@@ -812,12 +812,8 @@ document.querySelectorAll('.suggestion-chip').forEach(chip => {
 // ==================== UI EVENT LISTENERS ====================
 // Level switching
 document.querySelectorAll('.level-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentLevel = btn.getAttribute('data-level');
-        selectedClass = null;
-        document.getElementById('classSelectionSection').style.display = 'block';
+    const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
         document.getElementById('subjectsSection').style.display = 'none';
         document.getElementById('playlistSection').style.display = 'none';
         document.getElementById('videoPlayerSection').style.display = 'none';
