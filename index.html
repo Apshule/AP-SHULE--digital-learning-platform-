@@ -452,7 +452,7 @@
 // ==================== GEMINI AI CONFIGURATION ====================
 const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-AIzaSyD3UCnSDldJWSCJI7ADKx3tHz4V4VYmROI
+const GEMINI_API_KEY = "AIzaSyD3UCnSDldJWSCJI7ADKx3tHz4V4VYmROI";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
  async function askGemini(question) {
     // Force direct answer - no menus, no subject questions
@@ -535,7 +535,7 @@ Your response: Give a complete, helpful answer immediately.`;
 const classesData = {
     primary: [
         document.querySelectorAll('.level-btn').forEach(btn => {
-        { id: 2, name: "Primary 2", icon: "fas fa-child", subjects: primarySubjects },
+    btn.addEventListener('click', () => {
         { id: 3, name: "Primary 3", icon: "fas fa-child", subjects: primarySubjects },
         { id: 4, name: "Primary 4", icon: "fas fa-user-graduate", subjects: primarySubjects },
         { id: 5, name: "Primary 5", icon: "fas fa-user-graduate", subjects: primarySubjects },
