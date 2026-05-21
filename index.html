@@ -454,11 +454,38 @@ const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
 // ==================== DATA ====================
-const primarySubjects = [
-    { name: "Mathematics", icon: "fa-calculator", color: "#2196F3", lessons: 12 },
-    { name: "English", icon: "fa-book", color: "#4CAF50", lessons: 10 },
-    { name: "Science", icon: "fa-flask", color: "#FF9800", lessons: 15 },
-    { name: "Social Studies", icon: "fa-globe", color: "#9C27B0", lessons: 8 },
+async function askGemini(question) {
+    // System instruction that forces AI to answer directly
+    const systemInstruction = `You are APSHULE AI Tutor. IMPORTANT RULES:
+1. ALWAYS answer the student's question directly and completely FIRST.
+2. NEVER ask "What subject would you like to learn about?" before answering.
+3. DO NOT show a menu or list of topics instead of answering.
+4. Keep explanations clear, simple, and educational for Ugandan Primary/Secondary students.
+5. After answering, you may briefly offer 1-2 related follow-up suggestions.
+
+Student's question: ${question}
+
+Remember: Answer the question immediately. No menus. No asking for subject first.`;
+
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: systemInstruction }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+            })
+        });
+        
+        if (!response.ok) throw new Error('API Error');
+        
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "Let me help you learn! Could you please rephrase your question?";
+    } catch (error) {
+        console.error('AI Error:', error);
+        return "📚 I'm here to help! Please type your question again.";
+    }
+}
     { name: "Literacy", icon: "fa-book-open", color: "#00BCD4", lessons: 10 },
     { name: "Religious Education", icon: "fa-church", color: "#795548", lessons: 6 },
     { name: "Agriculture", icon: "fa-tractor", color: "#8BC34A", lessons: 7 }
