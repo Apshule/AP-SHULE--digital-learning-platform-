@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>APSHULE - Digital Learning Platform with AI Tutor</title>
-    <!-- Google Fonts & Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -23,8 +22,17 @@
         .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 30px; font-size: 16px; }
         .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .login-btn:hover { background: #3a1f7a; }
+        .forgot-password { color: #4B2E9E; font-size: 12px; margin-top: 12px; display: block; cursor: pointer; text-decoration: underline; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
+        .success-message { color: green; margin-top: 16px; font-size: 14px; }
         .hidden { display: none; }
+        
+        /* Reset Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 3000; }
+        .modal-content { background: white; border-radius: 30px; padding: 30px; width: 90%; max-width: 350px; text-align: center; }
+        .modal-content input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 25px; border: 1px solid #ddd; }
+        .modal-content button { background: #4B2E9E; color: white; border: none; padding: 12px; border-radius: 25px; width: 100%; margin-top: 10px; cursor: pointer; }
+        .close-modal { background: #ccc; margin-top: 5px; }
         
         .header { background: #5B4FCF; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
         .header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
@@ -33,86 +41,42 @@
         .tagline { color: rgba(255,255,255,0.8); font-size: 12px; }
         .greeting { color: white; font-weight: bold; font-size: 14px; margin-top: 4px; }
         .header-right { display: flex; align-items: center; gap: 12px; }
-        .ai-icon-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
-        .ai-icon-btn:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
+        .ai-icon-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .ai-icon-btn i { font-size: 22px; color: white; }
         .logout-btn { background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; color: white; font-size: 14px; cursor: pointer; }
         
-        .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; box-shadow: -2px 0 20px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+        .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column; }
         .ai-drawer.open { right: 0; }
-        .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; align-items: center; justify-content: space-between; }
-        .ai-drawer-header h3 { display: flex; align-items: center; gap: 10px; font-size: 18px; }
-        .close-drawer { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
+        .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; justify-content: space-between; }
         .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f5f5f5; }
         .message { margin-bottom: 16px; display: flex; gap: 10px; }
         .message.user { justify-content: flex-end; }
         .message.user .message-bubble { background: #4B2E9E; color: white; border-radius: 20px 20px 5px 20px; }
-        .message.ai .message-bubble { background: white; color: #333; border-radius: 20px 20px 20px 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .message-bubble { max-width: 80%; padding: 12px 16px; font-size: 14px; line-height: 1.4; }
-        .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .message.user .message-avatar { background: #4B2E9E; color: white; }
-        .message.ai .message-avatar { background: #FF8C42; color: white; }
-        .typing-indicator { padding: 12px 16px; background: white; border-radius: 20px; display: inline-block; font-size: 14px; color: #666; }
+        .message.ai .message-bubble { background: white; color: #333; border-radius: 20px 20px 20px 5px; }
+        .message-bubble { max-width: 80%; padding: 12px 16px; font-size: 14px; }
+        .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #FF8C42; color: white; }
         .suggestions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; background: white; border-top: 1px solid #eee; }
-        .suggestion-chip { background: #e0e0e0; padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-        .suggestion-chip:hover { background: #4B2E9E; color: white; }
-        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; border-top: 1px solid #eee; }
-        .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 14px; outline: none; }
+        .suggestion-chip { background: #e0e0e0; padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; }
+        .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; }
         .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
-        .ai-chat-input button:disabled { background: #ccc; cursor: not-allowed; }
         
         .main-content { padding: 20px 16px; padding-bottom: 80px; }
         .section-title { color: white; font-weight: bold; font-size: 20px; margin-bottom: 16px; }
-        .class-selection { margin-bottom: 24px; }
         .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 16px; }
-        .class-card { background: white; border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: transform 0.2s; }
-        .class-card:hover { transform: translateY(-2px); }
-        .class-card i { font-size: 32px; color: #4B2E9E; margin-bottom: 8px; }
-        .class-name { font-weight: bold; font-size: 14px; color: #333; }
-        .class-desc { font-size: 10px; color: #666; margin-top: 4px; }
+        .class-card { background: white; border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; }
+        .class-card i { font-size: 32px; color: #4B2E9E; }
+        .class-name { font-weight: bold; font-size: 14px; }
         .education-level { display: flex; gap: 16px; margin-bottom: 20px; }
-        .level-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
+        .level-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
         .level-btn.active { background: white; color: #4B2E9E; }
-        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 16px; max-height: 500px; overflow-y: auto; padding-bottom: 20px; }
-        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
-        .subject-card:active { transform: scale(0.98); }
-        .subject-icon { width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 16px; }
+        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; }
+        .subject-icon { width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; background: #4B2E9E; }
         .subject-icon i { font-size: 28px; color: white; }
-        .subject-name { font-weight: 600; color: #333; font-size: 14px; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .video-player-container { margin-top: 20px; }
-        .video-card { background: black; border-radius: 20px; overflow: hidden; margin-bottom: 20px; }
-        .video-wrapper { position: relative; background: black; min-height: 250px; }
-        .custom-video-player { width: 100%; background: black; outline: none; }
-        .custom-video-controls { background: rgba(0,0,0,0.9); padding: 12px 16px; }
-        .progress-container { margin-bottom: 12px; }
-        .time-info { display: flex; justify-content: space-between; color: white; font-size: 12px; margin-bottom: 8px; }
-        .progress-bar { background: rgba(255,255,255,0.3); height: 6px; border-radius: 3px; cursor: pointer; position: relative; }
-        .progress-fill { background: #4CAF50; width: 0%; height: 100%; border-radius: 3px; transition: width 0.1s linear; }
-        .control-buttons { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
-        .control-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-        .control-btn:hover { background: rgba(255,255,255,0.2); }
-        .volume-slider { width: 80px; cursor: pointer; }
-        .video-title { background: rgba(0,0,0,0.8); padding: 12px 16px; color: white; font-weight: bold; font-size: 16px; text-align: center; }
-        .watch-status { background: #4CAF50; color: white; padding: 10px; border-radius: 30px; text-align: center; margin-top: 10px; font-size: 14px; }
-        .playlist-videos { display: flex; flex-direction: column; gap: 12px; max-height: 500px; overflow-y: auto; }
-        .playlist-item { background: white; border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: center; cursor: pointer; }
-        .playlist-item:hover { background: #f5f5f5; }
-        .playlist-thumb { width: 70px; height: 50px; background: linear-gradient(135deg,#4B2E9E,#9B8BE0); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
-        .playlist-info { flex: 1; }
-        .playlist-title { font-weight: bold; margin-bottom: 4px; font-size: 14px; }
-        .playlist-duration { font-size: 11px; color: #666; }
-        .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
-        .folder-header { background: #4B2E9E; padding: 16px; color: white; font-weight: bold; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .folder-content { padding: 16px; display: none; background: #f9f9f9; }
-        .folder-content.show { display: block; }
-        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .material-icon { width: 40px; height: 40px; background: #e0e0e0; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        .material-info { flex: 1; }
-        .material-title { font-weight: bold; }
-        .material-size { font-size: 11px; color: #666; }
-        .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; margin-bottom: 20px; }
-        .payment-plans-title { font-size: 18px; font-weight: bold; color: #4B2E9E; text-align: center; margin-bottom: 16px; }
+        .subject-name { font-weight: 600; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; }
+        .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
         .payment-plans-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
         .payment-card { border-radius: 16px; padding: 12px; text-align: center; color: white; }
         .payment-card.daily { background: linear-gradient(135deg,#2196F3,#1976D2); }
@@ -120,30 +84,321 @@
         .payment-card.monthly { background: linear-gradient(135deg,#FF9800,#F57C00); }
         .payment-card.half { background: linear-gradient(135deg,#9C27B0,#7B1FA2); }
         .payment-card.full { background: linear-gradient(135deg,#F44336,#D32F2F); }
-        .payment-plan-name { font-size: 14px; font-weight: bold; }
-        .payment-plan-price { font-size: 20px; font-weight: bold; margin: 4px 0; }
-        .payment-plan-duration { font-size: 10px; opacity: 0.9; }
         .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; cursor: pointer; width: 100%; }
-        .subscribe-btn-small:hover { background: #4B2E9E; color: white; }
-        .mylist-container { background: white; border-radius: 20px; padding: 20px; min-height: 300px; }
-        .account-card { background: white; border-radius: 20px; padding: 24px; text-align: center; }
-        .account-avatar { width: 80px; height: 80px; background: #4B2E9E; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-        .account-avatar i { font-size: 40px; color: white; }
-        .account-field { text-align: left; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
-        .account-label { font-size: 12px; color: #666; }
-        .account-value { font-weight: bold; margin-top: 4px; }
-        .about-card { background: white; border-radius: 20px; padding: 24px; margin-bottom: 20px; }
+        .account-card, .about-card, .mylist-container { background: white; border-radius: 20px; padding: 24px; }
+        .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         .vision-box, .mission-box { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center; }
         .core-value { padding: 12px; background: #f0f0f0; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-        .core-value i { font-size: 24px; color: #4B2E9E; }
         .team-member { display: flex; align-items: center; gap: 16px; padding: 12px; background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; }
-        .team-avatar { width: 60px; height: 60px; background: linear-gradient(135deg, #4B2E9E, #7B5FCF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; }
-        .team-info { flex: 1; }
-        .team-name { font-weight: bold; font-size: 16px; }
-        .team-role { font-size: 12px; color: #666; }
-        .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
+        .nav-item i { font-size: 22px; }
+        .nav-item.active { color: #FF8C42; }
+        .page { display: none; }
+        .page.active-page { display: block; }
+        .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
+        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
+        .overlay.show { display: block; }
+        .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
+        .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; gap: 12px; cursor: pointer; }
+        .folder-content { padding: 16px; display: none; }
+        .folder-content.show { display: block; }
+        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; gap: 12px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="Logo" class="login-logo-img">
+        <div class="login-title">APSHULE</div>
+        <div class="login-subtitle">Let's Learn With Ease</div>
+        <div class="login-tabs">
+            <div class="login-tab active" data-tab="login">Login</div>
+            <div class="login-tab" data-tab="signup">Sign Up</div>
+        </div>
+        <div id="loginFormDiv" class="login-form active">
+            <input type="text" id="loginEmail" placeholder="Username" class="login-input">
+            <input type="password" id="loginPassword" placeholder="Password" class="login-input">
+            <button id="loginBtn" class="login-btn">Login</button>
+            <div class="forgot-password" id="forgotPasswordBtn">Forgot Password?</div>
+        </div>
+        <div id="signupFormDiv" class="login-form">
+            <input type="text" id="signupName" placeholder="Full Name" class="login-input">
+            <input type="text" id="signupEmail" placeholder="Username" class="login-input">
+            <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
+            <input type="password" id="signupPassword" placeholder="Password" class="login-input">
+            <select id="signupEducationLevel" class="login-input">
+                <option value="">Select Education Level</option>
+                <option value="Primary">Primary School</option>
+                <option value="Secondary">Secondary School</option>
+            </select>
+            <button id="signupBtn" class="login-btn">Create Account</button>
+        </div>
+        <div id="loginError" class="error-message"></div>
+    </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div id="resetModal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Reset Password</h3>
+        <input type="text" id="resetUsername" placeholder="Enter your username">
+        <input type="password" id="resetNewPassword" placeholder="New password">
+        <button id="confirmResetBtn">Reset Password</button>
+        <button id="closeModalBtn" class="close-modal">Cancel</button>
+        <div id="resetMessage" class="success-message"></div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="app-container hidden">
+    <div class="header">
+        <div class="header-left">
+            <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE" class="header-logo-img">
+            <div><div class="app-title">APSHULE</div><div class="tagline">Learn with ease</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
+        </div>
+        <div class="header-right">
+            <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+    </div>
+
+    <!-- AI Drawer -->
+    <div class="overlay" id="drawerOverlay"></div>
+    <div class="ai-drawer" id="aiDrawer">
+        <div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button class="close-drawer" id="closeDrawerBtn">&times;</button></div>
+        <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything about your studies! 📚</div></div></div>
+        <div class="suggestions" id="suggestions">
+            <div class="suggestion-chip" data-question="What is photosynthesis?">🌿 Photosynthesis</div>
+            <div class="suggestion-chip" data-question="Explain algebra">📐 Algebra</div>
+            <div class="suggestion-chip" data-question="What are the parts of speech?">📖 Grammar</div>
+            <div class="suggestion-chip" data-question="What is the capital of Uganda?">🇺🇬 Capital</div>
+        </div>
+        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me anything..."><button id="sendBtn">Send</button></div>
+    </div>
+
+    <div class="main-content">
+        <div id="homePage" class="page active-page">
+            <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary</button><button class="level-btn" data-level="secondary">🎓 Secondary</button></div>
+            <div id="classSelectionSection"><div class="section-title">📚 Select Class</div><div id="classGrid" class="class-grid"></div></div>
+            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button><div class="section-title">📖 Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
+            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Your learning journey starts here</div></div>
+            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i> 📚 Learning Materials <i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div class="material-item">📄 Mathematics Notes</div><div class="material-item">📄 English Past Papers</div><div class="material-item">📄 Science Guide</div></div></div>
+            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div class="payment-plan-name">Daily</div><div class="payment-plan-price">UGX 300</div><button class="subscribe-btn-small" data-plan="Daily" data-price="300">Subscribe</button></div><div class="payment-card weekly"><div class="payment-plan-name">Weekly</div><div class="payment-plan-price">UGX 2,500</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="2500">Subscribe</button></div><div class="payment-card monthly"><div class="payment-plan-name">Monthly</div><div class="payment-plan-price">UGX 20,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="20000">Subscribe</button></div><div class="payment-card half"><div class="payment-plan-name">Half Year</div><div class="payment-plan-price">UGX 120,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="120000">Subscribe</button></div><div class="payment-card full"><div class="payment-plan-name">Full Year</div><div class="payment-plan-price">UGX 240,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="240000">Subscribe</button></div></div></div>
+        </div>
+
+        <div id="myListPage" class="page"><div class="section-title">❤️ My List</div><div class="mylist-container"><p style="text-align:center; color:#999;">No saved lessons yet</p></div></div>
+        <div id="notificationsPage" class="page"><div class="section-title">🔔 Alerts</div><div class="mylist-container"><p style="text-align:center; color:#999;">No new notifications</p></div></div>
+        <div id="accountPage" class="page"><div class="section-title">👤 My Account</div><div id="accountInfo" class="account-card"></div></div>
+        <div id="aboutPage" class="page"><div class="section-title">📖 About APSHULE</div><div class="about-card"><div class="vision-box"><h3>Our Vision</h3><p>To be Africa's leading digital learning platform</p></div><div class="mission-box"><h3>Our Mission</h3><p>Quality accessible education for every student</p></div><h3>Contact</h3><div class="contact-info">📞 +256705732540</div><div class="contact-info">📧 apshule@gmail.com</div><a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us</a></div></div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
+        <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
+        <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
+        <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
+        <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
+    </div>
+</div>
+
+<script>
+    // DATA
+    const primarySubjects = ["Mathematics", "English", "Science", "Social Studies", "Literacy", "RE", "Agriculture"];
+    const secondarySubjects = ["Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "PE", "Agriculture"];
+    
+    const classesData = {
+        primary: [1,2,3,4,5,6,7].map(i => ({ id: i, name: `Primary ${i}`, subjects: primarySubjects })),
+        secondary: [1,2,3,4,5,6].map(i => ({ id: i, name: `Senior ${i}`, subjects: secondarySubjects }))
+    };
+
+    let currentLevel = "primary";
+    let selectedClass = null;
+    let currentUser = null;
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    // NAVIGATION FIX
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const pageId = this.getAttribute('data-page');
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
+            document.getElementById(`${pageId}Page`).classList.add('active-page');
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            this.classList.add('active');
+            console.log("Navigated to:", pageId);
+        });
+    });
+
+    function renderClasses() {
+        const grid = document.getElementById('classGrid');
+        const classes = classesData[currentLevel];
+        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id})"><i class="fas fa-book"></i><div class="class-name">${c.name}</div><div class="class-desc">${c.subjects.length} Subjects</div></div>`).join('');
+    }
+
+    window.selectClass = function(id) {
+        selectedClass = classesData[currentLevel].find(c => c.id === id);
+        document.getElementById('classSelectionSection').style.display = 'none';
+        document.getElementById('subjectsSection').style.display = 'block';
+        const subjectsGrid = document.getElementById('subjectsGrid');
+        subjectsGrid.innerHTML = selectedClass.subjects.map(s => `<div class="subject-card" onclick="alert('📚 ${s} lessons coming soon!')"><div class="subject-icon" style="background:#4B2E9E"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div></div>`).join('');
+    };
+
+    document.getElementById('backToClasses')?.addEventListener('click', () => {
+        document.getElementById('classSelectionSection').style.display = 'block';
+        document.getElementById('subjectsSection').style.display = 'none';
+    });
+
+    document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentLevel = btn.getAttribute('data-level');
+            selectedClass = null;
+            document.getElementById('classSelectionSection').style.display = 'block';
+            document.getElementById('subjectsSection').style.display = 'none';
+            renderClasses();
+        });
+    });
+
+    // AUTHENTICATION
+    function showAppScreen() {
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.name.split(' ')[0];
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            document.getElementById('accountInfo').innerHTML = `<div class="account-field"><label>Name</label><div>${currentUser.name}</div></div><div class="account-field"><label>Username</label><div>${currentUser.email}</div></div><div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div><div class="account-field"><label>Education</label><div>${currentUser.educationLevel}</div></div>`;
+            renderClasses();
+        }
+    }
+
+    document.getElementById('signupBtn')?.addEventListener('click', () => {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const phone = document.getElementById('signupPhone').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const level = document.getElementById('signupEducationLevel').value;
+        if (!name || !email || !phone || !password || !level) return document.getElementById('loginError').textContent = 'Fill all fields';
+        if (users.find(u => u.email === email)) return document.getElementById('loginError').textContent = 'Username exists';
+        const newUser = { id: Date.now(), name, email, phone, password, educationLevel: level, createdAt: new Date() };
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        currentUser = newUser;
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        showAppScreen();
+    });
+
+    document.getElementById('loginBtn')?.addEventListener('click', () => {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const user = users.find(u => u.email === email && u.password === password);
+        if (user) { currentUser = user; localStorage.setItem('currentUser', JSON.stringify(currentUser)); showAppScreen(); }
+        else document.getElementById('loginError').textContent = 'Invalid credentials';
+    });
+
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+    });
+
+    // PASSWORD RESET
+    const modal = document.getElementById('resetModal');
+    document.getElementById('forgotPasswordBtn')?.addEventListener('click', () => modal.classList.remove('hidden'));
+    document.getElementById('closeModalBtn')?.addEventListener('click', () => modal.classList.add('hidden'));
+    document.getElementById('confirmResetBtn')?.addEventListener('click', () => {
+        const username = document.getElementById('resetUsername').value.trim();
+        const newPass = document.getElementById('resetNewPassword').value;
+        const user = users.find(u => u.email === username);
+        if (user && newPass.length >= 4) {
+            user.password = newPass;
+            localStorage.setItem('users', JSON.stringify(users));
+            document.getElementById('resetMessage').textContent = 'Password reset successful! Login with new password.';
+            setTimeout(() => modal.classList.add('hidden'), 2000);
+        } else {
+            document.getElementById('resetMessage').textContent = 'User not found or password too short (min 4 chars)';
+        }
+    });
+
+    // AI CHAT with direct answers (no API fallback)
+    const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
+    async function askGemini(question) {
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: `You are a helpful tutor for Ugandan students. Answer briefly and clearly: ${question}` }] }] })
+            });
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm here to help! Can you rephrase your question?";
+        } catch(e) {
+            return "📚 Great question! Let me help you learn. Please ask me about Math, Science, English, or any subject!";
+        }
+    }
+
+    function addMessage(text, sender) {
+        const container = document.getElementById('chatMessages');
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        div.innerHTML = `<div class="message-avatar"><i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'}"></i></div><div class="message-bubble">${text}</div>`;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const q = input.value.trim();
+        if (!q) return;
+        addMessage(q, 'user');
+        input.value = '';
+        addMessage("🤔 Thinking...", 'ai');
+        const answer = await askGemini(q);
+        const msgs = document.querySelectorAll('#chatMessages .message');
+        if (msgs[msgs.length-1].querySelector('.message-bubble')?.innerText === "🤔 Thinking...") msgs[msgs.length-1].remove();
+        addMessage(answer, 'ai');
+    }
+
+    document.getElementById('sendBtn')?.addEventListener('click', sendMessage);
+    document.getElementById('chatInput')?.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+        chip.addEventListener('click', () => { document.getElementById('chatInput').value = chip.getAttribute('data-question'); sendMessage(); });
+    });
+
+    function openDrawer() { document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); }
+    function closeDrawer() { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); }
+    document.getElementById('openAIDrawerBtn')?.addEventListener('click', openDrawer);
+    document.getElementById('closeDrawerBtn')?.addEventListener('click', closeDrawer);
+    document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
+
+    document.getElementById('folderHeader')?.addEventListener('click', () => document.getElementById('folderContent').classList.toggle('show'));
+    document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if(!currentUser) { alert('Please login first'); return; }
+            window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan`, '_blank');
+        });
+    });
+
+    document.querySelectorAll('.login-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabName = tab.getAttribute('data-tab');
+            document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login');
+            document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup');
+        });
+    });
+
+    const saved = localStorage.getItem('currentUser');
+    if (saved) { currentUser = JSON.parse(saved); showAppScreen(); }
+</script>
+</body>
+</html>        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
         .nav-item i { font-size: 22px; }
         .nav-item.active { color: #FF8C42; }
