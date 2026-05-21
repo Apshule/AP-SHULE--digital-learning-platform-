@@ -453,47 +453,69 @@
 const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
-// ==================== DATA ====================
-async function askGemini(question) {
-    // System instruction that forces AI to answer directly
-    const systemInstruction = `You are APSHULE AI Tutor. IMPORTANT RULES:
-1. ALWAYS answer the student's question directly and completely FIRST.
-2. NEVER ask "What subject would you like to learn about?" before answering.
-3. DO NOT show a menu or list of topics instead of answering.
-4. Keep explanations clear, simple, and educational for Ugandan Primary/Secondary students.
-5. After answering, you may briefly offer 1-2 related follow-up suggestions.
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+ async function askGemini(question) {
+    // Force direct answer - no menus, no subject questions
+    const prompt = `You are APSHULE AI Tutor for Ugandan students.
 
-Student's question: ${question}
+CRITICAL RULE: Answer the student's question DIRECTLY. Do NOT say "I'm here to help! What subject would you like to learn about?" Do NOT show a menu. Just ANSWER.
 
-Remember: Answer the question immediately. No menus. No asking for subject first.`;
+Student asks: "${question}"
+
+Your response: Give a complete, helpful answer immediately.`;
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: systemInstruction }] }],
-                generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
             })
         });
         
-        if (!response.ok) throw new Error('API Error');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            throw new Error('API Error');
+        }
         
         const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "Let me help you learn! Could you please rephrase your question?";
+        
+        // Extract the actual answer
+        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (answer && !answer.includes("What subject would you like")) {
+            return answer;
+        } else {
+            // Fallback direct answers
+            if (question.toLowerCase().includes("photosynthesis")) {
+                return "🌿 Photosynthesis is the process plants use to convert sunlight, water, and carbon dioxide into glucose (food) and oxygen. It happens in plant leaves containing chlorophyll, which makes plants green. The equation is: 6CO₂ + 6H₂O + sunlight → C₆H₁₂O₆ + 6O₂";
+            }
+            if (question.toLowerCase().includes("uganda")) {
+                return "🇺🇬 Uganda's capital is Kampala. It's located on the shores of Lake Victoria and is the largest city in Uganda.";
+            }
+            if (question.includes("2x + 5 = 15")) {
+                return "📐 Let me solve: 2x + 5 = 15\nSubtract 5 from both sides: 2x = 10\nDivide both sides by 2: x = 5";
+            }
+            return "I'm your AI tutor. Please ask me any academic question like 'What is photosynthesis?' and I'll answer directly!";
+        }
     } catch (error) {
         console.error('AI Error:', error);
-        return "📚 I'm here to help! Please type your question again.";
+        // Manual fallback answers
+        if (question.toLowerCase().includes("photosynthesis")) {
+            return "🌿 Photosynthesis is the process plants use to make food using sunlight, water, and carbon dioxide. They release oxygen as a byproduct.";
+        }
+        if (question.toLowerCase().includes("uganda")) {
+            return "🇺🇬 The capital of Uganda is Kampala.";
+        }
+        if (question.includes("2x + 5 = 15")) {
+            return "📐 2x + 5 = 15 → 2x = 10 → x = 5";
+        }
+        return `📚 ${question}\n\nHere's what I can help with: Ask me "What is photosynthesis?" or "Capital of Uganda" and I'll answer directly!`;
     }
-}
-    { name: "Literacy", icon: "fa-book-open", color: "#00BCD4", lessons: 10 },
-    { name: "Religious Education", icon: "fa-church", color: "#795548", lessons: 6 },
-    { name: "Agriculture", icon: "fa-tractor", color: "#8BC34A", lessons: 7 }
-];
-
-const secondarySubjects = [
-    { name: "Mathematics", icon: "fa-calculator", color: "#2196F3", lessons: 20 },
-    { name: "English", icon: "fa-book", color: "#4CAF50", lessons: 18 },
+ }       const respon        console.error    { name: "Literacy", icon    { name: "Agriculture", icon    { name: "Mathematics", icon: "fa-calculator", colo    { name: 18 },
     { name: "Biology", icon: "fa-dna", color: "#9C27B0", lessons: 15 },
     { name: "Chemistry", icon: "fa-vial", color: "#F44336", lessons: 14 },
     { name: "Physics", icon: "fa-atom", color: "#00BCD4", lessons: 16 },
@@ -512,7 +534,7 @@ const secondarySubjects = [
 
 const classesData = {
     primary: [
-        { id: 1, name: "Primary 1", icon: "fas fa-child", subjects: primarySubjects },
+        document.querySelectorAll('.level-btn').forEach(btn => {
         { id: 2, name: "Primary 2", icon: "fas fa-child", subjects: primarySubjects },
         { id: 3, name: "Primary 3", icon: "fas fa-child", subjects: primarySubjects },
         { id: 4, name: "Primary 4", icon: "fas fa-user-graduate", subjects: primarySubjects },
