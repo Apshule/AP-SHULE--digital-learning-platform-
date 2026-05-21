@@ -40,6 +40,8 @@
         .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column; }
         .ai-drawer.open { right: 0; }
         .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; justify-content: space-between; }
+        .ai-drawer-header h3 { margin: 0; }
+        .close-drawer { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
         .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f5f5f5; }
         .message { margin-bottom: 16px; display: flex; gap: 10px; }
         .message.user { justify-content: flex-end; }
@@ -49,25 +51,28 @@
         .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #FF8C42; color: white; }
         .suggestions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; background: white; border-top: 1px solid #eee; }
         .suggestion-chip { background: #e0e0e0; padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
-        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; }
+        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; border-top: 1px solid #eee; }
         .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; }
         .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
         
         .main-content { padding: 20px 16px; padding-bottom: 80px; }
         .section-title { color: white; font-weight: bold; font-size: 20px; margin-bottom: 16px; }
         .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 16px; }
-        .class-card { background: white; border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; }
+        .class-card { background: white; border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .class-card:hover { transform: translateY(-2px); }
         .class-card i { font-size: 32px; color: #4B2E9E; }
         .class-name { font-weight: bold; font-size: 14px; }
+        .class-desc { font-size: 10px; color: #666; margin-top: 4px; }
         .education-level { display: flex; gap: 16px; margin-bottom: 20px; }
         .level-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
         .level-btn.active { background: white; color: #4B2E9E; }
-        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 16px; }
-        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; }
+        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 16px; max-height: 400px; overflow-y: auto; }
+        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
+        .subject-card:active { transform: scale(0.98); }
         .subject-icon { width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; background: #4B2E9E; }
         .subject-icon i { font-size: 28px; color: white; }
         .subject-name { font-weight: 600; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
         .payment-plans-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
         .payment-card { border-radius: 16px; padding: 12px; text-align: center; color: white; }
@@ -76,15 +81,22 @@
         .payment-card.monthly { background: linear-gradient(135deg,#FF9800,#F57C00); }
         .payment-card.half { background: linear-gradient(135deg,#9C27B0,#7B1FA2); }
         .payment-card.full { background: linear-gradient(135deg,#F44336,#D32F2F); }
+        .payment-plan-name { font-size: 14px; font-weight: bold; }
+        .payment-plan-price { font-size: 18px; font-weight: bold; margin: 4px 0; }
         .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; cursor: pointer; width: 100%; }
+        .subscribe-btn-small:hover { background: #4B2E9E; color: white; }
         .account-card, .about-card, .mylist-container { background: white; border-radius: 20px; padding: 24px; }
         .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
+        .account-field label { font-size: 12px; color: #666; }
+        .account-field div { font-weight: bold; margin-top: 4px; }
         .reset-password-section { background: #f5f5f5; border-radius: 16px; padding: 16px; margin-top: 20px; text-align: center; }
+        .reset-password-section h3 { margin-bottom: 12px; font-size: 16px; color: #4B2E9E; }
         .reset-password-section input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 25px; border: 1px solid #ddd; }
         .reset-password-section button { background: #4B2E9E; color: white; border: none; padding: 12px; border-radius: 25px; width: 100%; margin-top: 8px; cursor: pointer; }
         .vision-box, .mission-box { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center; }
         .core-value { padding: 12px; background: #f0f0f0; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
         .team-member { display: flex; align-items: center; gap: 16px; padding: 12px; background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; }
+        .team-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, #4B2E9E, #7B5FCF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
         .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
@@ -93,13 +105,18 @@
         .page { display: none; }
         .page.active-page { display: block; }
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
+        .welcome-title { color: white; font-weight: bold; font-size: 22px; }
+        .welcome-subtitle { color: rgba(255,255,255,0.8); font-size: 14px; }
         .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
         .overlay.show { display: block; }
         .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
-        .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; gap: 12px; cursor: pointer; }
-        .folder-content { padding: 16px; display: none; }
+        .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .folder-header i:first-child { font-size: 20px; }
+        .folder-header i:last-child { margin-left: auto; }
+        .folder-content { padding: 16px; display: none; background: #f9f9f9; }
         .folder-content.show { display: block; }
-        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; gap: 12px; cursor: pointer; }
+        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .material-item i { color: #4B2E9E; }
         .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
     </style>
 </head>
@@ -108,7 +125,7 @@
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
-        <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="Logo" class="login-logo-img">
+        <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE Logo" class="login-logo-img" onerror="this.src='https://via.placeholder.com/180x180?text=APSHULE'">
         <div class="login-title">APSHULE</div>
         <div class="login-subtitle">Let's Learn With Ease</div>
         <div class="login-tabs">
@@ -140,8 +157,12 @@
 <div id="appScreen" class="app-container hidden">
     <div class="header">
         <div class="header-left">
-            <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE" class="header-logo-img">
-            <div><div class="app-title">APSHULE</div><div class="tagline">Learn with ease</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
+            <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE Logo" class="header-logo-img" onerror="this.src='https://via.placeholder.com/48x48?text=A'">
+            <div>
+                <div class="app-title">APSHULE</div>
+                <div class="tagline">Learn with ease</div>
+                <div class="greeting">Hello, <span id="userName">Student</span>!</div>
+            </div>
         </div>
         <div class="header-right">
             <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
@@ -156,40 +177,103 @@
         <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything about your studies! 📚</div></div></div>
         <div class="suggestions" id="suggestions">
             <div class="suggestion-chip" data-question="What is photosynthesis?">🌿 Photosynthesis</div>
-            <div class="suggestion-chip" data-question="Explain algebra">📐 Algebra</div>
+            <div class="suggestion-chip" data-question="Explain algebra in simple terms">📐 Algebra</div>
             <div class="suggestion-chip" data-question="What are the parts of speech?">📖 Grammar</div>
             <div class="suggestion-chip" data-question="What is the capital of Uganda?">🇺🇬 Capital</div>
+            <div class="suggestion-chip" data-question="Solve: 2x + 5 = 15">🧮 Equation</div>
         </div>
         <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me anything..."><button id="sendBtn">Send</button></div>
     </div>
 
     <div class="main-content">
+        <!-- HOME PAGE -->
         <div id="homePage" class="page active-page">
-            <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary</button><button class="level-btn" data-level="secondary">🎓 Secondary</button></div>
-            <div id="classSelectionSection"><div class="section-title">📚 Select Class</div><div id="classGrid" class="class-grid"></div></div>
-            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back</button><div class="section-title">📖 Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
-            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Your learning journey starts here</div></div>
-            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i> 📚 Learning Materials <i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div class="material-item">📄 Mathematics Notes</div><div class="material-item">📄 English Past Papers</div><div class="material-item">📄 Science Guide</div></div></div>
-            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div class="payment-plan-name">Daily</div><div class="payment-plan-price">UGX 300</div><button class="subscribe-btn-small" data-plan="Daily" data-price="300">Subscribe</button></div><div class="payment-card weekly"><div class="payment-plan-name">Weekly</div><div class="payment-plan-price">UGX 2,500</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="2500">Subscribe</button></div><div class="payment-card monthly"><div class="payment-plan-name">Monthly</div><div class="payment-plan-price">UGX 20,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="20000">Subscribe</button></div><div class="payment-card half"><div class="payment-plan-name">Half Year</div><div class="payment-plan-price">UGX 120,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="120000">Subscribe</button></div><div class="payment-card full"><div class="payment-plan-name">Full Year</div><div class="payment-plan-price">UGX 240,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="240000">Subscribe</button></div></div></div>
+            <div class="education-level">
+                <button class="level-btn active" data-level="primary">🏫 Primary School</button>
+                <button class="level-btn" data-level="secondary">🎓 Secondary School</button>
+            </div>
+            <div id="classSelectionSection">
+                <div class="section-title">📚 Select Your Class</div>
+                <div id="classGrid" class="class-grid"></div>
+            </div>
+            <div id="subjectsSection" style="display:none;">
+                <button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button>
+                <div class="section-title">📖 Available Subjects</div>
+                <div id="subjectsGrid" class="subjects-grid"></div>
+            </div>
+            <div class="welcome-card">
+                <div class="welcome-title">Welcome to APSHULE Digital Learning Platform</div>
+                <div class="welcome-subtitle">Your learning journey starts here</div>
+            </div>
+            <div class="materials-folder">
+                <div class="folder-header" id="folderHeader">
+                    <i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs, Notes, Past Papers)</span><i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="folder-content" id="folderContent">
+                    <div class="material-item"><i class="fas fa-file-pdf"></i> Mathematics Revision Notes</div>
+                    <div class="material-item"><i class="fas fa-file-pdf"></i> English Past Papers</div>
+                    <div class="material-item"><i class="fas fa-file-word"></i> Science Practical Guide</div>
+                    <div class="material-item"><i class="fas fa-file-pdf"></i> Social Studies Notes</div>
+                    <div class="material-item"><i class="fas fa-file-pdf"></i> Literacy Study Guide</div>
+                </div>
+            </div>
+            <div class="payment-plans-section">
+                <div class="payment-plans-title">🎯 Choose Your Subscription Plan</div>
+                <div class="payment-plans-grid">
+                    <div class="payment-card daily"><div class="payment-plan-name">Daily</div><div class="payment-plan-price">UGX 300</div><div class="payment-plan-duration">24 hours</div><button class="subscribe-btn-small" data-plan="Daily" data-price="300">Subscribe</button></div>
+                    <div class="payment-card weekly"><div class="payment-plan-name">Weekly</div><div class="payment-plan-price">UGX 2,500</div><div class="payment-plan-duration">7 days</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="2500">Subscribe</button></div>
+                    <div class="payment-card monthly"><div class="payment-plan-name">Monthly</div><div class="payment-plan-price">UGX 20,000</div><div class="payment-plan-duration">30 days</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="20000">Subscribe</button></div>
+                    <div class="payment-card half"><div class="payment-plan-name">Half Year</div><div class="payment-plan-price">UGX 120,000</div><div class="payment-plan-duration">6 months</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="120000">Subscribe</button></div>
+                    <div class="payment-card full"><div class="payment-plan-name">Full Year</div><div class="payment-plan-price">UGX 240,000</div><div class="payment-plan-duration">12 months</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="240000">Subscribe</button></div>
+                </div>
+            </div>
         </div>
 
-        <div id="myListPage" class="page"><div class="section-title">❤️ My List</div><div class="mylist-container"><p style="text-align:center; color:#999;">No saved lessons yet</p></div></div>
-        <div id="notificationsPage" class="page"><div class="section-title">🔔 Alerts</div><div class="mylist-container"><p style="text-align:center; color:#999;">No new notifications</p></div></div>
+        <!-- MY LIST PAGE -->
+        <div id="myListPage" class="page">
+            <div class="section-title">❤️ My List</div>
+            <div class="mylist-container"><p style="text-align:center; color:#999;">No saved lessons yet</p></div>
+        </div>
         
-        <!-- ACCOUNT PAGE with PASSWORD RESET integrated -->
+        <!-- NOTIFICATIONS PAGE -->
+        <div id="notificationsPage" class="page">
+            <div class="section-title">🔔 Alerts</div>
+            <div class="mylist-container"><p style="text-align:center; color:#999;">No new notifications</p></div>
+        </div>
+        
+        <!-- ACCOUNT PAGE with PASSWORD RESET -->
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
             <div class="reset-password-section">
                 <h3><i class="fas fa-key"></i> Reset Password</h3>
-                <input type="text" id="resetUsernameAccount" placeholder="Enter your username" class="login-input">
-                <input type="password" id="resetNewPasswordAccount" placeholder="New password (min 4 characters)" class="login-input">
-                <button id="resetPasswordBtnAccount" class="login-btn">Reset Password</button>
+                <input type="text" id="resetUsernameAccount" placeholder="Enter your username">
+                <input type="password" id="resetNewPasswordAccount" placeholder="New password (min 4 characters)">
+                <button id="resetPasswordBtnAccount">Reset Password</button>
                 <div id="resetMessageAccount" class="success-message"></div>
             </div>
         </div>
         
-        <div id="aboutPage" class="page"><div class="section-title">📖 About APSHULE</div><div class="about-card"><div class="vision-box"><h3>Our Vision</h3><p>To be Africa's leading digital learning platform</p></div><div class="mission-box"><h3>Our Mission</h3><p>Quality accessible education for every student</p></div><h3>Contact</h3><div class="contact-info">📞 +256705732540</div><div class="contact-info">📧 apshule@gmail.com</div><a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us</a></div></div>
+        <!-- ABOUT US PAGE -->
+        <div id="aboutPage" class="page">
+            <div class="section-title">📖 About APSHULE</div>
+            <div class="about-card">
+                <div class="vision-box"><i class="fas fa-eye" style="font-size: 32px; margin-bottom: 10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
+                <div class="mission-box"><i class="fas fa-bullseye" style="font-size: 32px; margin-bottom: 10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology, self-paced learning, and comprehensive educational resources.</p></div>
+                <h3><i class="fas fa-gem"></i> Core Values</h3>
+                <div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality</div>
+                <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Education for all</div>
+                <div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Cutting-edge technology</div>
+                <h3 style="margin-top: 20px;"><i class="fas fa-users"></i> Our Team</h3>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div class="team-info"><div class="team-name">Tebuswake Abdallah</div><div class="team-role">Founder & CEO</div></div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div class="team-info"><div class="team-name">Mukasa Tadius</div><div class="team-role">Head of Operations</div></div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div class="team-info"><div class="team-name">Kasule Anthony</div><div class="team-role">Head of Academics</div></div></div>
+                <h3 style="margin-top: 20px;"><i class="fas fa-address-card"></i> Contact</h3>
+                <div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div>
+                <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
+                <a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a>
+            </div>
+        </div>
     </div>
 
     <div class="bottom-nav">
@@ -202,13 +286,13 @@
 </div>
 
 <script>
-    // DATA
-    const primarySubjects = ["Mathematics", "English", "Science", "Social Studies", "Literacy", "RE", "Agriculture"];
-    const secondarySubjects = ["Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "PE", "Agriculture"];
+    // ==================== DATA ====================
+    const primarySubjectsList = ["Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture"];
+    const secondarySubjectsList = ["Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"];
     
     const classesData = {
-        primary: [1,2,3,4,5,6,7].map(i => ({ id: i, name: `Primary ${i}`, subjects: primarySubjects })),
-        secondary: [1,2,3,4,5,6].map(i => ({ id: i, name: `Senior ${i}`, subjects: secondarySubjects }))
+        primary: [1,2,3,4,5,6,7].map(i => ({ id: i, name: `Primary ${i}`, subjects: primarySubjectsList })),
+        secondary: [1,2,3,4,5,6].map(i => ({ id: i, name: `Senior ${i}`, subjects: secondarySubjectsList }))
     };
 
     let currentLevel = "primary";
@@ -216,23 +300,37 @@
     let currentUser = null;
     let users = JSON.parse(localStorage.getItem('users')) || [];
 
-    // NAVIGATION FIX
+    // ==================== NAVIGATION ====================
+    function navigateTo(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
+        const targetPage = document.getElementById(`${pageId}Page`);
+        if (targetPage) targetPage.classList.add('active-page');
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+        if (activeNav) activeNav.classList.add('active');
+    }
+
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             const pageId = this.getAttribute('data-page');
-            document.querySelectorAll('.page').forEach(page => page.classList.remove('active-page'));
-            document.getElementById(`${pageId}Page`).classList.add('active-page');
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-            this.classList.add('active');
+            navigateTo(pageId);
         });
     });
 
+    // ==================== CLASS & SUBJECT RENDERING ====================
     function renderClasses() {
         const grid = document.getElementById('classGrid');
+        if (!grid) return;
         const classes = classesData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id})"><i class="fas fa-book"></i><div class="class-name">${c.name}</div><div class="class-desc">${c.subjects.length} Subjects</div></div>`).join('');
+        grid.innerHTML = classes.map(c => `
+            <div class="class-card" onclick="selectClass(${c.id})">
+                <i class="fas fa-book"></i>
+                <div class="class-name">${c.name}</div>
+                <div class="class-desc">${c.subjects.length} Subjects</div>
+            </div>
+        `).join('');
     }
 
     window.selectClass = function(id) {
@@ -240,7 +338,13 @@
         document.getElementById('classSelectionSection').style.display = 'none';
         document.getElementById('subjectsSection').style.display = 'block';
         const subjectsGrid = document.getElementById('subjectsGrid');
-        subjectsGrid.innerHTML = selectedClass.subjects.map(s => `<div class="subject-card" onclick="alert('📚 ${s} lessons coming soon!')"><div class="subject-icon" style="background:#4B2E9E"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div></div>`).join('');
+        subjectsGrid.innerHTML = selectedClass.subjects.map(s => `
+            <div class="subject-card" onclick="alert('📚 ${s} lessons coming soon!\\n\\nOur team is preparing content for you.')">
+                <div class="subject-icon" style="background:#4B2E9E"><i class="fas fa-book-open"></i></div>
+                <div class="subject-name">${s}</div>
+                <div class="class-desc">Coming soon</div>
+            </div>
+        `).join('');
     };
 
     document.getElementById('backToClasses')?.addEventListener('click', () => {
@@ -260,13 +364,19 @@
         });
     });
 
-    // AUTHENTICATION
+    // ==================== AUTHENTICATION ====================
     function showAppScreen() {
         if (currentUser) {
             document.getElementById('userName').textContent = currentUser.name.split(' ')[0];
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            document.getElementById('accountInfo').innerHTML = `<div class="account-field"><label>Name</label><div>${currentUser.name}</div></div><div class="account-field"><label>Username</label><div>${currentUser.email}</div></div><div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div><div class="account-field"><label>Education</label><div>${currentUser.educationLevel}</div></div>`;
+            document.getElementById('accountInfo').innerHTML = `
+                <div class="account-field"><label>Full Name</label><div>${currentUser.name}</div></div>
+                <div class="account-field"><label>Username</label><div>${currentUser.email}</div></div>
+                <div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div>
+                <div class="account-field"><label>Education Level</label><div>${currentUser.educationLevel}</div></div>
+                <div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>
+            `;
             renderClasses();
         }
     }
@@ -277,10 +387,19 @@
         const phone = document.getElementById('signupPhone').value.trim();
         const password = document.getElementById('signupPassword').value;
         const level = document.getElementById('signupEducationLevel').value;
-        if (!name || !email || !phone || !password || !level) return document.getElementById('loginError').textContent = 'Fill all fields';
-        if (users.find(u => u.email === email)) return document.getElementById('loginError').textContent = 'Username exists';
-        if (password.length < 4) return document.getElementById('loginError').textContent = 'Password min 4 characters';
-        const newUser = { id: Date.now(), name, email, phone, password, educationLevel: level, createdAt: new Date() };
+        if (!name || !email || !phone || !password || !level) {
+            document.getElementById('loginError').textContent = '❌ Fill all fields';
+            return;
+        }
+        if (password.length < 4) {
+            document.getElementById('loginError').textContent = '❌ Password min 4 characters';
+            return;
+        }
+        if (users.find(u => u.email === email)) {
+            document.getElementById('loginError').textContent = '❌ Username exists';
+            return;
+        }
+        const newUser = { id: Date.now(), name, email, phone, password, educationLevel: level, createdAt: new Date(), myList: [] };
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
         currentUser = newUser;
@@ -292,8 +411,13 @@
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
         const user = users.find(u => u.email === email && u.password === password);
-        if (user) { currentUser = user; localStorage.setItem('currentUser', JSON.stringify(currentUser)); showAppScreen(); }
-        else document.getElementById('loginError').textContent = 'Invalid credentials';
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showAppScreen();
+        } else {
+            document.getElementById('loginError').textContent = '❌ Invalid username or password';
+        }
     });
 
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
@@ -303,7 +427,7 @@
         document.getElementById('appScreen').classList.add('hidden');
     });
 
-    // PASSWORD RESET on Account Page
+    // ==================== PASSWORD RESET ====================
     document.getElementById('resetPasswordBtnAccount')?.addEventListener('click', () => {
         const username = document.getElementById('resetUsernameAccount').value.trim();
         const newPass = document.getElementById('resetNewPasswordAccount').value;
@@ -323,7 +447,7 @@
         setTimeout(() => { msgDiv.textContent = ''; }, 3000);
     });
 
-    // AI CHAT
+    // ==================== AI CHAT ====================
     const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
     async function askGemini(question) {
         try {
@@ -357,23 +481,38 @@
         addMessage("🤔 Thinking...", 'ai');
         const answer = await askGemini(q);
         const msgs = document.querySelectorAll('#chatMessages .message');
-        if (msgs[msgs.length-1].querySelector('.message-bubble')?.innerText === "🤔 Thinking...") msgs[msgs.length-1].remove();
+        if (msgs.length > 0 && msgs[msgs.length-1].querySelector('.message-bubble')?.innerText === "🤔 Thinking...") {
+            msgs[msgs.length-1].remove();
+        }
         addMessage(answer, 'ai');
     }
 
     document.getElementById('sendBtn')?.addEventListener('click', sendMessage);
     document.getElementById('chatInput')?.addEventListener('keypress', e => { if(e.key === 'Enter') sendMessage(); });
     document.querySelectorAll('.suggestion-chip').forEach(chip => {
-        chip.addEventListener('click', () => { document.getElementById('chatInput').value = chip.getAttribute('data-question'); sendMessage(); });
+        chip.addEventListener('click', () => { 
+            document.getElementById('chatInput').value = chip.getAttribute('data-question'); 
+            sendMessage(); 
+        });
     });
 
-    function openDrawer() { document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); }
-    function closeDrawer() { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); }
+    // ==================== UI HELPERS ====================
+    function openDrawer() { 
+        document.getElementById('aiDrawer').classList.add('open'); 
+        document.getElementById('drawerOverlay').classList.add('show'); 
+    }
+    function closeDrawer() { 
+        document.getElementById('aiDrawer').classList.remove('open'); 
+        document.getElementById('drawerOverlay').classList.remove('show'); 
+    }
     document.getElementById('openAIDrawerBtn')?.addEventListener('click', openDrawer);
     document.getElementById('closeDrawerBtn')?.addEventListener('click', closeDrawer);
     document.getElementById('drawerOverlay')?.addEventListener('click', closeDrawer);
 
-    document.getElementById('folderHeader')?.addEventListener('click', () => document.getElementById('folderContent').classList.toggle('show'));
+    document.getElementById('folderHeader')?.addEventListener('click', () => {
+        document.getElementById('folderContent').classList.toggle('show');
+    });
+
     document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -389,11 +528,18 @@
             tab.classList.add('active');
             document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login');
             document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup');
+            document.getElementById('loginError').textContent = '';
         });
     });
 
-    const saved = localStorage.getItem('currentUser');
-    if (saved) { currentUser = JSON.parse(saved); showAppScreen(); }
+    // ==================== CHECK EXISTING SESSION ====================
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) { 
+        currentUser = JSON.parse(savedUser); 
+        showAppScreen(); 
+    }
+    
+    console.log('✅ APSHULE fully loaded with logo, navigation, AI, and password reset');
 </script>
 </body>
 </html>
