@@ -534,8 +534,7 @@ const classesData = {
 let currentLevel = "primary";
 let selectedClass = null;
 let currentUser = null;
-let users = JSON.parse(localStorage.getItem('users')) || [];
-
+document.querySelectorAll('.level-btn').forEach(btn => {
 // ==================== VIDEO PLAYER ====================
 function initVideoPlayer() {
     const video = document.getElementById('customVideoPlayer');
