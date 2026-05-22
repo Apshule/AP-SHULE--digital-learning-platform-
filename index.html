@@ -752,6 +752,654 @@ if(saved) { currentUser = JSON.parse(saved); showAppScreen(); }
 console.log('✅ APSHULE FULLY LOADED with Video Player, 16/7 Subjects, Complete About, and Password Reset on Landing Page');
 </script>
 </body>
+</html>        .video-container video { width: 100%; height: auto; display: block; }
+        .video-controls { display: flex; align-items: center; gap: 8px; padding: 10px; background: #1a1a2e; flex-wrap: wrap; }
+        .video-controls button { background: #4B2E9E; color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        .video-controls button:hover { background: #FF8C42; }
+        .progress-bar { flex: 1; height: 5px; background: #ddd; border-radius: 5px; overflow: hidden; cursor: pointer; }
+        .progress-fill { height: 100%; background: #FF8C42; width: 0%; }
+        .time-display { color: white; font-size: 12px; min-width: 100px; text-align: center; }
+        .volume-slider { width: 80px; }
+        
+        /* Attendance Modal */
+        .attendance-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .attendance-modal.show { display: flex; }
+        .attendance-modal-content { background: white; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; }
+        .attendance-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close-modal { background: none; border: none; font-size: 28px; cursor: pointer; }
+        .camera-container { background: #2E7D32; border-radius: 16px; overflow: hidden; margin-bottom: 15px; }
+        #attendanceVideo, #enrollVideo { width: 100%; background: #1B5E20; }
+        .attendance-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .attendance-tab { flex: 1; padding: 10px; text-align: center; background: #e0e0e0; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .attendance-tab.active { background: #FF8C42; color: white; }
+        .attendance-tab-content { display: none; }
+        .attendance-tab-content.active { display: block; }
+        .attendance-controls { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        .btn-primary { background: #FF8C42; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
+        .btn-secondary { background: #2E7D32; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
+        .btn-danger { background: #dc3545; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; }
+        .recognition-result { background: #E8F5E9; padding: 15px; border-radius: 12px; margin: 15px 0; border-left: 4px solid #FF8C42; }
+        .recent-attendance-list, .enrolled-list { max-height: 200px; overflow-y: auto; }
+        .attendance-item, .enrolled-person { background: white; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .preview-image { max-width: 100px; max-height: 100px; border-radius: 10px; margin-top: 10px; border: 2px solid #FF8C42; }
+        .file-input-label { background: #FF8C42; color: white; padding: 10px 15px; border-radius: 25px; cursor: pointer; display: inline-block; font-size: 12px; margin: 5px; }
+        #faceImageUpload { display: none; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #E65100; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #FF8C42; border-radius: 10px; }
+        
+        /* AI Drawer */
+        .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column; }
+        .ai-drawer.open { right: 0; }
+        .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; justify-content: space-between; }
+        .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f5f5f5; }
+        .message { margin-bottom: 16px; display: flex; gap: 10px; }
+        .message.user { justify-content: flex-end; }
+        .message.user .message-bubble { background: #4B2E9E; color: white; border-radius: 20px 20px 5px 20px; }
+        .message.ai .message-bubble { background: white; color: #333; border-radius: 20px 20px 20px 5px; }
+        .message-bubble { max-width: 80%; padding: 12px 16px; font-size: 14px; }
+        .message-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #FF8C42; color: white; }
+        .suggestions { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; background: white; border-top: 1px solid #eee; }
+        .suggestion-chip { background: #e0e0e0; padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; border-top: 1px solid #eee; }
+        .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; }
+        .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE Logo" class="login-logo-img">
+        <div class="login-title">APSHULE</div>
+        <div class="login-subtitle">Complete Digital Learning Platform</div>
+        <div class="login-tabs">
+            <div class="login-tab active" data-tab="login">Login</div>
+            <div class="login-tab" data-tab="signup">Sign Up</div>
+        </div>
+        <div id="loginFormDiv" class="login-form active">
+            <input type="text" id="loginEmail" placeholder="Username" class="login-input">
+            <input type="password" id="loginPassword" placeholder="Password" class="login-input">
+            <button id="loginBtn" class="login-btn">Login</button>
+        </div>
+        <div id="signupFormDiv" class="login-form">
+            <input type="text" id="signupName" placeholder="Full Name" class="login-input">
+            <input type="text" id="signupEmail" placeholder="Username" class="login-input">
+            <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
+            <input type="password" id="signupPassword" placeholder="Password" class="login-input">
+            <select id="signupEducationLevel" class="login-input">
+                <option value="">Select Education Level</option>
+                <option value="Primary">Primary School</option>
+                <option value="Secondary">Secondary School</option>
+            </select>
+            <button id="signupBtn" class="login-btn">Create Account</button>
+        </div>
+        <div id="loginError" class="error-message"></div>
+        
+        <!-- Password Reset Section on Login Page -->
+        <div class="reset-section">
+            <h4><i class="fas fa-key"></i> Forgot Password?</h4>
+            <input type="text" id="resetUsername" placeholder="Enter your username" class="reset-input">
+            <input type="password" id="resetNewPassword" placeholder="New password (min 4 characters)" class="reset-input">
+            <button id="resetPasswordBtn" class="reset-btn">Reset Password</button>
+            <div id="resetMessage" class="success-message"></div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="app-container hidden">
+    <div class="header">
+        <div class="header-left">
+            <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE" class="header-logo-img">
+            <div>
+                <div class="app-title">APSHULE</div>
+                <div class="tagline">Learn • Track • Succeed</div>
+                <div class="greeting">Hello, <span id="userName">Student</span>!</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
+            <div style="position: relative;">
+                <button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
+                <div class="more-dropdown" id="moreDropdown">
+                    <div class="dropdown-item" id="attendanceMenuItem"><i class="fas fa-camera"></i><span>📸 Facial Attendance</span></div>
+                    <div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FACIAL ATTENDANCE MODAL -->
+    <div id="attendanceModal" class="attendance-modal">
+        <div class="attendance-modal-content">
+            <div class="attendance-modal-header"><h3><i class="fas fa-face-recognition"></i> Facial Attendance</h3><button class="close-modal" id="closeAttendanceModal">&times;</button></div>
+            <div class="attendance-tabs">
+                <button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button>
+                <button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button>
+                <button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button>
+            </div>
+            <div id="markTab" class="attendance-tab-content active">
+                <div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div>
+                <div class="attendance-controls"><button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-face-smile"></i> Mark Attendance</button></div>
+                <div id="attendanceResult" class="recognition-result" style="display:none;"></div>
+                <h4>📋 Today's Attendance</h4>
+                <div id="recentAttendanceList" class="recent-attendance-list"></div>
+            </div>
+            <div id="enrollTab" class="attendance-tab-content">
+                <div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div>
+                <div class="attendance-controls"><button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button></div>
+                <div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> 📁 Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div>
+                <div id="enrollPreview" style="text-align:center;"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div>
+                <div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Manager</option><option>Visitor</option></select></div>
+                <div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div>
+                <button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button>
+            </div>
+            <div id="manageTab" class="attendance-tab-content">
+                <h4>📋 Enrolled Persons</h4>
+                <div id="enrolledPersonsList" class="enrolled-list"></div>
+                <button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%; margin-top:15px;">🗑️ Clear All Records</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Drawer -->
+    <div class="overlay" id="drawerOverlay"></div>
+    <div class="ai-drawer" id="aiDrawer">
+        <div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button class="close-drawer" id="closeDrawerBtn">&times;</button></div>
+        <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div>
+        <div class="suggestions" id="suggestions"><div class="suggestion-chip" data-question="What is photosynthesis?">🌿 Photosynthesis</div><div class="suggestion-chip" data-question="Explain algebra">📐 Algebra</div><div class="suggestion-chip" data-question="Parts of speech">📖 Grammar</div></div>
+        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me..."><button id="sendBtn">Send</button></div>
+    </div>
+
+    <div class="main-content">
+        <div id="homePage" class="page active-page">
+            <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary School</button><button class="level-btn" data-level="secondary">🎓 Secondary School</button></div>
+            <div id="classSelectionSection"><div class="section-title">📚 Select Your Class</div><div id="classGrid" class="class-grid"></div></div>
+            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button><div class="section-title">📖 Available Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
+            
+            <!-- Demo Videos Section -->
+            <div class="video-section">
+                <div class="video-header"><i class="fas fa-play-circle"></i><span>📺 Demo Lessons</span></div>
+                <div class="video-container">
+                    <video id="demoVideo" src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+                    <div class="video-controls">
+                        <button id="playPauseBtn"><i class="fas fa-play"></i></button>
+                        <button id="prevVideoBtn"><i class="fas fa-backward"></i></button>
+                        <button id="nextVideoBtn"><i class="fas fa-forward"></i></button>
+                        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+                        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.1" value="1">
+                        <button id="muteBtn"><i class="fas fa-volume-up"></i></button>
+                    </div>
+                </div>
+                <div style="padding: 12px; text-align: center; color: #666; font-size: 12px;">
+                    🎬 Demo: Introduction to Algebra | Next: Photosynthesis Explained
+                </div>
+            </div>
+            
+            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Your complete digital learning journey starts here</div></div>
+            
+            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials</span><i class="fas fa-chevron-down"></i></div>
+            <div class="folder-content" id="folderContent">
+                <div class="material-item" data-file="Mathematics Notes"><i class="fas fa-file-pdf"></i> Mathematics Complete Notes (PDF)</div>
+                <div class="material-item" data-file="English Grammar"><i class="fas fa-file-pdf"></i> English Grammar Guide (PDF)</div>
+                <div class="material-item" data-file="Science Guide"><i class="fas fa-file-pdf"></i> Science Practical Handbook (PDF)</div>
+                <div class="material-item" data-file="Past Papers"><i class="fas fa-file-pdf"></i> Past Papers 2023-2024 (ZIP)</div>
+                <div class="material-item" data-file="Biology Diagrams"><i class="fas fa-image"></i> Biology Diagrams & Charts (PDF)</div>
+                <div class="material-item" data-file="Physics Formulas"><i class="fas fa-file-pdf"></i> Physics Formulas Sheet (PDF)</div>
+            </div></div>
+            
+            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid">
+                <div class="payment-card daily"><div class="payment-plan-name">Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div>
+                <div class="payment-card weekly"><div class="payment-plan-name">Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div>
+                <div class="payment-card monthly"><div class="payment-plan-name">Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div>
+                <div class="payment-card half"><div class="payment-plan-name">Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div>
+                <div class="payment-card half"><div class="payment-plan-name">Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div>
+                <div class="payment-card full"><div class="payment-plan-name">Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div>
+            </div></div>
+        </div>
+        
+        <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No saved lessons yet. Browse subjects and click ❤️ to save!</div></div>
+        <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
+        <div id="accountPage" class="page"><div class="section-title">👤 My Account</div><div id="accountInfo" class="account-card"></div></div>
+        
+        <!-- COMPLETE ABOUT PAGE -->
+        <div id="aboutPage" class="page">
+            <div class="section-title">📖 About APSHULE</div>
+            <div class="about-card">
+                <div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
+                <div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology, self-paced learning, and comprehensive educational resources.</p></div>
+                
+                <h3><i class="fas fa-gem"></i> Core Values</h3>
+                <div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery and content development</div>
+                <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students, regardless of location or background</div>
+                <div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform with cutting-edge technology</div>
+                <div class="core-value"><i class="fas fa-handshake"></i> <strong>Integrity:</strong> Operating with transparency, honesty, and ethical standards</div>
+                <div class="core-value"><i class="fas fa-users"></i> <strong>Student-Centered:</strong> Putting learners first in everything we do, ensuring their success</div>
+                
+                <h3><i class="fas fa-users"></i> Our Managing Team</h3>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & Chief Executive Officer (CEO)</div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & Human Resource Manager</div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div>
+                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div>
+                
+                <h3><i class="fas fa-cogs"></i> Key Features</h3>
+                <div class="core-value"><i class="fas fa-chalkboard"></i> <strong>Real-time Lessons:</strong> Interactive live classes and recorded sessions</div>
+                <div class="core-value"><i class="fas fa-download"></i> <strong>Downloadable Resources:</strong> Access materials offline anytime</div>
+                <div class="core-value"><i class="fas fa-chart-line"></i> <strong>Progress Tracking:</strong> Monitor your learning journey</div>
+                <div class="core-value"><i class="fas fa-users"></i> <strong>Community Learning:</strong> Connect with fellow students</div>
+                <div class="core-value"><i class="fas fa-mobile-alt"></i> <strong>Mobile Friendly:</strong> Learn on any device, anytime, anywhere</div>
+                <div class="core-value"><i class="fas fa-certificate"></i> <strong>Certificates:</strong> Earn certificates upon course completion</div>
+                <div class="core-value"><i class="fas fa-face-smile"></i> <strong>Facial Attendance:</strong> AI-powered attendance tracking</div>
+                
+                <h3><i class="fas fa-address-card"></i> Contact Information</h3>
+                <div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div>
+                <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
+                <div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div>
+                <a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
+        <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
+        <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
+        <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
+        <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
+    </div>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<script>
+// ==================== VIDEO PLAYER ====================
+const video = document.getElementById('demoVideo');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const prevBtn = document.getElementById('prevVideoBtn');
+const nextBtn = document.getElementById('nextVideoBtn');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const timeDisplay = document.getElementById('timeDisplay');
+const volumeSlider = document.getElementById('volumeSlider');
+const muteBtn = document.getElementById('muteBtn');
+
+const videoList = [
+    { src: "https://www.w3schools.com/html/mov_bbb.mp4", title: "Introduction to Algebra" },
+    { src: "https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4", title: "Photosynthesis Explained" }
+];
+let currentVideoIndex = 0;
+
+function loadVideo(index) {
+    video.src = videoList[index].src;
+    video.load();
+    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+video.addEventListener('loadedmetadata', () => {
+    timeDisplay.textContent = `0:00 / ${formatTime(video.duration)}`;
+});
+
+video.addEventListener('timeupdate', () => {
+    const percent = (video.currentTime / video.duration) * 100;
+    progressFill.style.width = `${percent}%`;
+    timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+});
+
+playPauseBtn.addEventListener('click', () => {
+    if (video.paused) {
+        video.play();
+        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+    } else {
+        video.pause();
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    }
+});
+
+progressBar.addEventListener('click', (e) => {
+    const rect = progressBar.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    video.currentTime = percent * video.duration;
+});
+
+volumeSlider.addEventListener('input', () => {
+    video.volume = volumeSlider.value;
+    muteBtn.innerHTML = video.volume === 0 ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+});
+
+muteBtn.addEventListener('click', () => {
+    if (video.volume > 0) {
+        video.volume = 0;
+        volumeSlider.value = 0;
+        muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    } else {
+        video.volume = 1;
+        volumeSlider.value = 1;
+        muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+    }
+});
+
+prevBtn.addEventListener('click', () => {
+    currentVideoIndex = (currentVideoIndex - 1 + videoList.length) % videoList.length;
+    loadVideo(currentVideoIndex);
+    showNotification(`Now playing: ${videoList[currentVideoIndex].title}`, "success");
+});
+
+nextBtn.addEventListener('click', () => {
+    currentVideoIndex = (currentVideoIndex + 1) % videoList.length;
+    loadVideo(currentVideoIndex);
+    showNotification(`Now playing: ${videoList[currentVideoIndex].title}`, "success");
+});
+
+loadVideo(0);
+
+// ==================== SUBJECTS WITH COLORS ====================
+const subjectColors = [
+    '#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', 
+    '#E91E63', '#3F51B5', '#009688', '#FFC107', '#8BC34A', '#673AB7', '#FF5722', 
+    '#607D8B', '#CDDC39'
+];
+
+const primarySubjectsList = [
+    "Mathematics", "English", "Science", "Social Studies", 
+    "Literacy", "Religious Education", "Agriculture"
+];
+
+const secondarySubjectsList = [
+    "Mathematics", "English", "Biology", "Chemistry", "Physics", 
+    "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", 
+    "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"
+];
+
+const classesData = {
+    primary: [1,2,3,4,5,6,7].map(i => ({ id: i, name: `Primary ${i}`, subjects: primarySubjectsList })),
+    secondary: [1,2,3,4,5,6].map(i => ({ id: i, name: `Senior ${i}`, subjects: secondarySubjectsList }))
+};
+
+let currentLevel = "primary";
+let selectedClass = null;
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem('users')) || [];
+
+// ==================== RENDER FUNCTIONS ====================
+function renderClasses() {
+    const grid = document.getElementById('classGrid');
+    const classes = classesData[currentLevel];
+    grid.innerHTML = classes.map(c => `
+        <div class="class-card" onclick="selectClass(${c.id})">
+            <i class="fas fa-book"></i>
+            <div class="class-name">${c.name}</div>
+            <div style="font-size:10px; color:#666;">${c.subjects.length} Subjects</div>
+        </div>
+    `).join('');
+}
+
+window.selectClass = function(id) {
+    selectedClass = classesData[currentLevel].find(c => c.id === id);
+    document.getElementById('classSelectionSection').style.display = 'none';
+    document.getElementById('subjectsSection').style.display = 'block';
+    renderSubjects();
+};
+
+function renderSubjects() {
+    const grid = document.getElementById('subjectsGrid');
+    const subjects = selectedClass.subjects;
+    grid.innerHTML = subjects.map((s, index) => `
+        <div class="subject-card" onclick="showNotification('📚 ${s} lessons coming soon! Check back for video content.', 'info')">
+            <div class="subject-icon" style="background: ${subjectColors[index % subjectColors.length]}">
+                <i class="fas ${getSubjectIcon(s)}"></i>
+            </div>
+            <div class="subject-name">${s}</div>
+            <div style="font-size:10px; color:#666;">Coming soon</div>
+        </div>
+    `).join('');
+}
+
+function getSubjectIcon(subject) {
+    const icons = {
+        'Mathematics': 'fa-calculator', 'English': 'fa-book', 'Biology': 'fa-dna',
+        'Chemistry': 'fa-flask', 'Physics': 'fa-atom', 'History': 'fa-landmark',
+        'Geography': 'fa-globe', 'Kiswahili': 'fa-language', 'Commerce': 'fa-chart-line',
+        'ICT': 'fa-laptop', 'Literature': 'fa-book-open', 'Economics': 'fa-chart-bar',
+        'Science': 'fa-flask', 'Social Studies': 'fa-globe', 'Literacy': 'fa-book',
+        'Religious Education': 'fa-church', 'Agriculture': 'fa-seedling'
+    };
+    return icons[subject] || 'fa-book-open';
+}
+
+document.getElementById('backToClasses')?.addEventListener('click', () => {
+    document.getElementById('classSelectionSection').style.display = 'block';
+    document.getElementById('subjectsSection').style.display = 'none';
+});
+
+document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLevel = btn.getAttribute('data-level');
+        selectedClass = null;
+        document.getElementById('classSelectionSection').style.display = 'block';
+        document.getElementById('subjectsSection').style.display = 'none';
+        renderClasses();
+    });
+});
+
+// ==================== FACIAL ATTENDANCE ====================
+let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
+let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
+let attendanceStream = null, enrollStream = null;
+let currentAttendanceCamera = 'environment', currentEnrollCamera = 'environment';
+let capturedFaceImage = null;
+
+if (attendancePeople.length === 0) {
+    attendancePeople.push({ id: 1, name: "Admin User", category: "Manager", phone: "+256700000000", faceImage: "sample", enrolledAt: new Date().toISOString() });
+    localStorage.setItem('apshule_attendance_people', JSON.stringify(attendancePeople));
+}
+
+function generateFaceSignature(imageData) { let hash = 0; for(let i=0; i<Math.min(imageData?.length||0,3000); i++) { hash = ((hash<<5)-hash)+imageData.charCodeAt(i); hash|=0; } return Math.abs(hash); }
+
+async function setupCamera(videoId, mode='environment') { 
+    try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); const video = document.getElementById(videoId); if(video) { video.srcObject = stream; return stream; } } catch(e) { 
+        try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); const video = document.getElementById(videoId); if(video) { video.srcObject = stream; return stream; } } catch(e) { showNotification("Camera access denied", "error"); return null; } 
+    } return null; 
+}
+
+function captureFace(videoId) { const video = document.getElementById(videoId); if(!video || !video.videoWidth) return null; const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video,0,0); return canvas.toDataURL('image/jpeg',0.8); }
+
+function showNotification(msg, type) { const n = document.getElementById('notification'); n.textContent = msg; n.className = `notification ${type}`; n.style.display = 'block'; setTimeout(()=>{ n.style.display = 'none'; },3000); }
+
+async function markAttendance() { 
+    if(attendancePeople.length===0 || attendancePeople.length===1) { showNotification("No enrolled faces! Go to Enroll tab first.","error"); return; } 
+    const img = captureFace('attendanceVideo'); if(!img) { showNotification("Could not capture face","error"); return; } 
+    let matched = null, best=Infinity; 
+    for(const p of attendancePeople) { if(p.faceImage && p.faceImage !== "sample") { const diff = Math.abs(generateFaceSignature(img)-generateFaceSignature(p.faceImage)); if(diff < best && diff < 15000) { best=diff; matched=p; } } } 
+    const resultDiv = document.getElementById('attendanceResult'); 
+    if(!matched) { resultDiv.style.display='block'; resultDiv.innerHTML='<div style="color:#dc3545;">❌ Face not recognized! Please enroll first.</div>'; return; } 
+    const today = new Date().toDateString(); 
+    const already = attendanceRecords.find(a=>a.personId===matched.id && new Date(a.timestamp).toDateString()===today); 
+    if(already) { resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#FF8C42;">⚠️ ${matched.name} already marked today</div>`; return; } 
+    const now = new Date(); 
+    attendanceRecords.push({ id:Date.now(), personId:matched.id, personName:matched.name, category:matched.category, phone:matched.phone, timestamp:now.toISOString(), timeIn:now.toLocaleTimeString(), date:today }); 
+    localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); 
+    resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#2E7D32;">✅ ${matched.name} marked present at ${now.toLocaleTimeString()}</div>`; 
+    showNotification(`Attendance marked for ${matched.name}!`,"success"); 
+    renderRecentAttendance(); renderEnrolledList(); 
+    setTimeout(()=>{ resultDiv.style.display='none'; },4000); 
+}
+
+function renderRecentAttendance() { 
+    const container = document.getElementById('recentAttendanceList'); if(!container) return; 
+    const today = new Date().toDateString(); 
+    const records = attendanceRecords.filter(r=>new Date(r.timestamp).toDateString()===today).slice(-10); 
+    if(records.length===0) { container.innerHTML='<div style="text-align:center;color:#999;padding:20px;">No records today</div>'; return; } 
+    container.innerHTML = records.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); 
+}
+
+function renderEnrolledList() { 
+    const container = document.getElementById('enrolledPersonsList'); if(!container) return; 
+    if(attendancePeople.length===0) { container.innerHTML='<div style="text-align:center;color:#999;">No enrolled people</div>'; return; } 
+    container.innerHTML = attendancePeople.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br><small>📞 ${p.phone||'N/A'}</small></div><button onclick="deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); 
+}
+
+window.deleteEnrolled = function(id) { 
+    if(confirm("Delete this person?")) { 
+        attendancePeople = attendancePeople.filter(p=>p.id!==id); 
+        attendanceRecords = attendanceRecords.filter(r=>r.personId!==id); 
+        localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); 
+        localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); 
+        showNotification("Person deleted","success"); renderEnrolledList(); renderRecentAttendance(); 
+    } 
+};
+
+document.getElementById('faceImageUpload')?.addEventListener('change', function(e) { 
+    const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(ev) { capturedFaceImage = ev.target.result; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported!</p>`; showNotification("Face imported! Fill details.","success"); }; reader.readAsDataURL(file); } 
+});
+
+document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ const img = captureFace('enrollVideo'); if(img) { capturedFaceImage = img; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured!</p>`; showNotification("Face captured! Fill details.","success"); } else { showNotification("Camera not ready","error"); } });
+
+document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ const name = document.getElementById('enrollName').value.trim(); const category = document.getElementById('enrollCategory').value; const phone = document.getElementById('enrollPhone').value.trim(); if(!name) { showNotification("Enter name","error"); return; } if(!capturedFaceImage) { showNotification("Capture or import face first","error"); return; } attendancePeople.push({ id:Date.now(), name, category, phone, faceImage:capturedFaceImage, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled!`,"success"); renderEnrolledList(); });
+
+document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(confirm("Delete ALL attendance records?")) { attendanceRecords=[]; localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared","success"); renderRecentAttendance(); } });
+
+// ==================== AI CHAT ====================
+const GEMINI_API_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
+async function askGemini(q) { 
+    try { const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ contents:[{ parts:[{ text:`You are a helpful tutor. Answer briefly: ${q}` }] }] }) }); const data = await res.json(); return data.candidates?.[0]?.content?.parts?.[0]?.text || "Let me help! Ask me anything!"; } catch(e) { return "📚 Great question! Ask me about Math, Science, English, or any subject!"; } }
+
+function addMessage(text, sender) { const container = document.getElementById('chatMessages'); const div = document.createElement('div'); div.className = `message ${sender}`; div.innerHTML = `<div class="message-avatar"><i class="fas ${sender==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${text}</div>`; container.appendChild(div); container.scrollTop = container.scrollHeight; }
+
+async function sendMessage() { const input = document.getElementById('chatInput'); const q = input.value.trim(); if(!q) return; addMessage(q,'user'); input.value=''; addMessage("🤔 Thinking...",'ai'); const ans = await askGemini(q); const msgs = document.querySelectorAll('#chatMessages .message'); if(msgs.length && msgs[msgs.length-1].querySelector('.message-bubble')?.innerText === "🤔 Thinking...") msgs[msgs.length-1].remove(); addMessage(ans,'ai'); }
+
+document.getElementById('sendBtn')?.addEventListener('click',sendMessage);
+document.getElementById('chatInput')?.addEventListener('keypress',e=>{ if(e.key==='Enter') sendMessage(); });
+document.querySelectorAll('.suggestion-chip').forEach(chip=>{ chip.addEventListener('click',()=>{ document.getElementById('chatInput').value = chip.getAttribute('data-question'); sendMessage(); }); });
+
+// ==================== AUTHENTICATION ====================
+function showAppScreen() { 
+    if(currentUser) { 
+        document.getElementById('userName').textContent = currentUser.name.split(' ')[0]; 
+        document.getElementById('loginScreen').classList.add('hidden'); 
+        document.getElementById('appScreen').classList.remove('hidden'); 
+        document.getElementById('accountInfo').innerHTML = `<div class="account-field"><label>Full Name</label><div>${currentUser.name}</div></div><div class="account-field"><label>Username</label><div>${currentUser.email}</div></div><div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div><div class="account-field"><label>Education Level</label><div>${currentUser.educationLevel}</div></div><div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>`; 
+        renderClasses(); renderRecentAttendance(); renderEnrolledList(); 
+    } 
+}
+
+// Password reset on landing page
+document.getElementById('resetPasswordBtn')?.addEventListener('click', () => {
+    const username = document.getElementById('resetUsername').value.trim();
+    const newPass = document.getElementById('resetNewPassword').value;
+    const user = users.find(u => u.email === username);
+    const msgDiv = document.getElementById('resetMessage');
+    if (user && newPass.length >= 4) {
+        user.password = newPass;
+        localStorage.setItem('users', JSON.stringify(users));
+        msgDiv.textContent = '✅ Password reset successful! You can now login.';
+        msgDiv.style.color = 'green';
+        document.getElementById('resetUsername').value = '';
+        document.getElementById('resetNewPassword').value = '';
+    } else {
+        msgDiv.textContent = '❌ User not found or password too short (min 4 characters)';
+        msgDiv.style.color = 'red';
+    }
+    setTimeout(() => { msgDiv.textContent = ''; }, 4000);
+});
+
+document.getElementById('signupBtn')?.addEventListener('click',()=>{ 
+    const name=document.getElementById('signupName').value.trim(); 
+    const email=document.getElementById('signupEmail').value.trim(); 
+    const phone=document.getElementById('signupPhone').value.trim(); 
+    const pwd=document.getElementById('signupPassword').value; 
+    const level=document.getElementById('signupEducationLevel').value; 
+    if(!name||!email||!phone||!pwd||!level) { document.getElementById('loginError').textContent='❌ Fill all fields'; return; } 
+    if(pwd.length < 4) { document.getElementById('loginError').textContent='❌ Password min 4 characters'; return; }
+    if(users.find(u=>u.email===email)) { document.getElementById('loginError').textContent='❌ Username exists'; return; } 
+    users.push({ id:Date.now(), name, email, phone, password:pwd, educationLevel:level, createdAt:new Date(), myList:[] }); 
+    localStorage.setItem('users',JSON.stringify(users)); 
+    currentUser = users[users.length-1]; 
+    localStorage.setItem('currentUser',JSON.stringify(currentUser)); 
+    showAppScreen(); 
+});
+
+document.getElementById('loginBtn')?.addEventListener('click',()=>{ 
+    const email=document.getElementById('loginEmail').value.trim(); 
+    const pwd=document.getElementById('loginPassword').value; 
+    const user=users.find(u=>u.email===email && u.password===pwd); 
+    if(user) { currentUser=user; localStorage.setItem('currentUser',JSON.stringify(currentUser)); showAppScreen(); } 
+    else { document.getElementById('loginError').textContent='❌ Invalid username or password'; } 
+});
+
+document.getElementById('logoutBtn')?.addEventListener('click',()=>{ 
+    currentUser=null; localStorage.removeItem('currentUser'); 
+    if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); 
+    if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); 
+    document.getElementById('loginScreen').classList.remove('hidden'); 
+    document.getElementById('appScreen').classList.add('hidden'); 
+});
+
+// ==================== UI NAVIGATION ====================
+function navigateTo(pageId) { 
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); 
+    document.getElementById(`${pageId}Page`)?.classList.add('active-page'); 
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); 
+    document.querySelector(`.nav-item[data-page="${pageId}"]`)?.classList.add('active'); 
+}
+document.querySelectorAll('.nav-item').forEach(item=>{ item.addEventListener('click',()=>{ navigateTo(item.getAttribute('data-page')); }); });
+
+document.getElementById('folderHeader')?.addEventListener('click',()=>{ document.getElementById('folderContent').classList.toggle('show'); });
+
+document.querySelectorAll('.subscribe-btn-small').forEach(btn=>{ 
+    btn.addEventListener('click',(e)=>{ e.stopPropagation(); if(!currentUser) { alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`,'_blank'); }); 
+});
+
+document.querySelectorAll('.material-item').forEach(item=>{ 
+    item.addEventListener('click',()=>{ const name = item.getAttribute('data-file') || item.textContent.trim(); showNotification(`📄 Downloading: ${name} - This feature will be available soon with direct PDF access.`, "success"); }); 
+});
+
+document.querySelectorAll('.login-tab').forEach(tab=>{ 
+    tab.addEventListener('click',()=>{ const tabName=tab.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active',tabName==='login'); document.getElementById('signupFormDiv').classList.toggle('active',tabName==='signup'); document.getElementById('loginError').textContent=''; }); 
+});
+
+// ==================== ATTENDANCE MODAL ====================
+const attModal = document.getElementById('attendanceModal');
+document.getElementById('attendanceMenuItem')?.addEventListener('click',async()=>{ attModal.classList.add('show'); document.getElementById('moreDropdown').classList.remove('show'); attendanceStream = await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream = await setupCamera('enrollVideo',currentEnrollCamera); });
+document.getElementById('closeAttendanceModal')?.addEventListener('click',()=>{ attModal.classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
+document.querySelectorAll('.attendance-tab').forEach(tab=>{ tab.addEventListener('click',()=>{ const name = tab.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }); });
+document.getElementById('switchAttendanceCamera')?.addEventListener('click',async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); const newMode = currentAttendanceCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('attendanceVideo',newMode); if(stream) currentAttendanceCamera = newMode; });
+document.getElementById('switchEnrollCamera')?.addEventListener('click',async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); const newMode = currentEnrollCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('enrollVideo',newMode); if(stream) currentEnrollCamera = newMode; });
+document.getElementById('markAttendanceBtn')?.addEventListener('click',markAttendance);
+
+// ==================== AI DRAWER ====================
+function openDrawer() { document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); }
+function closeDrawer() { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); }
+document.getElementById('openAIDrawerBtn')?.addEventListener('click',openDrawer);
+document.getElementById('closeDrawerBtn')?.addEventListener('click',closeDrawer);
+document.getElementById('drawerOverlay')?.addEventListener('click',closeDrawer);
+
+// ==================== THREE DOTS MENU ====================
+const moreBtn = document.getElementById('moreMenuBtn');
+const moreDrop = document.getElementById('moreDropdown');
+moreBtn?.addEventListener('click',(e)=>{ e.stopPropagation(); moreDrop.classList.toggle('show'); });
+document.addEventListener('click',()=>{ moreDrop?.classList.remove('show'); });
+
+// ==================== LOAD SESSION ====================
+const saved = localStorage.getItem('currentUser');
+if(saved) { currentUser = JSON.parse(saved); showAppScreen(); }
+
+console.log('✅ APSHULE FULLY LOADED with Video Player, 16/7 Subjects, Complete About, and Password Reset on Landing Page');
+</script>
+</body>
     </html>    <div class="login-card">
         <img src="https://img.sanishtech.com/u/e05d5dd3a867f0334b5b3b69d86ac376.jpg" alt="APSHULE Logo" class="login-logo-img">
         <div class="login-title">APSHULE</div>
