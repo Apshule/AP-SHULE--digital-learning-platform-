@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>APSHULE - Let's Learn With Ease From Anywhere At Anytime </title>
+    <title>APSHULE - Let's Learn With Ease From Anywhere At Anytime</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,7 +23,7 @@
         .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
         .success-message { color: green; margin-top: 16px; font-size: 14px; }
-        .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
         .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
         .reset-btn { background: #FF8C42; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; cursor: pointer; font-weight: bold; }
         .hidden { display: none; }
@@ -47,10 +46,15 @@
         .education-level { display: flex; gap: 16px; margin-bottom: 20px; }
         .level-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
         .level-btn.active { background: white; color: #4B2E9E; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 16px; }
-        .class-card { background: white; border-radius: 16px; padding: 16px 8px; text-align: center; cursor: pointer; transition: transform 0.2s; }
-        .class-card i { font-size: 32px; color: #4B2E9E; }
-        .class-name { font-weight: bold; }
+        
+        /* Beautiful Class Cards */
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px; margin-top: 16px; }
+        .class-card { background: white; border-radius: 20px; padding: 20px 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .class-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .class-card i { font-size: 48px; margin-bottom: 12px; display: block; }
+        .class-name { font-weight: bold; font-size: 14px; color: #333; margin-top: 8px; }
+        .class-details { font-size: 11px; color: #999; margin-top: 4px; }
+        
         .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; max-height: 500px; overflow-y: auto; }
         .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
         .subject-card:hover { transform: translateY(-3px); }
@@ -60,6 +64,75 @@
         .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
         .welcome-title { color: white; font-size: 22px; }
+        .welcome-subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }
+        
+        /* Announcements Ticker Styles */
+        .announcements-section {
+            background: linear-gradient(135deg, #FF8C42, #FF6B35);
+            border-radius: 20px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .announcements-header {
+            background: rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+        }
+        .announcements-header i {
+            font-size: 18px;
+        }
+        .announcements-header span {
+            flex: 1;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .announcements-ticker {
+            background: #FF8C42;
+            padding: 12px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .ticker {
+            display: inline-block;
+            animation: ticker-scroll 25s linear infinite;
+            white-space: nowrap;
+        }
+        .ticker-item {
+            display: inline-block;
+            padding: 0 30px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .ticker-item strong {
+            color: #FFF9C4;
+            font-weight: bold;
+        }
+        @keyframes ticker-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .announcements-ticker:hover .ticker {
+            animation-play-state: paused;
+        }
+        @media (max-width: 600px) {
+            .ticker-item { font-size: 11px; padding: 0 20px; }
+            .announcements-header span { font-size: 11px; }
+        }
+        
         .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
         .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .folder-header i:last-child { margin-left: auto; }
@@ -87,17 +160,15 @@
         .notification.success { background: #2E7D32; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         
-        /* Video Modal - Better Fullscreen Support */
+        /* Video Modal */
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
-        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; transition: all 0.3s ease; }
+        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
         .video-content:fullscreen { max-width: none; border-radius: 0; background: #000; }
         .video-content:fullscreen .video-header { position: absolute; top: 0; left: 0; right: 0; z-index: 10; background: rgba(0,0,0,0.7); }
-        .video-content:fullscreen .video-title { position: absolute; bottom: 60px; left: 0; right: 0; z-index: 10; background: rgba(0,0,0,0.7); }
-        .video-content:fullscreen .video-controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; background: rgba(0,0,0,0.7); }
         .video-header { background: #4B2E9E; padding: 15px; color: white; display: flex; justify-content: space-between; align-items: center; }
         .video-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 12px; }
-        .video-container video { width: 100%; height: auto; display: block; background: #000; max-height: 70vh; object-fit: contain; }
+        .video-container video { width: 100%; height: auto; display: block; background: #000; max-height: 60vh; object-fit: contain; }
         .video-content:fullscreen .video-container video { max-height: 100vh; width: 100%; height: 100vh; object-fit: contain; }
         .video-controls { display: flex; align-items: center; gap: 8px; padding: 10px; background: #1a1a2e; flex-wrap: wrap; }
         .video-controls button { background: #4B2E9E; color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
@@ -107,6 +178,18 @@
         .time-display { color: white; font-size: 12px; min-width: 100px; font-family: monospace; }
         .volume-slider { width: 80px; cursor: pointer; }
         .video-title { padding: 12px; color: white; text-align: center; background: #2a2a3e; font-weight: 500; }
+        
+        /* Feedback Section - Below Video */
+        .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; }
+        .feedback-section h4 { color: #4B2E9E; margin-bottom: 12px; }
+        #starRating { margin-bottom: 12px; }
+        #starRating i { font-size: 28px; cursor: pointer; margin-right: 5px; color: #FFD700; }
+        #starRating i.far { color: #ccc; }
+        #feedbackComment { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin: 10px 0; resize: vertical; }
+        .feedback-buttons { display: flex; gap: 10px; }
+        .feedback-buttons button { flex: 1; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        .submit-feedback { background: #4B2E9E; color: white; }
+        .skip-feedback { background: #ccc; color: #333; }
         
         /* Attendance Modal */
         .attendance-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
@@ -153,7 +236,6 @@
         .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
         .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         
-        /* Landscape orientation support */
         @media (orientation: landscape) {
             .video-modal { padding: 0; }
             .video-content { max-width: 100%; height: 100%; border-radius: 0; }
@@ -176,13 +258,19 @@
         <div id="loginFormDiv" class="login-form active">
             <input type="text" id="loginEmail" placeholder="Username" class="login-input">
             <input type="password" id="loginPassword" placeholder="Password" class="login-input">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
+                    <input type="checkbox" id="rememberMeCheckbox"> Remember Me
+                </label>
+                <span id="forgotPasswordLink" style="color: #FF8C42; font-size: 14px; cursor: pointer;">Forgot Password?</span>
+            </div>
             <button id="loginBtn" class="login-btn">Login</button>
         </div>
         <div id="signupFormDiv" class="login-form">
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
             <input type="text" id="signupEmail" placeholder="Username" class="login-input">
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
-            <input type="password" id="signupPassword" placeholder="Password" class="login-input">
+            <input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input">
             <select id="signupEducationLevel" class="login-input">
                 <option value="">Select Education Level</option>
                 <option value="Primary">Primary School</option>
@@ -247,6 +335,21 @@
                 </div>
             </div>
             <div class="video-title" id="currentVideoTitle">Introduction to Algebra</div>
+            <div class="feedback-section" id="feedbackSection" style="display: none;">
+                <h4>⭐ Rate this lesson</h4>
+                <div id="starRating">
+                    <i class="far fa-star" data-rating="1"></i>
+                    <i class="far fa-star" data-rating="2"></i>
+                    <i class="far fa-star" data-rating="3"></i>
+                    <i class="far fa-star" data-rating="4"></i>
+                    <i class="far fa-star" data-rating="5"></i>
+                </div>
+                <textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea>
+                <div class="feedback-buttons">
+                    <button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button>
+                    <button id="closeFeedbackBtn" class="skip-feedback">Skip</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -307,7 +410,38 @@
                 <div class="section-title">📖 Available Subjects</div>
                 <div id="subjectsGrid" class="subjects-grid"></div>
             </div>
-            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
+            
+            <!-- Welcome Card -->
+            <div class="welcome-card">
+                <div class="welcome-title">Welcome to APSHULE</div>
+                <div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div>
+            </div>
+            
+            <!-- Announcements Ticker -->
+            <div class="announcements-section">
+                <div class="announcements-header">
+                    <i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span>
+                    <i class="fas fa-volume-up"></i>
+                </div>
+                <div class="announcements-ticker">
+                    <div class="ticker-wrap">
+                        <div class="ticker">
+                            <div class="ticker-item">🎓 <strong>Jinja College</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 21st June</div>
+                            <div class="ticker-item">🏫 <strong>Rock High School - Tororo</strong> - Biology Seminar | Fee: UGX 12,000 | 📅 28th June</div>
+                            <div class="ticker-item">📚 <strong>Lubiri SS</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 5th July</div>
+                            <div class="ticker-item">🏛️ <strong>Jinja College</strong> - History Seminar | Fee: UGX 12,000 | 📅 12th July</div>
+                            <div class="ticker-item">🎓 <strong>Rock High School - Tororo</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 19th July</div>
+                            <!-- Duplicate for seamless looping -->
+                            <div class="ticker-item">🎓 <strong>Jinja College</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 21st June</div>
+                            <div class="ticker-item">🏫 <strong>Rock High School - Tororo</strong> - Biology Seminar | Fee: UGX 12,000 | 📅 28th June</div>
+                            <div class="ticker-item">📚 <strong>Lubiri SS</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 5th July</div>
+                            <div class="ticker-item">🏛️ <strong>Jinja College</strong> - History Seminar | Fee: UGX 12,000 | 📅 12th July</div>
+                            <div class="ticker-item">🎓 <strong>Rock High School - Tororo</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 19th July</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="materials-folder">
                 <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials</span><i class="fas fa-chevron-down"></i></div>
                 <div class="folder-content" id="folderContent">
@@ -371,23 +505,89 @@
 <div id="notification" class="notification"></div>
 
 <script>
-// ========== COMPLETE SUBJECT LISTS (7 Primary, 16 Secondary) ==========
-const primarySubjectsList = [
-    "Mathematics", "English", "Science", "Social Studies", 
-    "Literacy", "Religious Education", "Agriculture"
-];
+// ========== INITIALIZATION ==========
+let currentUser = null;
+let users = JSON.parse(localStorage.getItem('users')) || [];
+if (!Array.isArray(users)) users = [];
 
-const secondarySubjectsList = [
-    "Mathematics", "English", "Biology", "Chemistry", "Physics", 
-    "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", 
-    "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"
-];
+// ========== HELPER FUNCTIONS ==========
+function showNotification(msg, type) {
+    let n = document.getElementById('notification');
+    n.textContent = msg;
+    n.className = `notification ${type}`;
+    n.style.display = 'block';
+    setTimeout(() => n.style.display = 'none', 3000);
+}
 
-const subjectColors = [
-    '#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', 
-    '#E91E63', '#3F51B5', '#009688', '#FFC107', '#8BC34A', '#673AB7', '#FF5722', 
-    '#607D8B', '#CDDC39'
-];
+function logoutUser() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
+    localStorage.removeItem('rememberMe');
+    if (attendanceStream) { attendanceStream.getTracks().forEach(t => t.stop()); attendanceStream = null; }
+    if (enrollStream) { enrollStream.getTracks().forEach(t => t.stop()); enrollStream = null; }
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+}
+
+function showApp() {
+    if (currentUser) {
+        document.getElementById('userName').textContent = currentUser.name.split(' ')[0];
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('accountInfo').innerHTML = `
+            <div class="account-field"><label>Full Name</label><div>${currentUser.name}</div></div>
+            <div class="account-field"><label>Username</label><div>${currentUser.email}</div></div>
+            <div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div>
+            <div class="account-field"><label>Education Level</label><div>${currentUser.educationLevel}</div></div>
+            <div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>
+        `;
+        renderClasses();
+        renderRecentAttendance();
+        renderEnrolledList();
+    }
+}
+
+// ========== FACE RECOGNITION HASH FUNCTIONS ==========
+function getImageHash(dataURL, callback) {
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 8;
+        canvas.height = 8;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 8, 8);
+        const imageData = ctx.getImageData(0, 0, 8, 8);
+        const pixels = imageData.data;
+        let sum = 0;
+        for (let i = 0; i < pixels.length; i += 4) {
+            const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+            sum += gray;
+        }
+        const avg = sum / 64;
+        let hash = '';
+        for (let i = 0; i < pixels.length; i += 4) {
+            const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+            hash += (gray >= avg) ? '1' : '0';
+        }
+        callback(hash);
+    };
+    img.src = dataURL;
+}
+
+function hammingDistance(hash1, hash2) {
+    if (hash1.length !== hash2.length) return 999;
+    let diff = 0;
+    for (let i = 0; i < hash1.length; i++) {
+        if (hash1[i] !== hash2[i]) diff++;
+    }
+    return diff;
+}
+
+// ========== SUBJECTS DATA ==========
+const primarySubjectsList = ["Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture"];
+const secondarySubjectsList = ["Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"];
+const subjectColors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#E91E63', '#3F51B5', '#009688', '#FFC107', '#8BC34A', '#673AB7', '#FF5722', '#607D8B', '#CDDC39'];
 
 function getSubjectIcon(subject) {
     const icons = {
@@ -403,7 +603,59 @@ function getSubjectIcon(subject) {
     return icons[subject] || 'fa-book-open';
 }
 
-// ========== VIDEO PLAYER WITH FULLSCREEN & LANDSCAPE SUPPORT ==========
+// ========== BEAUTIFUL CLASSES WITH ICONS ==========
+const classData = {
+    primary: [
+        { id: 1, name: "Primary 1", icon: "fa-baby-carriage", subjects: primarySubjectsList, color: "#FF6B6B" },
+        { id: 2, name: "Primary 2", icon: "fa-child", subjects: primarySubjectsList, color: "#4ECDC4" },
+        { id: 3, name: "Primary 3", icon: "fa-graduation-cap", subjects: primarySubjectsList, color: "#45B7D1" },
+        { id: 4, name: "Primary 4", icon: "fa-book-reader", subjects: primarySubjectsList, color: "#96CEB4" },
+        { id: 5, name: "Primary 5", icon: "fa-pencil-alt", subjects: primarySubjectsList, color: "#FFEAA7" },
+        { id: 6, name: "Primary 6", icon: "fa-chalkboard-teacher", subjects: primarySubjectsList, color: "#DDA0DD" },
+        { id: 7, name: "Primary 7", icon: "fa-users", subjects: primarySubjectsList, color: "#FF9F43" }
+    ],
+    secondary: [
+        { id: 1, name: "Senior 1", icon: "fa-seedling", subjects: secondarySubjectsList, color: "#4CAF50" },
+        { id: 2, name: "Senior 2", icon: "fa-tree", subjects: secondarySubjectsList, color: "#8BC34A" },
+        { id: 3, name: "Senior 3", icon: "fa-book", subjects: secondarySubjectsList, color: "#FF9800" },
+        { id: 4, name: "Senior 4", icon: "fa-chart-line", subjects: secondarySubjectsList, color: "#F44336" },
+        { id: 5, name: "Senior 5", icon: "fa-flask", subjects: secondarySubjectsList, color: "#9C27B0" },
+        { id: 6, name: "Senior 6", icon: "fa-university", subjects: secondarySubjectsList, color: "#2196F3" }
+    ]
+};
+
+let currentLevel = "primary";
+let selectedClass = null;
+
+function renderClasses() {
+    let grid = document.getElementById('classGrid');
+    let classes = classData[currentLevel];
+    grid.innerHTML = classes.map(c => `
+        <div class="class-card" data-class="${c.id}" onclick="selectClass(${c.id})" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;">
+            <i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i>
+            <div class="class-name" style="color: ${c.color};">${c.name}</div>
+            <div class="class-details">${c.subjects.length} Subjects</div>
+        </div>
+    `).join('');
+}
+
+window.selectClass = function(id) {
+    selectedClass = classData[currentLevel].find(c => c.id === id);
+    document.getElementById('classSelectionSection').style.display = 'none';
+    document.getElementById('subjectsSection').style.display = 'block';
+    let grid = document.getElementById('subjectsGrid');
+    grid.innerHTML = selectedClass.subjects.map((s, idx) => `
+        <div class="subject-card" onclick="openVideoLesson('${s}')">
+            <div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}">
+                <i class="fas ${getSubjectIcon(s)}"></i>
+            </div>
+            <div class="subject-name">${s}</div>
+            <div style="font-size:10px; color:#666; margin-top:8px;"><i class="fas fa-play-circle"></i> Watch Lesson</div>
+        </div>
+    `).join('');
+};
+
+// ========== VIDEO PLAYER WITH FEEDBACK BELOW ==========
 const video = document.getElementById('lessonVideo');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const prevBtn = document.getElementById('prevVideoBtn');
@@ -417,6 +669,7 @@ const videoModal = document.getElementById('videoModal');
 const closeVideoBtn = document.getElementById('closeVideoBtn');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 const videoContent = document.getElementById('videoContent');
+const feedbackSection = document.getElementById('feedbackSection');
 
 const videos = [
     { src: "https://www.w3schools.com/html/mov_bbb.mp4", title: "Introduction to Algebra - Mathematics" },
@@ -426,14 +679,9 @@ const videos = [
     { src: "https://www.w3schools.com/html/mov_bbb.mp4", title: "Physics: Newton's Laws" }
 ];
 let currentVideo = 0;
-
-function loadVideo(index) {
-    video.src = videos[index].src;
-    video.load();
-    document.getElementById('currentVideoTitle').textContent = videos[index].title;
-    document.getElementById('videoTitle').innerHTML = `<i class="fas fa-play-circle"></i> ${videos[index].title.substring(0, 30)}`;
-    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-}
+let feedbackShownForCurrentVideo = false;
+let currentRating = 0;
+let videoTimeUpdateHandler = null;
 
 function formatTime(sec) {
     if (isNaN(sec)) return "0:00";
@@ -442,14 +690,55 @@ function formatTime(sec) {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+function checkAndShowFeedback(currentTime, duration) {
+    if (!duration || feedbackShownForCurrentVideo) return;
+    const remaining = duration - currentTime;
+    if (remaining <= 60 && remaining > 0) {
+        feedbackShownForCurrentVideo = true;
+        feedbackSection.style.display = 'block';
+        video.pause();
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    }
+}
+
+function setupVideoListeners() {
+    if (videoTimeUpdateHandler) video.removeEventListener('timeupdate', videoTimeUpdateHandler);
+    videoTimeUpdateHandler = () => {
+        let percent = (video.currentTime / video.duration) * 100;
+        progressFill.style.width = `${percent}%`;
+        timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+        checkAndShowFeedback(video.currentTime, video.duration);
+    };
+    video.addEventListener('timeupdate', videoTimeUpdateHandler);
+}
+
+function loadVideo(index) {
+    video.src = videos[index].src;
+    video.load();
+    document.getElementById('currentVideoTitle').textContent = videos[index].title;
+    document.getElementById('videoTitle').innerHTML = `<i class="fas fa-play-circle"></i> ${videos[index].title.substring(0, 30)}`;
+    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    feedbackShownForCurrentVideo = false;
+    feedbackSection.style.display = 'none';
+    document.getElementById('feedbackComment').value = '';
+    currentRating = 0;
+    document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
+    setupVideoListeners();
+}
+
+function openVideoLesson(subject) {
+    if (subject.includes("Math")) currentVideo = 0;
+    else if (subject.includes("Science") || subject.includes("Biology") || subject.includes("Chemistry")) currentVideo = 1;
+    else if (subject.includes("English")) currentVideo = 2;
+    else if (subject.includes("Physics")) currentVideo = 3;
+    else currentVideo = 4;
+    loadVideo(currentVideo);
+    videoModal.classList.add('show');
+}
+
+// Video event listeners
 video.addEventListener('loadedmetadata', () => {
     timeDisplay.textContent = `0:00 / ${formatTime(video.duration)}`;
-});
-
-video.addEventListener('timeupdate', () => {
-    let percent = (video.currentTime / video.duration) * 100;
-    progressFill.style.width = `${percent}%`;
-    timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
 });
 
 playPauseBtn.addEventListener('click', () => {
@@ -485,7 +774,7 @@ nextBtn.addEventListener('click', () => {
     showNotification(`Now playing: ${videos[currentVideo].title}`, "success");
 });
 
-// Fullscreen with proper centering
+// Fullscreen with proper exit handling
 fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
         videoContent.requestFullscreen().catch(err => console.log(err));
@@ -496,119 +785,168 @@ fullscreenBtn.addEventListener('click', () => {
     }
 });
 
-// Auto-detect orientation change for landscape
-window.addEventListener('resize', () => {
-    if (window.innerHeight < window.innerWidth && videoModal.classList.contains('show')) {
-        // Landscape mode - suggest fullscreen or auto-adjust
-        if (!document.fullscreenElement) {
-            // Video already centered via CSS
-        }
-    }
-});
-
+// Handle fullscreen change and provide exit option
 document.addEventListener('fullscreenchange', () => {
-    if (document.fullscreenElement) fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-    else fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+    if (document.fullscreenElement) {
+        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
+        if (!document.getElementById('fsExitBtn')) {
+            const exitBtn = document.createElement('button');
+            exitBtn.id = 'fsExitBtn';
+            exitBtn.innerHTML = '<i class="fas fa-times-circle"></i> Exit Fullscreen';
+            exitBtn.style.position = 'fixed';
+            exitBtn.style.top = '20px';
+            exitBtn.style.right = '20px';
+            exitBtn.style.zIndex = '9999';
+            exitBtn.style.background = '#4B2E9E';
+            exitBtn.style.color = 'white';
+            exitBtn.style.border = 'none';
+            exitBtn.style.padding = '10px 15px';
+            exitBtn.style.borderRadius = '25px';
+            exitBtn.style.cursor = 'pointer';
+            exitBtn.style.fontWeight = 'bold';
+            exitBtn.onclick = () => document.exitFullscreen();
+            document.body.appendChild(exitBtn);
+        }
+    } else {
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+        const exitBtn = document.getElementById('fsExitBtn');
+        if (exitBtn) exitBtn.remove();
+    }
 });
 
 closeVideoBtn.addEventListener('click', () => {
     videoModal.classList.remove('show');
     video.pause();
-});
-
-function openVideoLesson(subject) {
-    // Map subject to appropriate video
-    if (subject.includes("Math")) currentVideo = 0;
-    else if (subject.includes("Science") || subject.includes("Biology") || subject.includes("Chemistry")) currentVideo = 1;
-    else if (subject.includes("English")) currentVideo = 2;
-    else if (subject.includes("Physics")) currentVideo = 3;
-    else currentVideo = 4;
-    loadVideo(currentVideo);
-    videoModal.classList.add('show');
-}
-
-// ========== AUTHENTICATION ==========
-let currentUser = null;
-let users = JSON.parse(localStorage.getItem('users')) || [];
-
-function showNotification(msg, type) {
-    let n = document.getElementById('notification');
-    n.textContent = msg;
-    n.className = `notification ${type}`;
-    n.style.display = 'block';
-    setTimeout(() => n.style.display = 'none', 3000);
-}
-
-function showApp() {
-    if (currentUser) {
-        document.getElementById('userName').textContent = currentUser.name.split(' ')[0];
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('appScreen').classList.remove('hidden');
-        document.getElementById('accountInfo').innerHTML = `
-            <div class="account-field"><label>Full Name</label><div>${currentUser.name}</div></div>
-            <div class="account-field"><label>Username</label><div>${currentUser.email}</div></div>
-            <div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div>
-            <div class="account-field"><label>Education Level</label><div>${currentUser.educationLevel}</div></div>
-            <div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>
-        `;
-        renderClasses();
-        renderRecentAttendance();
-        renderEnrolledList();
+    video.currentTime = 0;
+    if (videoTimeUpdateHandler) {
+        video.removeEventListener('timeupdate', videoTimeUpdateHandler);
+        videoTimeUpdateHandler = null;
     }
-}
-
-// ========== CLASSES & SUBJECTS ==========
-const classData = {
-    primary: [1,2,3,4,5,6,7].map(i => ({ id: i, name: `Primary ${i}`, subjects: primarySubjectsList })),
-    secondary: [1,2,3,4,5,6].map(i => ({ id: i, name: `Senior ${i}`, subjects: secondarySubjectsList }))
-};
-
-let currentLevel = "primary";
-let selectedClass = null;
-
-function renderClasses() {
-    let grid = document.getElementById('classGrid');
-    let classes = classData[currentLevel];
-    grid.innerHTML = classes.map(c => `
-        <div class="class-card" onclick="selectClass(${c.id})">
-            <i class="fas fa-book"></i>
-            <div class="class-name">${c.name}</div>
-            <div style="font-size:10px; color:#666;">${c.subjects.length} Subjects</div>
-        </div>
-    `).join('');
-}
-
-window.selectClass = function(id) {
-    selectedClass = classData[currentLevel].find(c => c.id === id);
-    document.getElementById('classSelectionSection').style.display = 'none';
-    document.getElementById('subjectsSection').style.display = 'block';
-    let grid = document.getElementById('subjectsGrid');
-    grid.innerHTML = selectedClass.subjects.map((s, idx) => `
-        <div class="subject-card" onclick="openVideoLesson('${s}')">
-            <div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}">
-                <i class="fas ${getSubjectIcon(s)}"></i>
-            </div>
-            <div class="subject-name">${s}</div>
-            <div style="font-size:10px; color:#666;"><i class="fas fa-play-circle"></i> Watch Lesson</div>
-        </div>
-    `).join('');
-};
-
-document.getElementById('backToClasses')?.addEventListener('click', () => {
-    document.getElementById('classSelectionSection').style.display = 'block';
-    document.getElementById('subjectsSection').style.display = 'none';
 });
 
-document.querySelectorAll('.level-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentLevel = btn.getAttribute('data-level');
-        selectedClass = null;
-        document.getElementById('classSelectionSection').style.display = 'block';
-        document.getElementById('subjectsSection').style.display = 'none';
-        renderClasses();
+// Feedback star rating
+document.querySelectorAll('#starRating i').forEach(star => {
+    star.addEventListener('click', function() {
+        currentRating = parseInt(this.getAttribute('data-rating'));
+        document.querySelectorAll('#starRating i').forEach((s, idx) => {
+            if (idx < currentRating) s.className = 'fas fa-star';
+            else s.className = 'far fa-star';
+        });
     });
+});
+
+document.getElementById('submitFeedbackBtn')?.addEventListener('click', () => {
+    const comment = document.getElementById('feedbackComment').value;
+    const lessonTitle = videos[currentVideo].title;
+    const feedbacks = JSON.parse(localStorage.getItem('lessonFeedbacks') || '[]');
+    feedbacks.push({
+        lesson: lessonTitle,
+        rating: currentRating,
+        comment: comment,
+        user: currentUser?.email || 'guest',
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('lessonFeedbacks', JSON.stringify(feedbacks));
+    showNotification('Thank you for your feedback!', 'success');
+    feedbackSection.style.display = 'none';
+    if (video.paused) video.play();
+});
+
+document.getElementById('closeFeedbackBtn')?.addEventListener('click', () => {
+    feedbackSection.style.display = 'none';
+    if (video.paused) video.play();
+});
+
+// ========== AUTHENTICATION WITH FIXED REMEMBER ME ==========
+document.getElementById('signupBtn')?.addEventListener('click', () => {
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+    const phone = document.getElementById('signupPhone').value.trim();
+    const pwd = document.getElementById('signupPassword').value;
+    const level = document.getElementById('signupEducationLevel').value;
+    if (!name || !email || !phone || !pwd || !level) {
+        document.getElementById('loginError').textContent = '❌ Fill all fields';
+        return;
+    }
+    if (pwd.length < 4) {
+        document.getElementById('loginError').textContent = '❌ Password min 4 characters';
+        return;
+    }
+    if (users.find(u => u.email === email)) {
+        document.getElementById('loginError').textContent = '❌ Username already exists';
+        return;
+    }
+    users.push({
+        id: Date.now(),
+        name,
+        email,
+        phone,
+        password: pwd,
+        educationLevel: level,
+        createdAt: new Date()
+    });
+    localStorage.setItem('users', JSON.stringify(users));
+    currentUser = users[users.length - 1];
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    localStorage.setItem('rememberMe', 'true');
+    showApp();
+});
+
+document.getElementById('loginBtn')?.addEventListener('click', () => {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pwd = document.getElementById('loginPassword').value;
+    const rememberMe = document.getElementById('rememberMeCheckbox')?.checked || false;
+    const user = users.find(u => u.email === email && u.password === pwd);
+    if (user) {
+        currentUser = user;
+        if (rememberMe) {
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('rememberMe', 'true');
+        } else {
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.removeItem('rememberMe');
+        }
+        showApp();
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('loginPassword').value = '';
+    } else {
+        document.getElementById('loginError').textContent = '❌ Invalid username or password';
+    }
+});
+
+document.getElementById('resetPasswordBtn')?.addEventListener('click', () => {
+    const username = document.getElementById('resetUsername').value.trim().toLowerCase();
+    const newPass = document.getElementById('resetNewPassword').value;
+    const user = users.find(u => u.email === username);
+    const msgDiv = document.getElementById('resetMessage');
+    if (!user) {
+        msgDiv.textContent = '❌ Username not found.';
+        msgDiv.style.color = 'red';
+    } else if (newPass.length < 4) {
+        msgDiv.textContent = '❌ Password must be at least 4 characters.';
+        msgDiv.style.color = 'red';
+    } else {
+        user.password = newPass;
+        localStorage.setItem('users', JSON.stringify(users));
+        msgDiv.textContent = '✅ Password reset successful!';
+        msgDiv.style.color = 'green';
+        document.getElementById('resetNewPassword').value = '';
+    }
+    setTimeout(() => msgDiv.textContent = '', 3000);
+});
+
+document.getElementById('logoutBtn')?.addEventListener('click', () => {
+    logoutUser();
+    showNotification('Logged out successfully', 'success');
+});
+
+document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const resetSection = document.querySelector('.reset-section');
+    if (resetSection) {
+        resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
+        resetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 });
 
 // ========== FACIAL ATTENDANCE ==========
@@ -629,19 +967,37 @@ function captureFace(videoId) { const videoEl = document.getElementById(videoId)
 async function markAttendance() { 
     if(attendancePeople.length===0) { showNotification("No enrolled faces! Go to Enroll tab first.","error"); return; } 
     const img = captureFace('attendanceVideo'); if(!img) { showNotification("Could not capture face","error"); return; } 
-    let matched = null, best=Infinity; 
-    for(const p of attendancePeople) { if(p.faceImage) { const diff = Math.abs((img.length%10000)-(p.faceImage.length%10000)); if(diff < best && diff < 15000) { best=diff; matched=p; } } } 
-    const resultDiv = document.getElementById('attendanceResult'); 
-    if(!matched) { resultDiv.style.display='block'; resultDiv.innerHTML='<div style="color:#dc3545;">❌ Face not recognized! Please enroll first.</div>'; return; } 
-    const today = new Date().toDateString(); 
-    const already = attendanceRecords.find(a=>a.personId===matched.id && new Date(a.timestamp).toDateString()===today); 
-    if(already) { resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#FF8C42;">⚠️ ${matched.name} already marked today</div>`; return; } 
-    attendanceRecords.push({ id:Date.now(), personId:matched.id, personName:matched.name, category:matched.category, phone:matched.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today }); 
-    localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); 
-    resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#2E7D32;">✅ ${matched.name} marked present at ${new Date().toLocaleTimeString()}</div>`; 
-    showNotification(`Attendance marked for ${matched.name}!`,"success"); 
-    renderRecentAttendance(); renderEnrolledList(); 
-    setTimeout(()=>{ resultDiv.style.display='none'; },4000); 
+    getImageHash(img, (capturedHash) => {
+        let bestMatch = null;
+        let bestDistance = 15;
+        for(const person of attendancePeople) {
+            if(person.faceHash) {
+                const distance = hammingDistance(capturedHash, person.faceHash);
+                if(distance < bestDistance) { bestDistance = distance; bestMatch = person; }
+            }
+        }
+        const resultDiv = document.getElementById('attendanceResult');
+        if(!bestMatch) {
+            resultDiv.style.display='block';
+            resultDiv.innerHTML='<div style="color:#dc3545;">❌ Face not recognized! Please enroll first.</div>';
+            return;
+        }
+        const today = new Date().toDateString();
+        const already = attendanceRecords.find(a=>a.personId===bestMatch.id && new Date(a.timestamp).toDateString()===today);
+        if(already) {
+            resultDiv.style.display='block';
+            resultDiv.innerHTML=`<div style="color:#FF8C42;">⚠️ ${bestMatch.name} already marked today</div>`;
+            return;
+        }
+        attendanceRecords.push({ id:Date.now(), personId:bestMatch.id, personName:bestMatch.name, category:bestMatch.category, phone:bestMatch.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today });
+        localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));
+        resultDiv.style.display='block';
+        resultDiv.innerHTML=`<div style="color:#2E7D32;">✅ ${bestMatch.name} marked present at ${new Date().toLocaleTimeString()}</div>`;
+        showNotification(`Attendance marked for ${bestMatch.name}!`,"success");
+        renderRecentAttendance();
+        renderEnrolledList();
+        setTimeout(()=>{ resultDiv.style.display='none'; },4000);
+    });
 }
 
 function renderRecentAttendance() { 
@@ -668,77 +1024,20 @@ window.deleteEnrolled = function(id) {
     } 
 };
 
-// ========== EVENT LISTENERS ==========
-document.getElementById('signupBtn')?.addEventListener('click', () => {
-    const name = document.getElementById('signupName').value.trim();
-    const email = document.getElementById('signupEmail').value.trim();
-    const phone = document.getElementById('signupPhone').value.trim();
-    const pwd = document.getElementById('signupPassword').value;
-    const level = document.getElementById('signupEducationLevel').value;
-    if (!name || !email || !phone || !pwd || !level) { document.getElementById('loginError').textContent = '❌ Fill all fields'; return; }
-    if (pwd.length < 4) { document.getElementById('loginError').textContent = '❌ Password min 4 characters'; return; }
-    if (users.find(u => u.email === email)) { document.getElementById('loginError').textContent = '❌ Username exists'; return; }
-    users.push({ id: Date.now(), name, email, phone, password: pwd, educationLevel: level, createdAt: new Date() });
-    localStorage.setItem('users', JSON.stringify(users));
-    currentUser = users[users.length - 1];
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    showApp();
-});
-
-document.getElementById('loginBtn')?.addEventListener('click', () => {
-    const email = document.getElementById('loginEmail').value.trim();
-    const pwd = document.getElementById('loginPassword').value;
-    const user = users.find(u => u.email === email && u.password === pwd);
-    if (user) { currentUser = user; localStorage.setItem('currentUser', JSON.stringify(currentUser)); showApp(); } 
-    else { document.getElementById('loginError').textContent = '❌ Invalid username or password'; }
-});
-
-document.getElementById('resetPasswordBtn')?.addEventListener('click', () => {
-    const username = document.getElementById('resetUsername').value.trim();
-    const newPass = document.getElementById('resetNewPassword').value;
-    const user = users.find(u => u.email === username);
-    const msgDiv = document.getElementById('resetMessage');
-    if (user && newPass.length >= 4) { user.password = newPass; localStorage.setItem('users', JSON.stringify(users)); msgDiv.textContent = '✅ Password reset successful!'; msgDiv.style.color = 'green'; } 
-    else { msgDiv.textContent = '❌ User not found or password too short'; msgDiv.style.color = 'red'; }
-    setTimeout(() => msgDiv.textContent = '', 3000);
-});
-
-document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    currentUser = null; localStorage.removeItem('currentUser');
-    if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop());
-    if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop());
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('appScreen').classList.add('hidden');
-});
-
-// Navigation
-function navigateTo(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-    document.getElementById(`${pageId}Page`).classList.add('active-page');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
-}
-document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => navigateTo(item.getAttribute('data-page'))); });
-
-document.getElementById('folderHeader')?.addEventListener('click', () => { document.getElementById('folderContent').classList.toggle('show'); });
-document.querySelectorAll('.subscribe-btn-small').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); if(!currentUser) { alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`, '_blank'); }); });
-document.querySelectorAll('.material-item').forEach(item => { item.addEventListener('click', () => { showNotification(`📄 Downloading: ${item.getAttribute('data-file') || item.textContent}`, "success"); }); });
-document.querySelectorAll('.login-tab').forEach(tab => { tab.addEventListener('click', () => { const tabName = tab.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login'); document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup'); }); });
-
-// Attendance Modal
+// Attendance modal listeners
 const attModal = document.getElementById('attendanceModal');
 document.getElementById('attendanceMenuItem')?.addEventListener('click', async() => { attModal.classList.add('show'); attendanceStream = await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream = await setupCamera('enrollVideo',currentEnrollCamera); });
-document.getElementById('closeAttendanceModal')?.addEventListener('click', () => { attModal.classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
+document.getElementById('closeAttendanceModal')?.addEventListener('click', () => { attModal.classList.remove('show'); if(attendanceStream) { attendanceStream.getTracks().forEach(t=>t.stop()); attendanceStream = null; } if(enrollStream) { enrollStream.getTracks().forEach(t=>t.stop()); enrollStream = null; } });
 document.querySelectorAll('.attendance-tab').forEach(tab => { tab.addEventListener('click', () => { const name = tab.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }); });
 document.getElementById('switchAttendanceCamera')?.addEventListener('click', async() => { if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); const newMode = currentAttendanceCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('attendanceVideo',newMode); if(stream) currentAttendanceCamera = newMode; });
 document.getElementById('switchEnrollCamera')?.addEventListener('click', async() => { if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); const newMode = currentEnrollCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('enrollVideo',newMode); if(stream) currentEnrollCamera = newMode; });
 document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
 document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ const img = captureFace('enrollVideo'); if(img) { capturedFaceImage = img; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured!</p>`; showNotification("Face captured! Fill details.","success"); } else { showNotification("Camera not ready","error"); } });
 document.getElementById('faceImageUpload')?.addEventListener('change', function(e) { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(ev) { capturedFaceImage = ev.target.result; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported!</p>`; showNotification("Face imported! Fill details.","success"); }; reader.readAsDataURL(file); } });
-document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ const name = document.getElementById('enrollName').value.trim(); const category = document.getElementById('enrollCategory').value; const phone = document.getElementById('enrollPhone').value.trim(); if(!name) { showNotification("Enter name","error"); return; } if(!capturedFaceImage) { showNotification("Capture or import face first","error"); return; } attendancePeople.push({ id:Date.now(), name, category, phone, faceImage:capturedFaceImage, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled!`,"success"); renderEnrolledList(); });
+document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ const name = document.getElementById('enrollName').value.trim(); const category = document.getElementById('enrollCategory').value; const phone = document.getElementById('enrollPhone').value.trim(); if(!name) { showNotification("Enter name","error"); return; } if(!capturedFaceImage) { showNotification("Capture or import face first","error"); return; } getImageHash(capturedFaceImage, (hash) => { attendancePeople.push({ id:Date.now(), name, category, phone, faceHash: hash, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled!`,"success"); renderEnrolledList(); }); });
 document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(confirm("Delete ALL attendance records?")) { attendanceRecords=[]; localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared","success"); renderRecentAttendance(); } });
 
-// AI Chat
+// ========== AI CHAT ==========
 const GEMINI_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
 async function askAI(q) {
     try {
@@ -755,21 +1054,78 @@ async function sendChat() { const input = document.getElementById('chatInput'); 
 document.getElementById('sendBtn')?.addEventListener('click', sendChat);
 document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
 
-// AI Drawer
+// ========== AI DRAWER ==========
 document.getElementById('openAIDrawerBtn')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
 document.getElementById('closeDrawerBtn')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
 document.getElementById('drawerOverlay')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
 
-// More menu
+// ========== NAVIGATION ==========
+function navigateTo(pageId) {
+    if (videoModal.classList.contains('show')) {
+        videoModal.classList.remove('show');
+        video.pause();
+    }
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+    document.getElementById(`${pageId}Page`).classList.add('active-page');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
+}
+document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => navigateTo(item.getAttribute('data-page'))); });
+document.getElementById('folderHeader')?.addEventListener('click', () => { document.getElementById('folderContent').classList.toggle('show'); });
+document.querySelectorAll('.subscribe-btn-small').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); if(!currentUser) { alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`, '_blank'); }); });
+document.querySelectorAll('.material-item').forEach(item => { item.addEventListener('click', () => { showNotification(`📄 Downloading: ${item.getAttribute('data-file') || item.textContent}`, "success"); }); });
+document.querySelectorAll('.login-tab').forEach(tab => { tab.addEventListener('click', () => { const tabName = tab.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login'); document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup'); }); });
+document.getElementById('backToClasses')?.addEventListener('click', () => {
+    document.getElementById('classSelectionSection').style.display = 'block';
+    document.getElementById('subjectsSection').style.display = 'none';
+});
+document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLevel = btn.getAttribute('data-level');
+        selectedClass = null;
+        document.getElementById('classSelectionSection').style.display = 'block';
+        document.getElementById('subjectsSection').style.display = 'none';
+        renderClasses();
+    });
+});
 document.getElementById('moreMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
 document.addEventListener('click', () => { document.getElementById('moreDropdown')?.classList.remove('show'); });
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !video.paused) {
+        video.pause();
+        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+    }
+});
 
-// Load saved user
-const savedUser = localStorage.getItem('currentUser');
-if (savedUser) { currentUser = JSON.parse(savedUser); showApp(); }
+// ========== LOAD SESSION ==========
+function loadUserSession() {
+    const rememberMe = localStorage.getItem('rememberMe') === 'true';
+    let savedUser = null;
+    if (rememberMe) {
+        savedUser = localStorage.getItem('currentUser');
+    } else {
+        savedUser = sessionStorage.getItem('currentUser');
+        if (!savedUser) savedUser = localStorage.getItem('currentUser');
+    }
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            const userExists = users.find(u => u.email === currentUser.email);
+            if (userExists) {
+                showApp();
+            } else {
+                logoutUser();
+            }
+        } catch(e) {
+            logoutUser();
+        }
+    }
+}
 
+loadUserSession();
 renderClasses();
-console.log('✅ APSHULE FULLY LOADED - 7 Primary Subjects, 16 Secondary Subjects, Fullscreen Video Working on all devices!');
 </script>
 </body>
 </html>
