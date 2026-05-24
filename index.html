@@ -6,7 +6,7 @@
     <title>APSHULE - Learn With Ease</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== ALL YOUR EXISTING STYLES (same as before, keep them) ========== */
+        /* ========== ALL ORIGINAL STYLES (kept, only minor additions for analytics) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
@@ -98,10 +98,10 @@
         @media (max-width: 600px) { .ticker-item { font-size: 11px; padding: 0 20px; } .announcements-header span { font-size: 11px; } }
         .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
         .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .folder-header i:last-child { margin-left: auto; }
+        .folder-header i:last-child { margin-left: auto; transition: transform 0.2s; }
         .folder-content { padding: 16px; display: none; background: #f9f9f9; }
         .folder-content.show { display: block; }
-        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; color: #333; }
         .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
         .payment-plans-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
         .payment-card { border-radius: 16px; padding: 12px; text-align: center; color: white; }
@@ -134,7 +134,7 @@
         .youtube-player-container { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
         .youtube-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
         .video-title { padding: 12px; color: white; text-align: center; background: #2a2a3e; font-weight: 500; }
-        .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; }
+        .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; display: none; }
         .feedback-section h4 { color: #4B2E9E; margin-bottom: 12px; }
         #starRating { margin-bottom: 12px; }
         #starRating i { font-size: 28px; cursor: pointer; margin-right: 5px; color: #FFD700; }
@@ -189,16 +189,30 @@
         .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         @media (orientation: landscape) { .video-modal { padding: 0; } .video-content { max-width: 100%; height: 100%; border-radius: 0; } }
         
-        /* Admin panel styles */
+        /* Admin & Analytics styles */
         .admin-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; display: none; }
         .admin-panel.show { display: block; }
         .admin-panel h3 { color: #4B2E9E; margin-bottom: 15px; }
+        .admin-section { margin-bottom: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
+        .admin-section h4 { color: #4B2E9E; margin-bottom: 10px; }
         .admin-subject { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 16px; padding: 12px; }
         .admin-subject label { font-weight: bold; display: block; margin-bottom: 5px; }
         .admin-subject input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 25px; margin-bottom: 8px; }
         .admin-subject button { background: #FF8C42; color: white; border: none; padding: 8px 16px; border-radius: 25px; cursor: pointer; margin-right: 8px; }
         .admin-subject .status { font-size: 12px; color: green; margin-top: 5px; }
         .admin-toggle { background: #FF8C42; color: white; border: none; padding: 10px 20px; border-radius: 30px; margin: 10px 0; cursor: pointer; font-weight: bold; }
+        .pdf-item { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; margin-bottom: 8px; padding: 10px; border-radius: 12px; }
+        .pdf-item a { text-decoration: none; color: #4B2E9E; flex: 1; }
+        .pdf-item button { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; }
+        .add-pdf-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
+        .add-pdf-form input { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
+        .add-subject-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
+        .add-subject-form input, .add-subject-form select { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
+        .analytics-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        .analytics-table th, .analytics-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .analytics-table th { background: #4B2E9E; color: white; }
+        .most-watched-list { list-style: none; padding: 0; }
+        .most-watched-list li { background: #f5f5f5; margin: 8px 0; padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -285,7 +299,7 @@
                 <iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
             <div class="video-title" id="currentVideoTitle"></div>
-            <div class="feedback-section" id="feedbackSection" style="display: none;">
+            <div class="feedback-section" id="feedbackSection">
                 <h4>⭐ Rate this lesson</h4>
                 <div id="starRating">
                     <i class="far fa-star" data-rating="1"></i>
@@ -369,14 +383,9 @@
                 <div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker"><div class="ticker-item">🎓 <strong>Jinja College</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 21st June</div><div class="ticker-item">🏫 <strong>Rock High School - Tororo</strong> - Biology Seminar | Fee: UGX 12,000 | 📅 28th June</div><div class="ticker-item">📚 <strong>Lubiri SS</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 5th July</div><div class="ticker-item">🏛️ <strong>Jinja College</strong> - History Seminar | Fee: UGX 12,000 | 📅 12th July</div><div class="ticker-item">🎓 <strong>Rock High School - Tororo</strong> - MTC Seminar | Fee: UGX 12,000 | 📅 19th July</div></div></div></div>
             </div>
             <div class="materials-folder">
-                <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials</span><i class="fas fa-chevron-down"></i></div>
+                <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div>
                 <div class="folder-content" id="folderContent">
-                    <div class="material-item" data-file="Mathematics Notes"><i class="fas fa-file-pdf"></i> Mathematics Complete Notes (PDF)</div>
-                    <div class="material-item" data-file="English Grammar"><i class="fas fa-file-pdf"></i> English Grammar Guide (PDF)</div>
-                    <div class="material-item" data-file="Science Guide"><i class="fas fa-file-pdf"></i> Science Practical Handbook (PDF)</div>
-                    <div class="material-item" data-file="Past Papers"><i class="fas fa-file-pdf"></i> Past Papers 2023-2024 (ZIP)</div>
-                    <div class="material-item" data-file="Biology Diagrams"><i class="fas fa-image"></i> Biology Diagrams & Charts (PDF)</div>
-                    <div class="material-item" data-file="Physics Formulas"><i class="fas fa-file-pdf"></i> Physics Formulas Sheet (PDF)</div>
+                    <div id="pdfListContainer"></div>
                 </div>
             </div>
             <div class="payment-plans-section">
@@ -392,10 +401,63 @@
             </div>
             <!-- Admin Panel (hidden by default) -->
             <div id="adminPanel" class="admin-panel">
-                <h3><i class="fas fa-lock"></i> Admin Panel - Manage Videos</h3>
-                <p>Paste the YouTube video URL (even unlisted) for each subject. The video ID will be saved automatically.</p>
-                <div id="adminSubjectsList"></div>
-                <button id="saveAllVideosBtn" class="admin-toggle" style="background:#4B2E9E;">💾 Save All</button>
+                <h3><i class="fas fa-lock"></i> Admin Panel - Manage Content & Analytics</h3>
+                
+                <!-- Add New Subject Section -->
+                <div class="admin-section">
+                    <h4>➕ Add New Subject (No coding required)</h4>
+                    <div class="add-subject-form">
+                        <input type="text" id="newSubjectName" placeholder="Subject name (e.g., French, Computer Science)">
+                        <select id="newSubjectLevel">
+                            <option value="primary">Primary School</option>
+                            <option value="secondary">Secondary School</option>
+                        </select>
+                        <input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID (optional)">
+                        <button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button>
+                    </div>
+                </div>
+
+                <!-- Primary Subjects Section -->
+                <div class="admin-section">
+                    <h4>📘 Primary School Subjects (Video Mapping)</h4>
+                    <div id="adminPrimarySubjectsList"></div>
+                    <button id="savePrimaryVideosBtn" class="admin-toggle" style="background:#4B2E9E;">💾 Save Primary Videos</button>
+                </div>
+
+                <!-- Secondary Subjects Section -->
+                <div class="admin-section">
+                    <h4>📗 Secondary School Subjects (Video Mapping)</h4>
+                    <div id="adminSecondarySubjectsList"></div>
+                    <button id="saveSecondaryVideosBtn" class="admin-toggle" style="background:#4B2E9E;">💾 Save Secondary Videos</button>
+                </div>
+
+                <!-- PDF Management -->
+                <div class="admin-section">
+                    <h4>📄 Manage PDF Learning Materials</h4>
+                    <div class="add-pdf-form">
+                        <input type="text" id="pdfTitle" placeholder="PDF Title (e.g., Mathematics Notes)">
+                        <input type="text" id="pdfUrl" placeholder="PDF File URL (direct link)">
+                        <button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button>
+                    </div>
+                    <div id="pdfAdminList"></div>
+                </div>
+
+                <!-- Analytics Dashboard -->
+                <div class="admin-section">
+                    <h4>📊 Analytics & Statistics</h4>
+                    <div>
+                        <h5>👥 Registered Users</h5>
+                        <p><strong>Total users:</strong> <span id="totalUsersCount">0</span></p>
+                        <table class="analytics-table" id="usersTable">
+                            <thead><tr><th>Name</th><th>Email</th><th>Login Count</th><th>Last Login</th></tr></thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <h5>🎬 Most Watched Videos</h5>
+                        <ul class="most-watched-list" id="mostWatchedList"></ul>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No saved lessons yet.</div></div>
@@ -438,41 +500,41 @@
 <div id="notification" class="notification"></div>
 
 <script>
-// ==================== ADMIN PANEL & VIDEO MAPPING ====================
-// This is the master list of subjects (all subjects from primary and secondary)
-// We'll store video IDs in localStorage.
-const allSubjectsList = [
-    "Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture",
-    "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", 
-    "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education"
+// ==================== DATA INITIALIZATION ====================
+// Primary and Secondary subjects - stored in localStorage
+let primarySubjects = JSON.parse(localStorage.getItem('apshule_primary_subjects')) || [
+    "Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture"
+];
+let secondarySubjects = JSON.parse(localStorage.getItem('apshule_secondary_subjects')) || [
+    "Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", 
+    "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"
 ];
 
-// Load saved video mappings from localStorage
+// Video mappings (subject -> video ID)
 let videoMappings = JSON.parse(localStorage.getItem('apshule_video_mappings')) || {};
-// Initialize empty for subjects not yet set
-allSubjectsList.forEach(sub => { if (!videoMappings[sub]) videoMappings[sub] = ""; });
+[...primarySubjects, ...secondarySubjects].forEach(sub => { if (!videoMappings[sub]) videoMappings[sub] = ""; });
 
-// Helper: extract video ID from YouTube URL
-function extractVideoId(url) {
-    if (!url) return "";
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=)([^&]+)/,
-        /(?:youtu\.be\/)([^?]+)/,
-        /(?:youtube\.com\/embed\/)([^?]+)/
-    ];
-    for (let p of patterns) {
-        const match = url.match(p);
-        if (match) return match[1];
-    }
-    return url; // if already an ID
-}
+// PDF materials
+let pdfMaterials = JSON.parse(localStorage.getItem('apshule_pdf_materials')) || [
+    { title: "Mathematics Complete Notes", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+    { title: "English Grammar Guide", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+    { title: "Science Practical Handbook", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+];
 
-let currentUser = null;
+// User data with login count
 let users = JSON.parse(localStorage.getItem('users')) || [];
 if (!Array.isArray(users)) users = [];
+// Ensure each user has loginCount and lastLogin
+users.forEach(u => { if (u.loginCount === undefined) u.loginCount = 0; if (!u.lastLogin) u.lastLogin = null; });
 
+// Video views tracking: array of { userId, subject, timestamp }
+let videoViews = JSON.parse(localStorage.getItem('apshule_video_views')) || [];
+
+let currentUser = null;
 let currentRating = 0;
+let currentLessonSubject = "";
 
+// ==================== HELPER FUNCTIONS ====================
 function showNotification(msg, type) {
     let n = document.getElementById('notification');
     n.textContent = msg;
@@ -490,6 +552,7 @@ function logoutUser() {
     if (enrollStream) { enrollStream.getTracks().forEach(t => t.stop()); enrollStream = null; }
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appScreen').classList.add('hidden');
+    navigateTo('home');
 }
 
 function showApp() {
@@ -503,14 +566,16 @@ function showApp() {
             <div class="account-field"><label>Phone</label><div>${currentUser.phone}</div></div>
             <div class="account-field"><label>Education Level</label><div>${currentUser.educationLevel}</div></div>
             <div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>
+            <div class="account-field"><label>Total Logins</label><div>${currentUser.loginCount || 0}</div></div>
         `;
-        renderClasses();
-        renderRecentAttendance();
-        renderEnrolledList();
+        try {
+            renderClasses();
+            renderRecentAttendance();
+            renderEnrolledList();
+            renderPdfList();
+        } catch(e) { console.error("Render error", e); }
         
-        // Show admin menu item if user is admin (you can set a specific admin email)
-        const adminEmail = "admin@apshule.com"; // change to your admin email
-        if (currentUser.email === adminEmail || currentUser.name === "Admin") {
+        if (currentUser.email === "admin@apshule.com" || currentUser.name === "Admin") {
             document.getElementById('adminMenuItem').style.display = "flex";
         } else {
             document.getElementById('adminMenuItem').style.display = "none";
@@ -518,9 +583,119 @@ function showApp() {
     }
 }
 
-// ========== SUBJECTS & CLASSES (same as original) ==========
-const primarySubjectsList = ["Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture"];
-const secondarySubjectsList = ["Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"];
+// Track video view
+function trackVideoView(subject) {
+    if (!currentUser) return;
+    videoViews.push({
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        subject: subject,
+        timestamp: new Date().toISOString()
+    });
+    // Keep last 1000 views
+    if (videoViews.length > 1000) videoViews = videoViews.slice(-1000);
+    localStorage.setItem('apshule_video_views', JSON.stringify(videoViews));
+}
+
+// Get most watched videos (top 5)
+function getMostWatchedVideos() {
+    const viewCounts = {};
+    videoViews.forEach(view => {
+        viewCounts[view.subject] = (viewCounts[view.subject] || 0) + 1;
+    });
+    const sorted = Object.entries(viewCounts).sort((a,b) => b[1] - a[1]).slice(0,5);
+    return sorted;
+}
+
+function updateAnalytics() {
+    if (!currentUser || (currentUser.email !== "admin@apshule.com" && currentUser.name !== "Admin")) return;
+    // Total users
+    document.getElementById('totalUsersCount').innerText = users.length;
+    // Users table
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = users.map(u => `
+        <tr><td>${u.name}</td><td>${u.email}</td><td>${u.loginCount || 0}</td><td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</td></tr>
+    `).join('');
+    // Most watched videos
+    const mostWatched = getMostWatchedVideos();
+    const listContainer = document.getElementById('mostWatchedList');
+    if (mostWatched.length === 0) {
+        listContainer.innerHTML = '<li>No video views recorded yet.</li>';
+    } else {
+        listContainer.innerHTML = mostWatched.map(([subject, count]) => `<li><span>${subject}</span><span>👁️ ${count} views</span></li>`).join('');
+    }
+}
+
+// ========== PDF MANAGEMENT ==========
+function renderPdfList() {
+    const container = document.getElementById('pdfListContainer');
+    if (!container) return;
+    if (pdfMaterials.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">No PDFs added yet. Admin can add from Admin Panel.</div>';
+        return;
+    }
+    container.innerHTML = pdfMaterials.map(pdf => `
+        <a href="${pdf.url}" target="_blank" class="material-item" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
+            <i class="fas fa-file-pdf"></i> ${pdf.title}
+        </a>
+    `).join('');
+}
+
+function renderPdfAdmin() {
+    const container = document.getElementById('pdfAdminList');
+    if (!container) return;
+    if (pdfMaterials.length === 0) {
+        container.innerHTML = '<div style="padding:10px; text-align:center;">No PDFs yet.</div>';
+        return;
+    }
+    container.innerHTML = pdfMaterials.map((pdf, idx) => `
+        <div class="pdf-item">
+            <a href="${pdf.url}" target="_blank">📄 ${pdf.title}</a>
+            <button onclick="removePdf(${idx})">Delete</button>
+        </div>
+    `).join('');
+}
+
+window.removePdf = function(idx) {
+    pdfMaterials.splice(idx, 1);
+    localStorage.setItem('apshule_pdf_materials', JSON.stringify(pdfMaterials));
+    renderPdfAdmin();
+    renderPdfList();
+    showNotification("PDF removed", "success");
+};
+
+document.getElementById('addPdfBtn')?.addEventListener('click', () => {
+    const title = document.getElementById('pdfTitle').value.trim();
+    const url = document.getElementById('pdfUrl').value.trim();
+    if (!title || !url) {
+        showNotification("Please enter both title and URL", "error");
+        return;
+    }
+    pdfMaterials.push({ title, url });
+    localStorage.setItem('apshule_pdf_materials', JSON.stringify(pdfMaterials));
+    document.getElementById('pdfTitle').value = '';
+    document.getElementById('pdfUrl').value = '';
+    renderPdfAdmin();
+    renderPdfList();
+    showNotification("PDF added!", "success");
+});
+
+// ========== VIDEO HELPER ==========
+function extractVideoId(url) {
+    if (!url) return "";
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=)([^&]+)/,
+        /(?:youtu\.be\/)([^?]+)/,
+        /(?:youtube\.com\/embed\/)([^?]+)/
+    ];
+    for (let p of patterns) {
+        const match = url.match(p);
+        if (match) return match[1];
+    }
+    return url;
+}
+
+// ========== SUBJECTS & CLASSES ==========
 const subjectColors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#E91E63', '#3F51B5', '#009688', '#FFC107', '#8BC34A', '#673AB7', '#FF5722', '#607D8B', '#CDDC39'];
 
 function getSubjectIcon(subject) {
@@ -539,21 +714,21 @@ function getSubjectIcon(subject) {
 
 const classData = {
     primary: [
-        { id: 1, name: "Primary 1", icon: "fa-baby-carriage", subjects: primarySubjectsList, color: "#FF6B6B" },
-        { id: 2, name: "Primary 2", icon: "fa-child", subjects: primarySubjectsList, color: "#4ECDC4" },
-        { id: 3, name: "Primary 3", icon: "fa-graduation-cap", subjects: primarySubjectsList, color: "#45B7D1" },
-        { id: 4, name: "Primary 4", icon: "fa-book-reader", subjects: primarySubjectsList, color: "#96CEB4" },
-        { id: 5, name: "Primary 5", icon: "fa-pencil-alt", subjects: primarySubjectsList, color: "#FFEAA7" },
-        { id: 6, name: "Primary 6", icon: "fa-chalkboard-teacher", subjects: primarySubjectsList, color: "#DDA0DD" },
-        { id: 7, name: "Primary 7", icon: "fa-users", subjects: primarySubjectsList, color: "#FF9F43" }
+        { id: 1, name: "Primary 1", icon: "fa-baby-carriage", color: "#FF6B6B" },
+        { id: 2, name: "Primary 2", icon: "fa-child", color: "#4ECDC4" },
+        { id: 3, name: "Primary 3", icon: "fa-graduation-cap", color: "#45B7D1" },
+        { id: 4, name: "Primary 4", icon: "fa-book-reader", color: "#96CEB4" },
+        { id: 5, name: "Primary 5", icon: "fa-pencil-alt", color: "#FFEAA7" },
+        { id: 6, name: "Primary 6", icon: "fa-chalkboard-teacher", color: "#DDA0DD" },
+        { id: 7, name: "Primary 7", icon: "fa-users", color: "#FF9F43" }
     ],
     secondary: [
-        { id: 1, name: "Senior 1", icon: "fa-seedling", subjects: secondarySubjectsList, color: "#4CAF50" },
-        { id: 2, name: "Senior 2", icon: "fa-tree", subjects: secondarySubjectsList, color: "#8BC34A" },
-        { id: 3, name: "Senior 3", icon: "fa-book", subjects: secondarySubjectsList, color: "#FF9800" },
-        { id: 4, name: "Senior 4", icon: "fa-chart-line", subjects: secondarySubjectsList, color: "#F44336" },
-        { id: 5, name: "Senior 5", icon: "fa-flask", subjects: secondarySubjectsList, color: "#9C27B0" },
-        { id: 6, name: "Senior 6", icon: "fa-university", subjects: secondarySubjectsList, color: "#2196F3" }
+        { id: 1, name: "Senior 1", icon: "fa-seedling", color: "#4CAF50" },
+        { id: 2, name: "Senior 2", icon: "fa-tree", color: "#8BC34A" },
+        { id: 3, name: "Senior 3", icon: "fa-book", color: "#FF9800" },
+        { id: 4, name: "Senior 4", icon: "fa-chart-line", color: "#F44336" },
+        { id: 5, name: "Senior 5", icon: "fa-flask", color: "#9C27B0" },
+        { id: 6, name: "Senior 6", icon: "fa-university", color: "#2196F3" }
     ]
 };
 
@@ -567,7 +742,7 @@ function renderClasses() {
         <div class="class-card" data-class="${c.id}" onclick="selectClass(${c.id})" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;">
             <i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i>
             <div class="class-name" style="color: ${c.color};">${c.name}</div>
-            <div class="class-details">${c.subjects.length} Subjects</div>
+            <div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div>
         </div>
     `).join('');
 }
@@ -576,8 +751,9 @@ window.selectClass = function(id) {
     selectedClass = classData[currentLevel].find(c => c.id === id);
     document.getElementById('classSelectionSection').style.display = 'none';
     document.getElementById('subjectsSection').style.display = 'block';
+    const subjectsList = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
     let grid = document.getElementById('subjectsGrid');
-    grid.innerHTML = selectedClass.subjects.map((s, idx) => `
+    grid.innerHTML = subjectsList.map((s, idx) => `
         <div class="subject-card" onclick="openVideoLesson('${s}')">
             <div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}">
                 <i class="fas ${getSubjectIcon(s)}"></i>
@@ -588,7 +764,7 @@ window.selectClass = function(id) {
     `).join('');
 };
 
-// ==================== VIDEO PLAYER USING MAPPINGS ====================
+// ========== VIDEO PLAYER WITH FEEDBACK AND VIEW TRACKING ==========
 const videoModal = document.getElementById('videoModal');
 const closeVideoBtn = document.getElementById('closeVideoBtn');
 const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -597,26 +773,29 @@ const youtubeIframe = document.getElementById('youtubeIframe');
 const feedbackSection = document.getElementById('feedbackSection');
 
 function openVideoLesson(subject) {
+    if (!currentUser) { showNotification("Please login first", "error"); return; }
     const videoId = videoMappings[subject];
     if (!videoId || videoId === "") {
-        showNotification(`No video assigned to "${subject}" yet. Admin can add one.`, "info");
+        showNotification(`No video assigned to "${subject}". Admin can add one.`, "info");
         return;
     }
-    youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+    currentLessonSubject = subject;
+    // Track view
+    trackVideoView(subject);
+    youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     document.getElementById('currentVideoTitle').textContent = `${subject} Lesson`;
     document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
-    
-    feedbackSection.style.display = 'none';
-    document.getElementById('feedbackComment').value = '';
+    feedbackSection.style.display = 'block';
     currentRating = 0;
     document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
-    
+    document.getElementById('feedbackComment').value = '';
     videoModal.classList.add('show');
 }
 
 closeVideoBtn.addEventListener('click', () => {
     videoModal.classList.remove('show');
     youtubeIframe.src = '';
+    feedbackSection.style.display = 'none';
 });
 
 fullscreenBtn.addEventListener('click', () => {
@@ -636,7 +815,6 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-// Feedback star rating
 document.querySelectorAll('#starRating i').forEach(star => {
     star.addEventListener('click', function() {
         currentRating = parseInt(this.getAttribute('data-rating'));
@@ -651,7 +829,7 @@ document.getElementById('submitFeedbackBtn')?.addEventListener('click', () => {
     const comment = document.getElementById('feedbackComment').value;
     const feedbacks = JSON.parse(localStorage.getItem('lessonFeedbacks') || '[]');
     feedbacks.push({
-        lesson: document.getElementById('currentVideoTitle').textContent,
+        lesson: currentLessonSubject,
         rating: currentRating,
         comment: comment,
         user: currentUser?.email || 'guest',
@@ -659,14 +837,18 @@ document.getElementById('submitFeedbackBtn')?.addEventListener('click', () => {
     });
     localStorage.setItem('lessonFeedbacks', JSON.stringify(feedbacks));
     showNotification('Thank you for your feedback!', 'success');
+    videoModal.classList.remove('show');
+    youtubeIframe.src = '';
     feedbackSection.style.display = 'none';
 });
 
 document.getElementById('closeFeedbackBtn')?.addEventListener('click', () => {
+    videoModal.classList.remove('show');
+    youtubeIframe.src = '';
     feedbackSection.style.display = 'none';
 });
 
-// ========== AUTHENTICATION (same as original, abbreviated) ==========
+// ========== AUTHENTICATION WITH LOGIN COUNT ==========
 document.getElementById('signupBtn')?.addEventListener('click', () => {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
@@ -692,10 +874,16 @@ document.getElementById('signupBtn')?.addEventListener('click', () => {
         phone,
         password: pwd,
         educationLevel: level,
-        createdAt: new Date()
+        createdAt: new Date().toISOString(),
+        loginCount: 0,
+        lastLogin: null
     });
     localStorage.setItem('users', JSON.stringify(users));
     currentUser = users[users.length - 1];
+    // Increment login count for new user (first login)
+    currentUser.loginCount = 1;
+    currentUser.lastLogin = new Date().toISOString();
+    localStorage.setItem('users', JSON.stringify(users));
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     localStorage.setItem('rememberMe', 'true');
     showApp();
@@ -705,9 +893,14 @@ document.getElementById('loginBtn')?.addEventListener('click', () => {
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const pwd = document.getElementById('loginPassword').value;
     const rememberMe = document.getElementById('rememberMeCheckbox')?.checked || false;
-    const user = users.find(u => u.email === email && u.password === pwd);
-    if (user) {
-        currentUser = user;
+    const userIndex = users.findIndex(u => u.email === email && u.password === pwd);
+    if (userIndex !== -1) {
+        currentUser = users[userIndex];
+        // Increment login count and update last login
+        currentUser.loginCount = (currentUser.loginCount || 0) + 1;
+        currentUser.lastLogin = new Date().toISOString();
+        users[userIndex] = currentUser;
+        localStorage.setItem('users', JSON.stringify(users));
         if (rememberMe) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             localStorage.setItem('rememberMe', 'true');
@@ -718,6 +911,7 @@ document.getElementById('loginBtn')?.addEventListener('click', () => {
         showApp();
         document.getElementById('loginError').textContent = '';
         document.getElementById('loginPassword').value = '';
+        navigateTo('home');
     } else {
         document.getElementById('loginError').textContent = '❌ Invalid username or password';
     }
@@ -758,7 +952,7 @@ document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => 
     }
 });
 
-// ========== FACIAL ATTENDANCE (same as original, keep as is) ==========
+// ========== FACIAL ATTENDANCE (same as original, abbreviated for brevity) ==========
 let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
 let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
 let attendanceStream = null, enrollStream = null;
@@ -879,8 +1073,8 @@ document.getElementById('faceImageUpload')?.addEventListener('change', function(
 document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ const name = document.getElementById('enrollName').value.trim(); const category = document.getElementById('enrollCategory').value; const phone = document.getElementById('enrollPhone').value.trim(); if(!name) { showNotification("Enter name","error"); return; } if(!capturedFaceImage) { showNotification("Capture or import face first","error"); return; } getImageHash(capturedFaceImage, (hash) => { attendancePeople.push({ id:Date.now(), name, category, phone, faceHash: hash, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled!`,"success"); renderEnrolledList(); }); });
 document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(confirm("Delete ALL attendance records?")) { attendanceRecords=[]; localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared","success"); renderRecentAttendance(); } });
 
-// ========== AI CHAT (same as original) ==========
-const GEMINI_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY";
+// ========== AI CHAT ==========
+const GEMINI_KEY = "AIzaSyBPuGZKjht8Th4DE51o62UNHyHWD8bdciY"; // Replace with your own for production
 async function askAI(q) {
     try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_KEY}`, {
@@ -900,20 +1094,38 @@ document.getElementById('openAIDrawerBtn')?.addEventListener('click', () => { do
 document.getElementById('closeDrawerBtn')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
 document.getElementById('drawerOverlay')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
 
+// ========== NAVIGATION ==========
 function navigateTo(pageId) {
     if (videoModal.classList.contains('show')) {
         videoModal.classList.remove('show');
         youtubeIframe.src = '';
+        feedbackSection.style.display = 'none';
     }
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-    document.getElementById(`${pageId}Page`).classList.add('active-page');
+    const targetPage = document.getElementById(`${pageId}Page`);
+    if (targetPage) {
+        targetPage.classList.add('active-page');
+    } else {
+        document.getElementById('homePage').classList.add('active-page');
+    }
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active');
+    const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if (activeNav) activeNav.classList.add('active');
 }
 document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => navigateTo(item.getAttribute('data-page'))); });
-document.getElementById('folderHeader')?.addEventListener('click', () => { document.getElementById('folderContent').classList.toggle('show'); });
+
+// ========== UI EVENT LISTENERS ==========
+document.getElementById('folderHeader')?.addEventListener('click', () => { 
+    const content = document.getElementById('folderContent');
+    const icon = document.querySelector('#folderHeader i:last-child');
+    content.classList.toggle('show');
+    if (content.classList.contains('show')) {
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        icon.className = 'fas fa-chevron-down';
+    }
+});
 document.querySelectorAll('.subscribe-btn-small').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); if(!currentUser) { alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`, '_blank'); }); });
-document.querySelectorAll('.material-item').forEach(item => { item.addEventListener('click', () => { showNotification(`📄 Downloading: ${item.getAttribute('data-file') || item.textContent}`, "success"); }); });
 document.querySelectorAll('.login-tab').forEach(tab => { tab.addEventListener('click', () => { const tabName = tab.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login'); document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup'); }); });
 document.getElementById('backToClasses')?.addEventListener('click', () => {
     document.getElementById('classSelectionSection').style.display = 'block';
@@ -933,73 +1145,122 @@ document.querySelectorAll('.level-btn').forEach(btn => {
 document.getElementById('moreMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
 document.addEventListener('click', () => { document.getElementById('moreDropdown')?.classList.remove('show'); });
 
-// ========== ADMIN PANEL FUNCTIONS ==========
-function renderAdminPanel() {
-    const container = document.getElementById('adminSubjectsList');
-    if (!container) return;
-    let html = '';
-    // Only show subjects that exist in the app (you can show all from allSubjectsList)
-    const subjectsToShow = allSubjectsList;
-    for (let subject of subjectsToShow) {
-        const currentId = videoMappings[subject] || '';
-        html += `
+// ========== ADMIN PANEL ==========
+function renderAdminVideoLists() {
+    const primaryContainer = document.getElementById('adminPrimarySubjectsList');
+    if (primaryContainer) {
+        primaryContainer.innerHTML = primarySubjects.map(subj => `
             <div class="admin-subject">
-                <label>${subject}</label>
-                <input type="text" id="input_${subject.replace(/\s/g, '_')}" placeholder="Paste YouTube URL or Video ID" value="${currentId}">
-                <button onclick="testVideo('${subject}')">Test</button>
-                <div class="status" id="status_${subject.replace(/\s/g, '_')}"></div>
+                <label>${subj}</label>
+                <input type="text" id="primary_input_${subj.replace(/\s/g, '_')}" value="${videoMappings[subj] || ''}" placeholder="YouTube URL or Video ID">
+                <button onclick="testVideo('${subj}')">Test</button>
+                <div class="status" id="primary_status_${subj.replace(/\s/g, '_')}"></div>
             </div>
-        `;
+        `).join('');
     }
-    container.innerHTML = html;
+    const secondaryContainer = document.getElementById('adminSecondarySubjectsList');
+    if (secondaryContainer) {
+        secondaryContainer.innerHTML = secondarySubjects.map(subj => `
+            <div class="admin-subject">
+                <label>${subj}</label>
+                <input type="text" id="secondary_input_${subj.replace(/\s/g, '_')}" value="${videoMappings[subj] || ''}" placeholder="YouTube URL or Video ID">
+                <button onclick="testVideo('${subj}')">Test</button>
+                <div class="status" id="secondary_status_${subj.replace(/\s/g, '_')}"></div>
+            </div>
+        `).join('');
+    }
 }
 
 window.testVideo = function(subject) {
-    const inputId = `input_${subject.replace(/\s/g, '_')}`;
-    const urlOrId = document.getElementById(inputId).value.trim();
+    let inputElem = document.getElementById(`primary_input_${subject.replace(/\s/g, '_')}`);
+    if (!inputElem) inputElem = document.getElementById(`secondary_input_${subject.replace(/\s/g, '_')}`);
+    if (!inputElem) return;
+    const urlOrId = inputElem.value.trim();
     const videoId = extractVideoId(urlOrId);
     if (!videoId) {
-        document.getElementById(`status_${subject.replace(/\s/g, '_')}`).innerHTML = "❌ Invalid URL/ID";
+        showNotification("Invalid URL or ID", "error");
         return;
     }
-    // Open a small modal or just show notification
     youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     document.getElementById('currentVideoTitle').textContent = `${subject} (Test)`;
     videoModal.classList.add('show');
-    document.getElementById(`status_${subject.replace(/\s/g, '_')}`).innerHTML = "✅ Test playing";
-    setTimeout(() => {
-        document.getElementById(`status_${subject.replace(/\s/g, '_')}`).innerHTML = "";
-    }, 3000);
+    showNotification(`Testing video for ${subject}`, "info");
 };
 
-document.getElementById('saveAllVideosBtn')?.addEventListener('click', () => {
-    for (let subject of allSubjectsList) {
-        const inputId = `input_${subject.replace(/\s/g, '_')}`;
-        const inputElem = document.getElementById(inputId);
+function savePrimaryVideos() {
+    for (let subj of primarySubjects) {
+        const inputElem = document.getElementById(`primary_input_${subj.replace(/\s/g, '_')}`);
         if (inputElem) {
             const urlOrId = inputElem.value.trim();
             const videoId = extractVideoId(urlOrId);
-            if (videoId) {
-                videoMappings[subject] = videoId;
-            } else {
-                videoMappings[subject] = "";
-            }
+            videoMappings[subj] = videoId || "";
         }
     }
     localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
-    showNotification("All video mappings saved!", "success");
+    showNotification("Primary subject videos saved!", "success");
+}
+
+function saveSecondaryVideos() {
+    for (let subj of secondarySubjects) {
+        const inputElem = document.getElementById(`secondary_input_${subj.replace(/\s/g, '_')}`);
+        if (inputElem) {
+            const urlOrId = inputElem.value.trim();
+            const videoId = extractVideoId(urlOrId);
+            videoMappings[subj] = videoId || "";
+        }
+    }
+    localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
+    showNotification("Secondary subject videos saved!", "success");
+}
+
+document.getElementById('savePrimaryVideosBtn')?.addEventListener('click', savePrimaryVideos);
+document.getElementById('saveSecondaryVideosBtn')?.addEventListener('click', saveSecondaryVideos);
+
+// Add new subject dynamically
+document.getElementById('addNewSubjectBtn')?.addEventListener('click', () => {
+    const newName = document.getElementById('newSubjectName').value.trim();
+    const level = document.getElementById('newSubjectLevel').value;
+    const videoUrl = document.getElementById('newSubjectVideo').value.trim();
+    if (!newName) {
+        showNotification("Please enter a subject name", "error");
+        return;
+    }
+    if (level === 'primary') {
+        if (primarySubjects.includes(newName)) {
+            showNotification("Subject already exists in Primary", "error");
+            return;
+        }
+        primarySubjects.push(newName);
+        localStorage.setItem('apshule_primary_subjects', JSON.stringify(primarySubjects));
+    } else {
+        if (secondarySubjects.includes(newName)) {
+            showNotification("Subject already exists in Secondary", "error");
+            return;
+        }
+        secondarySubjects.push(newName);
+        localStorage.setItem('apshule_secondary_subjects', JSON.stringify(secondarySubjects));
+    }
+    if (videoUrl) {
+        const vid = extractVideoId(videoUrl);
+        if (vid) videoMappings[newName] = vid;
+        localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
+    }
+    document.getElementById('newSubjectName').value = '';
+    document.getElementById('newSubjectVideo').value = '';
+    renderAdminVideoLists();
+    if (selectedClass) selectClass(selectedClass.id);
+    showNotification(`Subject "${newName}" added to ${level} level!`, "success");
 });
 
-// Show admin panel when menu item clicked
 document.getElementById('adminMenuItem')?.addEventListener('click', () => {
     const adminPanel = document.getElementById('adminPanel');
     if (adminPanel) {
         adminPanel.classList.toggle('show');
         if (adminPanel.classList.contains('show')) {
-            renderAdminPanel();
-            // Navigate to home page to see panel
+            renderAdminVideoLists();
+            renderPdfAdmin();
+            updateAnalytics(); // refresh analytics
             navigateTo('home');
-            // Scroll to panel
             adminPanel.scrollIntoView({ behavior: 'smooth' });
         }
     }
@@ -1032,6 +1293,7 @@ function loadUserSession() {
 
 loadUserSession();
 renderClasses();
+renderPdfList();
 </script>
 </body>
-</html>
+                    </html>
