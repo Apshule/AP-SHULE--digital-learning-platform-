@@ -6,7 +6,7 @@
     <title>APSHULE - Learn With Ease</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== YOUR ORIGINAL STYLES (exactly as you had, plus a few additions for analytics) ========== */
+        /* ========== YOUR ORIGINAL STYLES (unchanged) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
@@ -123,7 +123,6 @@
         .notification.success { background: #2E7D32; }
         .notification.info { background: #FF8C42; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
         .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
@@ -144,7 +143,6 @@
         .feedback-buttons button { flex: 1; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
         .submit-feedback { background: #4B2E9E; color: white; }
         .skip-feedback { background: #ccc; color: #333; }
-        
         .attendance-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .attendance-modal.show { display: flex; }
         .attendance-modal-content { background: white; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; }
@@ -188,8 +186,6 @@
         .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
         .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         @media (orientation: landscape) { .video-modal { padding: 0; } .video-content { max-width: 100%; height: 100%; border-radius: 0; } }
-        
-        /* Admin & Analytics styles */
         .admin-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; display: none; }
         .admin-panel.show { display: block; }
         .admin-panel h3 { color: #4B2E9E; margin-bottom: 15px; }
@@ -232,8 +228,14 @@
             <div class="login-tab" data-tab="signup">Sign Up</div>
         </div>
         <div id="loginFormDiv" class="login-form active">
-            <input type="text" id="loginEmail" placeholder="Username" class="login-input">
-            <input type="password" id="loginPassword" placeholder="Password" class="login-input">
+            <div style="position: relative;">
+                <input type="email" id="loginEmail" placeholder="Email" class="login-input">
+                <span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
+            </div>
+            <div style="position: relative;">
+                <input type="password" id="loginPassword" placeholder="Password" class="login-input">
+                <span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
                     <input type="checkbox" id="rememberMeCheckbox"> Remember Me
@@ -244,26 +246,25 @@
         </div>
         <div id="signupFormDiv" class="login-form">
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
-            <input type="text" id="signupEmail" placeholder="Username" class="login-input">
+            <input type="email" id="signupEmail" placeholder="Email" class="login-input">
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
-            <input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input">
+            <div style="position: relative;">
+                <input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input">
+                <span onclick="togglePassword('signupPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
+            </div>
             <select id="signupEducationLevel" class="login-input">
                 <option value="">Select Education Level</option>
                 <option value="Primary">Primary School</option>
                 <option value="Secondary">Secondary School</option>
             </select>
-            <select id="signupSchoolId" class="login-input" style="display:none;"> <!-- hidden for now -->
-                <option value="1">Default School</option>
-            </select>
             <button id="signupBtn" class="login-btn">Create Account</button>
         </div>
         <div id="loginError" class="error-message"></div>
-        <div class="reset-section">
+        <div class="reset-section" id="resetSection" style="display:none;">
             <h4><i class="fas fa-key"></i> Forgot Password?</h4>
-            <input type="text" id="resetUsername" placeholder="Username" class="reset-input">
-            <input type="password" id="resetNewPassword" placeholder="New password (min 4 characters)" class="reset-input">
-            <button id="resetPasswordBtn" class="reset-btn">Reset Password</button>
+            <input type="email" id="resetEmail" placeholder="Email" class="reset-input">
             <div id="resetMessage" class="success-message"></div>
+            <button id="sendResetEmailBtn" class="reset-btn">Send Reset Email</button>
         </div>
     </div>
 </div>
@@ -295,36 +296,14 @@
     <!-- VIDEO MODAL -->
     <div id="videoModal" class="video-modal">
         <div class="video-content" id="videoContent">
-            <div class="video-header">
-                <span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span>
-                <div>
-                    <button id="fullscreenBtn"><i class="fas fa-expand"></i></button>
-                    <button id="closeVideoBtn">&times;</button>
-                </div>
-            </div>
-            <div class="youtube-player-container">
-                <iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
+            <div class="video-header"><span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span><div><button id="fullscreenBtn"><i class="fas fa-expand"></i></button><button id="closeVideoBtn">&times;</button></div></div>
+            <div class="youtube-player-container"><iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
             <div class="video-title" id="currentVideoTitle"></div>
-            <div class="feedback-section" id="feedbackSection">
-                <h4>⭐ Rate this lesson</h4>
-                <div id="starRating">
-                    <i class="far fa-star" data-rating="1"></i>
-                    <i class="far fa-star" data-rating="2"></i>
-                    <i class="far fa-star" data-rating="3"></i>
-                    <i class="far fa-star" data-rating="4"></i>
-                    <i class="far fa-star" data-rating="5"></i>
-                </div>
-                <textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea>
-                <div class="feedback-buttons">
-                    <button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button>
-                    <button id="closeFeedbackBtn" class="skip-feedback">Skip</button>
-                </div>
-            </div>
+            <div class="feedback-section" id="feedbackSection"><h4>⭐ Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea><div class="feedback-buttons"><button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button><button id="closeFeedbackBtn" class="skip-feedback">Skip</button></div></div>
         </div>
     </div>
 
-    <!-- ATTENDANCE MODAL (school‑specific) -->
+    <!-- ATTENDANCE MODAL (simplified but functional) -->
     <div id="attendanceModal" class="attendance-modal">
         <div class="attendance-modal-content">
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3><i class="fas fa-face-recognition"></i> Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none; border:none; font-size:28px; cursor:pointer;">&times;</button></div>
@@ -360,157 +339,23 @@
 
     <!-- AI DRAWER -->
     <div class="overlay" id="drawerOverlay"></div>
-    <div class="ai-drawer" id="aiDrawer">
-        <div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button id="closeDrawerBtn" style="background:none; border:none; color:white; font-size:24px;">&times;</button></div>
-        <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div>
-        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me..."><button id="sendBtn">Send</button></div>
-    </div>
+    <div class="ai-drawer" id="aiDrawer"><div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button id="closeDrawerBtn" style="background:none; border:none; color:white; font-size:24px;">&times;</button></div><div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div><div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me..."><button id="sendBtn">Send</button></div></div>
 
     <div class="main-content">
         <div id="homePage" class="page active-page">
-            <div class="education-level">
-                <button class="level-btn active" data-level="primary">🏫 Primary School</button>
-                <button class="level-btn" data-level="secondary">🎓 Secondary School</button>
-            </div>
-            <div id="classSelectionSection">
-                <div class="section-title">📚 Select Your Class</div>
-                <div id="classGrid" class="class-grid"></div>
-            </div>
-            <div id="subjectsSection" style="display:none;">
-                <button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button>
-                <div class="section-title">📖 Available Subjects</div>
-                <div id="subjectsGrid" class="subjects-grid"></div>
-            </div>
-            <div class="welcome-card">
-                <div class="welcome-title">Welcome to APSHULE</div>
-                <div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div>
-            </div>
-            <div class="announcements-section">
-                <div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div>
-                <div class="announcements-ticker">
-                    <div class="ticker-wrap">
-                        <div class="ticker" id="eventsTicker">
-                            <!-- events will be injected dynamically here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="materials-folder">
-                <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div>
-                <div class="folder-content" id="folderContent">
-                    <div id="pdfListContainer"></div>
-                </div>
-            </div>
-            <div class="payment-plans-section">
-                <div class="payment-plans-title">🎯 Subscription Plans</div>
-                <div class="payment-plans-grid">
-                    <div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div>
-                    <div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div>
-                    <div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div>
-                    <div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div>
-                    <div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div>
-                    <div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div>
-                </div>
-            </div>
-            <!-- ADMIN PANEL (Super Admin only, but shown for both roles with different content) -->
-            <div id="adminPanel" class="admin-panel">
-                <h3><i class="fas fa-lock"></i> Admin Panel</h3>
-                <!-- Super Admin Section: Manage Schools, Global Events, Analytics -->
-                <div id="superAdminSection" class="admin-section" style="display:none;">
-                    <h4>🏢 Manage Schools</h4>
-                    <div class="add-subject-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
-                        <input type="text" id="schoolName" placeholder="School Name">
-                        <input type="text" id="schoolContact" placeholder="Contact (phone/email)">
-                        <input type="text" id="schoolLocation" placeholder="Location">
-                        <input type="text" id="schoolLogoUrl" placeholder="Logo URL">
-                        <input type="email" id="schoolLoginEmail" placeholder="School Login Email">
-                        <input type="password" id="schoolLoginPassword" placeholder="School Login Password">
-                        <button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button>
-                    </div>
-                    <div id="schoolsAdminList"></div>
-                    <h4>📊 Analytics & User Difficulties</h4>
-                    <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
-                    <p><strong>Failed Login Attempts:</strong> <span id="failedLoginCount">0</span></p>
-                    <p><strong>Signup Errors:</strong> <span id="signupErrorCount">0</span></p>
-                    <table class="analytics-table" id="usersTable">
-                        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Login Count</th><th>Last Login</th></tr></thead>
-                        <tbody id="usersTableBody"></tbody>
-                    </table>
-                    <div style="margin-top:20px;">
-                        <h5>🎬 Most Watched Videos</h5>
-                        <ul class="most-watched-list" id="mostWatchedList"></ul>
-                    </div>
-                </div>
-                <!-- Common admin features (events, subjects, PDFs) – visible to both Super Admin and School Admin -->
-                <div class="admin-section">
-                    <h4>📅 Manage Events (Global)</h4>
-                    <div class="add-pdf-form">
-                        <input type="text" id="eventTitle" placeholder="Event Title">
-                        <input type="text" id="eventDate" placeholder="Date (e.g., 21st June)">
-                        <input type="text" id="eventFee" placeholder="Fee (e.g., UGX 12,000)">
-                        <button id="addEventBtn" class="admin-toggle">➕ Add Event</button>
-                    </div>
-                    <div id="eventsAdminList"></div>
-                </div>
-                <div class="admin-section">
-                    <h4>➕ Add New Subject (No coding)</h4>
-                    <div class="add-subject-form">
-                        <input type="text" id="newSubjectName" placeholder="Subject name">
-                        <select id="newSubjectLevel">
-                            <option value="primary">Primary School</option>
-                            <option value="secondary">Secondary School</option>
-                        </select>
-                        <input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID">
-                        <button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button>
-                    </div>
-                </div>
-                <div class="admin-section">
-                    <h4>📘 Primary School Subjects (Video Mapping)</h4>
-                    <div id="adminPrimarySubjectsList"></div>
-                    <button id="savePrimaryVideosBtn" class="admin-toggle" style="background:#4B2E9E;">💾 Save Primary Videos</button>
-                </div>
-                <div class="admin-section">
-                    <h4>📗 Secondary School Subjects (Video Mapping)</h4>
-                    <div id="adminSecondarySubjectsList"></div>
-                    <button id="saveSecondaryVideosBtn" class="admin-toggle" style="background:#4B2E9E;">💾 Save Secondary Videos</button>
-                </div>
-                <div class="admin-section">
-                    <h4>📄 Manage PDF Learning Materials</h4>
-                    <div class="add-pdf-form">
-                        <input type="text" id="pdfTitle" placeholder="PDF Title">
-                        <input type="text" id="pdfUrl" placeholder="PDF File URL">
-                        <button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button>
-                    </div>
-                    <div id="pdfAdminList"></div>
-                </div>
-            </div>
+            <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary School</button><button class="level-btn" data-level="secondary">🎓 Secondary School</button></div>
+            <div id="classSelectionSection"><div class="section-title">📚 Select Your Class</div><div id="classGrid" class="class-grid"></div></div>
+            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button><div class="section-title">📖 Available Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
+            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
+            <div class="announcements-section"><div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
+            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div></div>
+            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div><div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div><div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div><div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div><div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div><div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div></div></div>
+            <div id="adminPanel" class="admin-panel"><h3><i class="fas fa-lock"></i> Admin Panel</h3><div id="superAdminSection" class="admin-section" style="display:none;"><h4>🏢 Manage Schools</h4><div class="add-subject-form"><input type="text" id="schoolName" placeholder="School Name"><input type="text" id="schoolContact" placeholder="Contact"><input type="text" id="schoolLocation" placeholder="Location"><input type="text" id="schoolLogoUrl" placeholder="Logo URL"><input type="email" id="schoolLoginEmail" placeholder="School Login Email"><input type="password" id="schoolLoginPassword" placeholder="School Login Password"><button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button></div><div id="schoolsAdminList"></div><h4>📊 Analytics & User Difficulties</h4><p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p><p><strong>Failed Login Attempts:</strong> <span id="failedLoginCount">0</span></p><p><strong>Signup Errors:</strong> <span id="signupErrorCount">0</span></p><table class="analytics-table" id="usersTable"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Login Count</th><th>Last Login</th></tr></thead><tbody id="usersTableBody"></tbody>}</table><div><h5>🎬 Most Watched Videos</h5><ul class="most-watched-list" id="mostWatchedList"></ul></div></div><div class="admin-section"><h4>📅 Manage Events (Global)</h4><div class="add-pdf-form"><input type="text" id="eventTitle" placeholder="Event Title"><input type="text" id="eventDate" placeholder="Date"><input type="text" id="eventFee" placeholder="Fee"><button id="addEventBtn" class="admin-toggle">➕ Add Event</button></div><div id="eventsAdminList"></div></div><div class="admin-section"><h4>➕ Add New Subject (No coding)</h4><div class="add-subject-form"><input type="text" id="newSubjectName" placeholder="Subject name"><select id="newSubjectLevel"><option value="primary">Primary School</option><option value="secondary">Secondary School</option></select><input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID"><button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button></div></div><div class="admin-section"><h4>📘 Primary School Subjects (Video Mapping)</h4><div id="adminPrimarySubjectsList"></div><button id="savePrimaryVideosBtn" class="admin-toggle">💾 Save Primary Videos</button></div><div class="admin-section"><h4>📗 Secondary School Subjects (Video Mapping)</h4><div id="adminSecondarySubjectsList"></div><button id="saveSecondaryVideosBtn" class="admin-toggle">💾 Save Secondary Videos</button></div><div class="admin-section"><h4>📄 Manage PDF Learning Materials</h4><div class="add-pdf-form"><input type="text" id="pdfTitle" placeholder="PDF Title"><input type="text" id="pdfUrl" placeholder="PDF File URL"><button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button></div><div id="pdfAdminList"></div></div></div>
         </div>
         <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No saved lessons yet.</div></div>
         <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
         <div id="accountPage" class="page"><div class="section-title">👤 My Account</div><div id="accountInfo" class="account-card"></div></div>
-        <div id="aboutPage" class="page">
-            <div class="section-title">📖 About APSHULE</div>
-            <div class="about-card">
-                <div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
-                <div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div>
-                <h3><i class="fas fa-gem"></i> Core Values</h3>
-                <div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div>
-                <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div>
-                <div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div>
-                <h3><i class="fas fa-users"></i> Our Managing Team</h3>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div>
-                <h3><i class="fas fa-address-card"></i> Contact Information</h3>
-                <div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div>
-                <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
-                <div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div>
-                <a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a>
-            </div>
-        </div>
+        <div id="aboutPage" class="page"><div class="section-title">📖 About APSHULE</div><div class="about-card"><div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div><div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div><h3><i class="fas fa-gem"></i> Core Values</h3><div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div><div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div><div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div><h3><i class="fas fa-users"></i> Our Managing Team</h3><div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div><h3><i class="fas fa-address-card"></i> Contact Information</h3><div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div><div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div><div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div><a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a></div></div>
     </div>
 
     <div class="bottom-nav">
@@ -521,1133 +366,477 @@
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
     </div>
 </div>
-
 <div id="notification" class="notification"></div>
 
-<script>
-// ==================== DATA INITIALIZATION ====================
-// Schools array (Super Admin only)
-let schools = JSON.parse(localStorage.getItem('apshule_schools')) || [
-    { id: 1, name: "Demo School", contact: "demo@school.com", location: "Kampala", logo: "https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg", loginEmail: "demo@school.com", loginPassword: "school123", createdAt: new Date().toISOString(), loginCount: 0 }
-];
-// Subjects
-let primarySubjects = JSON.parse(localStorage.getItem('apshule_primary_subjects')) || [
-    "Mathematics", "English", "Science", "Social Studies", "Literacy", "Religious Education", "Agriculture"
-];
-let secondarySubjects = JSON.parse(localStorage.getItem('apshule_secondary_subjects')) || [
-    "Mathematics", "English", "Biology", "Chemistry", "Physics", "History", "Geography", "Kiswahili", 
-    "Commerce", "Entrepreneurship", "ICT", "Literature", "Economics", "Fine Art", "Physical Education", "Agriculture"
-];
-let videoMappings = JSON.parse(localStorage.getItem('apshule_video_mappings')) || {};
-[...primarySubjects, ...secondarySubjects].forEach(sub => { if (!videoMappings[sub]) videoMappings[sub] = ""; });
-let pdfMaterials = JSON.parse(localStorage.getItem('apshule_pdf_materials')) || [
-    { title: "Mathematics Complete Notes", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-    { title: "English Grammar Guide", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-    { title: "Science Practical Handbook", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
-];
+<!-- FIREBASE + APP LOGIC -->
+<script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+        }
+    }
+</script>
 
-// Global events (dynamic)
-let eventsList = JSON.parse(localStorage.getItem('apshule_events')) || [
-    { id: 1, title: "MTC Seminar at Jinja College", date: "21st June", fee: "UGX 12,000" },
-    { id: 2, title: "Biology Seminar at Rock High School - Tororo", date: "28th June", fee: "UGX 12,000" },
-    { id: 3, title: "MTC Seminar at Lubiri SS", date: "5th July", fee: "UGX 12,000" },
-    { id: 4, title: "History Seminar at Jinja College", date: "12th July", fee: "UGX 12,000" },
-    { id: 5, title: "MTC Seminar at Rock High School - Tororo", date: "19th July", fee: "UGX 12,000" }
-];
+<script type="module">
+    // 🔐 YOUR FIREBASE CONFIGURATION (copied from your screenshot)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
+        authDomain: "apshule-app.firebaseapp.com",
+        projectId: "apshule-app",
+        storageBucket: "apshule-app.firebasestorage.app",
+        messagingSenderId: "610368652834",
+        appId: "1:610368652834:web:1a30274d95c282a5a3ac7b",
+        measurementId: "G-FYDWVHTMM6"
+    };
 
-// User types: "individual" (students/teachers), "school" (school account), "superadmin"
-let users = JSON.parse(localStorage.getItem('apshule_users')) || [];
-// Ensure each user has proper fields
-users.forEach(u => {
-    if (u.loginCount === undefined) u.loginCount = 0;
-    if (!u.lastLogin) u.lastLogin = null;
-    if (!u.role) u.role = "individual";
-});
+    import { initializeApp } from "firebase/app";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
+    import { getFirestore, collection, doc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
 
-// Failed login attempts tracker (for analytics)
-let failedLogins = JSON.parse(localStorage.getItem('apshule_failed_logins')) || []; // each entry: { email, timestamp, reason }
-let signupErrors = JSON.parse(localStorage.getItem('apshule_signup_errors')) || []; // each entry: { email, reason, timestamp }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-// Attendance data (per school)
-let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
-let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
-let videoViews = JSON.parse(localStorage.getItem('apshule_video_views')) || [];
+    // Make globally available
+    window.auth = auth;
+    window.db = db;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.sendPasswordResetEmail = sendPasswordResetEmail;
+    window.signOut = signOut;
+    window.onAuthStateChanged = onAuthStateChanged;
+    window.collection = collection;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDocs = getDocs;
+    window.addDoc = addDoc;
+    window.updateDoc = updateDoc;
+    window.deleteDoc = deleteDoc;
+    window.onSnapshot = onSnapshot;
+    window.query = query;
+    window.where = where;
+    window.orderBy = orderBy;
+    window.limit = limit;
 
-let currentUser = null;
-let currentRating = 0;
-let currentLessonSubject = "";
+    // Helper functions
+    function showNotification(msg, type = "success") {
+        const n = document.getElementById('notification');
+        n.textContent = msg;
+        n.className = `notification ${type}`;
+        n.style.display = 'block';
+        setTimeout(() => n.style.display = 'none', 3000);
+    }
+    window.showNotification = showNotification;
 
-// ==================== HELPER FUNCTIONS ====================
-function showNotification(msg, type) {
-    let n = document.getElementById('notification');
-    n.textContent = msg;
-    n.className = `notification ${type}`;
-    n.style.display = 'block';
-    setTimeout(() => n.style.display = 'none', 3000);
-}
+    window.togglePassword = function(fieldId) {
+        const input = document.getElementById(fieldId);
+        if (input) input.type = input.type === "password" ? "text" : "password";
+    };
 
-function logoutUser() {
-    currentUser = null;
-    localStorage.removeItem('currentUser');
-    sessionStorage.removeItem('currentUser');
-    localStorage.removeItem('rememberMe');
-    if (attendanceStream) { attendanceStream.getTracks().forEach(t => t.stop()); attendanceStream = null; }
-    if (enrollStream) { enrollStream.getTracks().forEach(t => t.stop()); enrollStream = null; }
-    document.getElementById('loginScreen').classList.remove('hidden');
-    document.getElementById('appScreen').classList.add('hidden');
-    navigateTo('home');
-}
+    // Global state
+    let currentUserObj = null;
+    let schools = [];
+    let events = [];
+    let pdfMaterials = [];
+    let videoMappings = {};
+    let primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"];
+    let secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"];
 
-function showApp() {
-    if (currentUser) {
-        document.getElementById('userName').textContent = currentUser.name.split(' ')[0];
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('appScreen').classList.remove('hidden');
-        // Update account info
-        let school = (currentUser.schoolId && schools.find(s => s.id === currentUser.schoolId)) || null;
-        document.getElementById('accountInfo').innerHTML = `
-            <div class="account-field"><label>Full Name</label><div>${currentUser.name}</div></div>
-            <div class="account-field"><label>Username</label><div>${currentUser.email}</div></div>
-            <div class="account-field"><label>Phone</label><div>${currentUser.phone || 'N/A'}</div></div>
-            <div class="account-field"><label>Role</label><div>${currentUser.role === 'superadmin' ? 'Super Admin' : (currentUser.role === 'school' ? 'School Admin' : 'Individual Learner')}</div></div>
-            <div class="account-field"><label>School</label><div>${school ? school.name : (currentUser.role === 'school' ? currentUser.schoolName : 'None')}</div></div>
-            <div class="account-field"><label>Member Since</label><div>${new Date(currentUser.createdAt).toLocaleDateString()}</div></div>
-            <div class="account-field"><label>Total Logins</label><div>${currentUser.loginCount || 0}</div></div>
-        `;
-        try {
-            renderClasses();
-            renderRecentAttendance();
-            renderEnrolledList();
-            renderPdfList();
+    // Real‑time listeners
+    function listenToSchools() {
+        onSnapshot(collection(db, "schools"), (snapshot) => {
+            schools = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderSchoolsAdmin();
+        });
+    }
+    function listenToEvents() {
+        onSnapshot(collection(db, "events"), (snapshot) => {
+            events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderEventsTicker();
             renderEventsAdmin();
-            renderSchoolsAdmin();
-        } catch(e) { console.error("Render error", e); }
-        
-        // Determine menu visibility
-        const isSuperAdmin = (currentUser.role === 'superadmin');
-        const isSchoolAdmin = (currentUser.role === 'school');
-        if (isSuperAdmin) {
-            document.getElementById('adminMenuItem').style.display = "flex";
-            document.getElementById('superAdminSection').style.display = "block";
-        } else if (isSchoolAdmin) {
-            document.getElementById('adminMenuItem').style.display = "flex";
-            document.getElementById('superAdminSection').style.display = "none";
-        } else {
-            document.getElementById('adminMenuItem').style.display = "none";
-        }
-        // Attendance menu only for school accounts
-        document.getElementById('attendanceMenuItem').style.display = isSchoolAdmin ? "flex" : "none";
-        if (isSchoolAdmin) {
-            let school = schools.find(s => s.id === currentUser.schoolId);
-            if (school) document.getElementById('attendanceSchoolName').innerText = ` - ${school.name}`;
-        }
-        // Update analytics if super admin
-        if (isSuperAdmin) updateAnalytics();
-    }
-}
-
-// Track failed login attempts
-function trackFailedLogin(email, reason) {
-    failedLogins.push({ email, reason, timestamp: new Date().toISOString() });
-    if (failedLogins.length > 100) failedLogins = failedLogins.slice(-100);
-    localStorage.setItem('apshule_failed_logins', JSON.stringify(failedLogins));
-}
-function trackSignupError(email, reason) {
-    signupErrors.push({ email, reason, timestamp: new Date().toISOString() });
-    if (signupErrors.length > 100) signupErrors = signupErrors.slice(-100);
-    localStorage.setItem('apshule_signup_errors', JSON.stringify(signupErrors));
-}
-
-function trackVideoView(subject) {
-    if (!currentUser) return;
-    videoViews.push({
-        userId: currentUser.id,
-        userEmail: currentUser.email,
-        subject: subject,
-        timestamp: new Date().toISOString()
-    });
-    if (videoViews.length > 1000) videoViews = videoViews.slice(-1000);
-    localStorage.setItem('apshule_video_views', JSON.stringify(videoViews));
-}
-
-function getMostWatchedVideos() {
-    const viewCounts = {};
-    videoViews.forEach(view => {
-        viewCounts[view.subject] = (viewCounts[view.subject] || 0) + 1;
-    });
-    return Object.entries(viewCounts).sort((a,b) => b[1] - a[1]).slice(0,5);
-}
-
-function updateAnalytics() {
-    if (!currentUser || currentUser.role !== 'superadmin') return;
-    document.getElementById('totalUsersCount').innerText = users.length;
-    document.getElementById('failedLoginCount').innerText = failedLogins.length;
-    document.getElementById('signupErrorCount').innerText = signupErrors.length;
-    const tbody = document.getElementById('usersTableBody');
-    // Combine users and schools (school accounts are also in users list with role 'school')
-    let allAccounts = [...users];
-    schools.forEach(school => {
-        if (!allAccounts.find(a => a.email === school.loginEmail)) {
-            allAccounts.push({
-                name: school.name,
-                email: school.loginEmail,
-                role: 'school',
-                loginCount: school.loginCount || 0,
-                lastLogin: school.lastLogin || null,
-                createdAt: school.createdAt
-            });
-        }
-    });
-    allAccounts.push({ name: 'Super Admin', email: 'superadmin@apshule.com', role: 'superadmin', loginCount: 0, lastLogin: null });
-    tbody.innerHTML = allAccounts.map(u => `
-        <tr><td>${u.name}</td><td>${u.email}</td><td>${u.role === 'superadmin' ? 'Super Admin' : (u.role === 'school' ? 'School' : 'Individual')}</td><td>${u.loginCount || 0}</td><td>${u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}</td>
-    `).join('');
-    const mostWatched = getMostWatchedVideos();
-    const listContainer = document.getElementById('mostWatchedList');
-    if (mostWatched.length === 0) {
-        listContainer.innerHTML = '<li>No video views recorded yet.</li>';
-    } else {
-        listContainer.innerHTML = mostWatched.map(([subject, count]) => `<li><span>${subject}</span><span>👁️ ${count} views</span></li>`).join('');
-    }
-}
-
-// ========== PDF MANAGEMENT ==========
-function renderPdfList() {
-    const container = document.getElementById('pdfListContainer');
-    if (!container) return;
-    if (pdfMaterials.length === 0) {
-        container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">No PDFs added yet. Admin can add from Admin Panel.</div>';
-        return;
-    }
-    container.innerHTML = pdfMaterials.map(pdf => `
-        <a href="${pdf.url}" target="_blank" class="material-item" style="display:flex; align-items:center; gap:12px; text-decoration:none;">
-            <i class="fas fa-file-pdf"></i> ${pdf.title}
-        </a>
-    `).join('');
-}
-
-function renderPdfAdmin() {
-    const container = document.getElementById('pdfAdminList');
-    if (!container) return;
-    if (pdfMaterials.length === 0) {
-        container.innerHTML = '<div style="padding:10px; text-align:center;">No PDFs yet.</div>';
-        return;
-    }
-    container.innerHTML = pdfMaterials.map((pdf, idx) => `
-        <div class="pdf-item">
-            <a href="${pdf.url}" target="_blank">📄 ${pdf.title}</a>
-            <button onclick="removePdf(${idx})">Delete</button>
-        </div>
-    `).join('');
-}
-
-window.removePdf = function(idx) {
-    pdfMaterials.splice(idx, 1);
-    localStorage.setItem('apshule_pdf_materials', JSON.stringify(pdfMaterials));
-    renderPdfAdmin();
-    renderPdfList();
-    showNotification("PDF removed", "success");
-};
-
-document.getElementById('addPdfBtn')?.addEventListener('click', () => {
-    const title = document.getElementById('pdfTitle').value.trim();
-    const url = document.getElementById('pdfUrl').value.trim();
-    if (!title || !url) {
-        showNotification("Please enter both title and URL", "error");
-        return;
-    }
-    pdfMaterials.push({ title, url });
-    localStorage.setItem('apshule_pdf_materials', JSON.stringify(pdfMaterials));
-    document.getElementById('pdfTitle').value = '';
-    document.getElementById('pdfUrl').value = '';
-    renderPdfAdmin();
-    renderPdfList();
-    showNotification("PDF added!", "success");
-});
-
-// ========== EVENTS MANAGEMENT (dynamic ticker) ==========
-function renderEventsTicker() {
-    const tickerContainer = document.getElementById('eventsTicker');
-    if (!tickerContainer) return;
-    if (!eventsList.length) {
-        tickerContainer.innerHTML = '<div class="ticker-item">📢 No upcoming events. Check back later!</div>';
-        return;
-    }
-    let html = '';
-    // Duplicate to ensure seamless loop
-    for (let i = 0; i < 2; i++) {
-        eventsList.forEach(ev => {
-            html += `<div class="ticker-item">🎓 <strong>${ev.title}</strong> | Fee: ${ev.fee} | 📅 ${ev.date}</div>`;
         });
     }
-    tickerContainer.innerHTML = html;
-}
-
-function renderEventsAdmin() {
-    const container = document.getElementById('eventsAdminList');
-    if (!container) return;
-    if (eventsList.length === 0) {
-        container.innerHTML = '<div style="padding:10px; text-align:center;">No events yet.</div>';
-        return;
-    }
-    container.innerHTML = eventsList.map(ev => `
-        <div class="event-item" data-id="${ev.id}">
-            <div class="event-info">
-                <strong>${ev.title}</strong>
-                <small>📅 ${ev.date} | 💰 ${ev.fee}</small>
-            </div>
-            <div class="event-actions">
-                <button class="edit-event" data-id="${ev.id}">✏️ Edit</button>
-                <button class="delete-event" data-id="${ev.id}">🗑️ Delete</button>
-            </div>
-        </div>
-    `).join('');
-    
-    document.querySelectorAll('.delete-event').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = parseInt(btn.getAttribute('data-id'));
-            if (confirm('Delete this event?')) {
-                eventsList = eventsList.filter(ev => ev.id !== id);
-                localStorage.setItem('apshule_events', JSON.stringify(eventsList));
-                renderEventsAdmin();
-                renderEventsTicker();
-                showNotification('Event deleted', 'success');
-            }
-        });
-    });
-    document.querySelectorAll('.edit-event').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = parseInt(btn.getAttribute('data-id'));
-            const ev = eventsList.find(e => e.id === id);
-            if (ev) {
-                const newTitle = prompt('Edit event title:', ev.title);
-                if (newTitle !== null) ev.title = newTitle.trim();
-                const newDate = prompt('Edit date:', ev.date);
-                if (newDate !== null) ev.date = newDate.trim();
-                const newFee = prompt('Edit fee:', ev.fee);
-                if (newFee !== null) ev.fee = newFee.trim();
-                localStorage.setItem('apshule_events', JSON.stringify(eventsList));
-                renderEventsAdmin();
-                renderEventsTicker();
-                showNotification('Event updated', 'success');
-            }
-        });
-    });
-}
-
-document.getElementById('addEventBtn')?.addEventListener('click', () => {
-    const title = document.getElementById('eventTitle').value.trim();
-    const date = document.getElementById('eventDate').value.trim();
-    const fee = document.getElementById('eventFee').value.trim();
-    if (!title || !date || !fee) {
-        showNotification('Please fill all event fields', 'error');
-        return;
-    }
-    const newId = Date.now();
-    eventsList.push({ id: newId, title, date, fee });
-    localStorage.setItem('apshule_events', JSON.stringify(eventsList));
-    document.getElementById('eventTitle').value = '';
-    document.getElementById('eventDate').value = '';
-    document.getElementById('eventFee').value = '';
-    renderEventsAdmin();
-    renderEventsTicker();
-    showNotification('Event added!', 'success');
-});
-
-// ========== SCHOOL MANAGEMENT (Super Admin only) ==========
-function renderSchoolsAdmin() {
-    const container = document.getElementById('schoolsAdminList');
-    if (!container) return;
-    if (schools.length === 0) {
-        container.innerHTML = '<div style="padding:10px; text-align:center;">No schools added yet.</div>';
-        return;
-    }
-    container.innerHTML = schools.map(school => `
-        <div class="school-item">
-            <img class="school-logo" src="${school.logo || 'https://via.placeholder.com/50'}" onerror="this.src='https://via.placeholder.com/50'">
-            <div class="school-info">
-                <strong>${school.name}</strong><br>
-                <small>📞 ${school.contact} | 📍 ${school.location}</small><br>
-                <small>Login: ${school.loginEmail}</small>
-            </div>
-            <div class="school-actions">
-                <button class="edit-school" data-id="${school.id}">✏️ Edit</button>
-                <button class="reset-school-pwd" data-id="${school.id}">🔑 Reset Password</button>
-                <button class="delete-school" data-id="${school.id}">🗑️ Delete</button>
-            </div>
-        </div>
-    `).join('');
-    
-    document.querySelectorAll('.edit-school').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.getAttribute('data-id'));
-            const school = schools.find(s => s.id === id);
-            if (!school) return;
-            const newName = prompt("School name:", school.name);
-            if (newName) school.name = newName;
-            const newContact = prompt("Contact:", school.contact);
-            if (newContact) school.contact = newContact;
-            const newLocation = prompt("Location:", school.location);
-            if (newLocation) school.location = newLocation;
-            const newLogo = prompt("Logo URL:", school.logo);
-            if (newLogo) school.logo = newLogo;
-            const newEmail = prompt("Login email:", school.loginEmail);
-            if (newEmail) school.loginEmail = newEmail;
-            localStorage.setItem('apshule_schools', JSON.stringify(schools));
-            renderSchoolsAdmin();
-            showNotification("School updated", "success");
-        });
-    });
-    document.querySelectorAll('.reset-school-pwd').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.getAttribute('data-id'));
-            const school = schools.find(s => s.id === id);
-            if (!school) return;
-            const newPwd = prompt("Enter new password for school login:", "school123");
-            if (newPwd && newPwd.length >= 4) {
-                school.loginPassword = newPwd;
-                localStorage.setItem('apshule_schools', JSON.stringify(schools));
-                showNotification(`Password for ${school.name} reset`, "success");
-            } else {
-                showNotification("Password must be at least 4 characters", "error");
-            }
-        });
-    });
-    document.querySelectorAll('.delete-school').forEach(btn => {
-        btn.addEventListener('click', () => {
-            if (confirm("Delete this school? All associated attendance data will be removed.")) {
-                const id = parseInt(btn.getAttribute('data-id'));
-                schools = schools.filter(s => s.id !== id);
-                attendancePeople = attendancePeople.filter(p => p.schoolId !== id);
-                attendanceRecords = attendanceRecords.filter(r => r.schoolId !== id);
-                localStorage.setItem('apshule_schools', JSON.stringify(schools));
-                localStorage.setItem('apshule_attendance_people', JSON.stringify(attendancePeople));
-                localStorage.setItem('apshule_attendance_records', JSON.stringify(attendanceRecords));
-                renderSchoolsAdmin();
-                showNotification("School deleted", "success");
-            }
-        });
-    });
-}
-
-document.getElementById('addSchoolBtn')?.addEventListener('click', () => {
-    const name = document.getElementById('schoolName').value.trim();
-    const contact = document.getElementById('schoolContact').value.trim();
-    const location = document.getElementById('schoolLocation').value.trim();
-    const logo = document.getElementById('schoolLogoUrl').value.trim();
-    const loginEmail = document.getElementById('schoolLoginEmail').value.trim();
-    const loginPassword = document.getElementById('schoolLoginPassword').value.trim();
-    if (!name || !contact || !location || !loginEmail || !loginPassword) {
-        showNotification("Please fill all fields (including login email/password)", "error");
-        return;
-    }
-    if (loginPassword.length < 4) {
-        showNotification("Password must be at least 4 characters", "error");
-        return;
-    }
-    if (schools.find(s => s.loginEmail === loginEmail)) {
-        showNotification("That login email already used by another school", "error");
-        return;
-    }
-    const newId = Date.now();
-    schools.push({ id: newId, name, contact, location, logo: logo || "", loginEmail, loginPassword, createdAt: new Date().toISOString(), loginCount: 0 });
-    localStorage.setItem('apshule_schools', JSON.stringify(schools));
-    document.getElementById('schoolName').value = '';
-    document.getElementById('schoolContact').value = '';
-    document.getElementById('schoolLocation').value = '';
-    document.getElementById('schoolLogoUrl').value = '';
-    document.getElementById('schoolLoginEmail').value = '';
-    document.getElementById('schoolLoginPassword').value = '';
-    renderSchoolsAdmin();
-    showNotification("School account created! The school can now log in with the given email/password.", "success");
-});
-
-// ========== VIDEO & SUBJECT MANAGEMENT ==========
-function extractVideoId(url) {
-    if (!url) return "";
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=)([^&]+)/,
-        /(?:youtu\.be\/)([^?]+)/,
-        /(?:youtube\.com\/embed\/)([^?]+)/
-    ];
-    for (let p of patterns) {
-        const match = url.match(p);
-        if (match) return match[1];
-    }
-    return url;
-}
-
-function renderAdminVideoLists() {
-    const primaryContainer = document.getElementById('adminPrimarySubjectsList');
-    if (primaryContainer) {
-        primaryContainer.innerHTML = primarySubjects.map(subj => `
-            <div class="admin-subject">
-                <label>${subj}</label>
-                <input type="text" id="primary_input_${subj.replace(/\s/g, '_')}" value="${videoMappings[subj] || ''}" placeholder="YouTube URL or Video ID">
-                <button onclick="testVideo('${subj}')">Test</button>
-                <div class="status" id="primary_status_${subj.replace(/\s/g, '_')}"></div>
-            </div>
-        `).join('');
-    }
-    const secondaryContainer = document.getElementById('adminSecondarySubjectsList');
-    if (secondaryContainer) {
-        secondaryContainer.innerHTML = secondarySubjects.map(subj => `
-            <div class="admin-subject">
-                <label>${subj}</label>
-                <input type="text" id="secondary_input_${subj.replace(/\s/g, '_')}" value="${videoMappings[subj] || ''}" placeholder="YouTube URL or Video ID">
-                <button onclick="testVideo('${subj}')">Test</button>
-                <div class="status" id="secondary_status_${subj.replace(/\s/g, '_')}"></div>
-            </div>
-        `).join('');
-    }
-}
-
-window.testVideo = function(subject) {
-    let inputElem = document.getElementById(`primary_input_${subject.replace(/\s/g, '_')}`);
-    if (!inputElem) inputElem = document.getElementById(`secondary_input_${subject.replace(/\s/g, '_')}`);
-    if (!inputElem) return;
-    const urlOrId = inputElem.value.trim();
-    const videoId = extractVideoId(urlOrId);
-    if (!videoId) { showNotification("Invalid URL or ID", "error"); return; }
-    youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    document.getElementById('currentVideoTitle').textContent = `${subject} (Test)`;
-    videoModal.classList.add('show');
-};
-
-function savePrimaryVideos() {
-    for (let subj of primarySubjects) {
-        const inputElem = document.getElementById(`primary_input_${subj.replace(/\s/g, '_')}`);
-        if (inputElem) {
-            const urlOrId = inputElem.value.trim();
-            const videoId = extractVideoId(urlOrId);
-            videoMappings[subj] = videoId || "";
-        }
-    }
-    localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
-    showNotification("Primary subject videos saved!", "success");
-}
-
-function saveSecondaryVideos() {
-    for (let subj of secondarySubjects) {
-        const inputElem = document.getElementById(`secondary_input_${subj.replace(/\s/g, '_')}`);
-        if (inputElem) {
-            const urlOrId = inputElem.value.trim();
-            const videoId = extractVideoId(urlOrId);
-            videoMappings[subj] = videoId || "";
-        }
-    }
-    localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
-    showNotification("Secondary subject videos saved!", "success");
-}
-
-document.getElementById('savePrimaryVideosBtn')?.addEventListener('click', savePrimaryVideos);
-document.getElementById('saveSecondaryVideosBtn')?.addEventListener('click', saveSecondaryVideos);
-document.getElementById('addNewSubjectBtn')?.addEventListener('click', () => {
-    const newName = document.getElementById('newSubjectName').value.trim();
-    const level = document.getElementById('newSubjectLevel').value;
-    const videoUrl = document.getElementById('newSubjectVideo').value.trim();
-    if (!newName) { showNotification("Please enter a subject name", "error"); return; }
-    if (level === 'primary') {
-        if (primarySubjects.includes(newName)) { showNotification("Subject already exists in Primary", "error"); return; }
-        primarySubjects.push(newName);
-        localStorage.setItem('apshule_primary_subjects', JSON.stringify(primarySubjects));
-    } else {
-        if (secondarySubjects.includes(newName)) { showNotification("Subject already exists in Secondary", "error"); return; }
-        secondarySubjects.push(newName);
-        localStorage.setItem('apshule_secondary_subjects', JSON.stringify(secondarySubjects));
-    }
-    if (videoUrl) {
-        const vid = extractVideoId(videoUrl);
-        if (vid) videoMappings[newName] = vid;
-        localStorage.setItem('apshule_video_mappings', JSON.stringify(videoMappings));
-    }
-    document.getElementById('newSubjectName').value = '';
-    document.getElementById('newSubjectVideo').value = '';
-    renderAdminVideoLists();
-    if (selectedClass) selectClass(selectedClass.id);
-    showNotification(`Subject "${newName}" added to ${level} level!`, "success");
-});
-
-// ========== SUBJECTS & CLASSES ==========
-const subjectColors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#E91E63', '#3F51B5', '#009688', '#FFC107', '#8BC34A', '#673AB7', '#FF5722', '#607D8B', '#CDDC39'];
-
-function getSubjectIcon(subject) {
-    const icons = {
-        'Mathematics': 'fa-calculator', 'English': 'fa-book', 'Biology': 'fa-dna',
-        'Chemistry': 'fa-flask', 'Physics': 'fa-atom', 'History': 'fa-landmark',
-        'Geography': 'fa-globe', 'Kiswahili': 'fa-language', 'Commerce': 'fa-chart-line',
-        'ICT': 'fa-laptop', 'Literature': 'fa-book-open', 'Economics': 'fa-chart-bar',
-        'Science': 'fa-flask', 'Social Studies': 'fa-globe', 'Literacy': 'fa-book',
-        'Religious Education': 'fa-church', 'Agriculture': 'fa-seedling', 
-        'Fine Art': 'fa-paintbrush', 'Physical Education': 'fa-futbol',
-        'Entrepreneurship': 'fa-lightbulb'
-    };
-    return icons[subject] || 'fa-book-open';
-}
-
-const classData = {
-    primary: [
-        { id: 1, name: "Primary 1", icon: "fa-baby-carriage", color: "#FF6B6B" },
-        { id: 2, name: "Primary 2", icon: "fa-child", color: "#4ECDC4" },
-        { id: 3, name: "Primary 3", icon: "fa-graduation-cap", color: "#45B7D1" },
-        { id: 4, name: "Primary 4", icon: "fa-book-reader", color: "#96CEB4" },
-        { id: 5, name: "Primary 5", icon: "fa-pencil-alt", color: "#FFEAA7" },
-        { id: 6, name: "Primary 6", icon: "fa-chalkboard-teacher", color: "#DDA0DD" },
-        { id: 7, name: "Primary 7", icon: "fa-users", color: "#FF9F43" }
-    ],
-    secondary: [
-        { id: 1, name: "Senior 1", icon: "fa-seedling", color: "#4CAF50" },
-        { id: 2, name: "Senior 2", icon: "fa-tree", color: "#8BC34A" },
-        { id: 3, name: "Senior 3", icon: "fa-book", color: "#FF9800" },
-        { id: 4, name: "Senior 4", icon: "fa-chart-line", color: "#F44336" },
-        { id: 5, name: "Senior 5", icon: "fa-flask", color: "#9C27B0" },
-        { id: 6, name: "Senior 6", icon: "fa-university", color: "#2196F3" }
-    ]
-};
-
-let currentLevel = "primary";
-let selectedClass = null;
-
-function renderClasses() {
-    let grid = document.getElementById('classGrid');
-    let classes = classData[currentLevel];
-    grid.innerHTML = classes.map(c => `
-        <div class="class-card" data-class="${c.id}" onclick="selectClass(${c.id})" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;">
-            <i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i>
-            <div class="class-name" style="color: ${c.color};">${c.name}</div>
-            <div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div>
-        </div>
-    `).join('');
-}
-
-window.selectClass = function(id) {
-    selectedClass = classData[currentLevel].find(c => c.id === id);
-    document.getElementById('classSelectionSection').style.display = 'none';
-    document.getElementById('subjectsSection').style.display = 'block';
-    const subjectsList = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
-    let grid = document.getElementById('subjectsGrid');
-    grid.innerHTML = subjectsList.map((s, idx) => `
-        <div class="subject-card" onclick="openVideoLesson('${s}')">
-            <div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}">
-                <i class="fas ${getSubjectIcon(s)}"></i>
-            </div>
-            <div class="subject-name">${s}</div>
-            <div style="font-size:10px; color:#666; margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div>
-        </div>
-    `).join('');
-};
-
-// ========== VIDEO PLAYER ==========
-const videoModal = document.getElementById('videoModal');
-const closeVideoBtn = document.getElementById('closeVideoBtn');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const videoContent = document.getElementById('videoContent');
-const youtubeIframe = document.getElementById('youtubeIframe');
-const feedbackSection = document.getElementById('feedbackSection');
-
-function openVideoLesson(subject) {
-    if (!currentUser) { showNotification("Please login first", "error"); return; }
-    const videoId = videoMappings[subject];
-    if (!videoId || videoId === "") {
-        showNotification(`No video assigned to "${subject}". Admin can add one.`, "info");
-        return;
-    }
-    currentLessonSubject = subject;
-    trackVideoView(subject);
-    youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    document.getElementById('currentVideoTitle').textContent = `${subject} Lesson`;
-    document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
-    feedbackSection.style.display = 'block';
-    currentRating = 0;
-    document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
-    document.getElementById('feedbackComment').value = '';
-    videoModal.classList.add('show');
-}
-
-closeVideoBtn.addEventListener('click', () => {
-    videoModal.classList.remove('show');
-    youtubeIframe.src = '';
-    feedbackSection.style.display = 'none';
-});
-
-fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        videoContent.requestFullscreen().catch(err => console.log(err));
-        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-    } else {
-        document.exitFullscreen();
-        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-    }
-});
-document.addEventListener('fullscreenchange', () => {
-    if (document.fullscreenElement) {
-        fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';
-    } else {
-        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
-    }
-});
-
-document.querySelectorAll('#starRating i').forEach(star => {
-    star.addEventListener('click', function() {
-        currentRating = parseInt(this.getAttribute('data-rating'));
-        document.querySelectorAll('#starRating i').forEach((s, idx) => {
-            if (idx < currentRating) s.className = 'fas fa-star';
-            else s.className = 'far fa-star';
-        });
-    });
-});
-
-document.getElementById('submitFeedbackBtn')?.addEventListener('click', () => {
-    const comment = document.getElementById('feedbackComment').value;
-    const feedbacks = JSON.parse(localStorage.getItem('lessonFeedbacks') || '[]');
-    feedbacks.push({
-        lesson: currentLessonSubject,
-        rating: currentRating,
-        comment: comment,
-        user: currentUser?.email || 'guest',
-        timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('lessonFeedbacks', JSON.stringify(feedbacks));
-    showNotification('Thank you for your feedback!', 'success');
-    videoModal.classList.remove('show');
-    youtubeIframe.src = '';
-    feedbackSection.style.display = 'none';
-});
-
-document.getElementById('closeFeedbackBtn')?.addEventListener('click', () => {
-    videoModal.classList.remove('show');
-    youtubeIframe.src = '';
-    feedbackSection.style.display = 'none';
-});
-
-// ========== AUTHENTICATION (with role detection) ==========
-document.getElementById('signupBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('signupName').value.trim();
-    const email = document.getElementById('signupEmail').value.trim().toLowerCase();
-    const phone = document.getElementById('signupPhone').value.trim();
-    const pwd = document.getElementById('signupPassword').value;
-    const level = document.getElementById('signupEducationLevel').value;
-    if (!name || !email || !phone || !pwd || !level) {
-        document.getElementById('loginError').textContent = '❌ Fill all fields';
-        trackSignupError(email, 'Missing required fields');
-        return;
-    }
-    if (pwd.length < 4) {
-        document.getElementById('loginError').textContent = '❌ Password min 4 characters';
-        trackSignupError(email, 'Password too short');
-        return;
-    }
-    if (users.find(u => u.email === email)) {
-        document.getElementById('loginError').textContent = '❌ Username already exists';
-        trackSignupError(email, 'Username already exists');
-        return;
-    }
-    // Assign to the first school (or hardcoded default school ID 1)
-    const defaultSchoolId = schools.length ? schools[0].id : 1;
-    users.push({
-        id: Date.now(),
-        name,
-        email,
-        phone,
-        password: pwd,
-        educationLevel: level,
-        schoolId: defaultSchoolId,
-        role: "individual",
-        createdAt: new Date().toISOString(),
-        loginCount: 0,
-        lastLogin: null
-    });
-    localStorage.setItem('apshule_users', JSON.stringify(users));
-    currentUser = users[users.length - 1];
-    currentUser.loginCount = 1;
-    currentUser.lastLogin = new Date().toISOString();
-    localStorage.setItem('apshule_users', JSON.stringify(users));
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    localStorage.setItem('rememberMe', 'true');
-    showApp();
-});
-
-document.getElementById('loginBtn')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const pwd = document.getElementById('loginPassword').value;
-    const rememberMe = document.getElementById('rememberMeCheckbox')?.checked || false;
-    
-    // Super admin check
-    if (email === "superadmin@apshule.com") {
-        // Password can be anything for super admin
-        currentUser = {
-            id: 0,
-            name: "Super Admin",
-            email: "superadmin@apshule.com",
-            role: "superadmin",
-            loginCount: 1,
-            lastLogin: new Date().toISOString(),
-            createdAt: new Date().toISOString()
-        };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        if (rememberMe) localStorage.setItem('rememberMe', 'true');
-        else localStorage.removeItem('rememberMe');
-        showApp();
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('loginPassword').value = '';
-        navigateTo('home');
-        return;
-    }
-    
-    // School account
-    const school = schools.find(s => s.loginEmail === email && s.loginPassword === pwd);
-    if (school) {
-        school.loginCount = (school.loginCount || 0) + 1;
-        school.lastLogin = new Date().toISOString();
-        localStorage.setItem('apshule_schools', JSON.stringify(schools));
-        currentUser = {
-            id: school.id,
-            name: school.name,
-            email: school.loginEmail,
-            role: "school",
-            schoolId: school.id,
-            schoolName: school.name,
-            loginCount: school.loginCount,
-            lastLogin: school.lastLogin,
-            createdAt: school.createdAt
-        };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        if (rememberMe) localStorage.setItem('rememberMe', 'true');
-        else localStorage.removeItem('rememberMe');
-        showApp();
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('loginPassword').value = '';
-        navigateTo('home');
-        return;
-    }
-    
-    // Individual user
-    const userIndex = users.findIndex(u => u.email === email && u.password === pwd);
-    if (userIndex !== -1) {
-        currentUser = users[userIndex];
-        currentUser.loginCount = (currentUser.loginCount || 0) + 1;
-        currentUser.lastLogin = new Date().toISOString();
-        users[userIndex] = currentUser;
-        localStorage.setItem('apshule_users', JSON.stringify(users));
-        if (rememberMe) {
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('rememberMe', 'true');
-        } else {
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.removeItem('rememberMe');
-        }
-        showApp();
-        document.getElementById('loginError').textContent = '';
-        document.getElementById('loginPassword').value = '';
-        navigateTo('home');
-    } else {
-        document.getElementById('loginError').textContent = '❌ Invalid username or password';
-        trackFailedLogin(email, 'Invalid credentials');
-    }
-});
-
-document.getElementById('resetPasswordBtn')?.addEventListener('click', () => {
-    const username = document.getElementById('resetUsername').value.trim().toLowerCase();
-    const newPass = document.getElementById('resetNewPassword').value;
-    // Check if it's a school account
-    const school = schools.find(s => s.loginEmail === username);
-    if (school) {
-        if (newPass.length < 4) {
-            document.getElementById('resetMessage').textContent = '❌ Password must be at least 4 characters.';
-            document.getElementById('resetMessage').style.color = 'red';
-        } else {
-            school.loginPassword = newPass;
-            localStorage.setItem('apshule_schools', JSON.stringify(schools));
-            document.getElementById('resetMessage').textContent = '✅ School password reset successful!';
-            document.getElementById('resetMessage').style.color = 'green';
-            document.getElementById('resetNewPassword').value = '';
-        }
-        setTimeout(() => document.getElementById('resetMessage').textContent = '', 3000);
-        return;
-    }
-    // Individual user
-    const user = users.find(u => u.email === username);
-    if (!user) {
-        document.getElementById('resetMessage').textContent = '❌ Username not found.';
-        document.getElementById('resetMessage').style.color = 'red';
-    } else if (newPass.length < 4) {
-        document.getElementById('resetMessage').textContent = '❌ Password must be at least 4 characters.';
-        document.getElementById('resetMessage').style.color = 'red';
-    } else {
-        user.password = newPass;
-        localStorage.setItem('apshule_users', JSON.stringify(users));
-        document.getElementById('resetMessage').textContent = '✅ Password reset successful!';
-        document.getElementById('resetMessage').style.color = 'green';
-        document.getElementById('resetNewPassword').value = '';
-    }
-    setTimeout(() => document.getElementById('resetMessage').textContent = '', 3000);
-});
-
-document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    logoutUser();
-    showNotification('Logged out successfully', 'success');
-});
-
-document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const resetSection = document.querySelector('.reset-section');
-    if (resetSection) {
-        resetSection.style.display = resetSection.style.display === 'none' ? 'block' : 'none';
-        resetSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-});
-
-// ========== FACIAL ATTENDANCE (school‑specific) ==========
-let attendanceStream = null, enrollStream = null;
-let currentAttendanceCamera = 'environment', currentEnrollCamera = 'environment';
-let capturedFaceImage = null;
-
-async function setupCamera(videoId, mode='environment') { 
-    try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); const videoEl = document.getElementById(videoId); if(videoEl) videoEl.srcObject = stream; return stream; } catch(e) { 
-        try { const stream = await navigator.mediaDevices.getUserMedia({ video: true }); const videoEl = document.getElementById(videoId); if(videoEl) videoEl.srcObject = stream; return stream; } catch(e) { showNotification("Camera access denied", "error"); return null; } 
-    }
-}
-function captureFace(videoId) { const videoEl = document.getElementById(videoId); if(!videoEl || !videoEl.videoWidth) return null; const canvas = document.createElement('canvas'); canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight; canvas.getContext('2d').drawImage(videoEl,0,0); return canvas.toDataURL('image/jpeg',0.8); }
-function getImageHash(dataURL, callback) {
-    const img = new Image();
-    img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 8; canvas.height = 8;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 8, 8);
-        const imageData = ctx.getImageData(0, 0, 8, 8);
-        const pixels = imageData.data;
-        let sum = 0;
-        for (let i = 0; i < pixels.length; i += 4) {
-            const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
-            sum += gray;
-        }
-        const avg = sum / 64;
-        let hash = '';
-        for (let i = 0; i < pixels.length; i += 4) {
-            const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
-            hash += (gray >= avg) ? '1' : '0';
-        }
-        callback(hash);
-    };
-    img.src = dataURL;
-}
-function hammingDistance(hash1, hash2) {
-    if (hash1.length !== hash2.length) return 999;
-    let diff = 0;
-    for (let i = 0; i < hash1.length; i++) if (hash1[i] !== hash2[i]) diff++;
-    return diff;
-}
-async function markAttendance() { 
-    if(!currentUser || currentUser.role !== 'school') { showNotification("Only school accounts can mark attendance","error"); return; }
-    const schoolId = currentUser.schoolId;
-    const schoolPeople = attendancePeople.filter(p => p.schoolId === schoolId);
-    if(schoolPeople.length===0) { showNotification("No enrolled faces for this school! Enroll first.","error"); return; } 
-    const img = captureFace('attendanceVideo'); if(!img) { showNotification("Could not capture face","error"); return; } 
-    getImageHash(img, (capturedHash) => {
-        let bestMatch = null, bestDistance = 15;
-        for(const person of schoolPeople) if(person.faceHash) { const d = hammingDistance(capturedHash, person.faceHash); if(d < bestDistance) { bestDistance = d; bestMatch = person; } }
-        const resultDiv = document.getElementById('attendanceResult');
-        if(!bestMatch) { resultDiv.style.display='block'; resultDiv.innerHTML='<div style="color:#dc3545;">❌ Face not recognized!</div>'; return; }
-        const today = new Date().toDateString();
-        const already = attendanceRecords.find(a=>a.personId===bestMatch.id && a.schoolId === schoolId && new Date(a.timestamp).toDateString()===today);
-        if(already) { resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#FF8C42;">⚠️ ${bestMatch.name} already marked today</div>`; return; }
-        attendanceRecords.push({ id:Date.now(), schoolId, personId:bestMatch.id, personName:bestMatch.name, category:bestMatch.category, phone:bestMatch.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today });
-        localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));
-        resultDiv.style.display='block'; resultDiv.innerHTML=`<div style="color:#2E7D32;">✅ ${bestMatch.name} marked present at ${new Date().toLocaleTimeString()}</div>`;
-        showNotification(`Attendance marked for ${bestMatch.name}!`,"success");
-        renderRecentAttendance(); renderEnrolledList();
-        setTimeout(()=> resultDiv.style.display='none',4000);
-    });
-}
-function renderRecentAttendance() { 
-    if(!currentUser || currentUser.role !== 'school') return;
-    const schoolId = currentUser.schoolId;
-    const container = document.getElementById('recentAttendanceList'); if(!container) return; 
-    const today = new Date().toDateString(); 
-    const records = attendanceRecords.filter(r=>r.schoolId === schoolId && new Date(r.timestamp).toDateString()===today).slice(-10); 
-    if(records.length===0) { container.innerHTML='<div style="text-align:center;color:#999;padding:20px;">No records today</div>'; return; } 
-    container.innerHTML = records.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); 
-}
-function renderEnrolledList() { 
-    if(!currentUser || currentUser.role !== 'school') return;
-    const schoolId = currentUser.schoolId;
-    const container = document.getElementById('enrolledPersonsList'); if(!container) return; 
-    const schoolPeople = attendancePeople.filter(p => p.schoolId === schoolId);
-    if(schoolPeople.length===0) { container.innerHTML='<div style="text-align:center;color:#999;">No enrolled people for this school</div>'; return; } 
-    container.innerHTML = schoolPeople.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br><small>📞 ${p.phone||'N/A'}</small></div><button onclick="deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); 
-}
-window.deleteEnrolled = function(id) { 
-    if(confirm("Delete this person?")) { 
-        attendancePeople = attendancePeople.filter(p=>p.id!==id); 
-        attendanceRecords = attendanceRecords.filter(r=>r.personId!==id); 
-        localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); 
-        localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); 
-        showNotification("Person deleted","success"); renderEnrolledList(); renderRecentAttendance(); 
-    } 
-};
-const attModal = document.getElementById('attendanceModal');
-document.getElementById('attendanceMenuItem')?.addEventListener('click', async() => { 
-    if(!currentUser || currentUser.role !== 'school') { showNotification("Only school accounts can access attendance","error"); return; }
-    attModal.classList.add('show'); 
-    attendanceStream = await setupCamera('attendanceVideo',currentAttendanceCamera); 
-    enrollStream = await setupCamera('enrollVideo',currentEnrollCamera); 
-});
-document.getElementById('closeAttendanceModal')?.addEventListener('click', () => { attModal.classList.remove('show'); if(attendanceStream) { attendanceStream.getTracks().forEach(t=>t.stop()); attendanceStream = null; } if(enrollStream) { enrollStream.getTracks().forEach(t=>t.stop()); enrollStream = null; } });
-document.querySelectorAll('.attendance-tab').forEach(tab => { tab.addEventListener('click', () => { const name = tab.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }); });
-document.getElementById('switchAttendanceCamera')?.addEventListener('click', async() => { if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); const newMode = currentAttendanceCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('attendanceVideo',newMode); if(stream) currentAttendanceCamera = newMode; });
-document.getElementById('switchEnrollCamera')?.addEventListener('click', async() => { if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); const newMode = currentEnrollCamera === 'environment' ? 'user' : 'environment'; const stream = await setupCamera('enrollVideo',newMode); if(stream) currentEnrollCamera = newMode; });
-document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
-document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ const img = captureFace('enrollVideo'); if(img) { capturedFaceImage = img; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured!</p>`; showNotification("Face captured! Fill details.","success"); } else { showNotification("Camera not ready","error"); } });
-document.getElementById('faceImageUpload')?.addEventListener('change', function(e) { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = function(ev) { capturedFaceImage = ev.target.result; document.getElementById('enrollPreview').innerHTML = `<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported!</p>`; showNotification("Face imported! Fill details.","success"); }; reader.readAsDataURL(file); } });
-document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ 
-    if(!currentUser || currentUser.role !== 'school') { showNotification("Only school accounts can enroll people","error"); return; }
-    const schoolId = currentUser.schoolId;
-    const name = document.getElementById('enrollName').value.trim(); 
-    const category = document.getElementById('enrollCategory').value; 
-    const phone = document.getElementById('enrollPhone').value.trim(); 
-    if(!name) { showNotification("Enter name","error"); return; } 
-    if(!capturedFaceImage) { showNotification("Capture or import face first","error"); return; } 
-    getImageHash(capturedFaceImage, (hash) => { 
-        attendancePeople.push({ id:Date.now(), schoolId, name, category, phone, faceHash: hash, enrolledAt:new Date().toISOString() }); 
-        localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); 
-        document.getElementById('enrollName').value=''; 
-        document.getElementById('enrollPhone').value=''; 
-        document.getElementById('enrollPreview').innerHTML=''; 
-        capturedFaceImage=null; 
-        document.getElementById('faceImageUpload').value=''; 
-        showNotification(`${name} enrolled!`,"success"); 
-        renderEnrolledList(); 
-    }); 
-});
-document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ 
-    if(!currentUser || currentUser.role !== 'school') return;
-    const schoolId = currentUser.schoolId;
-    if(confirm("Delete ALL attendance records for this school?")) { 
-        attendanceRecords = attendanceRecords.filter(r=>r.schoolId !== schoolId); 
-        localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); 
-        showNotification("All records cleared","success"); 
-        renderRecentAttendance(); 
-    } 
-});
-
-// ========== AI TUTOR (simplified, using Puter.js if available) ==========
-async function askAI(q) {
-    if (typeof puter !== 'undefined' && puter.ai) {
-        try {
-            const resp = await puter.ai.chat(q);
-            return resp.message.content;
-        } catch(e) { return "I'm having trouble connecting. Please try again."; }
-    } else {
-        return "📚 I'm a demo AI tutor. In the full version, I can answer any question about your subjects!";
-    }
-}
-function addMsg(text, sender) {
-    const container = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.className = `message ${sender}`;
-    div.innerHTML = `<div class="message-avatar"><i class="fas ${sender === 'user' ? 'fa-user' : 'fa-robot'}"></i></div><div class="message-bubble">${text}</div>`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
-async function sendChat() {
-    const input = document.getElementById('chatInput');
-    const q = input.value.trim();
-    if (!q) return;
-    addMsg(q, 'user');
-    input.value = '';
-    addMsg("🤔 Thinking...", 'ai');
-    const ans = await askAI(q);
-    const messages = document.querySelectorAll('#chatMessages .message');
-    if (messages.length && messages[messages.length-1].querySelector('.message-bubble')?.innerText === "🤔 Thinking...") {
-        messages[messages.length-1].remove();
-    }
-    addMsg(ans, 'ai');
-}
-document.getElementById('sendBtn')?.addEventListener('click', sendChat);
-document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
-document.getElementById('openAIDrawerBtn')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
-document.getElementById('closeDrawerBtn')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
-document.getElementById('drawerOverlay')?.addEventListener('click', () => { document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
-
-// ========== NAVIGATION ==========
-function navigateTo(pageId) {
-    if (videoModal.classList.contains('show')) {
-        videoModal.classList.remove('show');
-        youtubeIframe.src = '';
-        feedbackSection.style.display = 'none';
-    }
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-    const targetPage = document.getElementById(`${pageId}Page`);
-    if (targetPage) targetPage.classList.add('active-page');
-    else document.getElementById('homePage').classList.add('active-page');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
-    if (activeNav) activeNav.classList.add('active');
-}
-document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => navigateTo(item.getAttribute('data-page'))); });
-
-document.getElementById('folderHeader')?.addEventListener('click', () => { 
-    const content = document.getElementById('folderContent');
-    const icon = document.querySelector('#folderHeader i:last-child');
-    content.classList.toggle('show');
-    icon.className = content.classList.contains('show') ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
-});
-document.querySelectorAll('.subscribe-btn-small').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); if(!currentUser) { alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`, '_blank'); }); });
-document.querySelectorAll('.login-tab').forEach(tab => { tab.addEventListener('click', () => { const tabName = tab.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active', tabName === 'login'); document.getElementById('signupFormDiv').classList.toggle('active', tabName === 'signup'); }); });
-document.getElementById('backToClasses')?.addEventListener('click', () => { document.getElementById('classSelectionSection').style.display = 'block'; document.getElementById('subjectsSection').style.display = 'none'; });
-document.querySelectorAll('.level-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentLevel = btn.getAttribute('data-level'); selectedClass = null; document.getElementById('classSelectionSection').style.display = 'block'; document.getElementById('subjectsSection').style.display = 'none'; renderClasses(); }); });
-document.getElementById('moreMenuBtn')?.addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
-document.addEventListener('click', () => { document.getElementById('moreDropdown')?.classList.remove('show'); });
-
-document.getElementById('adminMenuItem')?.addEventListener('click', () => {
-    const adminPanel = document.getElementById('adminPanel');
-    if (adminPanel) {
-        adminPanel.classList.toggle('show');
-        if (adminPanel.classList.contains('show')) {
-            renderAdminVideoLists();
+    function listenToPDFs() {
+        onSnapshot(collection(db, "pdfs"), (snapshot) => {
+            pdfMaterials = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderPdfList();
             renderPdfAdmin();
-            renderEventsAdmin();
-            renderSchoolsAdmin();
-            if (currentUser && currentUser.role === 'superadmin') updateAnalytics();
-            navigateTo('home');
-            adminPanel.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+    function listenToVideoMappings() {
+        onSnapshot(collection(db, "videos"), (snapshot) => {
+            videoMappings = {};
+            snapshot.docs.forEach(doc => { videoMappings[doc.id] = doc.data().youtubeId; });
+            renderAdminVideoLists();
+        });
+    }
+
+    // Render functions (simplified but functional)
+    function renderClasses() {
+        const grid = document.getElementById('classGrid');
+        if (!grid) return;
+        const level = document.querySelector('.level-btn.active')?.getAttribute('data-level') || 'primary';
+        const classes = level === 'primary' 
+            ? [{id:1,name:"Primary 1"},{id:2,name:"Primary 2"},{id:3,name:"Primary 3"},{id:4,name:"Primary 4"},{id:5,name:"Primary 5"},{id:6,name:"Primary 6"},{id:7,name:"Primary 7"}]
+            : [{id:1,name:"Senior 1"},{id:2,name:"Senior 2"},{id:3,name:"Senior 3"},{id:4,name:"Senior 4"},{id:5,name:"Senior 5"},{id:6,name:"Senior 6"}];
+        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="window.selectClass(${c.id})"><i class="fas fa-graduation-cap"></i><div class="class-name">${c.name}</div></div>`).join('');
+    }
+    window.selectClass = function(id) {
+        document.getElementById('classSelectionSection').style.display = 'none';
+        document.getElementById('subjectsSection').style.display = 'block';
+        const subjects = document.querySelector('.level-btn.active')?.getAttribute('data-level') === 'primary' ? primarySubjects : secondarySubjects;
+        const grid = document.getElementById('subjectsGrid');
+        grid.innerHTML = subjects.map(s => `<div class="subject-card" onclick="window.openVideoLesson('${s}')"><div class="subject-icon" style="background:#4B2E9E"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div></div>`).join('');
+    };
+    window.openVideoLesson = function(subject) {
+        const videoId = videoMappings[subject];
+        if (!videoId) { showNotification("No video assigned", "error"); return; }
+        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        document.getElementById('currentVideoTitle').innerText = `${subject} Lesson`;
+        document.getElementById('videoModal').classList.add('show');
+    };
+    function renderPdfList() {
+        const container = document.getElementById('pdfListContainer');
+        if (!container) return;
+        if (pdfMaterials.length === 0) { container.innerHTML = '<div>No PDFs yet.</div>'; return; }
+        container.innerHTML = pdfMaterials.map(pdf => `<a href="${pdf.url}" target="_blank" class="material-item"><i class="fas fa-file-pdf"></i> ${pdf.title}</a>`).join('');
+    }
+    function renderEventsTicker() {
+        const ticker = document.getElementById('eventsTicker');
+        if (!ticker) return;
+        if (events.length === 0) { ticker.innerHTML = '<div class="ticker-item">No upcoming events</div>'; return; }
+        let html = '';
+        for (let i = 0; i < 2; i++) events.forEach(ev => { html += `<div class="ticker-item">🎓 ${ev.title} | ${ev.fee} | ${ev.date}</div>`; });
+        ticker.innerHTML = html;
+    }
+    function renderEventsAdmin() {
+        const container = document.getElementById('eventsAdminList');
+        if (!container) return;
+        if (events.length === 0) { container.innerHTML = '<div>No events</div>'; return; }
+        container.innerHTML = events.map(ev => `<div class="event-item"><div><strong>${ev.title}</strong><br>${ev.date} | ${ev.fee}</div><div><button class="delete-event" data-id="${ev.id}">Delete</button></div></div>`).join('');
+        document.querySelectorAll('.delete-event').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                await deleteDoc(doc(db, "events", id));
+                showNotification("Event deleted");
+            });
+        });
+    }
+    function renderSchoolsAdmin() {
+        const container = document.getElementById('schoolsAdminList');
+        if (!container) return;
+        if (schools.length === 0) { container.innerHTML = '<div>No schools</div>'; return; }
+        container.innerHTML = schools.map(school => `<div class="school-item"><div><strong>${school.name}</strong><br>${school.loginEmail}</div><div><button class="delete-school" data-id="${school.id}">Delete</button></div></div>`).join('');
+        document.querySelectorAll('.delete-school').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                await deleteDoc(doc(db, "schools", id));
+                showNotification("School deleted");
+            });
+        });
+    }
+    function renderAdminVideoLists() {
+        const primaryContainer = document.getElementById('adminPrimarySubjectsList');
+        if (primaryContainer) {
+            primaryContainer.innerHTML = primarySubjects.map(sub => `<div class="admin-subject"><label>${sub}</label><input id="primary_input_${sub.replace(/\s/g,'_')}" value="${videoMappings[sub] || ''}" placeholder="YouTube ID"></div>`).join('');
+        }
+        const secondaryContainer = document.getElementById('adminSecondarySubjectsList');
+        if (secondaryContainer) {
+            secondaryContainer.innerHTML = secondarySubjects.map(sub => `<div class="admin-subject"><label>${sub}</label><input id="secondary_input_${sub.replace(/\s/g,'_')}" value="${videoMappings[sub] || ''}" placeholder="YouTube ID"></div>`).join('');
         }
     }
-});
-
-// ========== LOAD SESSION ==========
-function loadUserSession() {
-    const rememberMe = localStorage.getItem('rememberMe') === 'true';
-    let savedUser = null;
-    if (rememberMe) savedUser = localStorage.getItem('currentUser');
-    else savedUser = sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-            if (currentUser.role === 'superadmin') {
-                showApp();
-            } else if (currentUser.role === 'school') {
-                const schoolExists = schools.find(s => s.id === currentUser.schoolId);
-                if (schoolExists) showApp();
-                else logoutUser();
-            } else if (currentUser.role === 'individual') {
-                const userExists = users.find(u => u.email === currentUser.email);
-                if (userExists) showApp();
-                else logoutUser();
-            } else {
-                logoutUser();
-            }
-        } catch(e) { logoutUser(); }
+    function renderPdfAdmin() {
+        const container = document.getElementById('pdfAdminList');
+        if (!container) return;
+        if (pdfMaterials.length === 0) { container.innerHTML = '<div>No PDFs</div>'; return; }
+        container.innerHTML = pdfMaterials.map(pdf => `<div class="pdf-item"><a href="${pdf.url}" target="_blank">${pdf.title}</a><button class="delete-pdf" data-id="${pdf.id}">Delete</button></div>`).join('');
+        document.querySelectorAll('.delete-pdf').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = btn.getAttribute('data-id');
+                await deleteDoc(doc(db, "pdfs", id));
+                showNotification("PDF deleted");
+            });
+        });
     }
-}
-loadUserSession();
-renderClasses();
-renderPdfList();
-renderEventsTicker();
+
+    // Authentication event handlers
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const phone = document.getElementById('signupPhone').value.trim();
+        const password = document.getElementById('signupPassword').value;
+        const level = document.getElementById('signupEducationLevel').value;
+        if (!name || !email || !phone || !password || !level) {
+            document.getElementById('loginError').innerText = "Fill all fields";
+            return;
+        }
+        if (password.length < 4) {
+            document.getElementById('loginError').innerText = "Password min 4 chars";
+            return;
+        }
+        try {
+            const userCred = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCred.user;
+            await setDoc(doc(db, "users", user.uid), {
+                uid: user.uid, name, email, phone, educationLevel: level,
+                role: "individual", createdAt: new Date().toISOString(),
+                loginCount: 1, lastLogin: new Date().toISOString()
+            });
+            showNotification("Account created! Logging in...");
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            currentUserObj = { uid: user.uid, name, email, phone, role: "individual" };
+            document.getElementById('userName').innerText = name.split(' ')[0];
+            // Trigger real-time listeners after login
+            listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings();
+        } catch (err) {
+            document.getElementById('loginError').innerText = err.message;
+        }
+    });
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        try {
+            const userCred = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCred.user;
+            const userSnap = await getDocs(query(collection(db, "users"), where("uid", "==", user.uid)));
+            if (!userSnap.empty) {
+                currentUserObj = userSnap.docs[0].data();
+                document.getElementById('userName').innerText = currentUserObj.name.split(' ')[0];
+            }
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings();
+        } catch (err) {
+            document.getElementById('loginError').innerText = "Invalid email/password";
+        }
+    });
+
+    document.getElementById('sendResetEmailBtn').addEventListener('click', async () => {
+        const email = document.getElementById('resetEmail').value.trim();
+        if (!email) { showNotification("Enter email", "error"); return; }
+        try {
+            await sendPasswordResetEmail(auth, email);
+            showNotification("Reset email sent!");
+        } catch (err) { showNotification(err.message, "error"); }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await signOut(auth);
+        currentUserObj = null;
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+        showNotification("Logged out");
+    });
+
+    document.getElementById('forgotPasswordLink').addEventListener('click', () => {
+        document.getElementById('resetSection').style.display = 'block';
+    });
+
+    document.getElementById('addSchoolBtn').addEventListener('click', async () => {
+        const name = document.getElementById('schoolName').value.trim();
+        const contact = document.getElementById('schoolContact').value.trim();
+        const location = document.getElementById('schoolLocation').value.trim();
+        const logo = document.getElementById('schoolLogoUrl').value.trim();
+        const loginEmail = document.getElementById('schoolLoginEmail').value.trim();
+        const loginPassword = document.getElementById('schoolLoginPassword').value;
+        if (!name || !contact || !location || !loginEmail || !loginPassword) {
+            showNotification("Fill all fields", "error"); return;
+        }
+        await addDoc(collection(db, "schools"), { name, contact, location, logo, loginEmail, loginPassword, createdAt: new Date().toISOString() });
+        // Also create a user account for the school
+        try {
+            const userCred = await createUserWithEmailAndPassword(auth, loginEmail, loginPassword);
+            await setDoc(doc(db, "users", userCred.user.uid), {
+                uid: userCred.user.uid, name, email: loginEmail, role: "school", schoolId: null, createdAt: new Date().toISOString()
+            });
+        } catch(e) { console.warn(e); }
+        showNotification("School added!");
+        document.getElementById('schoolName').value = '';
+        document.getElementById('schoolContact').value = '';
+        document.getElementById('schoolLocation').value = '';
+        document.getElementById('schoolLogoUrl').value = '';
+        document.getElementById('schoolLoginEmail').value = '';
+        document.getElementById('schoolLoginPassword').value = '';
+    });
+
+    document.getElementById('addEventBtn').addEventListener('click', async () => {
+        const title = document.getElementById('eventTitle').value.trim();
+        const date = document.getElementById('eventDate').value.trim();
+        const fee = document.getElementById('eventFee').value.trim();
+        if (!title || !date || !fee) { showNotification("Fill all fields", "error"); return; }
+        await addDoc(collection(db, "events"), { title, date, fee });
+        showNotification("Event added");
+        document.getElementById('eventTitle').value = '';
+        document.getElementById('eventDate').value = '';
+        document.getElementById('eventFee').value = '';
+    });
+
+    document.getElementById('addPdfBtn').addEventListener('click', async () => {
+        const title = document.getElementById('pdfTitle').value.trim();
+        const url = document.getElementById('pdfUrl').value.trim();
+        if (!title || !url) { showNotification("Fill both", "error"); return; }
+        await addDoc(collection(db, "pdfs"), { title, url });
+        showNotification("PDF added");
+        document.getElementById('pdfTitle').value = '';
+        document.getElementById('pdfUrl').value = '';
+    });
+
+    window.savePrimaryVideos = async () => {
+        for (let sub of primarySubjects) {
+            const input = document.getElementById(`primary_input_${sub.replace(/\s/g,'_')}`);
+            if (input && input.value.trim()) {
+                await setDoc(doc(db, "videos", sub), { youtubeId: input.value.trim() }, { merge: true });
+            }
+        }
+        showNotification("Primary videos saved");
+    };
+    window.saveSecondaryVideos = async () => {
+        for (let sub of secondarySubjects) {
+            const input = document.getElementById(`secondary_input_${sub.replace(/\s/g,'_')}`);
+            if (input && input.value.trim()) {
+                await setDoc(doc(db, "videos", sub), { youtubeId: input.value.trim() }, { merge: true });
+            }
+        }
+        showNotification("Secondary videos saved");
+    };
+    document.getElementById('savePrimaryVideosBtn')?.addEventListener('click', () => window.savePrimaryVideos());
+    document.getElementById('saveSecondaryVideosBtn')?.addEventListener('click', () => window.saveSecondaryVideos());
+
+    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => {
+        const newName = document.getElementById('newSubjectName').value.trim();
+        const level = document.getElementById('newSubjectLevel').value;
+        const videoUrl = document.getElementById('newSubjectVideo').value.trim();
+        if (!newName) { showNotification("Enter subject name", "error"); return; }
+        if (level === 'primary') {
+            if (primarySubjects.includes(newName)) { showNotification("Already exists", "error"); return; }
+            primarySubjects.push(newName);
+        } else {
+            if (secondarySubjects.includes(newName)) { showNotification("Already exists", "error"); return; }
+            secondarySubjects.push(newName);
+        }
+        if (videoUrl) await setDoc(doc(db, "videos", newName), { youtubeId: videoUrl });
+        showNotification(`Subject "${newName}" added`);
+        renderAdminVideoLists();
+    });
+
+    // Navigation and UI initializers
+    document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderClasses();
+        });
+    });
+    document.getElementById('backToClasses')?.addEventListener('click', () => {
+        document.getElementById('classSelectionSection').style.display = 'block';
+        document.getElementById('subjectsSection').style.display = 'none';
+    });
+    document.getElementById('folderHeader')?.addEventListener('click', () => {
+        document.getElementById('folderContent').classList.toggle('show');
+    });
+    document.getElementById('moreMenuBtn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('moreDropdown').classList.toggle('show');
+    });
+    document.addEventListener('click', () => document.getElementById('moreDropdown')?.classList.remove('show'));
+    document.getElementById('adminMenuItem')?.addEventListener('click', () => {
+        document.getElementById('adminPanel').classList.toggle('show');
+        if (document.getElementById('adminPanel').classList.contains('show')) {
+            renderAdminVideoLists(); renderPdfAdmin(); renderEventsAdmin(); renderSchoolsAdmin();
+        }
+    });
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.getAttribute('data-page');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(`${page}Page`).classList.add('active-page');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            item.classList.add('active');
+            if (page === 'home') {
+                document.getElementById('adminPanel').classList.remove('show');
+            }
+        });
+    });
+    document.getElementById('closeVideoBtn')?.addEventListener('click', () => {
+        document.getElementById('videoModal').classList.remove('show');
+        document.getElementById('youtubeIframe').src = '';
+    });
+    document.getElementById('fullscreenBtn')?.addEventListener('click', () => {
+        const videoContent = document.getElementById('videoContent');
+        if (!document.fullscreenElement) videoContent.requestFullscreen();
+        else document.exitFullscreen();
+    });
+    // AI drawer
+    document.getElementById('openAIDrawerBtn')?.addEventListener('click', () => {
+        document.getElementById('aiDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('show');
+    });
+    document.getElementById('closeDrawerBtn')?.addEventListener('click', () => {
+        document.getElementById('aiDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('show');
+    });
+    document.getElementById('drawerOverlay')?.addEventListener('click', () => {
+        document.getElementById('aiDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('show');
+    });
+    window.sendChat = async function() {
+        const input = document.getElementById('chatInput');
+        const q = input.value.trim();
+        if (!q) return;
+        const container = document.getElementById('chatMessages');
+        container.innerHTML += `<div class="message user"><div class="message-avatar"><i class="fas fa-user"></i></div><div class="message-bubble">${q}</div></div>`;
+        input.value = '';
+        container.innerHTML += `<div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">🤔 Thinking...</div></div>`;
+        try {
+            let answer = "I'm a demo AI. In the full version I can answer any question.";
+            if (typeof puter !== 'undefined' && puter.ai) {
+                const resp = await puter.ai.chat(q);
+                answer = resp.message.content;
+            }
+            const lastMsg = container.lastChild;
+            lastMsg.querySelector('.message-bubble').innerText = answer;
+        } catch(e) { console.error(e); }
+        container.scrollTop = container.scrollHeight;
+    };
+    document.getElementById('sendBtn')?.addEventListener('click', window.sendChat);
+    document.getElementById('chatInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') window.sendChat(); });
+
+    // Attendance modal (basic skeleton – you can extend later)
+    document.getElementById('attendanceMenuItem')?.addEventListener('click', () => {
+        if (!currentUserObj || currentUserObj.role !== 'school') { showNotification("Only school accounts can access attendance", "error"); return; }
+        document.getElementById('attendanceModal').classList.add('show');
+        // Camera setup etc. (you can reuse your original logic)
+    });
+    document.getElementById('closeAttendanceModal')?.addEventListener('click', () => {
+        document.getElementById('attendanceModal').classList.remove('show');
+    });
+
+    // Start render of initial UI
+    renderClasses();
+    // Auth state listener
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            // Load user data from Firestore if needed
+            if (!currentUserObj) {
+                getDocs(query(collection(db, "users"), where("uid", "==", user.uid))).then(snap => {
+                    if (!snap.empty) {
+                        currentUserObj = snap.docs[0].data();
+                        document.getElementById('userName').innerText = currentUserObj.name.split(' ')[0];
+                    }
+                });
+            }
+            listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings();
+        } else {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appScreen').classList.add('hidden');
+        }
+    });
 </script>
 </body>
-</html>
+                </html>
