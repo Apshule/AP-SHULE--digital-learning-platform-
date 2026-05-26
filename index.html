@@ -213,7 +213,6 @@
         .school-actions button, .event-actions button { margin-left: 8px; background: #FF8C42; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; }
         .school-actions button.delete, .event-actions button.delete { background: #dc3545; }
         .school-logo { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; margin-right: 12px; }
-        /* new compact video mapping form */
         .video-mapping-form {
             background: #f0f0f0;
             padding: 20px;
@@ -234,6 +233,21 @@
         }
         .form-row button {
             flex: 1;
+        }
+        .profile-pic-upload {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 16px;
+            text-align: center;
+        }
+        .profile-pic-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 2px solid #4B2E9E;
         }
     </style>
 </head>
@@ -314,7 +328,7 @@
                     <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
                     <div class="admin-section"><h4>🎬 Most Watched Videos (Global)</h4><ul id="globalMostWatchedList" class="most-watched-list"></ul></div>
                     <div class="admin-section"><h4>📝 User Feedback (for improvement)</h4><div id="feedbackAdminList"></div></div>
-                    <!-- NEW compact video mapping form -->
+                    <!-- Video mapping form -->
                     <div class="admin-section"><h4>🎥 Map Video Lessons (Subject + Class)</h4>
                         <div class="video-mapping-form">
                             <select id="videoSubjectSelect"><option value="">Select Subject</option></select>
@@ -328,13 +342,13 @@
                         <div id="existingMappingsList" style="font-size: 13px; margin-top: 10px;"></div>
                     </div>
                 </div>
-                <!-- School-specific events management (schools can only manage their own events) -->
+                <!-- School-specific events management -->
                 <div class="admin-section" id="schoolEventsSection" style="display:none;">
                     <h4>📅 Manage School Events (Only your school)</h4>
                     <div class="add-pdf-form"><input type="text" id="schoolEventTitle" placeholder="Event Title"><input type="text" id="schoolEventDate" placeholder="Date"><input type="text" id="schoolEventFee" placeholder="Fee"><button id="addSchoolEventBtn" class="admin-toggle">➕ Add Event</button></div>
                     <div id="schoolEventsList"></div>
                 </div>
-                <!-- Global events management (only superadmin sees this) -->
+                <!-- Global events management (superadmin only) -->
                 <div class="admin-section" id="globalEventsSection" style="display:none;">
                     <h4>📅 Manage Global Events (Super Admin)</h4>
                     <div class="add-pdf-form"><input type="text" id="eventTitle" placeholder="Event Title"><input type="text" id="eventDate" placeholder="Date"><input type="text" id="eventFee" placeholder="Fee"><button id="addEventBtn" class="admin-toggle">➕ Add Event</button></div>
@@ -346,7 +360,16 @@
         </div>
         <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">Coming soon – save your favourite lessons!</div></div>
         <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
-        <div id="accountPage" class="page"><div class="section-title">👤 My Account</div><div id="accountInfo" class="account-card"></div></div>
+        <div id="accountPage" class="page">
+            <div class="section-title">👤 My Account</div>
+            <div id="accountInfo" class="account-card"></div>
+            <div class="profile-pic-upload">
+                <h4>Profile Picture</h4>
+                <img id="profilePicPreview" class="profile-pic-preview" src="https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg">
+                <input type="file" id="profilePicInput" accept="image/*" style="margin-top: 10px;">
+                <button id="uploadProfilePicBtn" class="admin-toggle" style="margin-top: 10px;">Upload Picture</button>
+            </div>
+        </div>
         <div id="aboutPage" class="page"><div class="section-title">📖 About APSHULE</div><div class="about-card"><div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div><div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div><h3><i class="fas fa-gem"></i> Core Values</h3><div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div><div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div><div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div><h3><i class="fas fa-users"></i> Our Managing Team</h3><div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div><h3><i class="fas fa-address-card"></i> Contact Information</h3><div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div><div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div><div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div><a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a></div></div>
     </div>
 
@@ -393,13 +416,13 @@
     let schools = [];
     let globalEventsList = [];
     let pdfMaterials = [];
-    let videoMappings = {}; // key: `${classId}_${subject}` or maybe just per class+subject
+    let videoMappings = {};
     let primarySubjects = [];
     let secondarySubjects = [];
     let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
     let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
     let currentRating = 0, currentLessonSubject = "";
-    let currentSelectedClassId = null; // store the class id when user selects a class
+    let currentSelectedClassId = null;
     let currentLevel = "primary";
     const classData = {
         primary: [{id:1,name:"Primary 1",icon:"fa-baby-carriage",color:"#FF6B6B"},{id:2,name:"Primary 2",icon:"fa-child",color:"#4ECDC4"},{id:3,name:"Primary 3",icon:"fa-graduation-cap",color:"#45B7D1"},{id:4,name:"Primary 4",icon:"fa-book-reader",color:"#96CEB4"},{id:5,name:"Primary 5",icon:"fa-pencil-alt",color:"#FFEAA7"},{id:6,name:"Primary 6",icon:"fa-chalkboard-teacher",color:"#DDA0DD"},{id:7,name:"Primary 7",icon:"fa-users",color:"#FF9F43"}],
@@ -457,7 +480,7 @@
         });
     }
 
-    function renderFeedbackAdmin() { /* same as before */ 
+    function renderFeedbackAdmin() {
         const container = document.getElementById('feedbackAdminList');
         if (!container) return;
         const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"), limit(50));
@@ -501,7 +524,30 @@
         } catch(e) { return "Unknown"; }
     }
 
-    // ========== RENDER CLASSES & SUBJECTS (with class-specific video mapping) ==========
+    // Profile picture upload (base64 stored in Firestore)
+    async function uploadProfilePicture(file) {
+        if (!currentUser) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const base64 = e.target.result;
+            await updateDoc(doc(db, "users", currentUser.uid), { profilePic: base64 });
+            currentUser.profilePic = base64;
+            document.getElementById('headerLogoImg').src = base64;
+            document.getElementById('loginLogoImg').src = base64;
+            document.getElementById('profilePicPreview').src = base64;
+            showNotification("Profile picture updated!");
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadProfilePicPreview() {
+        const preview = document.getElementById('profilePicPreview');
+        if (preview && currentUser) {
+            preview.src = currentUser.profilePic || 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+        }
+    }
+
+    // ========== RENDER CLASSES & SUBJECTS ==========
     const subjectColors = ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#E91E63','#3F51B5','#009688','#FFC107','#8BC34A','#673AB7','#FF5722','#607D8B','#CDDC39'];
     function getSubjectIcon(subj) {
         const icons = { 'Mathematics':'fa-calculator','English':'fa-book','Biology':'fa-dna','Chemistry':'fa-flask','Physics':'fa-atom','History':'fa-landmark','Geography':'fa-globe','Kiswahili':'fa-language','Commerce':'fa-chart-line','ICT':'fa-laptop','Literature':'fa-book-open','Economics':'fa-chart-bar','Science':'fa-flask','Social Studies':'fa-globe','Literacy':'fa-book','Religious Education':'fa-church','Agriculture':'fa-seedling','Fine Art':'fa-paintbrush','Physical Education':'fa-futbol','Entrepreneurship':'fa-lightbulb' };
@@ -555,7 +601,6 @@
         c.innerHTML = pdfMaterials.map(p => `<div class="pdf-item"><a href="${p.url}" target="_blank">📄 ${p.title}</a><button class="delete-pdf" data-id="${p.id}">Delete</button></div>`).join('');
         document.querySelectorAll('.delete-pdf').forEach(btn => btn.addEventListener('click', async (e) => { await deleteDoc(doc(db,"pdfs",btn.getAttribute('data-id'))); showNotification("PDF deleted"); }));
     }
-    // Event ticker: show only events belonging to the logged-in school (if school) or global events
     function renderEventsTicker() {
         let t = document.getElementById('eventsTicker');
         if(!t) return;
@@ -570,7 +615,6 @@
         for(let i=0;i<2;i++) eventsToShow.forEach(ev => { html += `<div class="ticker-item">🎓 <strong>${ev.title}</strong> | ${ev.fee} | 📅 ${ev.date}</div>`; });
         t.innerHTML = html;
     }
-    // School events management (only school's own events)
     function renderSchoolEventsList() {
         let c = document.getElementById('schoolEventsList');
         if(!c) return;
@@ -631,7 +675,6 @@
         document.querySelectorAll('.delete-school').forEach(btn => btn.addEventListener('click', async (e) => { if(confirm("Delete school?")) await deleteDoc(doc(db,"schools",btn.getAttribute('data-id'))); }));
     }
 
-    // NEW: Populate subject and class dropdowns for video mapping form
     function populateVideoMappingDropdowns() {
         let subjSelect = document.getElementById('videoSubjectSelect');
         let allSubjects = [...primarySubjects, ...secondarySubjects];
@@ -640,7 +683,6 @@
         let allClasses = [...classData.primary.map(c => ({ value: `primary_${c.id}`, label: `Primary ${c.id}` })), ...classData.secondary.map(c => ({ value: `secondary_${c.id}`, label: `Senior ${c.id}` }))];
         classSelect.innerHTML = '<option value="">Select Class</option>' + allClasses.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
     }
-    // Load existing mappings and display them
     function renderExistingMappings() {
         let container = document.getElementById('existingMappingsList');
         if(!container) return;
@@ -663,7 +705,7 @@
         let classVal = document.getElementById('videoClassSelect').value;
         let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
         if(!subject || !classVal || !youtubeId) { showNotification("Please fill all fields","error"); return; }
-        let key = `${classVal}_${subject}`; // classVal e.g. "primary_3"
+        let key = `${classVal}_${subject}`;
         await setDoc(doc(db, "videoMappings", key), { subject, classKey: classVal, youtubeId });
         showNotification(`Video saved for ${subject} in class ${classVal}`);
         document.getElementById('videoYoutubeId').value = '';
@@ -737,15 +779,25 @@
         if(!name||!contact||!loc||!email||!pwd){ showNotification("Fill all fields","error"); return; }
         if(pwd.length<4){ showNotification("Password min 4","error"); return; }
         if(schools.find(s=>s.loginEmail===email)){ showNotification("Email exists","error"); return; }
-        await addDoc(collection(db,"schools"),{ name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0 });
-        try { let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{ uid:cred.user.uid, name, email, role:"school", schoolId: cred.user.uid, createdAt:new Date().toISOString() }); } catch(e){}
+        const schoolDocRef = await addDoc(collection(db,"schools"),{ name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0 });
+        try { 
+            let cred = await createUserWithEmailAndPassword(auth, email, pwd); 
+            await setDoc(doc(db,"users",cred.user.uid),{ 
+                uid: cred.user.uid, 
+                name, 
+                email, 
+                role: "school", 
+                schoolId: schoolDocRef.id,  // store the school document ID
+                createdAt: new Date().toISOString() 
+            }); 
+        } catch(e){ console.error(e); }
         showNotification("School added");
         document.getElementById('schoolName').value=''; document.getElementById('schoolContact').value=''; document.getElementById('schoolLocation').value=''; document.getElementById('schoolLogoUrl').value=''; document.getElementById('schoolLoginEmail').value=''; document.getElementById('schoolLoginPassword').value='';
     });
     document.getElementById('addEventBtn')?.addEventListener('click', async () => {
         let t=document.getElementById('eventTitle').value.trim(), d=document.getElementById('eventDate').value.trim(), f=document.getElementById('eventFee').value.trim();
         if(!t||!d||!f){ showNotification("Fill all","error"); return; }
-        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: null }); // global event
+        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: null });
         showNotification("Global event added");
         document.getElementById('eventTitle').value=''; document.getElementById('eventDate').value=''; document.getElementById('eventFee').value='';
     });
@@ -781,19 +833,30 @@
     });
     document.getElementById('testVideoBtn')?.addEventListener('click', testVideoMapping);
     document.getElementById('saveVideoMappingBtn')?.addEventListener('click', saveVideoMapping);
+    document.getElementById('uploadProfilePicBtn')?.addEventListener('click', () => {
+        const fileInput = document.getElementById('profilePicInput');
+        if (fileInput.files.length === 0) {
+            showNotification("Select an image first", "error");
+            return;
+        }
+        uploadProfilePicture(fileInput.files[0]);
+    });
 
     // ========== FIRESTORE LISTENERS ==========
     function listenToSchools() {
         onSnapshot(collection(db, "schools"), (snap) => {
             schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderSchoolsAdmin();
-            if(currentUser?.role === 'school') {
-                let s = schools.find(s => s.id === currentUser.schoolId);
-                if(s) {
-                    document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
-                    document.getElementById('headerLogoImg').src = s.logo || 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
-                    document.getElementById('loginLogoImg').src = s.logo || 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+            if (currentUser && currentUser.role === 'school') {
+                let s = schools.find(sch => sch.id === currentUser.schoolId);
+                if (s && s.logo) {
+                    document.getElementById('headerLogoImg').src = s.logo;
+                    document.getElementById('loginLogoImg').src = s.logo;
+                } else if (s && !s.logo) {
+                    document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+                    document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                 }
+                if (s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
             }
         });
     }
@@ -848,10 +911,25 @@
             document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
             document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
             document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
-            if(isSchool) {
-                let s = schools.find(s => s.id === currentUser.schoolId);
-                if(s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
+            
+            // Set logo based on role
+            if (isSchool) {
+                let s = schools.find(sch => sch.id === currentUser.schoolId);
+                if (s && s.logo) {
+                    document.getElementById('headerLogoImg').src = s.logo;
+                    document.getElementById('loginLogoImg').src = s.logo;
+                } else {
+                    document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+                    document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+                }
+            } else if (currentUser.profilePic) {
+                document.getElementById('headerLogoImg').src = currentUser.profilePic;
+                document.getElementById('loginLogoImg').src = currentUser.profilePic;
+            } else {
+                document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+                document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
             }
+            loadProfilePicPreview();
             if(isSuper) {
                 let usersList = await getDocs(collection(db,"users"));
                 document.getElementById('totalUsersCount').innerText = usersList.size;
@@ -912,7 +990,7 @@
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
     onAuthStateChanged(auth, async (user) => { if(user) await loadUserAndShowApp(user); else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
     renderClasses(); renderPdfList(); renderEventsTicker();
-    console.log("✅ Full updated version with class-specific video mapping, school events, and role restrictions.");
+    console.log("✅ Full final version with school logo fix, profile picture upload, and class-specific video mapping.");
 </script>
 </body>
-</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             </html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
