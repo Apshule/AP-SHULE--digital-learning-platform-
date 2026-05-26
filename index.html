@@ -6,7 +6,7 @@
     <title>APSHULE - Learn With Ease</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== YOUR ORIGINAL STYLES (preserved) – same as before ========== */
+        /* ========== YOUR ORIGINAL STYLES (preserved) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
@@ -249,9 +249,6 @@
             margin-bottom: 10px;
             border: 2px solid #4B2E9E;
         }
-        .default-logo-img {
-            object-fit: cover;
-        }
     </style>
 </head>
 <body>
@@ -366,8 +363,8 @@
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
-            <!-- Profile picture upload: only for individual and superadmin, not for schools -->
-            <div id="profilePicUploadSection" class="profile-pic-upload" style="display: none;">
+            <!-- Profile picture upload: only for individuals (not schools) and not for superadmin? Actually superadmin can also upload here but it will only show in header if superadmin -->
+            <div id="profilePicUploadSection" class="profile-pic-upload">
                 <h4>Profile Picture</h4>
                 <img id="profilePicPreview" class="profile-pic-preview" src="https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg">
                 <input type="file" id="profilePicInput" accept="image/*" style="margin-top: 10px;">
@@ -528,23 +525,20 @@
         } catch(e) { return "Unknown"; }
     }
 
-    // Profile picture upload (base64 stored in Firestore) – only for individual & superadmin
+    // Profile picture upload – only for superadmin (to change header) and individuals (only for account page view)
     async function uploadProfilePicture(file) {
         if (!currentUser) return;
-        if (currentUser.role === 'school') {
-            showNotification("Schools cannot upload profile pictures. Logo is set by superadmin.", "error");
-            return;
-        }
         const reader = new FileReader();
         reader.onload = async (e) => {
             const base64 = e.target.result;
             await updateDoc(doc(db, "users", currentUser.uid), { profilePic: base64 });
             currentUser.profilePic = base64;
-            // Update header logo only if user is not a school (schools use school logo)
-            if (currentUser.role !== 'school') {
+            // Only update header logo if user is superadmin (or school? school logo is separate)
+            if (currentUser.role === 'superadmin') {
                 document.getElementById('headerLogoImg').src = base64;
+                document.getElementById('loginLogoImg').src = base64;
             }
-            document.getElementById('loginLogoImg').src = base64; // login screen after logout? Actually login screen always default, but keep for consistency
+            // For individuals, only update the preview in account page
             document.getElementById('profilePicPreview').src = base64;
             showNotification("Profile picture updated!");
         };
@@ -553,8 +547,10 @@
 
     function loadProfilePicPreview() {
         const preview = document.getElementById('profilePicPreview');
-        if (preview && currentUser) {
-            preview.src = currentUser.profilePic || 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
+        if (preview && currentUser && currentUser.profilePic) {
+            preview.src = currentUser.profilePic;
+        } else if (preview) {
+            preview.src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
         }
     }
 
@@ -923,13 +919,13 @@
             document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
             document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
             
-            // Show/hide profile picture upload section
+            // Profile picture upload section: visible to all (including individuals, superadmin) but school can also see? Let's hide for school.
             const profilePicSection = document.getElementById('profilePicUploadSection');
             if (profilePicSection) {
-                profilePicSection.style.display = (isSchool ? "none" : "block");
+                profilePicSection.style.display = isSchool ? "none" : "block";
             }
             
-            // Set header logo based on role
+            // Set header logo:
             if (isSchool) {
                 let s = schools.find(sch => sch.id === currentUser.schoolId);
                 if (s && s.logo) {
@@ -939,10 +935,12 @@
                     document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                     document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                 }
-            } else if (currentUser.profilePic) {
+            } else if (isSuper && currentUser.profilePic) {
+                // Superadmin profile picture appears in header
                 document.getElementById('headerLogoImg').src = currentUser.profilePic;
                 document.getElementById('loginLogoImg').src = currentUser.profilePic;
             } else {
+                // Individuals and superadmin without profile pic: default logo
                 document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                 document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
             }
@@ -1007,7 +1005,7 @@
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
     onAuthStateChanged(auth, async (user) => { if(user) await loadUserAndShowApp(user); else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
     renderClasses(); renderPdfList(); renderEventsTicker();
-    console.log("✅ Fixed: Schools use only superadmin-set logo, individuals can upload profile picture, default logo preserved.");
+    console.log("✅ Final version: Default logo for individuals, school logo for schools, superadmin profile pic optional.");
 </script>
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
