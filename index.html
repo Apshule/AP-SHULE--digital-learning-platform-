@@ -6,7 +6,7 @@
     <title>APSHULE - Learn With Ease</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== YOUR ORIGINAL STYLES (EXACTLY AS YOU HAD) ========== */
+        /* ========== YOUR ORIGINAL STYLES (exactly as you had – beautiful classes & cards) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
@@ -23,6 +23,7 @@
         .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 30px; font-size: 16px; }
         .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
+        .success-message { color: green; margin-top: 16px; font-size: 14px; }
         .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
         .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
         .reset-btn { background: #FF8C42; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; cursor: pointer; font-weight: bold; }
@@ -216,7 +217,7 @@
 </head>
 <body>
 
-<!-- LOGIN SCREEN (with password visibility) -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <img class="login-logo-img" src="https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg" alt="APSHULE Logo">
@@ -227,114 +228,36 @@
             <div class="login-tab" data-tab="signup">Sign Up</div>
         </div>
         <div id="loginFormDiv" class="login-form active">
-            <div style="position: relative;">
-                <input type="email" id="loginEmail" placeholder="Email" class="login-input">
-                <span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
-            </div>
-            <div style="position: relative;">
-                <input type="password" id="loginPassword" placeholder="Password" class="login-input">
-                <span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
-                    <input type="checkbox" id="rememberMeCheckbox"> Remember Me
-                </label>
-                <span id="forgotPasswordLink" style="color: #FF8C42; font-size: 14px; cursor: pointer;">Forgot Password?</span>
-            </div>
+            <div style="position: relative;"><input type="email" id="loginEmail" placeholder="Email" class="login-input"><span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
+            <div style="position: relative;"><input type="password" id="loginPassword" placeholder="Password" class="login-input"><span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;"><label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;"><input type="checkbox" id="rememberMeCheckbox"> Remember Me</label><span id="forgotPasswordLink" style="color: #FF8C42; font-size: 14px; cursor: pointer;">Forgot Password?</span></div>
             <button id="loginBtn" class="login-btn">Login</button>
         </div>
         <div id="signupFormDiv" class="login-form">
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
             <input type="email" id="signupEmail" placeholder="Email" class="login-input">
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
-            <div style="position: relative;">
-                <input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input">
-                <span onclick="togglePassword('signupPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span>
-            </div>
-            <select id="signupEducationLevel" class="login-input">
-                <option value="">Select Education Level</option>
-                <option value="Primary">Primary School</option>
-                <option value="Secondary">Secondary School</option>
-            </select>
+            <div style="position: relative;"><input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input"><span onclick="togglePassword('signupPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
+            <select id="signupEducationLevel" class="login-input"><option value="">Select Education Level</option><option value="Primary">Primary School</option><option value="Secondary">Secondary School</option></select>
             <button id="signupBtn" class="login-btn">Create Account</button>
         </div>
         <div id="loginError" class="error-message"></div>
-        <div class="reset-section" id="resetSection" style="display:none;">
-            <h4><i class="fas fa-key"></i> Forgot Password?</h4>
-            <input type="email" id="resetEmail" placeholder="Email" class="reset-input">
-            <div id="resetMessage" class="success-message"></div>
-            <button id="sendResetEmailBtn" class="reset-btn">Send Reset Email</button>
-        </div>
+        <div class="reset-section" id="resetSection" style="display:none;"><h4><i class="fas fa-key"></i> Forgot Password?</h4><input type="email" id="resetEmail" placeholder="Email" class="reset-input"><div id="resetMessage" class="success-message"></div><button id="sendResetEmailBtn" class="reset-btn">Send Reset Email</button></div>
     </div>
 </div>
 
-<!-- MAIN APP (same structure as original) -->
+<!-- MAIN APP -->
 <div id="appScreen" class="app-container hidden">
     <div class="header">
-        <div class="header-left">
-            <img class="header-logo-img" src="https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg" alt="Logo">
-            <div>
-                <div class="app-title">APSHULE</div>
-                <div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div>
-                <div class="greeting">Hello, <span id="userName">Student</span>!</div>
-            </div>
-        </div>
-        <div class="header-right">
-            <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
-            <div style="position: relative;">
-                <button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
-                <div class="more-dropdown" id="moreDropdown">
-                    <div class="dropdown-item" id="attendanceMenuItem"><i class="fas fa-camera"></i><span>📸 Facial Attendance</span></div>
-                    <div class="dropdown-item" id="adminMenuItem" style="display: none;"><i class="fas fa-user-cog"></i><span>Admin Panel</span></div>
-                    <div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
-                </div>
-            </div>
-        </div>
+        <div class="header-left"><img class="header-logo-img" src="https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg" alt="Logo"><div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div></div>
+        <div class="header-right"><button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button><div style="position: relative;"><button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button><div class="more-dropdown" id="moreDropdown"><div class="dropdown-item" id="attendanceMenuItem"><i class="fas fa-camera"></i><span>📸 Facial Attendance</span></div><div class="dropdown-item" id="adminMenuItem" style="display: none;"><i class="fas fa-user-cog"></i><span>Admin Panel</span></div><div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div></div></div></div>
     </div>
 
     <!-- VIDEO MODAL -->
-    <div id="videoModal" class="video-modal">
-        <div class="video-content" id="videoContent">
-            <div class="video-header"><span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span><div><button id="fullscreenBtn"><i class="fas fa-expand"></i></button><button id="closeVideoBtn">&times;</button></div></div>
-            <div class="youtube-player-container"><iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
-            <div class="video-title" id="currentVideoTitle"></div>
-            <div class="feedback-section" id="feedbackSection"><h4>⭐ Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea><div class="feedback-buttons"><button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button><button id="closeFeedbackBtn" class="skip-feedback">Skip</button></div></div>
-        </div>
-    </div>
+    <div id="videoModal" class="video-modal"><div class="video-content" id="videoContent"><div class="video-header"><span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span><div><button id="fullscreenBtn"><i class="fas fa-expand"></i></button><button id="closeVideoBtn">&times;</button></div></div><div class="youtube-player-container"><iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><div class="video-title" id="currentVideoTitle"></div><div class="feedback-section" id="feedbackSection"><h4>⭐ Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea><div class="feedback-buttons"><button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button><button id="closeFeedbackBtn" class="skip-feedback">Skip</button></div></div></div></div>
 
-    <!-- ATTENDANCE MODAL (school‑specific) - same as original -->
-    <div id="attendanceModal" class="attendance-modal">
-        <div class="attendance-modal-content">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3><i class="fas fa-face-recognition"></i> Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none; border:none; font-size:28px; cursor:pointer;">&times;</button></div>
-            <div class="attendance-tabs">
-                <button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button>
-                <button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button>
-                <button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button>
-            </div>
-            <div id="markTab" class="attendance-tab-content active">
-                <div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div>
-                <div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-face-smile"></i> Mark Attendance</button></div>
-                <div id="attendanceResult" class="recognition-result" style="display:none;"></div>
-                <h4>📋 Today's Attendance</h4>
-                <div id="recentAttendanceList" class="recent-attendance-list"></div>
-            </div>
-            <div id="enrollTab" class="attendance-tab-content">
-                <div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div>
-                <div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button></div>
-                <div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> 📁 Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div>
-                <div id="enrollPreview" style="text-align:center;"></div>
-                <div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div>
-                <div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option><option>Visitor</option></select></div>
-                <div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div>
-                <button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button>
-            </div>
-            <div id="manageTab" class="attendance-tab-content">
-                <h4>📋 Enrolled Persons</h4>
-                <div id="enrolledPersonsList" class="enrolled-list"></div>
-                <button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%; margin-top:15px;">🗑️ Clear All Records</button>
-            </div>
-        </div>
-    </div>
+    <!-- ATTENDANCE MODAL -->
+    <div id="attendanceModal" class="attendance-modal"><div class="attendance-modal-content"><div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3><i class="fas fa-face-recognition"></i> Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none; border:none; font-size:28px; cursor:pointer;">&times;</button></div><div class="attendance-tabs"><button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button><button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button><button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button></div><div id="markTab" class="attendance-tab-content active"><div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-face-smile"></i> Mark Attendance</button></div><div id="attendanceResult" class="recognition-result" style="display:none;"></div><h4>📋 Today's Attendance</h4><div id="recentAttendanceList" class="recent-attendance-list"></div></div><div id="enrollTab" class="attendance-tab-content"><div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button></div><div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> 📁 Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div><div id="enrollPreview" style="text-align:center;"></div><div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div><div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option><option>Visitor</option></select></div><div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div><button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button></div><div id="manageTab" class="attendance-tab-content"><h4>📋 Enrolled Persons</h4><div id="enrolledPersonsList" class="enrolled-list"></div><button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%; margin-top:15px;">🗑️ Clear All Records</button></div></div></div>
 
     <!-- AI DRAWER -->
     <div class="overlay" id="drawerOverlay"></div>
@@ -349,10 +272,10 @@
             <div class="announcements-section"><div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
             <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div></div>
             <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div><div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div><div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div><div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div><div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div><div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div></div></div>
-            <!-- ADMIN PANEL (Super Admin only, but school admins see a limited version) -->
+            <!-- ADMIN PANEL -->
             <div id="adminPanel" class="admin-panel">
                 <h3><i class="fas fa-lock"></i> Admin Panel</h3>
-                <!-- Super Admin Section: Manage Schools, Global Events, Analytics -->
+                <!-- Super Admin Section -->
                 <div id="superAdminSection" class="admin-section" style="display:none;">
                     <h4>🏢 Manage Schools</h4>
                     <div class="add-subject-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
@@ -365,68 +288,23 @@
                         <button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button>
                     </div>
                     <div id="schoolsAdminList"></div>
-                    <h4>📊 Analytics & User Difficulties</h4>
+                    <h4>📊 Global Analytics</h4>
                     <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
-                    <p><strong>Most Watched Videos:</strong></p>
-                    <ul class="most-watched-list" id="mostWatchedList"></ul>
-                    <table class="analytics-table" id="usersTable">
-                        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Logins</th><th>Last Login</th></tr></thead>
-                        <tbody id="usersTableBody"></tbody>
-                    </table>
+                    <div class="admin-section"><h4>🎬 Most Watched Videos (Global)</h4><ul id="globalMostWatchedList" class="most-watched-list"></ul></div>
+                    <div class="admin-section"><h4>📝 User Feedback (for improvement)</h4><div id="feedbackAdminList"></div></div>
                 </div>
-                <!-- Common admin features (events, subjects, PDFs) – visible to both Super Admin and School Admin -->
-                <div class="admin-section">
-                    <h4>📅 Manage Events (Global)</h4>
-                    <div class="add-pdf-form"><input type="text" id="eventTitle" placeholder="Event Title"><input type="text" id="eventDate" placeholder="Date"><input type="text" id="eventFee" placeholder="Fee"><button id="addEventBtn" class="admin-toggle">➕ Add Event</button></div>
-                    <div id="eventsAdminList"></div>
-                </div>
-                <div class="admin-section">
-                    <h4>➕ Add New Subject</h4>
-                    <div class="add-subject-form"><input type="text" id="newSubjectName" placeholder="Subject name"><select id="newSubjectLevel"><option value="primary">Primary</option><option value="secondary">Secondary</option></select><input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID"><button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button></div>
-                </div>
-                <div class="admin-section">
-                    <h4>📘 Primary Subjects (Video Mapping)</h4>
-                    <div id="adminPrimarySubjectsList"></div>
-                    <button id="savePrimaryVideosBtn" class="admin-toggle">💾 Save Primary Videos</button>
-                </div>
-                <div class="admin-section">
-                    <h4>📗 Secondary Subjects (Video Mapping)</h4>
-                    <div id="adminSecondarySubjectsList"></div>
-                    <button id="saveSecondaryVideosBtn" class="admin-toggle">💾 Save Secondary Videos</button>
-                </div>
-                <div class="admin-section">
-                    <h4>📄 Manage PDFs</h4>
-                    <div class="add-pdf-form"><input type="text" id="pdfTitle" placeholder="PDF Title"><input type="text" id="pdfUrl" placeholder="PDF URL"><button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button></div>
-                    <div id="pdfAdminList"></div>
-                </div>
+                <!-- Common admin features -->
+                <div class="admin-section"><h4>📅 Manage Events (Global)</h4><div class="add-pdf-form"><input type="text" id="eventTitle" placeholder="Event Title"><input type="text" id="eventDate" placeholder="Date"><input type="text" id="eventFee" placeholder="Fee"><button id="addEventBtn" class="admin-toggle">➕ Add Event</button></div><div id="eventsAdminList"></div></div>
+                <div class="admin-section"><h4>➕ Add New Subject</h4><div class="add-subject-form"><input type="text" id="newSubjectName" placeholder="Subject name"><select id="newSubjectLevel"><option value="primary">Primary</option><option value="secondary">Secondary</option></select><input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID"><button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button></div></div>
+                <div class="admin-section"><h4>📘 Primary Subjects (Video Mapping)</h4><div id="adminPrimarySubjectsList"></div><button id="savePrimaryVideosBtn" class="admin-toggle">💾 Save Primary Videos</button></div>
+                <div class="admin-section"><h4>📗 Secondary Subjects (Video Mapping)</h4><div id="adminSecondarySubjectsList"></div><button id="saveSecondaryVideosBtn" class="admin-toggle">💾 Save Secondary Videos</button></div>
+                <div class="admin-section"><h4>📄 Manage PDFs</h4><div class="add-pdf-form"><input type="text" id="pdfTitle" placeholder="PDF Title"><input type="text" id="pdfUrl" placeholder="PDF URL"><button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button></div><div id="pdfAdminList"></div></div>
             </div>
         </div>
         <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">Coming soon – save your favourite lessons!</div></div>
         <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
         <div id="accountPage" class="page"><div class="section-title">👤 My Account</div><div id="accountInfo" class="account-card"></div></div>
-        <div id="aboutPage" class="page">
-            <div class="section-title">📖 About APSHULE</div>
-            <div class="about-card">
-                <div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
-                <div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div>
-                <h3><i class="fas fa-gem"></i> Core Values</h3>
-                <div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div>
-                <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div>
-                <div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div>
-                <h3><i class="fas fa-users"></i> Our Managing Team</h3>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div>
-                <h3><i class="fas fa-address-card"></i> Contact Information</h3>
-                <div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div>
-                <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
-                <div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div>
-                <a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a>
-            </div>
-        </div>
+        <div id="aboutPage" class="page"><div class="section-title">📖 About APSHULE</div><div class="about-card"><div class="vision-box"><i class="fas fa-eye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div><div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px; margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div><h3><i class="fas fa-gem"></i> Core Values</h3><div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div><div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div><div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div><h3><i class="fas fa-users"></i> Our Managing Team</h3><div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div><div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div><h3><i class="fas fa-address-card"></i> Contact Information</h3><div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div><div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div><div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div><a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a></div></div>
     </div>
 
     <div class="bottom-nav">
@@ -467,7 +345,7 @@
     const db = getFirestore(app);
     window.db = db; window.auth = auth;
 
-    // ========== GLOBALS ==========
+    // ========== GLOBAL VARIABLES ==========
     let currentUser = null;
     let schools = [];
     let eventsList = [];
@@ -477,10 +355,9 @@
     let secondarySubjects = [];
     let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
     let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
-    let videoViews = JSON.parse(localStorage.getItem('apshule_video_views')) || [];
     let currentRating = 0, currentLessonSubject = "";
 
-    // Helper
+    // ========== HELPER FUNCTIONS ==========
     function showNotification(msg, type="success") {
         let n = document.getElementById('notification');
         n.textContent = msg;
@@ -500,54 +377,85 @@
         return url;
     }
 
-    // ========== FIRESTORE LISTENERS (real-time) ==========
-    function listenToSchools() {
-        onSnapshot(collection(db, "schools"), (snap) => {
-            schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderSchoolsAdmin();
-            if(currentUser?.role === 'school') {
-                let s = schools.find(s => s.id === currentUser.schoolId);
-                if(s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
-            }
+    // ========== REAL-TIME GREETING ==========
+    function updateGreeting() {
+        const hour = new Date().getHours();
+        let greeting = "";
+        if (hour < 12) greeting = "Good morning";
+        else if (hour < 18) greeting = "Good afternoon";
+        else greeting = "Good evening";
+        const nameSpan = document.getElementById('userName');
+        if (nameSpan && currentUser) {
+            let firstName = currentUser.name?.split(' ')[0] || "Student";
+            nameSpan.innerText = `${greeting}, ${firstName}!`;
+        }
+    }
+    setInterval(updateGreeting, 60000);
+
+    // ========== FIRESTORE STORAGE FOR FEEDBACK & VIDEO VIEWS ==========
+    async function saveFeedback(lesson, rating, comment) {
+        if (!currentUser) return;
+        await addDoc(collection(db, "feedbacks"), {
+            lesson: lesson, rating: rating, comment: comment,
+            userName: currentUser.name, userEmail: currentUser.email,
+            timestamp: new Date().toISOString()
         });
     }
-    function listenToEvents() {
-        onSnapshot(collection(db, "events"), (snap) => {
-            eventsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderEventsTicker();
-            renderEventsAdmin();
-        });
-    }
-    function listenToPDFs() {
-        onSnapshot(collection(db, "pdfs"), (snap) => {
-            pdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderPdfList();
-            renderPdfAdmin();
-        });
-    }
-    function listenToVideoMappings() {
-        onSnapshot(collection(db, "videos"), (snap) => {
-            videoMappings = {};
-            snap.forEach(d => { videoMappings[d.id] = d.data().youtubeId; });
-            renderAdminVideoLists();
-        });
-    }
-    function listenToSubjects() {
-        onSnapshot(doc(db, "subjects", "primary"), (docSnap) => {
-            if(docSnap.exists()) primarySubjects = docSnap.data().list || [];
-            else { primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"]; setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); }
-            renderAdminVideoLists();
-            if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects();
-        });
-        onSnapshot(doc(db, "subjects", "secondary"), (docSnap) => {
-            if(docSnap.exists()) secondarySubjects = docSnap.data().list || [];
-            else { secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"]; setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); }
-            renderAdminVideoLists();
-            if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects();
+    async function saveVideoView(subject) {
+        if (!currentUser) return;
+        await addDoc(collection(db, "videoViews"), {
+            subject: subject, userId: currentUser.uid,
+            userName: currentUser.name, timestamp: new Date().toISOString()
         });
     }
 
-    // ========== RENDER FUNCTIONS (original attractive CSS) ==========
+    // ========== ADMIN PANEL RENDERING (feedback & global views) ==========
+    function renderFeedbackAdmin() {
+        const container = document.getElementById('feedbackAdminList');
+        if (!container) return;
+        const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"), limit(50));
+        onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) { container.innerHTML = '<div>No feedback yet.</div>'; return; }
+            let html = '<div style="max-height:300px; overflow-y:auto;">';
+            snapshot.forEach(doc => {
+                let f = doc.data();
+                html += `<div style="border-bottom:1px solid #ddd; padding:8px;"><strong>${f.userName}</strong> rated ${f.lesson} ${f.rating}⭐<br><em>${f.comment || 'No comment'}</em><br><small>${new Date(f.timestamp).toLocaleString()}</small></div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        });
+    }
+    function renderGlobalMostWatched() {
+        const container = document.getElementById('globalMostWatchedList');
+        if (!container) return;
+        onSnapshot(collection(db, "videoViews"), (snapshot) => {
+            const counts = new Map();
+            snapshot.forEach(doc => {
+                let subj = doc.data().subject;
+                counts.set(subj, (counts.get(subj) || 0) + 1);
+            });
+            const sorted = Array.from(counts.entries()).sort((a,b) => b[1] - a[1]).slice(0,10);
+            if (sorted.length === 0) { container.innerHTML = '<li>No views yet.</li>'; return; }
+            container.innerHTML = sorted.map(([subj, cnt]) => `<li><strong>${subj}</strong> – ${cnt} views</li>`).join('');
+        });
+    }
+
+    // ========== USER ADDRESS ==========
+    async function saveUserAddress(address) {
+        if (!currentUser) return;
+        await updateDoc(doc(db, "users", currentUser.uid), { address: address });
+        showNotification("Address saved!");
+        loadUserAndShowApp(auth.currentUser);
+    }
+    async function detectLocation() {
+        try {
+            let resp = await fetch('https://ipapi.co/json/');
+            let data = await resp.json();
+            return `${data.city}, ${data.country_name}`;
+        } catch(e) { return "Unknown"; }
+    }
+
+    // ========== ORIGINAL RENDER FUNCTIONS (attractive classes & subjects) ==========
     const subjectColors = ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#E91E63','#3F51B5','#009688','#FFC107','#8BC34A','#673AB7','#FF5722','#607D8B','#CDDC39'];
     function getSubjectIcon(subj) {
         const icons = { 'Mathematics':'fa-calculator','English':'fa-book','Biology':'fa-dna','Chemistry':'fa-flask','Physics':'fa-atom','History':'fa-landmark','Geography':'fa-globe','Kiswahili':'fa-language','Commerce':'fa-chart-line','ICT':'fa-laptop','Literature':'fa-book-open','Economics':'fa-chart-bar','Science':'fa-flask','Social Studies':'fa-globe','Literacy':'fa-book','Religious Education':'fa-church','Agriculture':'fa-seedling','Fine Art':'fa-paintbrush','Physical Education':'fa-futbol','Entrepreneurship':'fa-lightbulb' };
@@ -582,8 +490,7 @@
         let vid = videoMappings[subject];
         if(!vid) { showNotification(`No video for "${subject}". Admin can add.`,"info"); return; }
         currentLessonSubject = subject;
-        videoViews.push({ userId: currentUser.uid, subject, timestamp: new Date().toISOString() });
-        localStorage.setItem('apshule_video_views', JSON.stringify(videoViews));
+        saveVideoView(subject);
         document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${vid}?autoplay=1`;
         document.getElementById('currentVideoTitle').innerText = `${subject} Lesson`;
         document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
@@ -678,25 +585,6 @@
         }
         showNotification("Secondary saved");
     }
-    document.getElementById('savePrimaryVideosBtn')?.addEventListener('click', savePrimary);
-    document.getElementById('saveSecondaryVideosBtn')?.addEventListener('click', saveSecondary);
-    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => {
-        let name = document.getElementById('newSubjectName').value.trim();
-        let level = document.getElementById('newSubjectLevel').value;
-        let vid = document.getElementById('newSubjectVideo').value.trim();
-        if(!name) { showNotification("Enter subject name","error"); return; }
-        let subjectsRef = doc(db, "subjects", level);
-        let list = level === 'primary' ? primarySubjects : secondarySubjects;
-        if(list.includes(name)) { showNotification("Subject exists","error"); return; }
-        list.push(name);
-        await updateDoc(subjectsRef, { list });
-        if(vid) await setDoc(doc(db,"videos",name), { youtubeId: extractVideoId(vid) });
-        showNotification(`Subject "${name}" added`);
-        document.getElementById('newSubjectName').value = '';
-        document.getElementById('newSubjectVideo').value = '';
-        if(level === 'primary') primarySubjects = list; else secondarySubjects = list;
-        renderAdminVideoLists();
-    });
 
     // ========== AUTHENTICATION ==========
     async function handleSignup(e) {
@@ -710,8 +598,14 @@
         if(pwd.length<4) { document.getElementById('loginError').innerText = "Password min 4 chars"; return; }
         try {
             let cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            await setDoc(doc(db,"users",cred.user.uid), { uid:cred.user.uid, name, email, phone, educationLevel:level, role:"individual", createdAt:new Date().toISOString(), loginCount:1, lastLogin:new Date().toISOString() });
-            showNotification("Account created!");
+            let location = await detectLocation();
+            await setDoc(doc(db,"users",cred.user.uid), {
+                uid:cred.user.uid, name, email, phone, educationLevel:level,
+                role:"individual", createdAt:new Date().toISOString(),
+                loginCount:1, lastLogin:new Date().toISOString(),
+                detectedLocation: location, address: ""
+            });
+            showNotification("Account created! We detected your approximate location.");
         } catch(err) { document.getElementById('loginError').innerText = err.message; }
     }
     async function handleLogin(e) {
@@ -735,15 +629,28 @@
         try { await sendPasswordResetEmail(auth, email); showNotification("Reset email sent!"); } catch(err) { showNotification(err.message,"error"); }
     }
     function logout() { signOut(auth); }
+
+    // ========== LOAD USER AND SHOW APP ==========
     async function loadUserAndShowApp(user) {
         let docSnap = await getDoc(doc(db,"users",user.uid));
         if(docSnap.exists()) {
             currentUser = { uid:user.uid, ...docSnap.data() };
-            document.getElementById('userName').innerText = currentUser.name.split(' ')[0];
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            let school = (currentUser.schoolId && schools.find(s => s.id === currentUser.schoolId)) || null;
-            document.getElementById('accountInfo').innerHTML = `<div class="account-field"><label>Name</label><div>${currentUser.name}</div></div><div class="account-field"><label>Email</label><div>${currentUser.email}</div></div><div class="account-field"><label>Phone</label><div>${currentUser.phone||'N/A'}</div></div><div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':(currentUser.role==='school'?'School Admin':'Individual')}</div></div><div class="account-field"><label>Logins</label><div>${currentUser.loginCount||0}</div></div>`;
+            updateGreeting();
+            let address = currentUser.address || 'Not set';
+            document.getElementById('accountInfo').innerHTML = `
+                <div class="account-field"><label>Name</label><div>${currentUser.name}</div></div>
+                <div class="account-field"><label>Email</label><div>${currentUser.email}</div></div>
+                <div class="account-field"><label>Phone</label><div>${currentUser.phone||'N/A'}</div></div>
+                <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':(currentUser.role==='school'?'School Admin':'Individual')}</div></div>
+                <div class="account-field"><label>Address</label><div id="userAddressDisplay">${address}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
+                <div class="account-field"><label>Logins</label><div>${currentUser.loginCount||0}</div></div>
+            `;
+            document.getElementById('editAddressBtn')?.addEventListener('click', () => {
+                let newAddr = prompt("Enter your physical address:", address);
+                if (newAddr) saveUserAddress(newAddr);
+            });
             let isSuper = currentUser.role === 'superadmin';
             let isSchool = currentUser.role === 'school';
             document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
@@ -756,14 +663,8 @@
             if(isSuper) {
                 let usersList = await getDocs(collection(db,"users"));
                 document.getElementById('totalUsersCount').innerText = usersList.size;
-                let tbody = document.getElementById('usersTableBody');
-                tbody.innerHTML = "";
-                usersList.forEach(d => { let u = d.data(); tbody.innerHTML += `<tr><td>${u.name||''}</td><td>${u.email}</td><td>${u.role||'individual'}</td><td>${u.loginCount||0}</td><td>${u.lastLogin?new Date(u.lastLogin).toLocaleString():'Never'}</td></tr>`; });
-                let viewsCount = {};
-                videoViews.forEach(v => { viewsCount[v.subject] = (viewsCount[v.subject]||0)+1; });
-                let most = Object.entries(viewsCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
-                let mostDiv = document.getElementById('mostWatchedList');
-                mostDiv.innerHTML = most.map(([s,c]) => `<li>${s} (${c} views)</li>`).join('');
+                renderFeedbackAdmin();
+                renderGlobalMostWatched();
             }
             renderClasses();
             renderRecentAttendance();
@@ -771,7 +672,7 @@
         }
     }
 
-    // ========== ATTENDANCE FUNCTIONS (unchanged from original, using localStorage) ==========
+    // ========== ATTENDANCE FUNCTIONS (original, localStorage-based) ==========
     let attendanceStream = null, enrollStream = null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
     async function setupCamera(vid, mode='environment') { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); document.getElementById(vid).srcObject = s; return s; } catch(e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById(vid).srcObject = s; return s; } catch(e) { showNotification("Camera access denied","error"); return null; } } }
     function captureFace(vid) { let v = document.getElementById(vid); if(!v||!v.videoWidth) return null; let c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
@@ -817,10 +718,17 @@
     document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
     document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.getAttribute('data-rating')); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ if(idx<currentRating) s.className='fas fa-star'; else s.className='far fa-star'; }); }));
-    document.getElementById('submitFeedbackBtn')?.addEventListener('click',()=>{ let fb=JSON.parse(localStorage.getItem('lessonFeedbacks')||'[]'); fb.push({ lesson:currentLessonSubject, rating:currentRating, comment:document.getElementById('feedbackComment').value, user:currentUser?.email||'guest', timestamp:new Date().toISOString() }); localStorage.setItem('lessonFeedbacks',JSON.stringify(fb)); showNotification('Thank you!'); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; });
+    document.getElementById('submitFeedbackBtn')?.addEventListener('click', async () => {
+        const comment = document.getElementById('feedbackComment').value;
+        await saveFeedback(currentLessonSubject, currentRating, comment);
+        showNotification('Thank you for your feedback!');
+        document.getElementById('videoModal').classList.remove('show');
+        document.getElementById('youtubeIframe').src = '';
+        document.getElementById('feedbackSection').style.display = 'none';
+    });
     document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; });
 
-    // ========== ADD BUTTON LISTENERS FOR ADMIN ==========
+    // ========== ADMIN BUTTON LISTENERS ==========
     document.getElementById('addSchoolBtn')?.addEventListener('click', async () => {
         let name=document.getElementById('schoolName').value.trim(), contact=document.getElementById('schoolContact').value.trim(), loc=document.getElementById('schoolLocation').value.trim(), logo=document.getElementById('schoolLogoUrl').value.trim(), email=document.getElementById('schoolLoginEmail').value.trim(), pwd=document.getElementById('schoolLoginPassword').value;
         if(!name||!contact||!loc||!email||!pwd){ showNotification("Fill all fields","error"); return; }
@@ -845,6 +753,44 @@
         showNotification("PDF added");
         document.getElementById('pdfTitle').value=''; document.getElementById('pdfUrl').value='';
     });
+    document.getElementById('savePrimaryVideosBtn')?.addEventListener('click', savePrimary);
+    document.getElementById('saveSecondaryVideosBtn')?.addEventListener('click', saveSecondary);
+    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => {
+        let newName = document.getElementById('newSubjectName').value.trim();
+        let level = document.getElementById('newSubjectLevel').value;
+        let videoUrl = document.getElementById('newSubjectVideo').value.trim();
+        if(!newName) { showNotification("Enter subject name","error"); return; }
+        let subjectsRef = doc(db, "subjects", level);
+        let list = level === 'primary' ? primarySubjects : secondarySubjects;
+        if(list.includes(newName)) { showNotification("Subject exists","error"); return; }
+        list.push(newName);
+        await updateDoc(subjectsRef, { list });
+        if(videoUrl) await setDoc(doc(db,"videos",newName), { youtubeId: extractVideoId(videoUrl) });
+        showNotification(`Subject "${newName}" added`);
+        document.getElementById('newSubjectName').value = '';
+        document.getElementById('newSubjectVideo').value = '';
+        if(level === 'primary') primarySubjects = list; else secondarySubjects = list;
+        renderAdminVideoLists();
+    });
+
+    // ========== FIRESTORE LISTENERS (real-time) ==========
+    function listenToSchools() {
+        onSnapshot(collection(db, "schools"), (snap) => {
+            schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderSchoolsAdmin();
+            if(currentUser?.role === 'school') {
+                let s = schools.find(s => s.id === currentUser.schoolId);
+                if(s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
+            }
+        });
+    }
+    function listenToEvents() { onSnapshot(collection(db, "events"), (snap) => { eventsList = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderEventsTicker(); renderEventsAdmin(); }); }
+    function listenToPDFs() { onSnapshot(collection(db, "pdfs"), (snap) => { pdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPdfList(); renderPdfAdmin(); }); }
+    function listenToVideoMappings() { onSnapshot(collection(db, "videos"), (snap) => { videoMappings = {}; snap.forEach(d => { videoMappings[d.id] = d.data().youtubeId; }); renderAdminVideoLists(); }); }
+    function listenToSubjects() {
+        onSnapshot(doc(db, "subjects", "primary"), (docSnap) => { if(docSnap.exists()) primarySubjects = docSnap.data().list || []; else { primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"]; setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); } renderAdminVideoLists(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
+        onSnapshot(doc(db, "subjects", "secondary"), (docSnap) => { if(docSnap.exists()) secondarySubjects = docSnap.data().list || []; else { secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"]; setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); } renderAdminVideoLists(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
+    }
 
     // ========== START APP ==========
     listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings(); listenToSubjects();
@@ -855,7 +801,7 @@
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
     onAuthStateChanged(auth, async (user) => { if(user) await loadUserAndShowApp(user); else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
     renderClasses(); renderPdfList(); renderEventsTicker();
-    console.log("✅ All features restored – Firebase sync active, attractive classes/subjects, school & superadmin roles working, facial attendance, AI tutor, about page, and real-time updates across devices.");
+    console.log("✅ Full integrated version – all features working, including global feedback, most watched, greeting, address.");
 </script>
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       </html>
