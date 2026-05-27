@@ -249,6 +249,23 @@
             margin-bottom: 10px;
             border: 2px solid #4B2E9E;
         }
+        /* Loading overlay for payment */
+        .payment-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            flex-direction: column;
+            gap: 15px;
+        }
     </style>
 </head>
 <body>
@@ -265,7 +282,7 @@
         </div>
         <div id="loginFormDiv" class="login-form active">
             <div style="position: relative;"><input type="email" id="loginEmail" placeholder="Email" class="login-input"><span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
-            <div style="position: relative;"><input type="password" id="loginPassword" placeholder="Password" class="login-input"><span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
+            <div style="position: relative;"><input type="password" id="loginPassword" placeholder="Password" class="login-input"><span onclick="togglePassword('loginPassword')" style=" position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;"><label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;"><input type="checkbox" id="rememberMeCheckbox"> Remember Me</label><span id="forgotPasswordLink" style="color: #FF8C42; font-size: 14px; cursor: pointer;">Forgot Password?</span></div>
             <button id="loginBtn" class="login-btn">Login</button>
         </div>
@@ -412,6 +429,10 @@
     const db = getFirestore(app);
     window.db = db; window.auth = auth;
 
+    // ========== PESAPAL CONFIGURATION ==========
+    // *** UPDATED WITH YOUR DEPLOYED RENDER BACKEND URL ***
+    const PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
+
     // ========== GLOBAL VARIABLES ==========
     let currentUser = null;
     let schools = [];
@@ -463,6 +484,92 @@
         }
     }
     setInterval(updateGreeting, 60000);
+
+    // ========== PESAPAL PAYMENT INTEGRATION ==========
+    function showPaymentLoading(show) {
+        let existing = document.getElementById('paymentLoadingOverlay');
+        if(show) {
+            if(!existing) {
+                let div = document.createElement('div');
+                div.id = 'paymentLoadingOverlay';
+                div.className = 'payment-loading';
+                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting to Pesapal...</span>';
+                document.body.appendChild(div);
+            } else {
+                existing.style.display = 'flex';
+            }
+        } else {
+            if(existing) existing.style.display = 'none';
+        }
+    }
+
+    async function initiatePesapalPayment(plan, amount, email, phone, name) {
+        if(!PESAPAL_BACKEND_URL) {
+            showNotification("Backend URL not configured", "error");
+            return;
+        }
+        showPaymentLoading(true);
+        try {
+            const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amount,
+                    currency: "UGX",
+                    description: `${plan} Subscription - APSHULE`,
+                    email: email,
+                    phone: phone,
+                    name: name,
+                    reference: `SUB_${Date.now()}_${currentUser.uid}`
+                })
+            });
+            const data = await response.json();
+            if(data.redirect_url) {
+                sessionStorage.setItem('pesapal_order_tracking_id', data.order_tracking_id);
+                sessionStorage.setItem('pesapal_merchant_reference', data.merchant_reference);
+                window.location.href = data.redirect_url;
+            } else {
+                throw new Error(data.error || "Failed to initiate payment");
+            }
+        } catch(err) {
+            showNotification("Payment error: " + err.message, "error");
+            showPaymentLoading(false);
+        }
+    }
+
+    async function checkPaymentStatus() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderTrackingId = urlParams.get('OrderTrackingId');
+        const merchantReference = urlParams.get('OrderMerchantReference');
+        if(orderTrackingId && merchantReference && PESAPAL_BACKEND_URL) {
+            showPaymentLoading(true);
+            try {
+                const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_tracking_id: orderTrackingId })
+                });
+                const data = await response.json();
+                if(data.status === "COMPLETED") {
+                    showNotification("✅ Payment successful! Your subscription is active.", "success");
+                    if(currentUser) {
+                        await updateDoc(doc(db, "users", currentUser.uid), {
+                            subscription: merchantReference,
+                            subscriptionActive: true,
+                            subscriptionDate: new Date().toISOString()
+                        });
+                    }
+                } else {
+                    showNotification("Payment not completed. Status: " + data.status, "error");
+                }
+            } catch(err) {
+                showNotification("Failed to verify payment", "error");
+            } finally {
+                showPaymentLoading(false);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    }
 
     async function saveFeedback(lesson, rating, comment) {
         if (!currentUser) return;
@@ -525,7 +632,6 @@
         } catch(e) { return "Unknown"; }
     }
 
-    // Profile picture upload – only for superadmin (to change header) and individuals (only for account page view)
     async function uploadProfilePicture(file) {
         if (!currentUser) return;
         const reader = new FileReader();
@@ -533,12 +639,10 @@
             const base64 = e.target.result;
             await updateDoc(doc(db, "users", currentUser.uid), { profilePic: base64 });
             currentUser.profilePic = base64;
-            // Only update header logo if user is superadmin (or school? school logo is separate)
             if (currentUser.role === 'superadmin') {
                 document.getElementById('headerLogoImg').src = base64;
                 document.getElementById('loginLogoImg').src = base64;
             }
-            // For individuals, only update the preview in account page
             document.getElementById('profilePicPreview').src = base64;
             showNotification("Profile picture updated!");
         };
@@ -724,7 +828,7 @@
         document.getElementById('videoModal').classList.add('show');
     }
 
-    // ========== ATTENDANCE FUNCTIONS (unchanged) ==========
+    // ========== ATTENDANCE FUNCTIONS ==========
     let attendanceStream = null, enrollStream = null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
     async function setupCamera(vid, mode='environment') { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); document.getElementById(vid).srcObject = s; return s; } catch(e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById(vid).srcObject = s; return s; } catch(e) { showNotification("Camera access denied","error"); return null; } } }
     function captureFace(vid) { let v = document.getElementById(vid); if(!v||!v.videoWidth) return null; let c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
@@ -759,7 +863,25 @@
     function navigateTo(pageId) { if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
     document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.getAttribute('data-page'))));
     document.getElementById('folderHeader')?.addEventListener('click',()=>{ let c=document.getElementById('folderContent'); let ic=document.querySelector('#folderHeader i:last-child'); c.classList.toggle('show'); ic.className=c.classList.contains('show')?'fas fa-chevron-up':'fas fa-chevron-down'; });
-    document.querySelectorAll('.subscribe-btn-small').forEach(btn=>btn.addEventListener('click',(e)=>{ e.stopPropagation(); if(!currentUser){ alert('Please login first'); return; } window.open(`https://wa.me/256705732540?text=I want to subscribe to ${btn.getAttribute('data-plan')} plan (UGX ${btn.getAttribute('data-price')})`,'_blank'); }));
+    
+    // === SUBSCRIPTION BUTTON HANDLER WITH PESAPAL ===
+    document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+            const plan = btn.getAttribute('data-plan');
+            const amount = parseInt(btn.getAttribute('data-price'));
+            const email = currentUser.email;
+            const phone = currentUser.phone || "N/A";
+            const name = currentUser.name;
+            
+            await initiatePesapalPayment(plan, amount, email, phone, name);
+        });
+    });
+    
     document.querySelectorAll('.login-tab').forEach(t=>t.addEventListener('click',()=>{ let tn=t.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active',tn==='login'); document.getElementById('signupFormDiv').classList.toggle('active',tn==='signup'); }));
     document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; });
     document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; renderClasses(); }));
@@ -919,13 +1041,11 @@
             document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
             document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
             
-            // Profile picture upload section: visible to all (including individuals, superadmin) but school can also see? Let's hide for school.
             const profilePicSection = document.getElementById('profilePicUploadSection');
             if (profilePicSection) {
                 profilePicSection.style.display = isSchool ? "none" : "block";
             }
             
-            // Set header logo:
             if (isSchool) {
                 let s = schools.find(sch => sch.id === currentUser.schoolId);
                 if (s && s.logo) {
@@ -936,11 +1056,9 @@
                     document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                 }
             } else if (isSuper && currentUser.profilePic) {
-                // Superadmin profile picture appears in header
                 document.getElementById('headerLogoImg').src = currentUser.profilePic;
                 document.getElementById('loginLogoImg').src = currentUser.profilePic;
             } else {
-                // Individuals and superadmin without profile pic: default logo
                 document.getElementById('headerLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
                 document.getElementById('loginLogoImg').src = 'https://img.sanishtech.com/u/cb25b3240b50058891e40555dc06cf46.jpg';
             }
@@ -1005,7 +1123,11 @@
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
     onAuthStateChanged(auth, async (user) => { if(user) await loadUserAndShowApp(user); else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
     renderClasses(); renderPdfList(); renderEventsTicker();
-    console.log("✅ Final version: Default logo for individuals, school logo for schools, superadmin profile pic optional.");
+    
+    // Check for payment return status
+    checkPaymentStatus();
+    
+    console.log("✅ APSHULE with Pesapal integration ready.");
 </script>
 </body>
-</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+</html>                                                                                                                                                                                                                                                                                            
