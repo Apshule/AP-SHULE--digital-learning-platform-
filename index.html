@@ -9,39 +9,22 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
 
-        /* ✅ 1. YOUR LOGO RESPONSIVE CSS (NO BASE64) */
+        /* ✅ RESPONSIVE LOGO CSS */
         .logo--responsive {
             max-width: 100%;
             height: auto;
             display: block;
         }
-
-        /* Desktop larger screens */
-        .logo--desktop {
-            max-width: 280px;  /* Desktop size */
-        }
-
-        /* Tablets */
-        @media (max-width: 768px) {
-            .logo--tablet {
-                max-width: 220px;
-            }
-        }
-
-        /* Phones */
-        @media (max-width: 480px) {
-            .logo--mobile {
-                max-width: 180px;
-            }
-        }
+        .logo--desktop { max-width: 280px; }
+        @media (max-width: 768px) { .logo--tablet { max-width: 220px; } }
+        @media (max-width: 480px) { .logo--mobile { max-width: 180px; } }
         
-        /* ✅ CENTER LOGO ON LOGIN SCREEN (added rule) */
+        /* ✅ CENTER LOGIN LOGO */
         .login-logo-img {
             display: block;
             margin-left: auto;
             margin-right: auto;
         }
-        /* ✅ End of responsive logo CSS */
 
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
         .login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -337,7 +320,6 @@
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
-        <!-- ✅ LOGO: Centered & Responsive -->
         <img class="login-logo-img logo--responsive logo--desktop logo--tablet logo--mobile" 
              src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" 
              alt="APSHULE Logo - SHU Let's learn with ease">
@@ -412,6 +394,17 @@
                         <button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button>
                     </div>
                     <div id="schoolsAdminList"></div>
+                    
+                    <!-- ✅ NEW: LOGO UPLOAD SECTION (SUPER ADMIN ONLY) -->
+                    <div class="admin-section">
+                        <h4>🖼️ Upload / Change Brand Logo</h4>
+                        <div class="add-pdf-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
+                            <input type="file" id="logoUploadInput" accept="image/jpeg,image/png">
+                            <button id="uploadLogoBtn" class="admin-toggle">Upload Logo</button>
+                            <div id="logoUploadStatus" style="margin-top:8px; font-size:12px;"></div>
+                        </div>
+                    </div>
+                    
                     <h4>📊 Global Analytics</h4>
                     <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
                     <div class="admin-section"><h4>🎬 Most Watched Videos (Global)</h4><ul id="globalMostWatchedList" class="most-watched-list"></ul></div>
@@ -479,7 +472,10 @@
 </script>
 
 <script type="module">
-    // ========== FIREBASE CONFIG ==========
+    import { initializeApp } from "firebase/app";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
+    
     const firebaseConfig = {
         apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
         authDomain: "apshule-app.firebaseapp.com",
@@ -488,9 +484,6 @@
         messagingSenderId: "610368652834",
         appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
     };
-    import { initializeApp } from "firebase/app";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
-    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -717,6 +710,35 @@
             preview.src = currentUser.profilePic;
         } else if (preview) {
             preview.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+        }
+    }
+
+    // ========== BRAND LOGO UPLOAD (Base64 method, no Firebase Storage) ==========
+    async function uploadBrandLogoBase64(file) {
+        if (!currentUser || currentUser.role !== 'superadmin') {
+            showNotification("Only super admin can change the logo", "error");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const base64 = e.target.result;
+            await setDoc(doc(db, "settings", "brand"), { logoBase64: base64 });
+            // Update all logo images on the page
+            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
+                img.src = base64;
+            });
+            showNotification("Brand logo updated successfully!");
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function loadBrandLogo() {
+        const docSnap = await getDoc(doc(db, "settings", "brand"));
+        if (docSnap.exists() && docSnap.data().logoBase64) {
+            const logoUrl = docSnap.data().logoBase64;
+            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
+                img.src = logoUrl;
+            });
         }
     }
 
@@ -1030,6 +1052,16 @@
         }
         uploadProfilePicture(fileInput.files[0]);
     });
+    
+    // ✅ LOGO UPLOAD BUTTON EVENT
+    document.getElementById('uploadLogoBtn')?.addEventListener('click', () => {
+        const fileInput = document.getElementById('logoUploadInput');
+        if (!fileInput.files.length) {
+            showNotification("Select an image first", "error");
+            return;
+        }
+        uploadBrandLogoBase64(fileInput.files[0]);
+    });
 
     // ========== FIRESTORE LISTENERS ==========
     function listenToSchools() {
@@ -1185,12 +1217,22 @@
     });
     document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
-    onAuthStateChanged(auth, async (user) => { if(user) await loadUserAndShowApp(user); else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
+    onAuthStateChanged(auth, async (user) => { 
+        if(user) {
+            await loadUserAndShowApp(user);
+            await loadBrandLogo(); // Load saved logo after login
+        }
+        else { 
+            document.getElementById('loginScreen').classList.remove('hidden'); 
+            document.getElementById('appScreen').classList.add('hidden');
+            await loadBrandLogo(); // Also load logo on login screen (for non-logged users)
+        } 
+    });
     renderClasses(); renderPdfList(); renderEventsTicker();
     
     checkPaymentStatus();
     
-    console.log("✅ APSHULE with centered, responsive logo ready.");
+    console.log("✅ APSHULE with logo upload feature ready.");
 </script>
 </body>
 </html>
