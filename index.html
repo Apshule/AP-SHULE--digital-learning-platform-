@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>APSHULE - Learn With Ease</title>
+    <!-- ✅ FAVICON (logo on browser tab) using your existing logo URL -->
+    <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -395,7 +398,7 @@
                     </div>
                     <div id="schoolsAdminList"></div>
                     
-                    <!-- ✅ NEW: LOGO UPLOAD SECTION (SUPER ADMIN ONLY) -->
+                    <!-- ✅ LOGO UPLOAD SECTION (SUPER ADMIN ONLY) -->
                     <div class="admin-section">
                         <h4>🖼️ Upload / Change Brand Logo</h4>
                         <div class="add-pdf-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
@@ -723,10 +726,19 @@
         reader.onload = async (e) => {
             const base64 = e.target.result;
             await setDoc(doc(db, "settings", "brand"), { logoBase64: base64 });
-            // Update all logo images on the page
+            // Update all logo images on the page (including favicon? favicon is static, but we can update it too)
             document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
                 img.src = base64;
             });
+            // Also update the favicon dynamically (optional)
+            let faviconLink = document.querySelector("link[rel='icon']");
+            if (faviconLink) {
+                faviconLink.href = base64;
+            }
+            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+            if (appleIcon) {
+                appleIcon.href = base64;
+            }
             showNotification("Brand logo updated successfully!");
         };
         reader.readAsDataURL(file);
@@ -739,6 +751,15 @@
             document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
                 img.src = logoUrl;
             });
+            // Also update favicon dynamically
+            let faviconLink = document.querySelector("link[rel='icon']");
+            if (faviconLink) {
+                faviconLink.href = logoUrl;
+            }
+            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+            if (appleIcon) {
+                appleIcon.href = logoUrl;
+            }
         }
     }
 
@@ -1232,7 +1253,7 @@
     
     checkPaymentStatus();
     
-    console.log("✅ APSHULE with logo upload feature ready.");
+    console.log("✅ APSHULE with favicon and logo upload ready.");
 </script>
 </body>
 </html>
