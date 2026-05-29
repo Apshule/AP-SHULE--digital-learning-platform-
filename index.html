@@ -531,7 +531,7 @@
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
         <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
         <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
-        <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
+        <div class="nav-item" data-page="account"><i class="fas fa-user</i><span>Account</span></div>
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
     </div>
 </div>
@@ -1056,6 +1056,22 @@
 
     // ========== SUBSCRIPTION PLAN MANAGEMENT (with real-time updates for ALL users) ==========
     let unsubscribePlans = null;
+    async function ensureDefaultPlans() {
+        const snap = await getDocs(collection(db, "subscriptionPlans"));
+        if (snap.empty) {
+            const defaults = [
+                { name: "Daily", price: 500, currency: "UGX", order: 1 },
+                { name: "Weekly", price: 3000, currency: "UGX", order: 2 },
+                { name: "Monthly", price: 10000, currency: "UGX", order: 3 },
+                { name: "Term Plan", price: 50000, currency: "UGX", order: 4 },
+                { name: "Half Year", price: 80000, currency: "UGX", order: 5 },
+                { name: "Full Year", price: 150000, currency: "UGX", order: 6 }
+            ];
+            for (let plan of defaults) {
+                await addDoc(collection(db, "subscriptionPlans"), plan);
+            }
+        }
+    }
     function startSubscriptionPlansListener() {
         if (unsubscribePlans) unsubscribePlans();
         const q = collection(db, "subscriptionPlans");
@@ -1169,7 +1185,7 @@
             return;
         }
         const apiKey = "os_v2_app_iyb7nuncy5cnragggoxnk3qnj54nzmft6fvexdm5r26gykdt4fevq3sqpznghqgh5irkirbo6plreoieyivsl6yuj74l2grldddjpgq";
-        const appId = "4603f6d1-a2c7-44d8-80c6-33aed56e0d4f";
+        const appId = "4603f6d1-a2c7-44d8-80c6-33aad56e0d4f";
         try {
             const response = await fetch("https://onesignal.com/api/v1/notifications", {
                 method: "POST",
@@ -1369,7 +1385,8 @@
             if(isTeacher) loadTeacherDashboard();
             renderClasses();
             renderAboutPage(await loadAboutContent());
-            // Start subscription plans listener (for ALL logged in users)
+            // Ensure default subscription plans exist and start listener for ALL users
+            await ensureDefaultPlans();
             startSubscriptionPlansListener();
             // Link OneSignal with Firebase user
             if(window.OneSignalDeferred) {
@@ -1598,4 +1615,4 @@
     console.log("✅ APSHULE fully loaded with all features: teacher revenue, subscription management, OneSignal push, user analytics, and full original design.");
 </script>
 </body>
-</html>
+    </html>
