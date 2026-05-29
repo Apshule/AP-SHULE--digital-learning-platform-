@@ -8,17 +8,14 @@
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== ORIGINAL FULL CSS (exactly as in your working version) ========== */
+        /* ========== ORIGINAL FULL CSS (exactly as in your first working version) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
-
         .logo--responsive { max-width: 100%; height: auto; display: block; }
         .logo--desktop { max-width: 280px; }
         @media (max-width: 768px) { .logo--tablet { max-width: 220px; } }
         @media (max-width: 480px) { .logo--mobile { max-width: 180px; } }
-        
         .login-logo-img { display: block; margin-left: auto; margin-right: auto; }
-
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
         .login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-card { background: white; border-radius: 40px; padding: 40px 24px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
@@ -73,32 +70,11 @@
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
         .welcome-title { color: white; font-size: 22px; }
         .welcome-subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }
-        .announcements-section {
-            background: linear-gradient(135deg, #FF8C42, #FF6B35);
-            border-radius: 20px;
-            margin: 20px 0;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .announcements-header {
-            background: rgba(0,0,0,0.2);
-            padding: 12px 16px;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-        }
+        .announcements-section { background: linear-gradient(135deg, #FF8C42, #FF6B35); border-radius: 20px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .announcements-header { background: rgba(0,0,0,0.2); padding: 12px 16px; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.3); }
         .announcements-header i { font-size: 18px; }
         .announcements-header span { flex: 1; text-align: center; letter-spacing: 1px; }
-        .announcements-ticker {
-            background: #FF8C42;
-            padding: 12px 0;
-            overflow: hidden;
-            position: relative;
-        }
+        .announcements-ticker { background: #FF8C42; padding: 12px 0; overflow: hidden; position: relative; }
         .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
         .ticker { display: inline-block; animation: ticker-scroll 25s linear infinite; white-space: nowrap; }
         .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; letter-spacing: 0.5px; }
@@ -531,7 +507,7 @@
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
         <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
         <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
-        <div class="nav-item" data-page="account"><i class="fas fa-user</i><span>Account</span></div>
+        <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
     </div>
 </div>
@@ -1185,7 +1161,7 @@
             return;
         }
         const apiKey = "os_v2_app_iyb7nuncy5cnragggoxnk3qnj54nzmft6fvexdm5r26gykdt4fevq3sqpznghqgh5irkirbo6plreoieyivsl6yuj74l2grldddjpgq";
-        const appId = "4603f6d1-a2c7-44d8-80c6-33aad56e0d4f";
+        const appId = "4603f6d1-a2c7-44d8-80c6-33aed56e0d4f";
         try {
             const response = await fetch("https://onesignal.com/api/v1/notifications", {
                 method: "POST",
@@ -1615,4 +1591,4 @@
     console.log("✅ APSHULE fully loaded with all features: teacher revenue, subscription management, OneSignal push, user analytics, and full original design.");
 </script>
 </body>
-    </html>
+</html>                                                                                                                                                                                                                                                                    
