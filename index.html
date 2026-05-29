@@ -4,27 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>APSHULE - Learn With Ease</title>
-    <!-- ✅ FAVICON (logo on browser tab) -->
+    <!-- ✅ FAVICON -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* ========== ORIGINAL FULL CSS (unchanged) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
-
-        /* ✅ RESPONSIVE LOGO CSS */
         .logo--responsive { max-width: 100%; height: auto; display: block; }
         .logo--desktop { max-width: 280px; }
         @media (max-width: 768px) { .logo--tablet { max-width: 220px; } }
         @media (max-width: 480px) { .logo--mobile { max-width: 180px; } }
-        
-        /* ✅ CENTER LOGIN LOGO */
-        .login-logo-img {
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
+        .login-logo-img { display: block; margin-left: auto; margin-right: auto; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
         .login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-card { background: white; border-radius: 40px; padding: 40px 24px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
@@ -79,32 +71,11 @@
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
         .welcome-title { color: white; font-size: 22px; }
         .welcome-subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }
-        .announcements-section {
-            background: linear-gradient(135deg, #FF8C42, #FF6B35);
-            border-radius: 20px;
-            margin: 20px 0;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .announcements-header {
-            background: rgba(0,0,0,0.2);
-            padding: 12px 16px;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-        }
+        .announcements-section { background: linear-gradient(135deg, #FF8C42, #FF6B35); border-radius: 20px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .announcements-header { background: rgba(0,0,0,0.2); padding: 12px 16px; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.3); }
         .announcements-header i { font-size: 18px; }
         .announcements-header span { flex: 1; text-align: center; letter-spacing: 1px; }
-        .announcements-ticker {
-            background: #FF8C42;
-            padding: 12px 0;
-            overflow: hidden;
-            position: relative;
-        }
+        .announcements-ticker { background: #FF8C42; padding: 12px 0; overflow: hidden; position: relative; }
         .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
         .ticker { display: inline-block; animation: ticker-scroll 25s linear infinite; white-space: nowrap; }
         .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; letter-spacing: 0.5px; }
@@ -230,101 +201,19 @@
         .school-actions button, .event-actions button { margin-left: 8px; background: #FF8C42; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; }
         .school-actions button.delete, .event-actions button.delete { background: #dc3545; }
         .school-logo { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; margin-right: 12px; }
-        .video-mapping-form {
-            background: #f0f0f0;
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-        }
-        .video-mapping-form select, .video-mapping-form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 30px;
-            border: 1px solid #ccc;
-        }
-        .form-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .form-row button {
-            flex: 1;
-        }
-        .profile-pic-upload {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 16px;
-            text-align: center;
-        }
-        .profile-pic-preview {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 10px;
-            border: 2px solid #4B2E9E;
-            background: #f0f0f0;
-        }
-        .payment-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .default-avatar {
-            background: #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-        }
-        .demo-notice {
-            background: rgba(0,0,0,0.85);
-            color: white;
-            font-size: 13px;
-            padding: 8px 16px;
-            position: fixed;
-            bottom: 80px;
-            right: 10px;
-            border-radius: 30px;
-            z-index: 999;
-            pointer-events: none;
-            backdrop-filter: blur(6px);
-            font-family: monospace;
-            white-space: nowrap;
-        }
-        @media (max-width: 480px) {
-            .demo-notice { font-size: 10px; bottom: 70px; }
-        }
-
-        /* teacher video item */
-        .teacher-video-item {
-            background: #f9f9f9;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .user-watch-row {
-            border-bottom: 1px solid #eee;
-            padding: 8px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
+        .video-mapping-form { background: #f0f0f0; padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+        .video-mapping-form select, .video-mapping-form input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 30px; border: 1px solid #ccc; }
+        .form-row { display: flex; gap: 10px; align-items: center; }
+        .form-row button { flex: 1; }
+        .profile-pic-upload { background: white; border-radius: 20px; padding: 20px; margin-top: 16px; text-align: center; }
+        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid #4B2E9E; background: #f0f0f0; }
+        .payment-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-direction: column; gap: 15px; }
+        .default-avatar { background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white; }
+        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 13px; padding: 8px 16px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; pointer-events: none; backdrop-filter: blur(6px); font-family: monospace; white-space: nowrap; }
+        @media (max-width: 480px) { .demo-notice { font-size: 10px; bottom: 70px; } }
+        /* Teacher dashboard additions */
+        .teacher-video-item { background: #f9f9f9; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
+        .user-watch-row { border-bottom: 1px solid #eee; padding: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
     </style>
 </head>
 <body>
@@ -390,7 +279,9 @@
             <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary School</button><button class="level-btn" data-level="secondary">🎓 Secondary School</button></div>
             <div id="classSelectionSection"><div class="section-title">📚 Select Your Class</div><div id="classGrid" class="class-grid"></div></div>
             <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button><div class="section-title">📖 Available Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
-            <div id="teacherSelectionSection" style="display:none;"><button id="backToSubjectsTeacher" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Subjects</button><div class="section-title">👩‍🏫 Select Teacher</div><div id="teacherGrid" class="class-grid"></div></div>
+            <!-- Teacher selection after subject -->
+            <div id="teacherSelectionSection" style="display:none;"><button id="backToSubjects" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Subjects</button><div class="section-title">👩‍🏫 Select Teacher</div><div id="teacherGrid" class="class-grid"></div></div>
+            <!-- Videos for selected teacher -->
             <div id="teacherVideosSection" style="display:none;"><button id="backToTeachers" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Teachers</button><div class="section-title">📺 Lessons by <span id="selectedTeacherName"></span></div><div id="teacherVideosGrid" class="subjects-grid"></div></div>
             <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
             <div class="announcements-section"><div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
@@ -782,7 +673,7 @@
         }
     }
 
-    // ========== BRAND LOGO UPLOAD (Base64) ==========
+    // ========== BRAND LOGO UPLOAD ==========
     async function uploadBrandLogoBase64(file) {
         if (!currentUser || currentUser.role !== 'superadmin') {
             showNotification("Only super admin can change the logo", "error");
@@ -796,13 +687,9 @@
                 img.src = base64;
             });
             let faviconLink = document.querySelector("link[rel='icon']");
-            if (faviconLink) {
-                faviconLink.href = base64;
-            }
+            if (faviconLink) faviconLink.href = base64;
             let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-            if (appleIcon) {
-                appleIcon.href = base64;
-            }
+            if (appleIcon) appleIcon.href = base64;
             showNotification("Brand logo updated successfully!");
         };
         reader.readAsDataURL(file);
@@ -812,9 +699,7 @@
         const docSnap = await getDoc(doc(db, "settings", "brand"));
         if (docSnap.exists() && docSnap.data().logoBase64) {
             const logoUrl = docSnap.data().logoBase64;
-            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
-                img.src = logoUrl;
-            });
+            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = logoUrl);
             let faviconLink = document.querySelector("link[rel='icon']");
             if (faviconLink) faviconLink.href = logoUrl;
             let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
@@ -822,7 +707,7 @@
         }
     }
 
-    // ========== RENDER CLASSES & SUBJECTS ==========
+    // ========== RENDER CLASSES & SUBJECTS (original) ==========
     const subjectColors = ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#E91E63','#3F51B5','#009688','#FFC107','#8BC34A','#673AB7','#FF5722','#607D8B','#CDDC39'];
     function getSubjectIcon(subj) {
         const icons = { 'Mathematics':'fa-calculator','English':'fa-book','Biology':'fa-dna','Chemistry':'fa-flask','Physics':'fa-atom','History':'fa-landmark','Geography':'fa-globe','Kiswahili':'fa-language','Commerce':'fa-chart-line','ICT':'fa-laptop','Literature':'fa-book-open','Economics':'fa-chart-bar','Science':'fa-flask','Social Studies':'fa-globe','Literacy':'fa-book','Religious Education':'fa-church','Agriculture':'fa-seedling','Fine Art':'fa-paintbrush','Physical Education':'fa-futbol','Entrepreneurship':'fa-lightbulb' };
@@ -1035,7 +920,7 @@
         showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
     });
 
-    // ========== ABOUT PAGE EDITOR (with photos & reorder) ==========
+    // ========== ABOUT PAGE EDITOR ==========
     let currentTeamMembers = [];
     function escapeHtml(str){ if(!str)return ''; return str.replace(/[&<>]/g,function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;}); }
     function renderTeamEditor() {
@@ -1069,7 +954,7 @@
     document.getElementById('saveAboutBtn')?.addEventListener('click',async()=>{ let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:currentTeamMembers,contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await saveAboutContent(about); document.getElementById('aboutEditor').style.display='none'; });
     document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ currentTeamMembers.push({name:"New Member",role:"Role",phone:"",photo:""}); renderTeamEditor(); });
 
-    // ========== PUSH NOTIFICATIONS SETUP ==========
+    // ========== PUSH NOTIFICATIONS ==========
     async function setupPushNotifications() {
         if (!currentUser) return;
         if (!('Notification' in window && 'serviceWorker' in navigator)) return;
@@ -1356,7 +1241,7 @@
     });
     document.querySelectorAll('.login-tab').forEach(t=>t.addEventListener('click',()=>{ let tn=t.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active',tn==='login'); document.getElementById('signupFormDiv').classList.toggle('active',tn==='signup'); }));
     document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; });
-    document.getElementById('backToSubjectsTeacher')?.addEventListener('click',()=>{ document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; });
+    document.getElementById('backToSubjects')?.addEventListener('click',()=>{ document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; });
     document.getElementById('backToTeachers')?.addEventListener('click',()=>{ document.getElementById('teacherVideosSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='block'; });
     document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; renderClasses(); }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
@@ -1376,7 +1261,6 @@
     });
     document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
 
-    // School events render
     function renderSchoolEventsList() {
         let c = document.getElementById('schoolEventsList');
         if(!c) return;
@@ -1404,4 +1288,4 @@
     console.log("✅ APSHULE fully loaded with teacher revenue system and conditional teacher badge.");
 </script>
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                             
