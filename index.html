@@ -2,27 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>APSHULE - Learn With Ease</title>
-    <!-- ✅ FAVICON -->
-    <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+    <link rel="icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
-
-        .logo--responsive { max-width: 100%; height: auto; display: block; }
-        .logo--desktop { max-width: 280px; }
-        @media (max-width: 768px) { .logo--tablet { max-width: 220px; } }
-        @media (max-width: 480px) { .logo--mobile { max-width: 180px; } }
-        
-        .login-logo-img { display: block; margin-left: auto; margin-right: auto; }
-
+        .login-logo-img { display: block; margin: 0 auto; max-width: 180px; margin-bottom: 16px; border-radius: 20px; }
         .app-container, .login-screen { max-width: 500px; margin: 0 auto; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 100%); min-height: 100vh; padding-bottom: 70px; position: relative; }
         .login-screen { display: flex; align-items: center; justify-content: center; padding: 20px; }
         .login-card { background: white; border-radius: 40px; padding: 40px 24px; width: 100%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
-        .login-logo-img { max-width: 180px; width: 100%; margin-bottom: 16px; border-radius: 20px; object-fit: contain; }
         .login-title { font-size: 28px; font-weight: bold; color: #4B2E9E; margin-top: 8px; }
         .login-subtitle { color: #666; margin-bottom: 32px; }
         .login-tabs { display: flex; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #eee; }
@@ -30,315 +21,96 @@
         .login-tab.active { color: #4B2E9E; border-bottom: 2px solid #4B2E9E; }
         .login-form { display: none; }
         .login-form.active { display: block; }
-        .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 30px; font-size: 16px; }
-        .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        .login-input, .login-btn { width: 100%; padding: 14px; border-radius: 30px; font-size: 16px; margin-bottom: 16px; }
+        .login-input { border: 1px solid #ddd; }
+        .login-btn { background: #4B2E9E; color: white; border: none; font-weight: bold; cursor: pointer; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
-        .success-message { color: green; margin-top: 16px; font-size: 14px; }
         .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
-        .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
-        .reset-btn { background: #FF8C42; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; cursor: pointer; font-weight: bold; }
-        .hidden { display: none; }
         .header { background: #5B4FCF; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
         .header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
         .header-logo-img { width: 48px; height: 48px; object-fit: contain; border-radius: 12px; background: white; padding: 2px; }
         .app-title { color: white; font-weight: bold; font-size: 16px; }
-        .tagline { color: rgba(255,255,255,0.8); font-size: 12px; }
-        .greeting { color: white; font-weight: bold; font-size: 14px; margin-top: 4px; }
+        .greeting { color: white; font-size: 14px; margin-top: 4px; }
         .header-right { display: flex; align-items: center; gap: 12px; position: relative; }
-        .ai-icon-btn, .more-menu-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
-        .ai-icon-btn i, .more-menu-btn i { font-size: 20px; color: white; }
+        .ai-icon-btn, .more-menu-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; color: white; font-size: 20px; }
         .more-dropdown { position: absolute; top: 60px; right: 0; background: white; border-radius: 16px; min-width: 200px; z-index: 1000; display: none; overflow: hidden; }
         .more-dropdown.show { display: block; }
         .dropdown-item { padding: 14px 18px; display: flex; align-items: center; gap: 12px; color: #333; cursor: pointer; }
-        .dropdown-item:hover { background: #f5f5f5; }
-        .dropdown-item i { width: 24px; color: #4B2E9E; }
-        .main-content { padding: 20px 16px; padding-bottom: 80px; }
+        .main-content { padding: 20px 16px 80px; }
         .section-title { color: white; font-weight: bold; font-size: 20px; margin-bottom: 16px; }
         .education-level { display: flex; gap: 16px; margin-bottom: 20px; }
         .level-btn { flex: 1; padding: 15px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); color: white; }
         .level-btn.active { background: white; color: #4B2E9E; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px; margin-top: 16px; }
-        .class-card { background: white; border-radius: 20px; padding: 20px 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .class-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
-        .class-card i { font-size: 48px; margin-bottom: 12px; display: block; }
-        .class-name { font-weight: bold; font-size: 14px; color: #333; margin-top: 8px; }
-        .class-details { font-size: 11px; color: #999; margin-top: 4px; }
-        .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; max-height: 500px; overflow-y: auto; }
-        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
-        .subject-card:hover { transform: translateY(-3px); }
-        .subject-icon { width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-        .subject-icon i { font-size: 28px; color: white; }
-        .subject-name { font-weight: 600; font-size: 14px; }
+        .class-grid, .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px; margin-top: 16px; }
+        .class-card, .subject-card { background: white; border-radius: 20px; padding: 20px 8px; text-align: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
-        .welcome-title { color: white; font-size: 22px; }
-        .welcome-subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }
-        .announcements-section {
-            background: linear-gradient(135deg, #FF8C42, #FF6B35);
-            border-radius: 20px;
-            margin: 20px 0;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .announcements-header {
-            background: rgba(0,0,0,0.2);
-            padding: 12px 16px;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-        }
-        .announcements-header i { font-size: 18px; }
-        .announcements-header span { flex: 1; text-align: center; letter-spacing: 1px; }
-        .announcements-ticker {
-            background: #FF8C42;
-            padding: 12px 0;
-            overflow: hidden;
-            position: relative;
-        }
+        .announcements-section { background: linear-gradient(135deg, #FF8C42, #FF6B35); border-radius: 20px; margin: 20px 0; overflow: hidden; }
+        .announcements-header { background: rgba(0,0,0,0.2); padding: 12px 16px; color: white; font-weight: bold; display: flex; justify-content: space-between; }
+        .announcements-ticker { background: #FF8C42; padding: 12px 0; overflow: hidden; }
         .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
         .ticker { display: inline-block; animation: ticker-scroll 25s linear infinite; white-space: nowrap; }
-        .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; letter-spacing: 0.5px; }
-        .ticker-item strong { color: #FFF9C4; font-weight: bold; }
+        .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; }
         @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .announcements-ticker:hover .ticker { animation-play-state: paused; }
-        @media (max-width: 600px) { .ticker-item { font-size: 11px; padding: 0 20px; } .announcements-header span { font-size: 11px; } }
         .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
-        .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .folder-header i:last-child { margin-left: auto; transition: transform 0.2s; }
+        .folder-header { background: #4B2E9E; padding: 16px; color: white; cursor: pointer; }
         .folder-content { padding: 16px; display: none; background: #f9f9f9; }
         .folder-content.show { display: block; }
-        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; color: #333; }
+        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; text-decoration: none; color: #333; }
         .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
         .payment-plans-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
         .payment-card { border-radius: 16px; padding: 12px; text-align: center; color: white; }
         .payment-card.daily { background: linear-gradient(135deg,#2196F3,#1976D2); }
         .payment-card.weekly { background: linear-gradient(135deg,#4CAF50,#388E3C); }
         .payment-card.monthly { background: linear-gradient(135deg,#FF9800,#F57C00); }
-        .payment-card.half { background: linear-gradient(135deg,#9C27B0,#7B1FA2); }
-        .payment-card.full { background: linear-gradient(135deg,#F44336,#D32F2F); }
-        .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; cursor: pointer; width: 100%; }
+        .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; margin-top: 8px; cursor: pointer; width: 100%; }
         .account-card, .about-card { background: white; border-radius: 20px; padding: 24px; }
-        .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
         .nav-item i { font-size: 22px; }
         .nav-item.active { color: #FF8C42; }
         .page { display: none; }
         .page.active-page { display: block; }
-        .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px 20px; border-radius: 10px; display: none; z-index: 4000; animation: slideIn 0.3s ease; max-width: 300px; }
-        .notification.success { background: #2E7D32; }
-        .notification.info { background: #FF8C42; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px; border-radius: 10px; display: none; z-index: 4000; }
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
-        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
-        .video-content:fullscreen { max-width: none; border-radius: 0; background: #000; }
-        .video-content:fullscreen .video-header { position: absolute; top: 0; left: 0; right: 0; z-index: 10; background: rgba(0,0,0,0.7); }
-        .video-header { background: #4B2E9E; padding: 15px; color: white; display: flex; justify-content: space-between; align-items: center; }
-        .video-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 12px; }
+        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; }
         .youtube-player-container { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
         .youtube-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .video-title { padding: 12px; color: white; text-align: center; background: #2a2a3e; font-weight: 500; }
-        .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; display: none; }
-        .feedback-section h4 { color: #4B2E9E; margin-bottom: 12px; }
-        #starRating { margin-bottom: 12px; }
-        #starRating i { font-size: 28px; cursor: pointer; margin-right: 5px; color: #FFD700; }
-        #starRating i.far { color: #ccc; }
-        #feedbackComment { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin: 10px 0; resize: vertical; }
-        .feedback-buttons { display: flex; gap: 10px; }
-        .feedback-buttons button { flex: 1; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
-        .submit-feedback { background: #4B2E9E; color: white; }
-        .skip-feedback { background: #ccc; color: #333; }
-        .attendance-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .attendance-modal.show { display: flex; }
-        .attendance-modal-content { background: white; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; }
-        .attendance-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .attendance-tab { flex: 1; padding: 10px; text-align: center; background: #e0e0e0; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
-        .attendance-tab.active { background: #FF8C42; color: white; }
-        .attendance-tab-content { display: none; }
-        .attendance-tab-content.active { display: block; }
-        .camera-container { background: #2E7D32; border-radius: 16px; overflow: hidden; margin-bottom: 15px; }
-        #attendanceVideo, #enrollVideo { width: 100%; background: #1B5E20; }
-        .btn-primary { background: #FF8C42; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
-        .btn-secondary { background: #2E7D32; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
-        .btn-danger { background: #dc3545; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; }
-        .recognition-result { background: #E8F5E9; padding: 15px; border-radius: 12px; margin: 15px 0; }
-        .recent-attendance-list, .enrolled-list { max-height: 200px; overflow-y: auto; }
-        .attendance-item, .enrolled-person { background: white; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
-        .preview-image { max-width: 100px; border-radius: 10px; margin-top: 10px; border: 2px solid #FF8C42; }
-        .file-input-label { background: #FF8C42; color: white; padding: 10px 15px; border-radius: 25px; cursor: pointer; display: inline-block; font-size: 12px; }
-        #faceImageUpload { display: none; }
-        .form-group { margin-bottom: 15px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #FF8C42; border-radius: 10px; }
-        .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column; }
-        .ai-drawer.open { right: 0; }
-        .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; justify-content: space-between; }
-        .ai-chat-messages { flex: 1; overflow-y: auto; padding: 16px; background: #f5f5f5; }
-        .message { margin-bottom: 16px; display: flex; gap: 10px; }
-        .message.user { justify-content: flex-end; }
-        .message.user .message-bubble { background: #4B2E9E; color: white; border-radius: 20px 20px 5px 20px; }
-        .message.ai .message-bubble { background: white; color: #333; border-radius: 20px 20px 20px 5px; }
-        .message-bubble { max-width: 80%; padding: 12px 16px; }
-        .message-avatar { width: 32px; height: 32px; border-radius: 50%; background: #FF8C42; display: flex; align-items: center; justify-content: center; color: white; }
-        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; border-top: 1px solid #eee; }
-        .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; }
-        .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
-        .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
-        .overlay.show { display: block; }
-        .vision-box, .mission-box { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center; }
-        .core-value { padding: 12px; background: #f0f0f0; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-        .team-member { display: flex; align-items: center; gap: 16px; padding: 12px; background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; }
-        .team-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, #4B2E9E, #7B5FCF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; overflow: hidden; }
-        .team-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
-        .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
-        @media (orientation: landscape) { .video-modal { padding: 0; } .video-content { max-width: 100%; height: 100%; border-radius: 0; } }
+        .feedback-section { background: white; padding: 20px; display: none; border-radius: 0 0 20px 20px; }
         .admin-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; display: none; }
         .admin-panel.show { display: block; }
-        .admin-panel h3 { color: #4B2E9E; margin-bottom: 15px; }
         .admin-section { margin-bottom: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
-        .admin-section h4 { color: #4B2E9E; margin-bottom: 10px; }
-        .admin-subject { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 16px; padding: 12px; }
-        .admin-subject label { font-weight: bold; display: block; margin-bottom: 5px; }
-        .admin-subject input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 25px; margin-bottom: 8px; }
-        .admin-subject button { background: #FF8C42; color: white; border: none; padding: 8px 16px; border-radius: 25px; cursor: pointer; margin-right: 8px; }
-        .admin-subject .status { font-size: 12px; color: green; margin-top: 5px; }
         .admin-toggle { background: #FF8C42; color: white; border: none; padding: 10px 20px; border-radius: 30px; margin: 10px 0; cursor: pointer; font-weight: bold; }
-        .pdf-item { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; margin-bottom: 8px; padding: 10px; border-radius: 12px; }
-        .pdf-item a { text-decoration: none; color: #4B2E9E; flex: 1; }
-        .pdf-item button { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; }
-        .add-pdf-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
-        .add-pdf-form input { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
-        .add-subject-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
-        .add-subject-form input, .add-subject-form select { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
-        .analytics-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        .analytics-table th, .analytics-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .analytics-table th { background: #4B2E9E; color: white; }
-        .most-watched-list { list-style: none; padding: 0; }
-        .most-watched-list li { background: #f5f5f5; margin: 8px 0; padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; }
-        .school-item, .event-item { background: #f9f9f9; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .school-actions button, .event-actions button { margin-left: 8px; background: #FF8C42; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; }
-        .school-actions button.delete, .event-actions button.delete { background: #dc3545; }
-        .school-logo { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; margin-right: 12px; }
-        .video-mapping-form {
-            background: #f0f0f0;
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-        }
-        .video-mapping-form select, .video-mapping-form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 30px;
-            border: 1px solid #ccc;
-        }
-        .form-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .form-row button {
-            flex: 1;
-        }
-        .profile-pic-upload {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 16px;
-            text-align: center;
-        }
-        .profile-pic-preview {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 10px;
-            border: 2px solid #4B2E9E;
-            background: #f0f0f0;
-        }
-        .payment-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .default-avatar {
-            background: #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-        }
-        .demo-notice {
-            background: rgba(0,0,0,0.85);
-            color: white;
-            font-size: 13px;
-            padding: 8px 16px;
-            position: fixed;
-            bottom: 80px;
-            right: 10px;
-            border-radius: 30px;
-            z-index: 999;
-            pointer-events: none;
-            backdrop-filter: blur(6px);
-            font-family: monospace;
-            white-space: nowrap;
-        }
-        @media (max-width: 480px) {
-            .demo-notice { font-size: 10px; bottom: 70px; }
-        }
+        .teacher-video-item { background: #f9f9f9; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
+        .user-watch-row { border-bottom: 1px solid #eee; padding: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 12px; padding: 8px 12px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; }
     </style>
 </head>
 <body>
-
-<div class="demo-notice" id="responsiveDemoNotice">
-    🖥️ Desktop | 🖥️ Tablet | 📱 Phone
-</div>
+<div class="demo-notice">APSHULE - Teacher Revenue System</div>
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
-        <img class="login-logo-img logo--responsive logo--desktop logo--tablet logo--mobile" 
-             src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" 
-             alt="APSHULE Logo - SHU Let's learn with ease">
+        <img class="login-logo-img" id="loginLogoImg" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
         <div class="login-title">APSHULE</div>
-        <div class="login-subtitle">Let's Learn With Ease From Anywhere at Anytime</div>
-        <div class="login-tabs">
-            <div class="login-tab active" data-tab="login">Login</div>
-            <div class="login-tab" data-tab="signup">Sign Up</div>
-        </div>
+        <div class="login-subtitle">Learn With Ease</div>
+        <div class="login-tabs"><div class="login-tab active" data-tab="login">Login</div><div class="login-tab" data-tab="signup">Sign Up</div></div>
         <div id="loginFormDiv" class="login-form active">
-            <div style="position: relative;"><input type="email" id="loginEmail" placeholder="Email" class="login-input"><span onclick="togglePassword('loginPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
-            <div style="position: relative;"><input type="password" id="loginPassword" placeholder="Password" class="login-input"><span onclick="togglePassword('loginPassword')" style=" position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;"><label style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;"><input type="checkbox" id="rememberMeCheckbox"> Remember Me</label><span id="forgotPasswordLink" style="color: #FF8C42; font-size: 14px; cursor: pointer;">Forgot Password?</span></div>
+            <input type="email" id="loginEmail" placeholder="Email" class="login-input">
+            <input type="password" id="loginPassword" placeholder="Password" class="login-input">
             <button id="loginBtn" class="login-btn">Login</button>
         </div>
         <div id="signupFormDiv" class="login-form">
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
             <input type="email" id="signupEmail" placeholder="Email" class="login-input">
-            <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
-            <div style="position: relative;"><input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input"><span onclick="togglePassword('signupPassword')" style="position: absolute; right: 20px; top: 12px; cursor: pointer;">👁️</span></div>
-            <select id="signupEducationLevel" class="login-input"><option value="">Select Education Level</option><option value="Primary">Primary School</option><option value="Secondary">Secondary School</option></select>
+            <input type="tel" id="signupPhone" placeholder="Phone" class="login-input">
+            <input type="password" id="signupPassword" placeholder="Password (min 4)" class="login-input">
             <button id="signupBtn" class="login-btn">Create Account</button>
         </div>
         <div id="loginError" class="error-message"></div>
-        <div class="reset-section" id="resetSection" style="display:none;"><h4><i class="fas fa-key"></i> Forgot Password?</h4><input type="email" id="resetEmail" placeholder="Email" class="reset-input"><div id="resetMessage" class="success-message"></div><button id="sendResetEmailBtn" class="reset-btn">Send Reset Email</button></div>
+        <div id="resetSection" class="reset-section"><input id="resetEmail" placeholder="Email"><button id="sendResetEmailBtn">Reset</button></div>
     </div>
 </div>
 
@@ -346,140 +118,54 @@
 <div id="appScreen" class="app-container hidden">
     <div class="header">
         <div class="header-left">
-            <img id="headerLogoImg" class="header-logo-img logo--responsive logo--desktop logo--tablet logo--mobile" 
-                 src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" 
-                 alt="Logo SHU Learn">
-            <div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
+            <img id="headerLogoImg" class="header-logo-img" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+            <div><div class="app-title">APSHULE</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
         </div>
-        <div class="header-right"><button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button><div style="position: relative;"><button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button><div class="more-dropdown" id="moreDropdown"><div class="dropdown-item" id="attendanceMenuItem" style="display: none;"><i class="fas fa-camera"></i><span>📸 Facial Attendance</span></div><div class="dropdown-item" id="adminMenuItem" style="display: none;"><i class="fas fa-user-cog"></i><span>Admin Panel</span></div><div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div></div></div></div>
+        <div class="header-right"><button class="ai-icon-btn" id="openAIDrawerBtn">🤖</button><div style="position:relative"><button class="more-menu-btn" id="moreMenuBtn">⋮</button><div class="more-dropdown" id="moreDropdown"><div class="dropdown-item" id="adminMenuItem" style="display:none">Admin Panel</div><div class="dropdown-item" id="logoutBtn">Logout</div></div></div></div>
     </div>
 
-    <!-- VIDEO MODAL -->
-    <div id="videoModal" class="video-modal"><div class="video-content" id="videoContent"><div class="video-header"><span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span><div><button id="fullscreenBtn"><i class="fas fa-expand"></i></button><button id="closeVideoBtn">&times;</button></div></div><div class="youtube-player-container"><iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><div class="video-title" id="currentVideoTitle"></div><div class="feedback-section" id="feedbackSection"><h4>⭐ Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea><div class="feedback-buttons"><button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button><button id="closeFeedbackBtn" class="skip-feedback">Skip</button></div></div></div></div>
-
-    <!-- ATTENDANCE MODAL -->
-    <div id="attendanceModal" class="attendance-modal"><div class="attendance-modal-content"><div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3><i class="fas fa-face-recognition"></i> Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none; border:none; font-size:28px; cursor:pointer;">&times;</button></div><div class="attendance-tabs"><button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button><button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button><button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button></div><div id="markTab" class="attendance-tab-content active"><div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-face-smile"></i> Mark Attendance</button></div><div id="attendanceResult" class="recognition-result" style="display:none;"></div><h4>📋 Today's Attendance</h4><div id="recentAttendanceList" class="recent-attendance-list"></div></div><div id="enrollTab" class="attendance-tab-content"><div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button></div><div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> 📁 Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div><div id="enrollPreview" style="text-align:center;"></div><div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div><div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option><option>Visitor</option></select></div><div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div><button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button></div><div id="manageTab" class="attendance-tab-content"><h4>📋 Enrolled Persons</h4><div id="enrolledPersonsList" class="enrolled-list"></div><button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%; margin-top:15px;">🗑️ Clear All Records</button></div></div></div>
-
-    <!-- AI DRAWER -->
-    <div class="overlay" id="drawerOverlay"></div>
-    <div class="ai-drawer" id="aiDrawer"><div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button id="closeDrawerBtn" style="background:none; border:none; color:white; font-size:24px;">&times;</button></div><div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div><div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me..."><button id="sendBtn">Send</button></div></div>
+    <div id="videoModal" class="video-modal"><div class="video-content"><div class="youtube-player-container"><iframe id="youtubeIframe" src="" allowfullscreen></iframe></div><div class="feedback-section" id="feedbackSection"><h4>Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)"></textarea><button id="submitFeedbackBtn">Submit & Continue</button><button id="closeFeedbackBtn">Skip</button></div></div></div>
 
     <div class="main-content">
         <div id="homePage" class="page active-page">
-            <div class="education-level"><button class="level-btn active" data-level="primary">🏫 Primary School</button><button class="level-btn" data-level="secondary">🎓 Secondary School</button></div>
-            <div id="classSelectionSection"><div class="section-title">📚 Select Your Class</div><div id="classGrid" class="class-grid"></div></div>
-            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Classes</button><div class="section-title">📖 Available Subjects</div><div id="subjectsGrid" class="subjects-grid"></div></div>
-            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
-            <div class="announcements-section"><div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
-            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div></div>
-            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div><div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div><div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div><div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div><div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div><div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div></div></div>
-            <!-- ADMIN PANEL -->
+            <div class="education-level"><button class="level-btn active" data-level="primary">Primary</button><button class="level-btn" data-level="secondary">Secondary</button></div>
+            <div id="classSelectionSection"><div class="section-title">Select Class</div><div id="classGrid" class="class-grid"></div></div>
+            <div id="subjectsSection" style="display:none;"><button id="backToClasses" class="back-btn">← Back</button><div class="section-title">Select Subject</div><div id="subjectsGrid" class="subjects-grid"></div></div>
+            <div id="teacherSelectionSection" style="display:none;"><button id="backToSubjects" class="back-btn">← Back</button><div class="section-title">Select Teacher</div><div id="teacherGrid" class="class-grid"></div></div>
+            <div id="teacherVideosSection" style="display:none;"><button id="backToTeachers" class="back-btn">← Back</button><div class="section-title">Lessons by <span id="selectedTeacherName"></span></div><div id="teacherVideosGrid" class="subjects-grid"></div></div>
+            <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div></div>
+            <div class="announcements-section"><div class="announcements-header">📢 Events</div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
+            <div class="materials-folder"><div class="folder-header" id="folderHeader">📚 PDF Materials <i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"></div></div>
+            <div class="payment-plans-section"><div class="payment-plans-grid"><div class="payment-card daily">Daily UGX 500<button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div><div class="payment-card weekly">Weekly UGX 3000<button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div><div class="payment-card monthly">Monthly UGX 10000<button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div></div></div>
             <div id="adminPanel" class="admin-panel">
-                <h3><i class="fas fa-lock"></i> Admin Panel</h3>
+                <h3>Admin Panel</h3>
                 <div id="superAdminSection" class="admin-section" style="display:none;">
                     <h4>🏢 Manage Schools</h4>
-                    <div class="add-subject-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
-                        <input type="text" id="schoolName" placeholder="School Name">
-                        <input type="text" id="schoolContact" placeholder="Contact (phone/email)">
-                        <input type="text" id="schoolLocation" placeholder="Location">
-                        <input type="text" id="schoolLogoUrl" placeholder="Logo URL">
-                        <input type="email" id="schoolLoginEmail" placeholder="School Login Email">
-                        <input type="password" id="schoolLoginPassword" placeholder="School Login Password">
-                        <button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button>
-                    </div>
-                    <div id="schoolsAdminList"></div>
-                    
-                    <!-- LOGO UPLOAD SECTION (SUPER ADMIN ONLY) -->
-                    <div class="admin-section">
-                        <h4>🖼️ Upload / Change Brand Logo</h4>
-                        <div class="add-pdf-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
-                            <input type="file" id="logoUploadInput" accept="image/jpeg,image/png">
-                            <button id="uploadLogoBtn" class="admin-toggle">Upload Logo</button>
-                            <div id="logoUploadStatus" style="margin-top:8px; font-size:12px;"></div>
-                        </div>
-                    </div>
-                    
-                    <h4>📊 Global Analytics</h4>
-                    <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
-                    <div class="admin-section"><h4>🎬 Most Watched Videos (Global)</h4><ul id="globalMostWatchedList" class="most-watched-list"></ul></div>
-                    <div class="admin-section"><h4>📝 User Feedback (for improvement)</h4><div id="feedbackAdminList"></div></div>
-                    <div class="admin-section"><h4>🎥 Map Video Lessons (Subject + Class)</h4>
-                        <div class="video-mapping-form">
-                            <select id="videoSubjectSelect"><option value="">Select Subject</option></select>
-                            <select id="videoClassSelect"><option value="">Select Class</option></select>
-                            <input type="text" id="videoYoutubeId" placeholder="YouTube URL or Video ID">
-                            <div class="form-row">
-                                <button id="testVideoBtn" class="admin-toggle">▶ Test Video</button>
-                                <button id="saveVideoMappingBtn" class="admin-toggle">💾 Save Mapping</button>
-                            </div>
-                        </div>
-                        <div id="existingMappingsList" style="font-size: 13px; margin-top: 10px;"></div>
-                    </div>
-
-                    <!-- NEW: User Management -->
-                    <div class="admin-section">
-                        <h4>👥 Manage All Users</h4>
-                        <div id="allUsersList"></div>
-                        <button id="refreshUsersBtn" class="admin-toggle">Refresh Users</button>
-                    </div>
-
-                    <!-- NEW: About Page Editor -->
-                    <div class="admin-section">
-                        <h4>📝 Edit About Page Content</h4>
-                        <button id="editAboutBtn" class="admin-toggle">Edit About Content</button>
-                        <div id="aboutEditor" style="display:none; margin-top:15px; background:#f9f9f9; padding:15px; border-radius:16px;">
-                            <label>Vision</label><textarea id="editVision" rows="2" style="width:100%"></textarea>
-                            <label>Mission</label><textarea id="editMission" rows="2" style="width:100%"></textarea>
-                            <label>Core Values (comma separated)</label><input id="editCoreValues" style="width:100%">
-                            <label>Team Members</label><div id="teamMembersEditor"></div><button id="addTeamMemberBtn" class="admin-toggle">➕ Add Member</button>
-                            <label>Contact</label><input id="editContactPhone" placeholder="Phone"><input id="editContactEmail" placeholder="Email"><input id="editContactAddress" placeholder="Address"><input id="editWhatsapp" placeholder="WhatsApp">
-                            <button id="saveAboutBtn" class="admin-toggle">💾 Save</button>
-                        </div>
-                    </div>
-
-                    <!-- NEW: Live Lesson (Jitsi) -->
-                    <div class="admin-section">
-                        <h4>🎥 Live Lesson (Jitsi - Free)</h4>
-                        <button id="startJitsiLessonBtn" class="admin-toggle">Start Live Lesson</button>
-                        <div id="liveLessonContainer" style="display:none; margin-top:20px;"></div>
-                    </div>
+                    <input id="schoolName" placeholder="School Name"><input id="schoolLoginEmail" placeholder="Email"><input id="schoolLoginPassword" placeholder="Password"><button id="addSchoolBtn">Add School</button><div id="schoolsAdminList"></div>
+                    <h4>👥 Manage Users & Teachers</h4>
+                    <div id="allUsersList"></div><button id="refreshUsersBtn">Refresh</button>
+                    <h4>🎓 Manage Teachers (Assign Subjects & Revenue)</h4>
+                    <div id="teachersManageList"></div>
+                    <h4>🎥 Map Video Lessons</h4>
+                    <select id="videoTeacherSelect"><option>Select Teacher</option></select>
+                    <select id="videoSubjectSelect"><option>Select Subject</option></select>
+                    <select id="videoClassSelect"><option>Select Class</option></select>
+                    <input id="videoYoutubeId" placeholder="YouTube URL"><button id="saveVideoMappingBtn">Save Mapping</button><div id="existingMappingsList"></div>
+                    <h4>🖼️ Upload Logo</h4><input type="file" id="logoUploadInput"><button id="uploadLogoBtn">Upload</button>
+                    <h4>📊 Teacher Revenue Stats (All)</h4><div id="allTeacherRevenueStats"></div>
                 </div>
-                <div class="admin-section" id="schoolEventsSection" style="display:none;">
-                    <h4>📅 Manage School Events (Only your school)</h4>
-                    <div class="add-pdf-form"><input type="text" id="schoolEventTitle" placeholder="Event Title"><input type="text" id="schoolEventDate" placeholder="Date"><input type="text" id="schoolEventFee" placeholder="Fee"><button id="addSchoolEventBtn" class="admin-toggle">➕ Add Event</button></div>
-                    <div id="schoolEventsList"></div>
+                <div id="teacherDashboardSection" class="admin-section" style="display:none;">
+                    <h4>📊 My Teacher Dashboard</h4>
+                    <div id="teacherEarningsSummary"></div>
+                    <div id="teacherVideosList"></div>
                 </div>
-                <div class="admin-section" id="globalEventsSection" style="display:none;">
-                    <h4>📅 Manage Global Events (Super Admin)</h4>
-                    <div class="add-pdf-form"><input type="text" id="eventTitle" placeholder="Event Title"><input type="text" id="eventDate" placeholder="Date"><input type="text" id="eventFee" placeholder="Fee"><button id="addEventBtn" class="admin-toggle">➕ Add Event</button></div>
-                    <div id="eventsAdminList"></div>
-                </div>
-                <div class="admin-section" id="addSubjectSection" style="display:none;"><h4>➕ Add New Subject</h4><div class="add-subject-form"><input type="text" id="newSubjectName" placeholder="Subject name"><select id="newSubjectLevel"><option value="primary">Primary</option><option value="secondary">Secondary</option></select><input type="text" id="newSubjectVideo" placeholder="YouTube URL or Video ID"><button id="addNewSubjectBtn" class="admin-toggle">➕ Add Subject</button></div></div>
-                <div class="admin-section" id="pdfManagementSection" style="display:none;"><h4>📄 Manage PDFs</h4><div class="add-pdf-form"><input type="text" id="pdfTitle" placeholder="PDF Title"><input type="text" id="pdfUrl" placeholder="PDF URL"><button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button></div><div id="pdfAdminList"></div></div>
             </div>
         </div>
-        <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">Coming soon – save your favourite lessons!</div></div>
-        <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
-        <div id="accountPage" class="page">
-            <div class="section-title">👤 My Account</div>
-            <div id="accountInfo" class="account-card"></div>
-            <div id="profilePicUploadSection" class="profile-pic-upload">
-                <h4>Profile Picture</h4>
-                <img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile preview">
-                <input type="file" id="profilePicInput" accept="image/*" style="margin-top: 10px;">
-                <button id="uploadProfilePicBtn" class="admin-toggle" style="margin-top: 10px;">Upload Picture</button>
-            </div>
-        </div>
-        <div id="aboutPage" class="page">
-            <div class="section-title">📖 About APSHULE</div>
-            <div id="dynamicAbout" class="about-card">Loading...</div>
-        </div>
+        <div id="accountPage" class="page"><div class="section-title">Account</div><div id="accountInfo" class="account-card">Loading...</div></div>
+        <div id="aboutPage" class="page"><div class="section-title">About</div><div id="dynamicAbout" class="about-card">Loading...</div></div>
     </div>
-
     <div class="bottom-nav">
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
-        <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
-        <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
         <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
     </div>
@@ -487,867 +173,226 @@
 <div id="notification" class="notification"></div>
 
 <script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-            "firebase/messaging": "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js"
-        }
-    }
+    {"imports": {"firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js","firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js","firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js","firebase/messaging": "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js"}}
 </script>
-
 <script type="module">
     import { initializeApp } from "firebase/app";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
-    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where } from "firebase/firestore";
     import { getMessaging, getToken, onMessage } from "firebase/messaging";
-    
-    const firebaseConfig = {
-        apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
-        authDomain: "apshule-app.firebaseapp.com",
-        projectId: "apshule-app",
-        storageBucket: "apshule-app.firebasestorage.app",
-        messagingSenderId: "610368652834",
-        appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
-    };
+
+    const firebaseConfig = { apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg", authDomain: "apshule-app.firebaseapp.com", projectId: "apshule-app", storageBucket: "apshule-app.firebasestorage.app", messagingSenderId: "610368652834", appId: "1:610368652834:web:1a30274d95c282a5a3ac7b" };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     window.db = db; window.auth = auth;
 
-    // ========== PESAPAL BACKEND URL ==========
-    const PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
-
-    // ========== GLOBAL VARIABLES ==========
     let currentUser = null;
     let schools = [];
-    let globalEventsList = [];
-    let pdfMaterials = [];
+    let primarySubjects = ["Mathematics","English","Science"];
+    let secondarySubjects = ["Mathematics","English","Biology"];
     let videoMappings = {};
-    let primarySubjects = [];
-    let secondarySubjects = [];
-    let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
-    let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
-    let currentRating = 0, currentLessonSubject = "";
-    let currentSelectedClassId = null;
-    let currentLevel = "primary";
-    const classData = {
-        primary: [{id:1,name:"Primary 1",icon:"fa-baby-carriage",color:"#FF6B6B"},{id:2,name:"Primary 2",icon:"fa-child",color:"#4ECDC4"},{id:3,name:"Primary 3",icon:"fa-graduation-cap",color:"#45B7D1"},{id:4,name:"Primary 4",icon:"fa-book-reader",color:"#96CEB4"},{id:5,name:"Primary 5",icon:"fa-pencil-alt",color:"#FFEAA7"},{id:6,name:"Primary 6",icon:"fa-chalkboard-teacher",color:"#DDA0DD"},{id:7,name:"Primary 7",icon:"fa-users",color:"#FF9F43"}],
-        secondary: [{id:1,name:"Senior 1",icon:"fa-seedling",color:"#4CAF50"},{id:2,name:"Senior 2",icon:"fa-tree",color:"#8BC34A"},{id:3,name:"Senior 3",icon:"fa-book",color:"#FF9800"},{id:4,name:"Senior 4",icon:"fa-chart-line",color:"#F44336"},{id:5,name:"Senior 5",icon:"fa-flask",color:"#9C27B0"},{id:6,name:"Senior 6",icon:"fa-university",color:"#2196F3"}]
+    let pdfMaterials = [];
+    let globalEventsList = [];
+    let currentLevel = "primary", currentSelectedClass = null, currentSubject = null, currentTeacher = null;
+    let currentVideoProgressInterval = null;
+    let currentVideoMappingId = null;
+    let currentLessonSubject = "";
+    let currentRating = 0;
+
+    function showNotification(msg, type="success") { let n=document.getElementById('notification'); n.textContent=msg; n.className=`notification ${type}`; n.style.display='block'; setTimeout(()=>n.style.display='none',3000); }
+    function extractVideoId(url) { let m=url.match(/(?:youtube\.com\/watch\?v=)([^&]+)/); return m ? m[1] : url; }
+
+    const classData = { primary: [{id:1,name:"Primary 1"},{id:2,name:"Primary 2"},{id:3,name:"Primary 3"},{id:4,name:"Primary 4"},{id:5,name:"Primary 5"},{id:6,name:"Primary 6"},{id:7,name:"Primary 7"}], secondary: [{id:1,name:"Senior 1"},{id:2,name:"Senior 2"},{id:3,name:"Senior 3"},{id:4,name:"Senior 4"},{id:5,name:"Senior 5"},{id:6,name:"Senior 6"}] };
+    function renderClasses() { let grid=document.getElementById('classGrid'); let classes=classData[currentLevel]; grid.innerHTML=classes.map(c=>`<div class="class-card" onclick="selectClass(${c.id},'${c.name}')"><i class="fas fa-school"></i><div>${c.name}</div></div>`).join(''); }
+    window.selectClass = function(id,name) { currentSelectedClass={id,name,level:currentLevel}; document.getElementById('classSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; renderSubjects(); };
+    function renderSubjects() { let subjects=currentLevel==='primary'?primarySubjects:secondarySubjects; let grid=document.getElementById('subjectsGrid'); grid.innerHTML=subjects.map(s=>`<div class="subject-card" onclick="selectSubject('${s}')"><i class="fas fa-book"></i><div>${s}</div></div>`).join(''); }
+    window.selectSubject = function(subject) { currentSubject=subject; document.getElementById('subjectsSection').style.display='none'; loadTeachersForSubject(); };
+    async function loadTeachersForSubject() {
+        const q = query(collection(db,"videoMappings"), where("subject","==",currentSubject), where("classLevel","==",currentSelectedClass.level), where("classId","==",currentSelectedClass.id));
+        const snap = await getDocs(q);
+        const teacherIds = new Set();
+        snap.forEach(d => { if(d.data().teacherId) teacherIds.add(d.data().teacherId); });
+        let teacherList = [];
+        for(let tid of teacherIds) { let tSnap = await getDoc(doc(db,"users",tid)); if(tSnap.exists()) teacherList.push({id:tid, name:tSnap.data().name}); }
+        if(teacherList.length===0) { showNotification("No teachers have uploaded lessons yet.","info"); document.getElementById('subjectsSection').style.display='block'; return; }
+        let grid=document.getElementById('teacherGrid'); if(!grid){ let div=document.createElement('div'); div.id='teacherGrid'; div.className='class-grid'; document.getElementById('teacherSelectionSection').appendChild(div); grid=div; }
+        grid.innerHTML=teacherList.map(t=>`<div class="class-card" onclick="selectTeacher('${t.id}','${t.name}')"><i class="fas fa-chalkboard-user"></i><div>${t.name}</div></div>`).join('');
+        document.getElementById('teacherSelectionSection').style.display='block';
+    }
+    window.selectTeacher = function(teacherId, teacherName) { currentTeacher={id:teacherId, name:teacherName}; document.getElementById('selectedTeacherName').innerText=teacherName; loadTeacherVideos(); document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='block'; };
+    async function loadTeacherVideos() {
+        const q = query(collection(db,"videoMappings"), where("teacherId","==",currentTeacher.id), where("subject","==",currentSubject), where("classLevel","==",currentSelectedClass.level), where("classId","==",currentSelectedClass.id));
+        const snap = await getDocs(q);
+        let videos = [];
+        snap.forEach(d => { videos.push({id:d.id, youtubeId:d.data().youtubeId, title:d.data().title || `${currentSubject} lesson`}); });
+        let grid=document.getElementById('teacherVideosGrid'); if(!grid){ let d=document.createElement('div'); d.id='teacherVideosGrid'; d.className='subjects-grid'; document.getElementById('teacherVideosSection').appendChild(d); grid=d; }
+        grid.innerHTML=videos.map(v=>`<div class="subject-card" onclick="playTeacherVideo('${v.id}','${v.youtubeId}','${v.title}')"><i class="fab fa-youtube"></i><div>${v.title}</div></div>`).join('');
+    }
+    window.playTeacherVideo = function(videoMappingId, youtubeId, title) {
+        if(!currentUser){ showNotification("Login required","error"); return; }
+        currentVideoMappingId = videoMappingId;
+        currentLessonSubject = title;
+        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&enablejsapi=1`;
+        document.getElementById('videoModal').classList.add('show');
+        document.getElementById('feedbackSection').style.display='block';
+        trackVideoProgress(videoMappingId, youtubeId, title);
     };
-
-    // ========== HELPER FUNCTIONS ==========
-    function showNotification(msg, type="success") {
-        let n = document.getElementById('notification');
-        n.textContent = msg;
-        n.className = `notification ${type}`;
-        n.style.display = 'block';
-        setTimeout(() => n.style.display = 'none', 3000);
+    async function trackVideoProgress(videoMappingId, youtubeId, title) {
+        if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval);
+        let lastProgress = 0;
+        currentVideoProgressInterval = setInterval(async () => {
+            if(!document.getElementById('videoModal').classList.contains('show')) { clearInterval(currentVideoProgressInterval); return; }
+            lastProgress += 10;
+            let completed = lastProgress >= 270; // 5 min video, 90% = 270 sec
+            await saveProgress(videoMappingId, lastProgress, completed, title);
+            if(completed) { clearInterval(currentVideoProgressInterval); showNotification("Lesson completed! Teacher earns revenue.","success"); }
+        }, 10000);
     }
-    window.showNotification = showNotification;
-    window.togglePassword = function(id) {
-        let inp = document.getElementById(id);
-        if(inp) inp.type = inp.type === "password" ? "text" : "password";
-    };
-    function extractVideoId(url) {
-        if(!url) return "";
-        let patterns = [/(?:youtube\.com\/watch\?v=)([^&]+)/, /(?:youtu\.be\/)([^?]+)/, /(?:youtube\.com\/embed\/)([^?]+)/];
-        for(let p of patterns) { let m = url.match(p); if(m) return m[1]; }
-        return url;
-    }
-
-    function updateGreeting() {
-        const hour = new Date().getHours();
-        let greeting = "";
-        if (hour < 12) greeting = "Good morning";
-        else if (hour < 18) greeting = "Good afternoon";
-        else greeting = "Good evening";
-        const nameSpan = document.getElementById('userName');
-        if (nameSpan && currentUser) {
-            let firstName = currentUser.name?.split(' ')[0] || "Student";
-            nameSpan.innerText = `${greeting}, ${firstName}!`;
-        }
-    }
-    setInterval(updateGreeting, 60000);
-
-    // ========== PESAPAL PAYMENT ==========
-    function showPaymentLoading(show) {
-        let existing = document.getElementById('paymentLoadingOverlay');
-        if(show) {
-            if(!existing) {
-                let div = document.createElement('div');
-                div.id = 'paymentLoadingOverlay';
-                div.className = 'payment-loading';
-                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting to Pesapal...</span>';
-                document.body.appendChild(div);
-            } else {
-                existing.style.display = 'flex';
-            }
-        } else {
-            if(existing) existing.style.display = 'none';
-        }
-    }
-
-    async function initiatePesapalPayment(plan, amount, email, phone, name) {
-        if(!PESAPAL_BACKEND_URL) {
-            showNotification("Backend URL not configured", "error");
-            return;
-        }
-        showPaymentLoading(true);
-        try {
-            const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: amount,
-                    currency: "UGX",
-                    description: `${plan} Subscription - APSHULE`,
-                    email: email,
-                    phone: phone,
-                    name: name,
-                    reference: `SUB_${Date.now()}_${currentUser.uid}`
-                })
-            });
-            const data = await response.json();
-            if(data.redirect_url) {
-                sessionStorage.setItem('pesapal_order_tracking_id', data.order_tracking_id);
-                sessionStorage.setItem('pesapal_merchant_reference', data.merchant_reference);
-                window.location.href = data.redirect_url;
-            } else {
-                throw new Error(data.error || "Failed to initiate payment");
-            }
-        } catch(err) {
-            showNotification("Payment error: " + err.message, "error");
-            showPaymentLoading(false);
-        }
-    }
-
-    async function checkPaymentStatus() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderTrackingId = urlParams.get('OrderTrackingId');
-        const merchantReference = urlParams.get('OrderMerchantReference');
-        if(orderTrackingId && merchantReference && PESAPAL_BACKEND_URL) {
-            showPaymentLoading(true);
-            try {
-                const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order_tracking_id: orderTrackingId })
-                });
-                const data = await response.json();
-                if(data.status === "COMPLETED") {
-                    showNotification("✅ Payment successful! Your subscription is active.", "success");
-                    if(currentUser) {
-                        await updateDoc(doc(db, "users", currentUser.uid), {
-                            subscription: merchantReference,
-                            subscriptionActive: true,
-                            subscriptionDate: new Date().toISOString()
-                        });
-                    }
-                } else {
-                    showNotification("Payment not completed. Status: " + data.status, "error");
-                }
-            } catch(err) {
-                showNotification("Failed to verify payment", "error");
-            } finally {
-                showPaymentLoading(false);
-                window.history.replaceState({}, document.title, window.location.pathname);
+    async function saveProgress(videoMappingId, secondsWatched, completed, lessonTitle) {
+        if(!currentUser) return;
+        const progressRef = doc(db, "videoProgress", `${currentUser.uid}_${videoMappingId}`);
+        await setDoc(progressRef, { userId: currentUser.uid, videoMappingId, secondsWatched, completed, lastUpdated: new Date().toISOString(), lessonTitle, teacherId: currentTeacher.id }, { merge: true });
+        if(completed) {
+            const earningKey = `earning_${currentTeacher.id}_${currentUser.uid}_${videoMappingId}`;
+            const earningDoc = await getDoc(doc(db, "teacherEarnings", earningKey));
+            if(!earningDoc.exists()) {
+                const teacherDoc = await getDoc(doc(db,"users",currentTeacher.id));
+                let revenuePerView = teacherDoc.data()?.revenuePerView || 100;
+                await setDoc(doc(db, "teacherEarnings", earningKey), { teacherId: currentTeacher.id, userId: currentUser.uid, videoMappingId, amount: revenuePerView, timestamp: new Date().toISOString(), lessonTitle });
+                await setDoc(doc(db, "teacherUserViews", `${currentTeacher.id}_${currentUser.uid}_${videoMappingId}`), { teacherId: currentTeacher.id, userId: currentUser.uid, userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "", completedAt: new Date().toISOString(), lessonTitle, videoMappingId });
+                showNotification(`Teacher earned ${revenuePerView} UGX for this view.`,"info");
             }
         }
     }
-
     async function saveFeedback(lesson, rating, comment) {
-        if (!currentUser) return;
-        await addDoc(collection(db, "feedbacks"), {
-            lesson: lesson, rating: rating, comment: comment,
-            userName: currentUser.name, userEmail: currentUser.email,
-            timestamp: new Date().toISOString()
-        });
+        if(!currentUser || !currentVideoMappingId) return;
+        await addDoc(collection(db,"feedbacks"), { lesson, rating, comment, userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "", timestamp: new Date().toISOString(), teacherId: currentTeacher?.id, videoMappingId: currentVideoMappingId });
+        showNotification("Feedback submitted! Teacher can now see your details.","success");
     }
-    async function saveVideoView(subject, classId, className) {
-        if (!currentUser) return;
-        await addDoc(collection(db, "videoViews"), {
-            subject: subject, classId: classId, className: className,
-            userId: currentUser.uid, userName: currentUser.name,
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    function renderFeedbackAdmin() {
-        const container = document.getElementById('feedbackAdminList');
-        if (!container) return;
-        const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"), limit(50));
-        onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) { container.innerHTML = '<div>No feedback yet.</div>'; return; }
-            let html = '<div style="max-height:300px; overflow-y:auto;">';
-            snapshot.forEach(doc => {
-                let f = doc.data();
-                html += `<div style="border-bottom:1px solid #ddd; padding:8px;"><strong>${f.userName}</strong> rated ${f.lesson} ${f.rating}⭐<br><em>${f.comment || 'No comment'}</em><br><small>${new Date(f.timestamp).toLocaleString()}</small></div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        });
-    }
-    function renderGlobalMostWatched() {
-        const container = document.getElementById('globalMostWatchedList');
-        if (!container) return;
-        onSnapshot(collection(db, "videoViews"), (snapshot) => {
-            const counts = new Map();
-            snapshot.forEach(doc => {
-                let subj = doc.data().subject;
-                counts.set(subj, (counts.get(subj) || 0) + 1);
-            });
-            const sorted = Array.from(counts.entries()).sort((a,b) => b[1] - a[1]).slice(0,10);
-            if (sorted.length === 0) { container.innerHTML = '<li>No views yet.</li>'; return; }
-            container.innerHTML = sorted.map(([subj, cnt]) => `<li><strong>${subj}</strong> – ${cnt} views</li>`).join('');
-        });
-    }
-
-    async function saveUserAddress(address) {
-        if (!currentUser) return;
-        await updateDoc(doc(db, "users", currentUser.uid), { address: address });
-        showNotification("Address saved!");
-        loadUserAndShowApp(auth.currentUser);
-    }
-    async function detectLocation() {
-        try {
-            let resp = await fetch('https://ipapi.co/json/');
-            let data = await resp.json();
-            return `${data.city}, ${data.country_name}`;
-        } catch(e) { return "Unknown"; }
-    }
-
-    async function uploadProfilePicture(file) {
-        if (!currentUser) return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64 = e.target.result;
-            await updateDoc(doc(db, "users", currentUser.uid), { profilePic: base64 });
-            currentUser.profilePic = base64;
-            document.getElementById('profilePicPreview').src = base64;
-            showNotification("Profile picture updated!");
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function loadProfilePicPreview() {
-        const preview = document.getElementById('profilePicPreview');
-        if (preview && currentUser && currentUser.profilePic) {
-            preview.src = currentUser.profilePic;
-        } else if (preview) {
-            preview.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-        }
-    }
-
-    // ========== BRAND LOGO UPLOAD ==========
-    async function uploadBrandLogoBase64(file) {
-        if (!currentUser || currentUser.role !== 'superadmin') {
-            showNotification("Only super admin can change the logo", "error");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64 = e.target.result;
-            await setDoc(doc(db, "settings", "brand"), { logoBase64: base64 });
-            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
-                img.src = base64;
-            });
-            let faviconLink = document.querySelector("link[rel='icon']");
-            if (faviconLink) {
-                faviconLink.href = base64;
-            }
-            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-            if (appleIcon) {
-                appleIcon.href = base64;
-            }
-            showNotification("Brand logo updated successfully!");
-        };
-        reader.readAsDataURL(file);
-    }
-
-    async function loadBrandLogo() {
-        const docSnap = await getDoc(doc(db, "settings", "brand"));
-        if (docSnap.exists() && docSnap.data().logoBase64) {
-            const logoUrl = docSnap.data().logoBase64;
-            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
-                img.src = logoUrl;
-            });
-            let faviconLink = document.querySelector("link[rel='icon']");
-            if (faviconLink) {
-                faviconLink.href = logoUrl;
-            }
-            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-            if (appleIcon) {
-                appleIcon.href = logoUrl;
-            }
-        }
-    }
-
-    // ========== RENDER CLASSES & SUBJECTS ==========
-    const subjectColors = ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#E91E63','#3F51B5','#009688','#FFC107','#8BC34A','#673AB7','#FF5722','#607D8B','#CDDC39'];
-    function getSubjectIcon(subj) {
-        const icons = { 'Mathematics':'fa-calculator','English':'fa-book','Biology':'fa-dna','Chemistry':'fa-flask','Physics':'fa-atom','History':'fa-landmark','Geography':'fa-globe','Kiswahili':'fa-language','Commerce':'fa-chart-line','ICT':'fa-laptop','Literature':'fa-book-open','Economics':'fa-chart-bar','Science':'fa-flask','Social Studies':'fa-globe','Literacy':'fa-book','Religious Education':'fa-church','Agriculture':'fa-seedling','Fine Art':'fa-paintbrush','Physical Education':'fa-futbol','Entrepreneurship':'fa-lightbulb' };
-        return icons[subj] || 'fa-book-open';
-    }
-    function renderClasses() {
-        let grid = document.getElementById('classGrid');
-        if(!grid) return;
-        let classes = classData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" data-class="${c.id}" data-class-name="${c.name}" onclick="selectClass(${c.id}, '${c.name}')" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i><div class="class-name" style="color: ${c.color};">${c.name}</div><div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div></div>`).join('');
-    }
-    window.selectClass = function(id, name) {
-        currentSelectedClassId = { id, name, level: currentLevel };
-        document.getElementById('classSelectionSection').style.display = 'none';
-        document.getElementById('subjectsSection').style.display = 'block';
-        renderSubjects();
-    };
-    function renderSubjects() {
-        let subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
-        let grid = document.getElementById('subjectsGrid');
-        if(!grid) return;
-        grid.innerHTML = subjects.map((s,idx) => `<div class="subject-card" onclick="openVideoLesson('${s}')"><div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}"><i class="fas ${getSubjectIcon(s)}"></i></div><div class="subject-name">${s}</div><div style="font-size:10px; color:#666; margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div></div>`).join('');
-    }
-    window.openVideoLesson = function(subject) {
-        if(!currentUser) { showNotification("Please login first","error"); return; }
-        if(!currentSelectedClassId) { showNotification("Please select a class first","error"); return; }
-        const key = `${currentSelectedClassId.level}_${currentSelectedClassId.id}_${subject}`;
-        let vid = videoMappings[key];
-        if(!vid) { showNotification(`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`,"info"); return; }
-        currentLessonSubject = `${subject} (${currentSelectedClassId.name})`;
-        saveVideoView(subject, currentSelectedClassId.id, currentSelectedClassId.name);
-        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${vid}?autoplay=1`;
-        document.getElementById('currentVideoTitle').innerText = `${subject} - ${currentSelectedClassId.name} Lesson`;
-        document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
-        document.getElementById('feedbackSection').style.display = 'block';
-        document.getElementById('videoModal').classList.add('show');
-        currentRating = 0;
-        document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
-        document.getElementById('feedbackComment').value = '';
-    };
-    function renderPdfList() {
-        let c = document.getElementById('pdfListContainer');
-        if(!c) return;
-        if(!pdfMaterials.length) { c.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">No PDFs added yet.</div>'; return; }
-        c.innerHTML = pdfMaterials.map(p => `<a href="${p.url}" target="_blank" class="material-item"><i class="fas fa-file-pdf"></i> ${p.title}</a>`).join('');
-    }
-    function renderPdfAdmin() {
-        let c = document.getElementById('pdfAdminList');
-        if(!c) return;
-        if(!pdfMaterials.length) { c.innerHTML = '<div>No PDFs</div>'; return; }
-        c.innerHTML = pdfMaterials.map(p => `<div class="pdf-item"><a href="${p.url}" target="_blank">📄 ${p.title}</a><button class="delete-pdf" data-id="${p.id}">Delete</button></div>`).join('');
-        document.querySelectorAll('.delete-pdf').forEach(btn => btn.addEventListener('click', async (e) => { await deleteDoc(doc(db,"pdfs",btn.getAttribute('data-id'))); showNotification("PDF deleted"); }));
-    }
-    function renderEventsTicker() {
-        let t = document.getElementById('eventsTicker');
-        if(!t) return;
-        let eventsToShow = [];
-        if(currentUser && currentUser.role === 'school') {
-            eventsToShow = globalEventsList.filter(ev => ev.schoolId === currentUser.schoolId);
-        } else {
-            eventsToShow = globalEventsList;
-        }
-        if(!eventsToShow.length) { t.innerHTML = '<div class="ticker-item">No upcoming events</div>'; return; }
+    // Teacher dashboard - shows user details only if they gave feedback
+    async function loadTeacherDashboard() {
+        if(!currentUser || currentUser.role !== 'teacher') return;
+        const videoMappingsSnap = await getDocs(query(collection(db,"videoMappings"), where("teacherId","==",currentUser.uid)));
+        let videos = [];
+        videoMappingsSnap.forEach(d => videos.push({id:d.id, ...d.data()}));
+        const earningsSnap = await getDocs(query(collection(db,"teacherEarnings"), where("teacherId","==",currentUser.uid)));
+        let totalEarnings = 0;
+        earningsSnap.forEach(e => totalEarnings += e.data().amount);
+        document.getElementById('teacherEarningsSummary').innerHTML = `<div style="background:#e0f7fa; padding:15px; border-radius:16px;"><h3>💰 Total Earnings: UGX ${totalEarnings}</h3><p>${earningsSnap.size} paid views</p></div>`;
         let html = '';
-        for(let i=0;i<2;i++) eventsToShow.forEach(ev => { html += `<div class="ticker-item">🎓 <strong>${ev.title}</strong> | ${ev.fee} | 📅 ${ev.date}</div>`; });
-        t.innerHTML = html;
-    }
-    function renderSchoolEventsList() {
-        let c = document.getElementById('schoolEventsList');
-        if(!c) return;
-        if(!currentUser || currentUser.role !== 'school') return;
-        let myEvents = globalEventsList.filter(ev => ev.schoolId === currentUser.schoolId);
-        if(!myEvents.length) { c.innerHTML = '<div>No events for your school</div>'; return; }
-        c.innerHTML = myEvents.map(ev => `<div class="event-item"><div><strong>${ev.title}</strong><br>${ev.date} | ${ev.fee}</div><div><button class="delete-school-event" data-id="${ev.id}">Delete</button><button class="edit-school-event" data-id="${ev.id}">Edit</button></div></div>`).join('');
-        document.querySelectorAll('.delete-school-event').forEach(btn => btn.addEventListener('click', async (e) => { if(confirm("Delete?")) await deleteDoc(doc(db,"events",btn.getAttribute('data-id'))); }));
-        document.querySelectorAll('.edit-school-event').forEach(btn => btn.addEventListener('click', async (e) => {
-            let id = btn.getAttribute('data-id');
-            let ev = myEvents.find(e => e.id == id);
-            if(ev) {
-                let newTitle = prompt("Title:", ev.title); if(newTitle) ev.title = newTitle;
-                let newDate = prompt("Date:", ev.date); if(newDate) ev.date = newDate;
-                let newFee = prompt("Fee:", ev.fee); if(newFee) ev.fee = newFee;
-                await updateDoc(doc(db,"events",id), { title: ev.title, date: ev.date, fee: ev.fee });
+        for(let v of videos) {
+            const feedbackSnap = await getDocs(query(collection(db,"feedbacks"), where("videoMappingId","==",v.id)));
+            let viewersHtml = '<div style="margin-top:10px;"><strong>Users who gave feedback (details visible):</strong><div style="max-height:200px; overflow-y:auto;">';
+            if(feedbackSnap.empty) {
+                viewersHtml += '<div>No feedback yet. User details hidden until they give feedback.</div>';
+            } else {
+                feedbackSnap.forEach(f => {
+                    let fd = f.data();
+                    viewersHtml += `<div class="user-watch-row"><span><strong>${fd.userName}</strong></span><span>📧 ${fd.userEmail}</span><span>📞 ${fd.userPhone || 'No phone'}</span><span>⭐ ${fd.rating}</span><span>💬 ${fd.comment || ''}</span></div>`;
+                });
             }
-        }));
-    }
-    function renderEventsAdmin() {
-        let c = document.getElementById('eventsAdminList');
-        if(!c) return;
-        if(!globalEventsList.length) { c.innerHTML = '<div>No events</div>'; return; }
-        c.innerHTML = globalEventsList.map(ev => `<div class="event-item"><div><strong>${ev.title}</strong><br>${ev.date} | ${ev.fee}</div><div><button class="delete-event" data-id="${ev.id}">Delete</button><button class="edit-event" data-id="${ev.id}">Edit</button></div></div>`).join('');
-        document.querySelectorAll('.delete-event').forEach(btn => btn.addEventListener('click', async (e) => { if(confirm("Delete?")) await deleteDoc(doc(db,"events",btn.getAttribute('data-id'))); }));
-        document.querySelectorAll('.edit-event').forEach(btn => btn.addEventListener('click', async (e) => {
-            let id = btn.getAttribute('data-id');
-            let ev = globalEventsList.find(e => e.id == id);
-            if(ev) {
-                let newTitle = prompt("Title:", ev.title); if(newTitle) ev.title = newTitle;
-                let newDate = prompt("Date:", ev.date); if(newDate) ev.date = newDate;
-                let newFee = prompt("Fee:", ev.fee); if(newFee) ev.fee = newFee;
-                await updateDoc(doc(db,"events",id), { title: ev.title, date: ev.date, fee: ev.fee });
-            }
-        }));
-    }
-    function renderSchoolsAdmin() {
-        let c = document.getElementById('schoolsAdminList');
-        if(!c) return;
-        if(!schools.length) { c.innerHTML = '<div>No schools</div>'; return; }
-        c.innerHTML = schools.map(s => `<div class="school-item"><img class="school-logo" src="${s.logo||'https://via.placeholder.com/50'}" onerror="this.src='https://via.placeholder.com/50'"><div><strong>${s.name}</strong><br>${s.loginEmail}</div><div><button class="edit-school" data-id="${s.id}">Edit</button><button class="delete-school" data-id="${s.id}">Delete</button></div></div>`).join('');
-        document.querySelectorAll('.edit-school').forEach(btn => btn.addEventListener('click', async (e) => {
-            let id = btn.getAttribute('data-id');
-            let s = schools.find(ss => ss.id == id);
-            if(s) {
-                let newName = prompt("Name:", s.name); if(newName) s.name = newName;
-                let newContact = prompt("Contact:", s.contact); if(newContact) s.contact = newContact;
-                let newLoc = prompt("Location:", s.location); if(newLoc) s.location = newLoc;
-                let newLogo = prompt("Logo URL:", s.logo); if(newLogo) s.logo = newLogo;
-                let newEmail = prompt("Login email:", s.loginEmail); if(newEmail) s.loginEmail = newEmail;
-                await updateDoc(doc(db,"schools",id), { name:s.name, contact:s.contact, location:s.location, logo:s.logo, loginEmail:s.loginEmail });
-                if(currentUser && currentUser.role === 'school' && currentUser.schoolId === id) {
-                    document.getElementById('headerLogoImg').src = newLogo || "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                    document.getElementById('loginLogoImg').src = newLogo || "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                }
-            }
-        }));
-        document.querySelectorAll('.delete-school').forEach(btn => btn.addEventListener('click', async (e) => { if(confirm("Delete school?")) await deleteDoc(doc(db,"schools",btn.getAttribute('data-id'))); }));
-    }
-
-    function populateVideoMappingDropdowns() {
-        let subjSelect = document.getElementById('videoSubjectSelect');
-        let allSubjects = [...primarySubjects, ...secondarySubjects];
-        subjSelect.innerHTML = '<option value="">Select Subject</option>' + allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
-        let classSelect = document.getElementById('videoClassSelect');
-        let allClasses = [...classData.primary.map(c => ({ value: `primary_${c.id}`, label: `Primary ${c.id}` })), ...classData.secondary.map(c => ({ value: `secondary_${c.id}`, label: `Senior ${c.id}` }))];
-        classSelect.innerHTML = '<option value="">Select Class</option>' + allClasses.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
-    }
-    function renderExistingMappings() {
-        let container = document.getElementById('existingMappingsList');
-        if(!container) return;
-        let entries = Object.entries(videoMappings);
-        if(entries.length === 0) { container.innerHTML = '<em>No video mappings yet. Use the form above to add.</em>'; return; }
-        let html = '<strong>Current Mappings:</strong><ul style="margin-top:8px;">';
-        for(let [key, vid] of entries) {
-            let parts = key.split('_');
-            let level = parts[0] === 'primary' ? 'Primary' : 'Secondary';
-            let classId = parts[1];
-            let subject = parts.slice(2).join('_');
-            let className = (level === 'Primary' ? 'P' : 'S') + classId;
-            html += `<li><strong>${subject}</strong> (${level} ${className}) → <code>${vid}</code></li>`;
+            viewersHtml += '</div></div>';
+            html += `<div class="teacher-video-item"><h4>${v.title || v.subject} (${v.classLevel} ${v.classId})</h4><p>YouTube ID: ${v.youtubeId}</p>${viewersHtml}</div>`;
         }
-        html += '</ul>';
-        container.innerHTML = html;
-    }
-    async function saveVideoMapping() {
-        let subject = document.getElementById('videoSubjectSelect').value;
-        let classVal = document.getElementById('videoClassSelect').value;
-        let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!subject || !classVal || !youtubeId) { showNotification("Please fill all fields","error"); return; }
-        let key = `${classVal}_${subject}`;
-        await setDoc(doc(db, "videoMappings", key), { subject, classKey: classVal, youtubeId });
-        showNotification(`Video saved for ${subject} in class ${classVal}`);
-        document.getElementById('videoYoutubeId').value = '';
-    }
-    async function testVideoMapping() {
-        let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!youtubeId) { showNotification("Enter a valid YouTube URL or ID","error"); return; }
-        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
-        document.getElementById('videoModal').classList.add('show');
+        document.getElementById('teacherVideosList').innerHTML = html;
     }
 
-    // ========== ATTENDANCE FUNCTIONS ==========
-    let attendanceStream = null, enrollStream = null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
-    async function setupCamera(vid, mode='environment') { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); document.getElementById(vid).srcObject = s; return s; } catch(e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById(vid).srcObject = s; return s; } catch(e) { showNotification("Camera access denied","error"); return null; } } }
-    function captureFace(vid) { let v = document.getElementById(vid); if(!v||!v.videoWidth) return null; let c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
-    function getImageHash(dataURL, cb) { let img = new Image(); img.onload = () => { let c = document.createElement('canvas'); c.width=8; c.height=8; let ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8); let d=ctx.getImageData(0,0,8,8).data; let sum=0; for(let i=0;i<d.length;i+=4) sum+=(d[i]+d[i+1]+d[i+2])/3; let avg=sum/64; let hash=''; for(let i=0;i<d.length;i+=4) hash+=((d[i]+d[i+1]+d[i+2])/3 >= avg)?'1':'0'; cb(hash); }; img.src=dataURL; }
-    function hamming(a,b){ if(a.length!==b.length) return 999; let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++; return d; }
-    async function markAttendance() { if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ showNotification("No enrolled faces","error"); return; } let img=captureFace('attendanceVideo'); if(!img){ showNotification("Capture failed","error"); return; } getImageHash(img,(hash)=>{ let best=null,bestDist=15; for(let p of people) if(p.faceHash){ let d=hamming(hash,p.faceHash); if(d<bestDist){ bestDist=d; best=p; } } let resDiv=document.getElementById('attendanceResult'); if(!best){ resDiv.style.display='block'; resDiv.innerHTML='<div style="color:red">❌ Not recognized</div>'; return; } let today=new Date().toDateString(); let already=attendanceRecords.find(r=>r.personId===best.id&&r.schoolId===sid&&new Date(r.timestamp).toDateString()===today); if(already){ resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:#FF8C42">⚠️ ${best.name} already marked</div>`; return; } attendanceRecords.push({ id:Date.now(), schoolId:sid, personId:best.id, personName:best.name, category:best.category, phone:best.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today }); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:green">✅ ${best.name} marked at ${new Date().toLocaleTimeString()}</div>`; showNotification(`Attendance for ${best.name}`); renderRecentAttendance(); renderEnrolledList(); setTimeout(()=>resDiv.style.display='none',4000); }); }
-    function renderRecentAttendance() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('recentAttendanceList'); if(!c) return; let today=new Date().toDateString(); let rec=attendanceRecords.filter(r=>r.schoolId===sid&&new Date(r.timestamp).toDateString()===today).slice(-10); if(!rec.length){ c.innerHTML='<div style="text-align:center;color:#999">No records today</div>'; return; } c.innerHTML=rec.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); }
-    function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ c.innerHTML='<div style="text-align:center;color:#999">No enrolled people</div>'; return; } c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
-    window.deleteEnrolled = function(id) { if(confirm("Delete?")){ attendancePeople=attendancePeople.filter(p=>p.id!==id); attendanceRecords=attendanceRecords.filter(r=>r.personId!==id); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("Person deleted"); renderEnrolledList(); renderRecentAttendance(); } };
-    document.getElementById('attendanceMenuItem')?.addEventListener('click', async()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } document.getElementById('attendanceModal').classList.add('show'); attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream=await setupCamera('enrollVideo',currentEnrollCamera); });
-    document.getElementById('closeAttendanceModal')?.addEventListener('click',()=>{ document.getElementById('attendanceModal').classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
-    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{ let name=t.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }));
-    document.getElementById('switchAttendanceCamera')?.addEventListener('click', async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); let newMode=currentAttendanceCamera==='environment'?'user':'environment'; let s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode; });
-    document.getElementById('switchEnrollCamera')?.addEventListener('click', async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); let newMode=currentEnrollCamera==='environment'?'user':'environment'; let s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode; });
-    document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
-    document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ let img=captureFace('enrollVideo'); if(img){ capturedFaceImage=img; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured</p>`; showNotification("Face captured"); } else showNotification("Camera not ready","error"); });
-    document.getElementById('faceImageUpload')?.addEventListener('change',function(e){ let file=e.target.files[0]; if(file){ let reader=new FileReader(); reader.onload=function(ev){ capturedFaceImage=ev.target.result; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported</p>`; showNotification("Face imported"); }; reader.readAsDataURL(file); } });
-    document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let name=document.getElementById('enrollName').value.trim(); let cat=document.getElementById('enrollCategory').value; let phone=document.getElementById('enrollPhone').value.trim(); if(!name){ showNotification("Enter name","error"); return; } if(!capturedFaceImage){ showNotification("Capture face first","error"); return; } getImageHash(capturedFaceImage,(hash)=>{ attendancePeople.push({ id:Date.now(), schoolId:sid, name, category:cat, phone, faceHash:hash, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled`); renderEnrolledList(); }); });
-    document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; if(confirm("Delete all attendance records for this school?")){ attendanceRecords=attendanceRecords.filter(r=>r.schoolId!==sid); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared"); renderRecentAttendance(); } });
+    // Superadmin functions
+    async function loadAllUsers() {
+        if(!currentUser || currentUser.role !== 'superadmin') return;
+        let snap = await getDocs(collection(db,"users"));
+        let html = '';
+        snap.forEach(d => { let u=d.data(); html+=`<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${u.name}</strong> (${u.email}) Role: ${u.role||'individual'} <button class="edit-user" data-uid="${d.id}">Edit Role</button> <button class="make-teacher" data-uid="${d.id}">Make Teacher</button> <button class="delete-user" data-uid="${d.id}">Delete</button></div>`; });
+        document.getElementById('allUsersList').innerHTML=html;
+        document.querySelectorAll('.edit-user').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRole=prompt("Role: superadmin, school, teacher, individual"); if(newRole && ['superadmin','school','teacher','individual'].includes(newRole)){ await updateDoc(doc(db,"users",uid),{role:newRole}); showNotification("Role updated"); loadAllUsers(); loadTeachersManage(); }}));
+        document.querySelectorAll('.make-teacher').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; await updateDoc(doc(db,"users",uid),{role:"teacher", revenuePerView: 100}); showNotification("Teacher created with revenue 100 UGX per view"); loadAllUsers(); loadTeachersManage(); }));
+        document.querySelectorAll('.delete-user').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete?")) await deleteDoc(doc(db,"users",btn.dataset.uid)); loadAllUsers(); }));
+    }
+    async function loadTeachersManage() {
+        let snap = await getDocs(query(collection(db,"users"), where("role","==","teacher")));
+        let html = '';
+        for(let d of snap.docs) {
+            let t = d.data();
+            html += `<div style="border:1px solid #ddd; padding:10px; margin-bottom:10px;"><strong>${t.name}</strong> (${t.email})<br>Revenue per view: <input type="number" id="rev_${d.id}" value="${t.revenuePerView||100}" style="width:80px"> <button class="update-revenue" data-uid="${d.id}">Update</button><br>Assigned Subjects: <span id="subj_${d.id}">${t.subjects ? t.subjects.join(', ') : 'None'}</span><br><input id="addsubj_${d.id}" placeholder="Add subject"> <button class="add-subject" data-uid="${d.id}">Add Subject</button></div>`;
+        }
+        document.getElementById('teachersManageList').innerHTML = html;
+        document.querySelectorAll('.update-revenue').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRev=parseInt(document.getElementById(`rev_${uid}`).value); await updateDoc(doc(db,"users",uid),{revenuePerView:newRev}); showNotification("Revenue updated"); }));
+        document.querySelectorAll('.add-subject').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let subj=document.getElementById(`addsubj_${uid}`).value.trim(); if(subj){ let teacherDoc=await getDoc(doc(db,"users",uid)); let subs=teacherDoc.data().subjects||[]; if(!subs.includes(subj)){ subs.push(subj); await updateDoc(doc(db,"users",uid),{subjects:subs}); showNotification("Subject added"); loadTeachersManage(); } } }));
+    }
+    async function populateTeacherDropdown() { let snap=await getDocs(query(collection(db,"users"), where("role","==","teacher"))); let select=document.getElementById('videoTeacherSelect'); select.innerHTML='<option>Select Teacher</option>'; snap.forEach(d=>{ select.innerHTML+=`<option value="${d.id}">${d.data().name}</option>`; }); }
+    function populateSubjectDropdown() { let allSubs=[...primarySubjects,...secondarySubjects]; let select=document.getElementById('videoSubjectSelect'); select.innerHTML='<option>Select Subject</option>'+allSubs.map(s=>`<option>${s}</option>`).join(''); let classSelect=document.getElementById('videoClassSelect'); let allClasses=[...classData.primary.map(c=>({val:`primary_${c.id}`,label:`Primary ${c.id}`})), ...classData.secondary.map(c=>({val:`secondary_${c.id}`,label:`Senior ${c.id}`}))]; classSelect.innerHTML='<option>Select Class</option>'+allClasses.map(c=>`<option value="${c.val}">${c.label}</option>`).join(''); }
+    async function saveVideoMapping() { let teacherId=document.getElementById('videoTeacherSelect').value; let subject=document.getElementById('videoSubjectSelect').value; let classVal=document.getElementById('videoClassSelect').value; let youtubeId=extractVideoId(document.getElementById('videoYoutubeId').value); if(!teacherId||!subject||!classVal||!youtubeId){ showNotification("Fill all","error"); return; } let [classLevel,classId]=classVal.split('_'); let key=`${teacherId}_${subject}_${classLevel}_${classId}`; await setDoc(doc(db,"videoMappings",key),{teacherId,subject,classLevel,classId:parseInt(classId),youtubeId,title:`${subject} lesson`}); showNotification("Video mapped"); document.getElementById('videoYoutubeId').value=''; renderExistingMappings(); }
+    async function renderExistingMappings() { let snap=await getDocs(collection(db,"videoMappings")); let html='<ul>'; snap.forEach(d=>{ let data=d.data(); html+=`<li>Teacher: ${data.teacherId} | ${data.subject} | ${data.classLevel} ${data.classId} | ${data.youtubeId}</li>`; }); html+='</ul>'; document.getElementById('existingMappingsList').innerHTML=html; }
 
-    // ========== AI CHAT ==========
-    async function askAI(q) { if(typeof puter !== 'undefined' && puter.ai) { try { let resp = await puter.ai.chat(q); return resp.message.content; } catch(e) { return "Connection error"; } } else return "📚 I'm a demo AI. Full version coming soon!"; }
-    function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
-    async function sendChat() { let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length && msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
-    document.getElementById('sendBtn')?.addEventListener('click', sendChat);
-    document.getElementById('chatInput')?.addEventListener('keypress', e=>{ if(e.key==='Enter') sendChat(); });
-    document.getElementById('openAIDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
-    document.getElementById('closeDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
-    document.getElementById('drawerOverlay')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
+    // Push notifications
+    async function setupPushNotifications() { if(!currentUser) return; if('Notification' in window && 'serviceWorker' in navigator) { await Notification.requestPermission(); const messaging=getMessaging(); try{ const token=await getToken(messaging,{vapidKey:'BBCuQB6zGdVuA_fAQbtyC6ilkNwROcFmwq3_XdcmjhsY6s73zWlrHDYqKy6UDG6Bk--yhld0IsDpgy8ysoq9uXA'}); if(token) await updateDoc(doc(db,"users",currentUser.uid),{fcmToken:token}); }catch(e){} } }
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    onMessage(getMessaging(),(p)=>showNotification(p.notification?.body,"info"));
 
-    // ========== NAVIGATION & UI ==========
-    function navigateTo(pageId) { if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
-    document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.getAttribute('data-page'))));
-    document.getElementById('folderHeader')?.addEventListener('click',()=>{ let c=document.getElementById('folderContent'); let ic=document.querySelector('#folderHeader i:last-child'); c.classList.toggle('show'); ic.className=c.classList.contains('show')?'fas fa-chevron-up':'fas fa-chevron-down'; });
-    
-    document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (!currentUser) {
-                alert('Please login first');
-                return;
-            }
-            const plan = btn.getAttribute('data-plan');
-            const amount = parseInt(btn.getAttribute('data-price'));
-            const email = currentUser.email;
-            const phone = currentUser.phone || "N/A";
-            const name = currentUser.name;
-            await initiatePesapalPayment(plan, amount, email, phone, name);
-        });
-    });
-    
-    document.querySelectorAll('.login-tab').forEach(t=>t.addEventListener('click',()=>{ let tn=t.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active',tn==='login'); document.getElementById('signupFormDiv').classList.toggle('active',tn==='signup'); }));
+    // Logo upload
+    async function uploadBrandLogo(file){ let reader=new FileReader(); reader.onload=async e=>{ await setDoc(doc(db,"settings","brand"),{logoBase64:e.target.result}); document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img=>img.src=e.target.result); showNotification("Logo updated"); }; reader.readAsDataURL(file); }
+    document.getElementById('uploadLogoBtn')?.addEventListener('click',()=>{ let inp=document.getElementById('logoUploadInput'); if(inp.files.length) uploadBrandLogo(inp.files[0]); });
+    async function loadBrandLogo(){ let snap=await getDoc(doc(db,"settings","brand")); if(snap.exists()){ let url=snap.data().logoBase64; document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img=>img.src=url); } }
+
+    // About page
+    async function loadAboutContent(){ let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading learning platform.",mission:"Quality education for all."}; await setDoc(ref,def); return def; }
+    async function renderAboutPage(){ let about=await loadAboutContent(); document.getElementById('dynamicAbout').innerHTML=`<div><h3>Vision</h3><p>${about.vision}</p></div><div><h3>Mission</h3><p>${about.mission}</p></div>`; }
+    renderAboutPage();
+
+    // Navigation & UI
+    function navigateTo(pageId){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); document.getElementById(`${pageId}Page`).classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); document.querySelector(`.nav-item[data-page="${pageId}"]`).classList.add('active'); }
+    document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.dataset.page)));
     document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; });
-    document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; renderClasses(); }));
+    document.getElementById('backToSubjects')?.addEventListener('click',()=>{ document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; });
+    document.getElementById('backToTeachers')?.addEventListener('click',()=>{ document.getElementById('teacherVideosSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='block'; });
+    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); ap.classList.toggle('show'); if(ap.classList.contains('show') && currentUser?.role==='teacher') loadTeacherDashboard(); });
+    document.getElementById('folderHeader')?.addEventListener('click',()=>{ document.getElementById('folderContent').classList.toggle('show'); });
+    document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
+    document.getElementById('submitFeedbackBtn')?.addEventListener('click',async()=>{ await saveFeedback(currentLessonSubject, currentRating, document.getElementById('feedbackComment').value); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; });
+    document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; });
+    document.getElementById('saveVideoMappingBtn')?.addEventListener('click',saveVideoMapping);
+    document.getElementById('refreshUsersBtn')?.addEventListener('click',loadAllUsers);
+    document.getElementById('addSchoolBtn')?.addEventListener('click',async()=>{ let name=document.getElementById('schoolName').value, email=document.getElementById('schoolLoginEmail').value, pwd=document.getElementById('schoolLoginPassword').value; if(!name||!email||!pwd) return; let schoolRef=await addDoc(collection(db,"schools"),{name,loginEmail:email}); let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolRef.id}); showNotification("School added"); });
+    document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.dataset.level; renderClasses(); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click',()=>{ document.getElementById('moreDropdown')?.classList.remove('show'); });
-    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ renderPdfAdmin(); if(currentUser.role === 'school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
-    document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; });
-    document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
-    document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
-    document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.getAttribute('data-rating')); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ if(idx<currentRating) s.className='fas fa-star'; else s.className='far fa-star'; }); }));
-    document.getElementById('submitFeedbackBtn')?.addEventListener('click', async () => {
-        const comment = document.getElementById('feedbackComment').value;
-        await saveFeedback(currentLessonSubject, currentRating, comment);
-        showNotification('Thank you for your feedback!');
-        document.getElementById('videoModal').classList.remove('show');
-        document.getElementById('youtubeIframe').src = '';
-        document.getElementById('feedbackSection').style.display = 'none';
-    });
-    document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; });
+    document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.dataset.rating); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ s.className=idx<currentRating?'fas fa-star':'far fa-star'; }); }));
 
-    // ========== ADMIN BUTTON LISTENERS ==========
-    document.getElementById('addSchoolBtn')?.addEventListener('click', async () => {
-        let name=document.getElementById('schoolName').value.trim(), contact=document.getElementById('schoolContact').value.trim(), loc=document.getElementById('schoolLocation').value.trim(), logo=document.getElementById('schoolLogoUrl').value.trim(), email=document.getElementById('schoolLoginEmail').value.trim(), pwd=document.getElementById('schoolLoginPassword').value;
-        if(!name||!contact||!loc||!email||!pwd){ showNotification("Fill all fields","error"); return; }
-        if(pwd.length<4){ showNotification("Password min 4","error"); return; }
-        if(schools.find(s=>s.loginEmail===email)){ showNotification("Email exists","error"); return; }
-        const schoolDocRef = await addDoc(collection(db,"schools"),{ name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0 });
-        try { 
-            let cred = await createUserWithEmailAndPassword(auth, email, pwd); 
-            await setDoc(doc(db,"users",cred.user.uid),{ 
-                uid: cred.user.uid, 
-                name, 
-                email, 
-                role: "school", 
-                schoolId: schoolDocRef.id,
-                createdAt: new Date().toISOString() 
-            }); 
-        } catch(e){ console.error(e); }
-        showNotification("School added");
-        document.getElementById('schoolName').value=''; document.getElementById('schoolContact').value=''; document.getElementById('schoolLocation').value=''; document.getElementById('schoolLogoUrl').value=''; document.getElementById('schoolLoginEmail').value=''; document.getElementById('schoolLoginPassword').value='';
-    });
-    document.getElementById('addEventBtn')?.addEventListener('click', async () => {
-        let t=document.getElementById('eventTitle').value.trim(), d=document.getElementById('eventDate').value.trim(), f=document.getElementById('eventFee').value.trim();
-        if(!t||!d||!f){ showNotification("Fill all","error"); return; }
-        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: null });
-        showNotification("Global event added");
-        document.getElementById('eventTitle').value=''; document.getElementById('eventDate').value=''; document.getElementById('eventFee').value='';
-    });
-    document.getElementById('addSchoolEventBtn')?.addEventListener('click', async () => {
-        if(!currentUser || currentUser.role !== 'school') return;
-        let t=document.getElementById('schoolEventTitle').value.trim(), d=document.getElementById('schoolEventDate').value.trim(), f=document.getElementById('schoolEventFee').value.trim();
-        if(!t||!d||!f){ showNotification("Fill all","error"); return; }
-        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: currentUser.schoolId });
-        showNotification("School event added");
-        document.getElementById('schoolEventTitle').value=''; document.getElementById('schoolEventDate').value=''; document.getElementById('schoolEventFee').value='';
-    });
-    document.getElementById('addPdfBtn')?.addEventListener('click', async () => {
-        let t=document.getElementById('pdfTitle').value.trim(), u=document.getElementById('pdfUrl').value.trim();
-        if(!t||!u){ showNotification("Fill both","error"); return; }
-        await addDoc(collection(db,"pdfs"),{ title:t, url:u });
-        showNotification("PDF added");
-        document.getElementById('pdfTitle').value=''; document.getElementById('pdfUrl').value='';
-    });
-    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => {
-        let newName = document.getElementById('newSubjectName').value.trim();
-        let level = document.getElementById('newSubjectLevel').value;
-        if(!newName) { showNotification("Enter subject name","error"); return; }
-        let subjectsRef = doc(db, "subjects", level);
-        let list = level === 'primary' ? primarySubjects : secondarySubjects;
-        if(list.includes(newName)) { showNotification("Subject exists","error"); return; }
-        list.push(newName);
-        await updateDoc(subjectsRef, { list });
-        showNotification(`Subject "${newName}" added`);
-        document.getElementById('newSubjectName').value = '';
-        document.getElementById('newSubjectVideo').value = '';
-        if(level === 'primary') primarySubjects = list; else secondarySubjects = list;
-        populateVideoMappingDropdowns();
-    });
-    document.getElementById('testVideoBtn')?.addEventListener('click', testVideoMapping);
-    document.getElementById('saveVideoMappingBtn')?.addEventListener('click', saveVideoMapping);
-    document.getElementById('uploadProfilePicBtn')?.addEventListener('click', () => {
-        const fileInput = document.getElementById('profilePicInput');
-        if (fileInput.files.length === 0) {
-            showNotification("Select an image first", "error");
-            return;
-        }
-        uploadProfilePicture(fileInput.files[0]);
-    });
-    
-    // LOGO UPLOAD BUTTON EVENT
-    document.getElementById('uploadLogoBtn')?.addEventListener('click', () => {
-        const fileInput = document.getElementById('logoUploadInput');
-        if (!fileInput.files.length) {
-            showNotification("Select an image first", "error");
-            return;
-        }
-        uploadBrandLogoBase64(fileInput.files[0]);
-    });
+    // Listeners for Firestore data
+    onSnapshot(collection(db,"schools"),snap=>{ schools=snap.docs.map(d=>({id:d.id,...d.data()})); let c=document.getElementById('schoolsAdminList'); if(c) c.innerHTML=schools.map(s=>`<div>${s.name} (${s.loginEmail}) <button class="delete-school" data-id="${s.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-school').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"schools",btn.dataset.id)); })); });
+    onSnapshot(collection(db,"pdfs"),snap=>{ pdfMaterials=snap.docs.map(d=>({id:d.id,...d.data()})); document.getElementById('folderContent').innerHTML=pdfMaterials.map(p=>`<a href="${p.url}" target="_blank" class="material-item">📄 ${p.title}</a>`).join(''); });
+    onSnapshot(collection(db,"events"),snap=>{ globalEventsList=snap.docs.map(d=>({id:d.id,...d.data()})); document.getElementById('eventsTicker').innerHTML=globalEventsList.map(ev=>`<div class="ticker-item">${ev.title} | ${ev.date}</div>`).join(''); });
+    onSnapshot(doc(db,"subjects","primary"),docSnap=>{ if(docSnap.exists()) primarySubjects=docSnap.data().list; });
+    onSnapshot(doc(db,"subjects","secondary"),docSnap=>{ if(docSnap.exists()) secondarySubjects=docSnap.data().list; });
 
-    // ========== FIRESTORE LISTENERS ==========
-    function listenToSchools() {
-        onSnapshot(collection(db, "schools"), (snap) => {
-            schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderSchoolsAdmin();
-            if (currentUser && currentUser.role === 'school') {
-                let s = schools.find(sch => sch.id === currentUser.schoolId);
-                if (s && s.logo) {
-                    document.getElementById('headerLogoImg').src = s.logo;
-                    document.getElementById('loginLogoImg').src = s.logo;
-                } else if (s && !s.logo) {
-                    document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                    document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                }
-                if (s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
-            }
-        });
-    }
-    function listenToEvents() { 
-        onSnapshot(collection(db, "events"), (snap) => { 
-            globalEventsList = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
-            renderEventsTicker(); 
-            if(currentUser && currentUser.role === 'superadmin') renderEventsAdmin();
-            if(currentUser && currentUser.role === 'school') renderSchoolEventsList();
-        }); 
-    }
-    function listenToPDFs() { onSnapshot(collection(db, "pdfs"), (snap) => { pdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPdfList(); renderPdfAdmin(); }); }
-    function listenToVideoMappings() { 
-        onSnapshot(collection(db, "videoMappings"), (snap) => { 
-            videoMappings = {}; 
-            snap.forEach(d => { videoMappings[d.id] = d.data().youtubeId; }); 
-            renderExistingMappings(); 
-        }); 
-    }
-    function listenToSubjects() {
-        onSnapshot(doc(db, "subjects", "primary"), (docSnap) => { if(docSnap.exists()) primarySubjects = docSnap.data().list || []; else { primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"]; setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); } populateVideoMappingDropdowns(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
-        onSnapshot(doc(db, "subjects", "secondary"), (docSnap) => { if(docSnap.exists()) secondarySubjects = docSnap.data().list || []; else { secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"]; setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); } populateVideoMappingDropdowns(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
-    }
-
-    // ========== LOAD USER AND SHOW APP ==========
+    // User loading and auth
     async function loadUserAndShowApp(user) {
-        let docSnap = await getDoc(doc(db,"users",user.uid));
-        if(docSnap.exists()) {
-            currentUser = { uid:user.uid, ...docSnap.data() };
+        let snap=await getDoc(doc(db,"users",user.uid));
+        if(snap.exists()){
+            currentUser={uid:user.uid,...snap.data()};
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.remove('hidden');
-            updateGreeting();
-            let address = currentUser.address || 'Not set';
-            document.getElementById('accountInfo').innerHTML = `
-                <div class="account-field"><label>Name</label><div>${currentUser.name}</div></div>
-                <div class="account-field"><label>Email</label><div>${currentUser.email}</div></div>
-                <div class="account-field"><label>Phone</label><div>${currentUser.phone||'N/A'}</div></div>
-                <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':(currentUser.role==='school'?'School Admin':'Individual')}</div></div>
-                <div class="account-field"><label>Address</label><div id="userAddressDisplay">${address}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
-                <div class="account-field"><label>Logins</label><div>${currentUser.loginCount||0}</div></div>
-            `;
-            document.getElementById('editAddressBtn')?.addEventListener('click', () => {
-                let newAddr = prompt("Enter your physical address:", address);
-                if (newAddr) saveUserAddress(newAddr);
-            });
-            let isSuper = currentUser.role === 'superadmin';
-            let isSchool = currentUser.role === 'school';
-            document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
-            document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
-            document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
-            
-            const profilePicSection = document.getElementById('profilePicUploadSection');
-            if (profilePicSection) {
-                if (isSchool || isSuper) {
-                    profilePicSection.style.display = "none";
-                } else {
-                    profilePicSection.style.display = "block";
-                }
-            }
-            
-            if (isSchool) {
-                let s = schools.find(sch => sch.id === currentUser.schoolId);
-                if (s && s.logo) {
-                    document.getElementById('headerLogoImg').src = s.logo;
-                    document.getElementById('loginLogoImg').src = s.logo;
-                } else {
-                    document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                    document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                }
-            } else if (isSuper && currentUser.profilePic) {
-                document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-            } else {
-                document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-            }
-            loadProfilePicPreview();
-            if(isSuper) {
-                let usersList = await getDocs(collection(db,"users"));
-                document.getElementById('totalUsersCount').innerText = usersList.size;
-                renderFeedbackAdmin();
-                renderGlobalMostWatched();
-            }
-            renderClasses();
-            renderRecentAttendance();
-            renderEnrolledList();
-            renderEventsTicker();
-            
-            // ========== NEW: PUSH NOTIFICATIONS, JITSI, ABOUT EDITOR, USER MANAGEMENT ==========
+            document.getElementById('userName').innerText=currentUser.name.split(' ')[0];
+            let isSuper=currentUser.role==='superadmin';
+            let isTeacher=currentUser.role==='teacher';
+            document.getElementById('adminMenuItem').style.display=(isSuper||isTeacher)?"flex":"none";
+            document.getElementById('superAdminSection').style.display=isSuper?"block":"none";
+            document.getElementById('teacherDashboardSection').style.display=isTeacher?"block":"none";
+            if(isSuper){ loadAllUsers(); loadTeachersManage(); populateTeacherDropdown(); populateSubjectDropdown(); renderExistingMappings(); }
+            if(isTeacher) loadTeacherDashboard();
             setupPushNotifications();
-            renderAboutPage(await loadAboutContent());
-            if(isSuper) loadAllUsers();
+            renderClasses();
+            // Account info
+            document.getElementById('accountInfo').innerHTML = `<div>Name: ${currentUser.name}</div><div>Email: ${currentUser.email}</div><div>Phone: ${currentUser.phone||'Not set'}</div><div>Role: ${currentUser.role}</div>`;
         }
     }
-
-    // ========== PUSH NOTIFICATIONS SETUP ==========
-    async function setupPushNotifications() {
-        if (!currentUser) return;
-        if (!('Notification' in window && 'serviceWorker' in navigator)) return;
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            try {
-                const messaging = getMessaging();
-                const token = await getToken(messaging, { vapidKey: 'BBCuQB6zGdVuA_fAQbtyC6ilkNwROcFmwq3_XdcmjhsY6s73zWlrHDYqKy6UDG6Bk--yhld0IsDpgy8ysoq9uXA' });
-                if (token) await updateDoc(doc(db, "users", currentUser.uid), { fcmToken: token });
-            } catch(err) { console.error(err); }
-        }
-    }
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(e => console.error(e));
-    }
-    onMessage(getMessaging(), (payload) => {
-        showNotification(payload.notification?.body || "New message", "info");
-    });
-
-    // ========== JITSI LIVE LESSON ==========
-    document.getElementById('startJitsiLessonBtn')?.addEventListener('click', () => {
-        const roomName = `apshule_${Date.now()}_${Math.random().toString(36).substr(2,8)}`;
-        const container = document.getElementById('liveLessonContainer');
-        container.style.display = 'block';
-        container.innerHTML = `<div style="background:white; border-radius:20px;"><div style="background:#4B2E9E; padding:12px; color:white; display:flex; justify-content:space-between;"><span>Live Lesson</span><button id="closeLiveLessonBtn" style="background:none; border:none; color:white;">&times;</button></div><iframe src="https://meet.jit.si/${roomName}" allow="camera; microphone; fullscreen; display-capture" style="width:100%; height:500px; border:none;"></iframe></div>`;
-        document.getElementById('closeLiveLessonBtn')?.addEventListener('click', () => { container.style.display = 'none'; container.innerHTML = ''; });
-        showNotification("Live lesson started! Share the room name.", "success");
-    });
-
-    // ========== ABOUT PAGE EDITOR (with photos & reorder) ==========
-    let currentTeamMembers = [];
-    function escapeHtml(str){ if(!str)return ''; return str.replace(/[&<>]/g,function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;}); }
-    function renderTeamEditor() {
-        const container = document.getElementById('teamMembersEditor');
-        if (!container) return;
-        if (!currentTeamMembers.length) { container.innerHTML = '<div>No team members. Click "Add Member".</div>'; return; }
-        let html = '';
-        currentTeamMembers.forEach((member, idx) => {
-            html += `<div style="border:1px solid #ddd; border-radius:16px; padding:12px; margin-bottom:12px; background:white;">
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div><img src="${member.photo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'}" style="width:60px;height:60px;border-radius:50%;"><br><input type="file" class="team-photo-upload" data-idx="${idx}" accept="image/*" style="font-size:11px;"></div>
-                    <div style="flex:1;"><input type="text" placeholder="Name" value="${escapeHtml(member.name)}" class="team-name-input" data-idx="${idx}" style="width:100%;"><input type="text" placeholder="Role" value="${escapeHtml(member.role)}" class="team-role-input" data-idx="${idx}" style="width:100%;"><input type="text" placeholder="Phone" value="${escapeHtml(member.phone||'')}" class="team-phone-input" data-idx="${idx}" style="width:100%;"></div>
-                    <div><button class="move-up-btn" data-idx="${idx}" ${idx===0?'disabled':''}>⬆️ Up</button><button class="move-down-btn" data-idx="${idx}" ${idx===currentTeamMembers.length-1?'disabled':''}>⬇️ Down</button><button class="remove-team-btn" data-idx="${idx}" style="background:#dc3545;">Remove</button></div>
-                </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-        document.querySelectorAll('.team-photo-upload').forEach(inp=>inp.addEventListener('change',e=>{let idx=parseInt(inp.dataset.idx),file=e.target.files[0]; if(file){let r=new FileReader(); r.onload=ev=>{currentTeamMembers[idx].photo=ev.target.result; renderTeamEditor();}; r.readAsDataURL(file);}}));
-        document.querySelectorAll('.team-name-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].name=inp.value;}));
-        document.querySelectorAll('.team-role-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].role=inp.value;}));
-        document.querySelectorAll('.team-phone-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].phone=inp.value;}));
-        document.querySelectorAll('.move-up-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(idx>0){[currentTeamMembers[idx-1],currentTeamMembers[idx]]=[currentTeamMembers[idx],currentTeamMembers[idx-1]]; renderTeamEditor();}}));
-        document.querySelectorAll('.move-down-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(idx<currentTeamMembers.length-1){[currentTeamMembers[idx+1],currentTeamMembers[idx]]=[currentTeamMembers[idx],currentTeamMembers[idx+1]]; renderTeamEditor();}}));
-        document.querySelectorAll('.remove-team-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(confirm("Remove?")){currentTeamMembers.splice(idx,1); renderTeamEditor();}}));
-    }
-    async function loadAboutContent(){ let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading digital learning platform.",mission:"To provide quality, accessible education.",coreValues:["Excellence","Accessibility","Innovation"],team:[{name:"Tebuswake Abdallah",role:"CEO",photo:""}],contact:{phone:"+256705732540",email:"apshule@gmail.com",address:"Kampala",whatsapp:"+256705732540"}}; await setDoc(ref,def); return def; }
-    async function saveAboutContent(about){ await setDoc(doc(db,"settings","about"),about); showNotification("About page saved!"); renderAboutPage(about); }
-    async function renderAboutPage(about){ let container=document.getElementById('dynamicAbout'); if(!container)return; let coreHtml=about.coreValues.map(v=>`<div class="core-value"><i class="fas fa-star"></i> ${v}</div>`).join(''); let teamHtml=about.team.map(m=>`<div class="team-member"><div class="team-avatar">${m.photo?`<img src="${m.photo}" style="width:50px;height:50px;border-radius:50%;">`:'<i class="fas fa-user-tie"></i>'}</div><div><strong>${escapeHtml(m.name)}</strong><br>${escapeHtml(m.role)}${m.phone?`<br>📞 ${escapeHtml(m.phone)}`:''}</div></div>`).join(''); container.innerHTML=`<div class="vision-box"><h3>Vision</h3><p>${escapeHtml(about.vision)}</p></div><div class="mission-box"><h3>Mission</h3><p>${escapeHtml(about.mission)}</p></div><h3>Core Values</h3>${coreHtml}<h3>Team</h3>${teamHtml}<div class="contact-info"><i class="fas fa-phone"></i> ${escapeHtml(about.contact.phone)}</div><div class="contact-info"><i class="fas fa-envelope"></i> ${escapeHtml(about.contact.email)}</div><div class="contact-info"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(about.contact.address)}</div><a href="https://wa.me/${about.contact.whatsapp.replace(/[^0-9]/g,'')}" class="whatsapp-btn">WhatsApp ${escapeHtml(about.contact.whatsapp)}</a>`; }
-    async function populateAboutEditor(){ let about=await loadAboutContent(); document.getElementById('editVision').value=about.vision; document.getElementById('editMission').value=about.mission; document.getElementById('editCoreValues').value=about.coreValues.join(', '); currentTeamMembers=about.team?[...about.team]:[]; renderTeamEditor(); document.getElementById('editContactPhone').value=about.contact.phone; document.getElementById('editContactEmail').value=about.contact.email; document.getElementById('editContactAddress').value=about.contact.address; document.getElementById('editWhatsapp').value=about.contact.whatsapp; }
-    document.getElementById('editAboutBtn')?.addEventListener('click',async()=>{ let ed=document.getElementById('aboutEditor'); if(ed.style.display==='none'){ await populateAboutEditor(); ed.style.display='block'; } else ed.style.display='none'; });
-    document.getElementById('saveAboutBtn')?.addEventListener('click',async()=>{ let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:currentTeamMembers,contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await saveAboutContent(about); document.getElementById('aboutEditor').style.display='none'; });
-    document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ currentTeamMembers.push({name:"New Member",role:"Role",phone:"",photo:""}); renderTeamEditor(); });
-
-    // ========== SUPERADMIN USER MANAGEMENT ==========
-    async function loadAllUsers(){ if(!currentUser||currentUser.role!=='superadmin')return; let snap=await getDocs(collection(db,"users")); let html=''; snap.forEach(d=>{ let u=d.data(); html+=`<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${u.name}</strong> (${u.email}) Role: ${u.role||'individual'} <button class="edit-user" data-uid="${d.id}">Edit Role</button> <button class="delete-user" data-uid="${d.id}" style="background:#dc3545;">Delete</button></div>`; }); document.getElementById('allUsersList').innerHTML=html; document.querySelectorAll('.edit-user').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRole=prompt("Enter role: superadmin, school, individual"); if(newRole && ['superadmin','school','individual'].includes(newRole)){ await updateDoc(doc(db,"users",uid),{role:newRole}); showNotification("Role updated"); loadAllUsers(); }})); document.querySelectorAll('.delete-user').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete user?")){ await deleteDoc(doc(db,"users",btn.dataset.uid)); showNotification("User deleted"); loadAllUsers(); }})); }
-    document.getElementById('refreshUsersBtn')?.addEventListener('click',loadAllUsers);
-
-    // ========== START APP ==========
-    listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings(); listenToSubjects();
-    document.getElementById('signupBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        let name = document.getElementById('signupName').value.trim();
-        let email = document.getElementById('signupEmail').value.trim();
-        let phone = document.getElementById('signupPhone').value.trim();
-        let pwd = document.getElementById('signupPassword').value;
-        let level = document.getElementById('signupEducationLevel').value;
-        if(!name||!email||!phone||!pwd||!level) { document.getElementById('loginError').innerText = "Fill all fields"; return; }
-        if(pwd.length<4) { document.getElementById('loginError').innerText = "Password min 4 chars"; return; }
-        try {
-            let cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            let location = await detectLocation();
-            await setDoc(doc(db,"users",cred.user.uid), {
-                uid:cred.user.uid, name, email, phone, educationLevel:level,
-                role:"individual", createdAt:new Date().toISOString(),
-                loginCount:1, lastLogin:new Date().toISOString(),
-                detectedLocation: location, address: ""
-            });
-            showNotification("Account created! We detected your approximate location.");
-        } catch(err) { document.getElementById('loginError').innerText = err.message; }
-    });
-    document.getElementById('loginBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        let email = document.getElementById('loginEmail').value.trim();
-        let pwd = document.getElementById('loginPassword').value;
-        try {
-            let cred = await signInWithEmailAndPassword(auth, email, pwd);
-            let userRef = doc(db,"users",cred.user.uid);
-            let snap = await getDoc(userRef);
-            if(snap.exists()) {
-                let cnt = (snap.data().loginCount||0)+1;
-                await updateDoc(userRef, { loginCount: cnt, lastLogin: new Date().toISOString() });
-            }
-            showNotification("Login successful");
-        } catch(err) { document.getElementById('loginError').innerText = "Invalid email/password"; }
-    });
-    document.getElementById('sendResetEmailBtn').addEventListener('click', async () => {
-        let email = document.getElementById('resetEmail').value.trim();
-        if(!email) { showNotification("Enter email","error"); return; }
-        try { await sendPasswordResetEmail(auth, email); showNotification("Reset email sent!"); } catch(err) { showNotification(err.message,"error"); }
-    });
-    document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-    document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
-    onAuthStateChanged(auth, async (user) => { 
-        if(user) {
-            await loadUserAndShowApp(user);
-            await loadBrandLogo();
-        }
-        else { 
-            document.getElementById('loginScreen').classList.remove('hidden'); 
-            document.getElementById('appScreen').classList.add('hidden');
-            await loadBrandLogo();
-        } 
-    });
-    renderClasses(); renderPdfList(); renderEventsTicker();
-    
-    checkPaymentStatus();
-    
-    console.log("✅ APSHULE with all features ready.");
+    document.getElementById('signupBtn').addEventListener('click',async()=>{ let email=document.getElementById('signupEmail').value, pwd=document.getElementById('signupPassword').value, name=document.getElementById('signupName').value, phone=document.getElementById('signupPhone').value; if(pwd.length<4) return; let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,role:"individual"}); showNotification("Account created"); });
+    document.getElementById('loginBtn').addEventListener('click',async()=>{ let email=document.getElementById('loginEmail').value, pwd=document.getElementById('loginPassword').value; await signInWithEmailAndPassword(auth,email,pwd); });
+    document.getElementById('logoutBtn').addEventListener('click',()=>signOut(auth));
+    document.getElementById('sendResetEmailBtn').addEventListener('click',async()=>{ let email=document.getElementById('resetEmail').value; if(email) await sendPasswordResetEmail(auth,email); });
+    onAuthStateChanged(auth,async(user)=>{ if(user){ await loadUserAndShowApp(user); await loadBrandLogo(); } else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
+    renderClasses();
 </script>
 </body>
 </html>
