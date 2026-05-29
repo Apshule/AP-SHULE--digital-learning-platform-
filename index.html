@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>APSHULE - Learn With Ease</title>
-    <!-- ✅ FAVICON (logo on browser tab) -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -535,7 +534,6 @@
     await OneSignal.init({
       appId: "4603f6d1-a2c7-44d8-80c6-33aed56e0d4f",
     });
-    // Later we will link OneSignal user with Firebase user after login
   });
 </script>
 
@@ -1045,74 +1043,82 @@
         showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
     });
 
-    // ========== SUBSCRIPTION PLAN MANAGEMENT ==========
-    async function loadSubscriptionPlans() {
-        const plansRef = collection(db, "subscriptionPlans");
-        const snapshot = await getDocs(plansRef);
-        if (snapshot.empty) {
-            const defaultPlans = [
-                { name: "Daily", price: 500, currency: "UGX", order: 1 },
-                { name: "Weekly", price: 3000, currency: "UGX", order: 2 },
-                { name: "Monthly", price: 10000, currency: "UGX", order: 3 },
-                { name: "Term Plan", price: 50000, currency: "UGX", order: 4 },
-                { name: "Half Year", price: 80000, currency: "UGX", order: 5 },
-                { name: "Full Year", price: 150000, currency: "UGX", order: 6 }
-            ];
-            for (let plan of defaultPlans) {
-                await addDoc(collection(db, "subscriptionPlans"), plan);
+    // ========== SUBSCRIPTION PLAN MANAGEMENT (with real-time updates) ==========
+    // Listen to subscription plans in real-time and update both admin list and frontend grid
+    let unsubscribePlans = null;
+    function startSubscriptionPlansListener() {
+        if (unsubscribePlans) unsubscribePlans();
+        const q = collection(db, "subscriptionPlans");
+        unsubscribePlans = onSnapshot(q, (snapshot) => {
+            let plans = [];
+            snapshot.forEach(doc => plans.push({ id: doc.id, ...doc.data() }));
+            plans.sort((a,b) => (a.order || 0) - (b.order || 0));
+            // Update admin list if superadmin panel is open
+            const container = document.getElementById('subscriptionPlansList');
+            if (container && currentUser && currentUser.role === 'superadmin') {
+                container.innerHTML = plans.map(plan => `
+                    <div style="border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div><strong>${plan.name}</strong> - ${plan.currency || 'UGX'} ${plan.price}</div>
+                        <div>
+                            <button class="edit-plan" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">✏️ Edit</button>
+                            <button class="delete-plan" data-id="${plan.id}">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+                // Re-attach edit/delete events
+                document.querySelectorAll('.edit-plan').forEach(btn => {
+                    btn.removeEventListener('click', handleEditPlan);
+                    btn.addEventListener('click', handleEditPlan);
+                });
+                document.querySelectorAll('.delete-plan').forEach(btn => {
+                    btn.removeEventListener('click', handleDeletePlan);
+                    btn.addEventListener('click', handleDeletePlan);
+                });
             }
-            loadSubscriptionPlans();
-            return;
+            // Update frontend payment grid
+            const plansGrid = document.getElementById('plansGrid');
+            if (plansGrid) {
+                plansGrid.innerHTML = plans.map(plan => `
+                    <div class="payment-card" style="background: linear-gradient(135deg,#2196F3,#1976D2);">
+                        <div>${plan.name}</div>
+                        <div class="payment-plan-price">${plan.currency || 'UGX'} ${plan.price}</div>
+                        <button class="subscribe-btn-small" data-plan="${plan.name}" data-price="${plan.price}">Subscribe</button>
+                    </div>
+                `).join('');
+                document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
+                    btn.removeEventListener('click', handleSubscribe);
+                    btn.addEventListener('click', handleSubscribe);
+                });
+            }
+        });
+    }
+
+    function handleEditPlan(e) {
+        const btn = e.currentTarget;
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        const price = btn.dataset.price;
+        document.getElementById('planName').value = name;
+        document.getElementById('planPrice').value = price;
+        document.getElementById('planEditor').style.display = 'block';
+        document.getElementById('savePlanBtn').onclick = async () => {
+            const newName = document.getElementById('planName').value.trim();
+            const newPrice = parseInt(document.getElementById('planPrice').value);
+            if (newName && !isNaN(newPrice)) {
+                await updateDoc(doc(db, "subscriptionPlans", id), { name: newName, price: newPrice });
+                showNotification("Plan updated");
+                document.getElementById('planEditor').style.display = 'none';
+            } else {
+                showNotification("Invalid name or price", "error");
+            }
+        };
+    }
+    async function handleDeletePlan(e) {
+        const id = e.currentTarget.dataset.id;
+        if (confirm("Delete this plan?")) {
+            await deleteDoc(doc(db, "subscriptionPlans", id));
+            showNotification("Plan deleted");
         }
-        let plans = [];
-        snapshot.forEach(doc => plans.push({ id: doc.id, ...doc.data() }));
-        plans.sort((a,b) => a.order - b.order);
-        const container = document.getElementById('subscriptionPlansList');
-        if (!container) return;
-        container.innerHTML = plans.map(plan => `
-            <div style="border:1px solid #ddd; padding:10px; margin-bottom:8px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div><strong>${plan.name}</strong> - ${plan.currency} ${plan.price}</div>
-                <div>
-                    <button class="edit-plan" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">✏️ Edit</button>
-                    <button class="delete-plan" data-id="${plan.id}">🗑️ Delete</button>
-                </div>
-            </div>
-        `).join('');
-        // Edit events
-        document.querySelectorAll('.edit-plan').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.id;
-                const name = btn.dataset.name;
-                const price = btn.dataset.price;
-                document.getElementById('planName').value = name;
-                document.getElementById('planPrice').value = price;
-                document.getElementById('planEditor').style.display = 'block';
-                document.getElementById('savePlanBtn').onclick = async () => {
-                    const newName = document.getElementById('planName').value.trim();
-                    const newPrice = parseInt(document.getElementById('planPrice').value);
-                    if (newName && !isNaN(newPrice)) {
-                        await updateDoc(doc(db, "subscriptionPlans", id), { name: newName, price: newPrice });
-                        showNotification("Plan updated");
-                        loadSubscriptionPlans();
-                        renderSubscriptionPlansFrontend();
-                        document.getElementById('planEditor').style.display = 'none';
-                    } else {
-                        showNotification("Invalid name or price", "error");
-                    }
-                };
-            });
-        });
-        // Delete events
-        document.querySelectorAll('.delete-plan').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                if (confirm("Delete this plan?")) {
-                    await deleteDoc(doc(db, "subscriptionPlans", btn.dataset.id));
-                    showNotification("Plan deleted");
-                    loadSubscriptionPlans();
-                    renderSubscriptionPlansFrontend();
-                }
-            });
-        });
     }
     document.getElementById('addPlanBtn')?.addEventListener('click', () => {
         document.getElementById('planEditor').style.display = 'block';
@@ -1126,8 +1132,6 @@
                 const order = plansSnap.size + 1;
                 await addDoc(collection(db, "subscriptionPlans"), { name, price, currency: "UGX", order });
                 showNotification("Plan added");
-                loadSubscriptionPlans();
-                renderSubscriptionPlansFrontend();
                 document.getElementById('planEditor').style.display = 'none';
             } else {
                 showNotification("Enter valid name and price", "error");
@@ -1137,25 +1141,6 @@
     document.getElementById('cancelPlanBtn')?.addEventListener('click', () => {
         document.getElementById('planEditor').style.display = 'none';
     });
-    async function renderSubscriptionPlansFrontend() {
-        const plansSnap = await getDocs(collection(db, "subscriptionPlans"));
-        let plans = [];
-        plansSnap.forEach(doc => plans.push({ id: doc.id, ...doc.data() }));
-        plans.sort((a,b) => a.order - b.order);
-        const container = document.getElementById('plansGrid');
-        if (!container) return;
-        container.innerHTML = plans.map(plan => `
-            <div class="payment-card ${plan.name.toLowerCase().replace(/\s/g, '-')}">
-                <div>${plan.name}</div>
-                <div class="payment-plan-price">${plan.currency} ${plan.price}</div>
-                <button class="subscribe-btn-small" data-plan="${plan.name}" data-price="${plan.price}">Subscribe</button>
-            </div>
-        `).join('');
-        document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
-            btn.removeEventListener('click', handleSubscribe);
-            btn.addEventListener('click', handleSubscribe);
-        });
-    }
     function handleSubscribe(e) {
         e.stopPropagation();
         if (!currentUser) {
@@ -1173,8 +1158,7 @@
             showNotification("Only superadmin can send notifications", "error");
             return;
         }
-        // Replace with your actual REST API Key from OneSignal (Settings -> Keys & IDs)
-        const apiKey = "YOUR_ONESIGNAL_REST_API_KEY";
+        const apiKey = "os_v2_app_iyb7nuncy5cnragggoxnk3qnj54nzmft6fvexdm5r26gykdt4fevq3sqpznghqgh5irkirbo6plreoieyivsl6yuj74l2grldddjpgq";
         const appId = "4603f6d1-a2c7-44d8-80c6-33aed56e0d4f";
         try {
             const response = await fetch("https://onesignal.com/api/v1/notifications", {
@@ -1347,11 +1331,10 @@
                 loadAllUsers();
                 loadTeachersManage();
                 populateVideoMappingDropdowns();
-                loadSubscriptionPlans();
+                startSubscriptionPlansListener(); // start real-time listener for plans
             }
             if(isTeacher) loadTeacherDashboard();
             renderClasses();
-            renderSubscriptionPlansFrontend();
             renderAboutPage(await loadAboutContent());
             // Link OneSignal with Firebase user
             if(window.OneSignalDeferred) {
@@ -1507,7 +1490,7 @@
     document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; renderClasses(); }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click',()=>{ document.getElementById('moreDropdown')?.classList.remove('show'); });
-    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ if(currentUser.role === 'teacher') loadTeacherDashboard(); else if(currentUser.role === 'superadmin') { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); renderExistingMappings(); loadSubscriptionPlans(); } else if(currentUser.role === 'school') { renderSchoolEventsList(); } navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
+    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ if(currentUser.role === 'teacher') loadTeacherDashboard(); else if(currentUser.role === 'superadmin') { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); renderExistingMappings(); } else if(currentUser.role === 'school') { renderSchoolEventsList(); } navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
     document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
