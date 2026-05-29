@@ -475,6 +475,17 @@
                         <button id="sendOneSignalBtn" class="admin-toggle">📤 Send Notification</button>
                         <div id="pushNotificationStatus" style="font-size:12px; margin-top:8px;"></div>
                     </div>
+
+                    <!-- User Analytics -->
+                    <div class="admin-section">
+                        <h4>📊 User Analytics (Total / Active / Inactive)</h4>
+                        <div id="userStats">
+                            <p>Total Users: <strong id="statTotal">0</strong></p>
+                            <p>Active Users (last 7 days): <strong id="statActive">0</strong></p>
+                            <p>Inactive Users: <strong id="statInactive">0</strong></p>
+                        </div>
+                        <button id="refreshStatsBtn" class="admin-toggle">🔄 Refresh Stats</button>
+                    </div>
                 </div>
 
                 <!-- TEACHER DASHBOARD SECTION -->
@@ -1043,8 +1054,7 @@
         showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
     });
 
-    // ========== SUBSCRIPTION PLAN MANAGEMENT (with real-time updates) ==========
-    // Listen to subscription plans in real-time and update both admin list and frontend grid
+    // ========== SUBSCRIPTION PLAN MANAGEMENT (with real-time updates for ALL users) ==========
     let unsubscribePlans = null;
     function startSubscriptionPlansListener() {
         if (unsubscribePlans) unsubscribePlans();
@@ -1075,7 +1085,7 @@
                     btn.addEventListener('click', handleDeletePlan);
                 });
             }
-            // Update frontend payment grid
+            // Update frontend payment grid for EVERYONE (students, teachers, etc.)
             const plansGrid = document.getElementById('plansGrid');
             if (plansGrid) {
                 plansGrid.innerHTML = plans.map(plan => `
@@ -1192,6 +1202,29 @@
         document.getElementById('notificationTitle').value = '';
         document.getElementById('notificationBody').value = '';
     });
+
+    // ========== USER ANALYTICS (Total / Active / Inactive) ==========
+    async function refreshUserStats() {
+        if (!currentUser || currentUser.role !== 'superadmin') return;
+        const snapshot = await getDocs(collection(db, "users"));
+        const total = snapshot.size;
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        let active = 0;
+        snapshot.forEach(doc => {
+            const lastLogin = doc.data().lastLogin;
+            if (lastLogin) {
+                const loginDate = new Date(lastLogin);
+                if (loginDate >= sevenDaysAgo) active++;
+            }
+        });
+        const inactive = total - active;
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('statActive').innerText = active;
+        document.getElementById('statInactive').innerText = inactive;
+        showNotification("User stats refreshed", "info");
+    }
+    document.getElementById('refreshStatsBtn')?.addEventListener('click', refreshUserStats);
 
     // ========== ABOUT PAGE EDITOR (with photos & reorder) ==========
     let currentTeamMembers = [];
@@ -1331,11 +1364,13 @@
                 loadAllUsers();
                 loadTeachersManage();
                 populateVideoMappingDropdowns();
-                startSubscriptionPlansListener(); // start real-time listener for plans
+                refreshUserStats(); // initial load of stats
             }
             if(isTeacher) loadTeacherDashboard();
             renderClasses();
             renderAboutPage(await loadAboutContent());
+            // Start subscription plans listener (for ALL logged in users)
+            startSubscriptionPlansListener();
             // Link OneSignal with Firebase user
             if(window.OneSignalDeferred) {
                 window.OneSignalDeferred.push(async function(OneSignal) {
@@ -1490,7 +1525,7 @@
     document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; renderClasses(); }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click',()=>{ document.getElementById('moreDropdown')?.classList.remove('show'); });
-    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ if(currentUser.role === 'teacher') loadTeacherDashboard(); else if(currentUser.role === 'superadmin') { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); renderExistingMappings(); } else if(currentUser.role === 'school') { renderSchoolEventsList(); } navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
+    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ if(currentUser.role === 'teacher') loadTeacherDashboard(); else if(currentUser.role === 'superadmin') { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); renderExistingMappings(); refreshUserStats(); } else if(currentUser.role === 'school') { renderSchoolEventsList(); } navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
     document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
@@ -1560,7 +1595,7 @@
     listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings(); listenToSubjects();
     renderClasses();
     checkPaymentStatus();
-    console.log("✅ APSHULE fully loaded with all features: teacher revenue, subscription management, OneSignal push, and full original design.");
+    console.log("✅ APSHULE fully loaded with all features: teacher revenue, subscription management, OneSignal push, user analytics, and full original design.");
 </script>
 </body>
 </html>
