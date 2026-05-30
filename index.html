@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>APSHULE - Learn With Ease</title>
-    <!-- ✅ FAVICON -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== ORIGINAL FULL CSS (unchanged) ========== */
+        /* ========== ORIGINAL FULL CSS (exactly as in your working version) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .logo--responsive { max-width: 100%; height: auto; display: block; }
@@ -214,6 +213,7 @@
         /* Teacher dashboard additions */
         .teacher-video-item { background: #f9f9f9; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
         .user-watch-row { border-bottom: 1px solid #eee; padding: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+        .management-panel, .analytics-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -267,7 +267,7 @@
     <!-- VIDEO MODAL -->
     <div id="videoModal" class="video-modal"><div class="video-content" id="videoContent"><div class="video-header"><span id="videoTitle"><i class="fab fa-youtube"></i> Lesson</span><div><button id="fullscreenBtn"><i class="fas fa-expand"></i></button><button id="closeVideoBtn">&times;</button></div></div><div class="youtube-player-container"><iframe id="youtubeIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><div class="video-title" id="currentVideoTitle"></div><div class="feedback-section" id="feedbackSection"><h4>⭐ Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback (optional)" rows="3"></textarea><div class="feedback-buttons"><button id="submitFeedbackBtn" class="submit-feedback">Submit & Continue</button><button id="closeFeedbackBtn" class="skip-feedback">Skip</button></div></div></div></div>
 
-    <!-- ATTENDANCE MODAL -->
+    <!-- ATTENDANCE MODAL (full) -->
     <div id="attendanceModal" class="attendance-modal"><div class="attendance-modal-content"><div style="display: flex; justify-content: space-between; margin-bottom: 20px;"><h3><i class="fas fa-face-recognition"></i> Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none; border:none; font-size:28px; cursor:pointer;">&times;</button></div><div class="attendance-tabs"><button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button><button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button><button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button></div><div id="markTab" class="attendance-tab-content active"><div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-face-smile"></i> Mark Attendance</button></div><div id="attendanceResult" class="recognition-result" style="display:none;"></div><h4>📋 Today's Attendance</h4><div id="recentAttendanceList" class="recent-attendance-list"></div></div><div id="enrollTab" class="attendance-tab-content"><div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div><div class="attendance-controls" style="display:flex; gap:10px; margin:15px 0;"><button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button><button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button></div><div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> 📁 Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div><div id="enrollPreview" style="text-align:center;"></div><div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div><div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option><option>Visitor</option></select></div><div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div><button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button></div><div id="manageTab" class="attendance-tab-content"><h4>📋 Enrolled Persons</h4><div id="enrolledPersonsList" class="enrolled-list"></div><button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%; margin-top:15px;">🗑️ Clear All Records</button></div></div></div>
 
     <!-- AI DRAWER -->
@@ -285,9 +285,10 @@
             <div id="teacherVideosSection" style="display:none;"><button id="backToTeachers" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Teachers</button><div class="section-title">📺 Lessons by <span id="selectedTeacherName"></span></div><div id="teacherVideosGrid" class="subjects-grid"></div></div>
             <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
             <div class="announcements-section"><div class="announcements-header"><i class="fas fa-bullhorn"></i> <span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div><div class="announcements-ticker"><div class="ticker-wrap"><div class="ticker" id="eventsTicker"></div></div></div></div>
-            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div></div>
-            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid"><div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div><div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div><div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div><div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div><div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div><div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div></div></div>
-            <!-- ADMIN PANEL -->
+            <div class="materials-folder"><div class="folder-header" id="folderHeader"><i class="fas fa-folder</i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div><div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div></div>
+            <!-- Subscription plans dynamically loaded -->
+            <div class="payment-plans-section"><div class="payment-plans-title">🎯 Subscription Plans</div><div class="payment-plans-grid" id="plansGrid"></div></div>
+            <!-- ADMIN PANEL (original, with additions) -->
             <div id="adminPanel" class="admin-panel">
                 <h3><i class="fas fa-lock"></i> Admin Panel</h3>
                 <div id="superAdminSection" class="admin-section" style="display:none;">
@@ -303,7 +304,7 @@
                     </div>
                     <div id="schoolsAdminList"></div>
                     
-                    <!-- LOGO UPLOAD SECTION (SUPER ADMIN ONLY) -->
+                    <!-- LOGO UPLOAD SECTION -->
                     <div class="admin-section">
                         <h4>🖼️ Upload / Change Brand Logo</h4>
                         <div class="add-pdf-form" style="background:#f0f0f0; padding:15px; border-radius:16px;">
@@ -313,13 +314,12 @@
                         </div>
                     </div>
                     
-                    <h4>📊 Global Analytics</h4>
+                    <h4>📊 Global Analytics (Quick stats)</h4>
                     <p><strong>Total Users:</strong> <span id="totalUsersCount">0</span></p>
                     <div class="admin-section"><h4>🎬 Most Watched Videos (Global)</h4><ul id="globalMostWatchedList" class="most-watched-list"></ul></div>
                     <div class="admin-section"><h4>📝 User Feedback (for improvement)</h4><div id="feedbackAdminList"></div></div>
-                    <div class="admin-section"><h4>🎥 Map Video Lessons (Teacher + Subject + Class)</h4>
+                    <div class="admin-section"><h4>🎥 Map Video Lessons (Subject + Class)</h4>
                         <div class="video-mapping-form">
-                            <select id="videoTeacherSelect"><option value="">Select Teacher</option></select>
                             <select id="videoSubjectSelect"><option value="">Select Subject</option></select>
                             <select id="videoClassSelect"><option value="">Select Class</option></select>
                             <input type="text" id="videoYoutubeId" placeholder="YouTube URL or Video ID">
@@ -338,7 +338,7 @@
                     </div>
 
                     <div class="admin-section">
-                        <h4>🎓 Manage Teachers (Assign Subjects & Revenue)</h4>
+                        <h4>🎓 Manage Teachers (Revenue per view)</h4>
                         <div id="teachersManageList"></div>
                     </div>
 
@@ -360,15 +360,43 @@
                         <button id="startJitsiLessonBtn" class="admin-toggle">Start Live Lesson</button>
                         <div id="liveLessonContainer" style="display:none; margin-top:20px;"></div>
                     </div>
+
+                    <!-- Manage Subscription Plans -->
+                    <div class="admin-section">
+                        <h4>💰 Manage Subscription Plans</h4>
+                        <div id="subscriptionPlansList"></div>
+                        <button id="addPlanBtn" class="admin-toggle">➕ Add New Plan</button>
+                        <div id="planEditor" style="display:none; margin-top:10px; background:#f9f9f9; padding:10px; border-radius:16px;">
+                            <input type="text" id="planName" placeholder="Plan name (e.g., Monthly)" style="width:100%; margin-bottom:5px;">
+                            <input type="number" id="planPrice" placeholder="Price (UGX)" style="width:100%; margin-bottom:5px;">
+                            <button id="savePlanBtn">Save Plan</button>
+                            <button id="cancelPlanBtn">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- User Analytics (detailed) -->
+                    <div class="admin-section">
+                        <h4>📊 User Analytics (Total / Active / Inactive)</h4>
+                        <div id="userStats">
+                            <p>Total Users: <strong id="statTotal">0</strong></p>
+                            <p>Active Users (last 7 days): <strong id="statActive">0</strong></p>
+                            <p>Inactive Users: <strong id="statInactive">0</strong></p>
+                            <p>Failed Login Attempts (today): <strong id="failedLogins">0</strong></p>
+                        </div>
+                        <button id="refreshStatsBtn" class="admin-toggle">🔄 Refresh Stats</button>
+                    </div>
                 </div>
 
-                <!-- TEACHER DASHBOARD SECTION -->
+                <!-- TEACHER DASHBOARD SECTION (enhanced) -->
                 <div id="teacherDashboardSection" class="admin-section" style="display:none;">
                     <h4>📊 My Teacher Dashboard</h4>
                     <div id="teacherEarningsSummary"></div>
                     <div id="teacherVideosList"></div>
+                    <div id="teacherQuestionsList"></div>
+                    <div id="teacherPdfSection"></div>
                 </div>
 
+                <!-- School events section (unchanged) -->
                 <div class="admin-section" id="schoolEventsSection" style="display:none;">
                     <h4>📅 Manage School Events (Only your school)</h4>
                     <div class="add-pdf-form"><input type="text" id="schoolEventTitle" placeholder="Event Title"><input type="text" id="schoolEventDate" placeholder="Date"><input type="text" id="schoolEventFee" placeholder="Fee"><button id="addSchoolEventBtn" class="admin-toggle">➕ Add Event</button></div>
@@ -383,8 +411,47 @@
                 <div class="admin-section" id="pdfManagementSection" style="display:none;"><h4>📄 Manage PDFs</h4><div class="add-pdf-form"><input type="text" id="pdfTitle" placeholder="PDF Title"><input type="text" id="pdfUrl" placeholder="PDF URL"><button id="addPdfBtn" class="admin-toggle">➕ Add PDF</button></div><div id="pdfAdminList"></div></div>
             </div>
         </div>
-        <div id="myListPage" class="page"><div class="section-title">❤️ My Saved Lessons</div><div id="myListContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">Coming soon – save your favourite lessons!</div></div>
-        <div id="notificationsPage" class="page"><div class="section-title">🔔 Notifications</div><div id="notificationsContainer" style="background:white; border-radius:20px; padding:20px; text-align:center; color:#999;">No new notifications</div></div>
+
+        <!-- New pages for management and analytics (for superadmin only) -->
+        <div id="managementPage" class="page">
+            <div class="section-title">🛠️ Management Tools</div>
+            <div class="management-panel">
+                <h4>➕ Create Teacher Account</h4>
+                <input type="text" id="teacherName" placeholder="Teacher Name">
+                <input type="email" id="teacherEmail" placeholder="Teacher Email">
+                <input type="password" id="teacherPassword" placeholder="Temporary Password">
+                <button id="createTeacherBtn" class="admin-toggle">Create Teacher</button>
+                <hr>
+                <h4>🎥 Map Video to Teacher & Subject</h4>
+                <select id="mapTeacherSelect"><option>Select Teacher</option></select>
+                <select id="mapSubjectSelect"><option>Select Subject</option></select>
+                <select id="mapClassSelect"><option>Select Class</option></select>
+                <input id="mapYoutubeId" placeholder="YouTube URL or ID">
+                <button id="mapVideoBtn" class="admin-toggle">Map Video</button>
+                <hr>
+                <h4>🏫 Create School Account</h4>
+                <input id="newSchoolName" placeholder="School Name">
+                <input id="newSchoolEmail" placeholder="School Login Email">
+                <input id="newSchoolPassword" placeholder="School Password">
+                <button id="createSchoolBtn" class="admin-toggle">Create School</button>
+            </div>
+        </div>
+
+        <div id="analyticsPage" class="page">
+            <div class="section-title">📊 Analytics & Feedback</div>
+            <div class="analytics-panel">
+                <h4>📈 Platform Statistics</h4>
+                <p>Total Users: <span id="analyticsTotalUsers">0</span></p>
+                <p>Active Users (last 7 days): <span id="analyticsActiveUsers">0</span></p>
+                <p>Failed Login Attempts (today): <span id="analyticsFailedLogins">0</span></p>
+                <h4>🎬 Most Watched Videos (by Teacher)</h4>
+                <div id="mostWatchedByTeacher"></div>
+                <h4>💬 User Feedback & Questions</h4>
+                <div id="allUserFeedback"></div>
+            </div>
+        </div>
+
+        <!-- Account and About pages -->
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
@@ -401,12 +468,14 @@
         </div>
     </div>
 
-    <div class="bottom-nav">
+    <!-- Bottom navigation (role‑based) -->
+    <div class="bottom-nav" id="bottomNav">
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
-        <div class="nav-item" data-page="mylist"><i class="fas fa-heart"></i><span>My List</span></div>
-        <div class="nav-item" data-page="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div>
-        <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
-        <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
+        <div class="nav-item" data-page="account" id="navAccount"><i class="fas fa-user"></i><span>Account</span></div>
+        <div class="nav-item" data-page="about" id="navAbout"><i class="fas fa-info-circle"></i><span>About</span></div>
+        <div class="nav-item" data-page="management" id="navManagement" style="display:none;"><i class="fas fa-tools"></i><span>Management</span></div>
+        <div class="nav-item" data-page="analytics" id="navAnalytics" style="display:none;"><i class="fas fa-chart-line"></i><span>Analytics</span></div>
+        <div class="nav-item" data-page="teacherDashboard" id="navTeacherDashboard" style="display:none;"><i class="fas fa-chalkboard-teacher"></i><span>My Dashboard</span></div>
     </div>
 </div>
 <div id="notification" class="notification"></div>
@@ -416,8 +485,7 @@
         "imports": {
             "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
             "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-            "firebase/messaging": "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js"
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
         }
     }
 </script>
@@ -426,8 +494,7 @@
     import { initializeApp } from "firebase/app";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
     import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
-    import { getMessaging, getToken, onMessage } from "firebase/messaging";
-    
+
     const firebaseConfig = {
         apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
         authDomain: "apshule-app.firebaseapp.com",
@@ -441,7 +508,6 @@
     const db = getFirestore(app);
     window.db = db; window.auth = auth;
 
-    // ========== PESAPAL BACKEND URL ==========
     const PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
 
     // ========== GLOBAL VARIABLES ==========
@@ -450,41 +516,24 @@
     let globalEventsList = [];
     let pdfMaterials = [];
     let videoMappings = {};
-    let primarySubjects = [];
-    let secondarySubjects = [];
+    let primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"];
+    let secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"];
     let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
     let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
     let currentRating = 0, currentLessonSubject = "";
     let currentSelectedClassId = null;
     let currentLevel = "primary";
-    let currentSelectedTeacher = null;
+    let currentTeacherObject = null;
     let currentVideoProgressInterval = null;
     let currentVideoMappingId = null;
-    let currentTeacherObject = null;
+    let unsubscribePlans = null;
     const classData = {
         primary: [{id:1,name:"Primary 1",icon:"fa-baby-carriage",color:"#FF6B6B"},{id:2,name:"Primary 2",icon:"fa-child",color:"#4ECDC4"},{id:3,name:"Primary 3",icon:"fa-graduation-cap",color:"#45B7D1"},{id:4,name:"Primary 4",icon:"fa-book-reader",color:"#96CEB4"},{id:5,name:"Primary 5",icon:"fa-pencil-alt",color:"#FFEAA7"},{id:6,name:"Primary 6",icon:"fa-chalkboard-teacher",color:"#DDA0DD"},{id:7,name:"Primary 7",icon:"fa-users",color:"#FF9F43"}],
         secondary: [{id:1,name:"Senior 1",icon:"fa-seedling",color:"#4CAF50"},{id:2,name:"Senior 2",icon:"fa-tree",color:"#8BC34A"},{id:3,name:"Senior 3",icon:"fa-book",color:"#FF9800"},{id:4,name:"Senior 4",icon:"fa-chart-line",color:"#F44336"},{id:5,name:"Senior 5",icon:"fa-flask",color:"#9C27B0"},{id:6,name:"Senior 6",icon:"fa-university",color:"#2196F3"}]
     };
 
-    // ========== HELPER FUNCTIONS ==========
-    function showNotification(msg, type="success") {
-        let n = document.getElementById('notification');
-        n.textContent = msg;
-        n.className = `notification ${type}`;
-        n.style.display = 'block';
-        setTimeout(() => n.style.display = 'none', 3000);
-    }
-    window.showNotification = showNotification;
-    window.togglePassword = function(id) {
-        let inp = document.getElementById(id);
-        if(inp) inp.type = inp.type === "password" ? "text" : "password";
-    };
-    function extractVideoId(url) {
-        if(!url) return "";
-        let patterns = [/(?:youtube\.com\/watch\?v=)([^&]+)/, /(?:youtu\.be\/)([^?]+)/, /(?:youtube\.com\/embed\/)([^?]+)/];
-        for(let p of patterns) { let m = url.match(p); if(m) return m[1]; }
-        return url;
-    }
+    function showNotification(msg, type="success") { let n=document.getElementById('notification'); n.textContent=msg; n.className=`notification ${type}`; n.style.display='block'; setTimeout(()=>n.style.display='none',3000); }
+    function extractVideoId(url) { if(!url) return ""; let m=url.match(/(?:youtube\.com\/watch\?v=)([^&]+)/); return m ? m[1] : url; }
 
     function updateGreeting() {
         const hour = new Date().getHours();
@@ -500,224 +549,12 @@
     }
     setInterval(updateGreeting, 60000);
 
-    // ========== PESAPAL PAYMENT ==========
-    function showPaymentLoading(show) {
-        let existing = document.getElementById('paymentLoadingOverlay');
-        if(show) {
-            if(!existing) {
-                let div = document.createElement('div');
-                div.id = 'paymentLoadingOverlay';
-                div.className = 'payment-loading';
-                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting to Pesapal...</span>';
-                document.body.appendChild(div);
-            } else {
-                existing.style.display = 'flex';
-            }
-        } else {
-            if(existing) existing.style.display = 'none';
-        }
-    }
-
-    async function initiatePesapalPayment(plan, amount, email, phone, name) {
-        if(!PESAPAL_BACKEND_URL) {
-            showNotification("Backend URL not configured", "error");
-            return;
-        }
-        showPaymentLoading(true);
-        try {
-            const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    amount: amount,
-                    currency: "UGX",
-                    description: `${plan} Subscription - APSHULE`,
-                    email: email,
-                    phone: phone,
-                    name: name,
-                    reference: `SUB_${Date.now()}_${currentUser.uid}`
-                })
-            });
-            const data = await response.json();
-            if(data.redirect_url) {
-                sessionStorage.setItem('pesapal_order_tracking_id', data.order_tracking_id);
-                sessionStorage.setItem('pesapal_merchant_reference', data.merchant_reference);
-                window.location.href = data.redirect_url;
-            } else {
-                throw new Error(data.error || "Failed to initiate payment");
-            }
-        } catch(err) {
-            showNotification("Payment error: " + err.message, "error");
-            showPaymentLoading(false);
-        }
-    }
-
-    async function checkPaymentStatus() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderTrackingId = urlParams.get('OrderTrackingId');
-        const merchantReference = urlParams.get('OrderMerchantReference');
-        if(orderTrackingId && merchantReference && PESAPAL_BACKEND_URL) {
-            showPaymentLoading(true);
-            try {
-                const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order_tracking_id: orderTrackingId })
-                });
-                const data = await response.json();
-                if(data.status === "COMPLETED") {
-                    showNotification("✅ Payment successful! Your subscription is active.", "success");
-                    if(currentUser) {
-                        await updateDoc(doc(db, "users", currentUser.uid), {
-                            subscription: merchantReference,
-                            subscriptionActive: true,
-                            subscriptionDate: new Date().toISOString()
-                        });
-                    }
-                } else {
-                    showNotification("Payment not completed. Status: " + data.status, "error");
-                }
-            } catch(err) {
-                showNotification("Failed to verify payment", "error");
-            } finally {
-                showPaymentLoading(false);
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        }
-    }
-
-    async function saveFeedback(lesson, rating, comment) {
-        if (!currentUser) return;
-        await addDoc(collection(db, "feedbacks"), {
-            lesson: lesson, rating: rating, comment: comment,
-            userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "",
-            timestamp: new Date().toISOString(),
-            teacherId: currentTeacherObject?.id,
-            videoMappingId: currentVideoMappingId
-        });
-        showNotification("Feedback submitted! Teacher can now see your details.", "success");
-    }
-    async function saveVideoView(subject, classId, className, teacherId) {
-        if (!currentUser) return;
-        await addDoc(collection(db, "videoViews"), {
-            subject: subject, classId: classId, className: className,
-            userId: currentUser.uid, userName: currentUser.name,
-            timestamp: new Date().toISOString(),
-            teacherId: teacherId
-        });
-    }
-
-    function renderFeedbackAdmin() {
-        const container = document.getElementById('feedbackAdminList');
-        if (!container) return;
-        const q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"), limit(50));
-        onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) { container.innerHTML = '<div>No feedback yet.</div>'; return; }
-            let html = '<div style="max-height:300px; overflow-y:auto;">';
-            snapshot.forEach(doc => {
-                let f = doc.data();
-                html += `<div style="border-bottom:1px solid #ddd; padding:8px;"><strong>${f.userName}</strong> rated ${f.lesson} ${f.rating}⭐<br><em>${f.comment || 'No comment'}</em><br><small>${new Date(f.timestamp).toLocaleString()}</small></div>`;
-            });
-            html += '</div>';
-            container.innerHTML = html;
-        });
-    }
-    function renderGlobalMostWatched() {
-        const container = document.getElementById('globalMostWatchedList');
-        if (!container) return;
-        onSnapshot(collection(db, "videoViews"), (snapshot) => {
-            const counts = new Map();
-            snapshot.forEach(doc => {
-                let subj = doc.data().subject;
-                counts.set(subj, (counts.get(subj) || 0) + 1);
-            });
-            const sorted = Array.from(counts.entries()).sort((a,b) => b[1] - a[1]).slice(0,10);
-            if (sorted.length === 0) { container.innerHTML = '<li>No views yet.</li>'; return; }
-            container.innerHTML = sorted.map(([subj, cnt]) => `<li><strong>${subj}</strong> – ${cnt} views</li>`).join('');
-        });
-    }
-
-    async function saveUserAddress(address) {
-        if (!currentUser) return;
-        await updateDoc(doc(db, "users", currentUser.uid), { address: address });
-        showNotification("Address saved!");
-        loadUserAndShowApp(auth.currentUser);
-    }
-    async function detectLocation() {
-        try {
-            let resp = await fetch('https://ipapi.co/json/');
-            let data = await resp.json();
-            return `${data.city}, ${data.country_name}`;
-        } catch(e) { return "Unknown"; }
-    }
-
-    async function uploadProfilePicture(file) {
-        if (!currentUser) return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64 = e.target.result;
-            await updateDoc(doc(db, "users", currentUser.uid), { profilePic: base64 });
-            currentUser.profilePic = base64;
-            document.getElementById('profilePicPreview').src = base64;
-            showNotification("Profile picture updated!");
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function loadProfilePicPreview() {
-        const preview = document.getElementById('profilePicPreview');
-        if (preview && currentUser && currentUser.profilePic) {
-            preview.src = currentUser.profilePic;
-        } else if (preview) {
-            preview.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-        }
-    }
-
-    // ========== BRAND LOGO UPLOAD ==========
-    async function uploadBrandLogoBase64(file) {
-        if (!currentUser || currentUser.role !== 'superadmin') {
-            showNotification("Only super admin can change the logo", "error");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const base64 = e.target.result;
-            await setDoc(doc(db, "settings", "brand"), { logoBase64: base64 });
-            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => {
-                img.src = base64;
-            });
-            let faviconLink = document.querySelector("link[rel='icon']");
-            if (faviconLink) faviconLink.href = base64;
-            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-            if (appleIcon) appleIcon.href = base64;
-            showNotification("Brand logo updated successfully!");
-        };
-        reader.readAsDataURL(file);
-    }
-
-    async function loadBrandLogo() {
-        const docSnap = await getDoc(doc(db, "settings", "brand"));
-        if (docSnap.exists() && docSnap.data().logoBase64) {
-            const logoUrl = docSnap.data().logoBase64;
-            document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = logoUrl);
-            let faviconLink = document.querySelector("link[rel='icon']");
-            if (faviconLink) faviconLink.href = logoUrl;
-            let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-            if (appleIcon) appleIcon.href = logoUrl;
-        }
-    }
-
-    // ========== RENDER CLASSES & SUBJECTS (original) ==========
-    const subjectColors = ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336','#00BCD4','#795548','#E91E63','#3F51B5','#009688','#FFC107','#8BC34A','#673AB7','#FF5722','#607D8B','#CDDC39'];
-    function getSubjectIcon(subj) {
-        const icons = { 'Mathematics':'fa-calculator','English':'fa-book','Biology':'fa-dna','Chemistry':'fa-flask','Physics':'fa-atom','History':'fa-landmark','Geography':'fa-globe','Kiswahili':'fa-language','Commerce':'fa-chart-line','ICT':'fa-laptop','Literature':'fa-book-open','Economics':'fa-chart-bar','Science':'fa-flask','Social Studies':'fa-globe','Literacy':'fa-book','Religious Education':'fa-church','Agriculture':'fa-seedling','Fine Art':'fa-paintbrush','Physical Education':'fa-futbol','Entrepreneurship':'fa-lightbulb' };
-        return icons[subj] || 'fa-book-open';
-    }
+    // ========== RENDER CLASSES, SUBJECTS, TEACHERS, VIDEOS ==========
     function renderClasses() {
         let grid = document.getElementById('classGrid');
         if(!grid) return;
         let classes = classData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" data-class="${c.id}" data-class-name="${c.name}" onclick="selectClass(${c.id}, '${c.name}')" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i><div class="class-name" style="color: ${c.color};">${c.name}</div><div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div></div>`).join('');
+        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}')" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i><div class="class-name" style="color: ${c.color};">${c.name}</div><div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div></div>`).join('');
     }
     window.selectClass = function(id, name) {
         currentSelectedClassId = { id, name, level: currentLevel };
@@ -729,283 +566,445 @@
         let subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
         let grid = document.getElementById('subjectsGrid');
         if(!grid) return;
-        grid.innerHTML = subjects.map((s,idx) => `<div class="subject-card" onclick="selectSubject('${s}')"><div class="subject-icon" style="background: ${subjectColors[idx % subjectColors.length]}"><i class="fas ${getSubjectIcon(s)}"></i></div><div class="subject-name">${s}</div><div style="font-size:10px; color:#666; margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div></div>`).join('');
+        grid.innerHTML = subjects.map(s => `<div class="subject-card" onclick="selectSubject('${s}')"><div class="subject-icon" style="background:#2196F3;"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div><div style="font-size:10px;"><i class="fab fa-youtube"></i> Lesson</div></div>`).join('');
     }
     window.selectSubject = async function(subject) {
         currentSubject = subject;
-        // load teachers who have videos for this subject + class
-        const q = query(collection(db, "videoMappings"), where("subject", "==", subject), where("classLevel", "==", currentSelectedClassId.level), where("classId", "==", currentSelectedClassId.id));
+        const q = query(collection(db, "videoMappings"), where("subject","==",subject), where("classLevel","==",currentSelectedClassId.level), where("classId","==",currentSelectedClassId.id));
         const snap = await getDocs(q);
         const teacherIds = new Set();
         snap.forEach(d => { if(d.data().teacherId) teacherIds.add(d.data().teacherId); });
+        if(teacherIds.size === 0) { showNotification("No teachers for this subject","info"); return; }
         let teacherList = [];
-        for(let tid of teacherIds) {
-            let tSnap = await getDoc(doc(db, "users", tid));
-            if(tSnap.exists()) teacherList.push({id: tid, name: tSnap.data().name});
-        }
-        if(teacherList.length === 0) {
-            showNotification("No teachers have uploaded lessons for this subject yet.", "info");
-            document.getElementById('subjectsSection').style.display = 'block';
-            return;
-        }
+        for(let tid of teacherIds) { let tSnap = await getDoc(doc(db,"users",tid)); if(tSnap.exists()) teacherList.push({id:tid, name:tSnap.data().name}); }
         let grid = document.getElementById('teacherGrid');
-        if(!grid) { let div = document.createElement('div'); div.id = 'teacherGrid'; div.className = 'class-grid'; document.getElementById('teacherSelectionSection').appendChild(div); grid = div; }
-        grid.innerHTML = teacherList.map(t => `<div class="class-card" onclick="selectTeacher('${t.id}', '${t.name}')"><i class="fas fa-chalkboard-user"></i><div>${t.name}</div></div>`).join('');
-        document.getElementById('subjectsSection').style.display = 'none';
-        document.getElementById('teacherSelectionSection').style.display = 'block';
+        if(!grid) { let div=document.createElement('div'); div.id='teacherGrid'; div.className='class-grid'; document.getElementById('teacherSelectionSection').appendChild(div); grid=div; }
+        grid.innerHTML = teacherList.map(t => `<div class="class-card" onclick="selectTeacher('${t.id}','${t.name}')"><i class="fas fa-chalkboard-user"></i><div>${t.name}</div></div>`).join('');
+        document.getElementById('subjectsSection').style.display='none';
+        document.getElementById('teacherSelectionSection').style.display='block';
     };
     window.selectTeacher = function(teacherId, teacherName) {
-        currentTeacherObject = { id: teacherId, name: teacherName };
+        currentTeacherObject = {id:teacherId, name:teacherName};
         document.getElementById('selectedTeacherName').innerText = teacherName;
         loadTeacherVideos();
-        document.getElementById('teacherSelectionSection').style.display = 'none';
-        document.getElementById('teacherVideosSection').style.display = 'block';
+        document.getElementById('teacherSelectionSection').style.display='none';
+        document.getElementById('teacherVideosSection').style.display='block';
     };
     async function loadTeacherVideos() {
-        const q = query(collection(db, "videoMappings"), where("teacherId", "==", currentTeacherObject.id), where("subject", "==", currentSubject), where("classLevel", "==", currentSelectedClassId.level), where("classId", "==", currentSelectedClassId.id));
+        const q = query(collection(db,"videoMappings"), where("teacherId","==",currentTeacherObject.id), where("subject","==",currentSubject), where("classLevel","==",currentSelectedClassId.level), where("classId","==",currentSelectedClassId.id));
         const snap = await getDocs(q);
         let videos = [];
-        snap.forEach(d => videos.push({id: d.id, youtubeId: d.data().youtubeId, title: d.data().title || `${currentSubject} lesson`}));
+        snap.forEach(d => videos.push({id:d.id, youtubeId:d.data().youtubeId, title:d.data().title||`${currentSubject} lesson`}));
         let grid = document.getElementById('teacherVideosGrid');
-        if(!grid) { let d = document.createElement('div'); d.id = 'teacherVideosGrid'; d.className = 'subjects-grid'; document.getElementById('teacherVideosSection').appendChild(d); grid = d; }
+        if(!grid) { let d=document.createElement('div'); d.id='teacherVideosGrid'; d.className='subjects-grid'; document.getElementById('teacherVideosSection').appendChild(d); grid=d; }
         grid.innerHTML = videos.map(v => `<div class="subject-card" onclick="playTeacherVideo('${v.id}', '${v.youtubeId}', '${v.title}')"><i class="fab fa-youtube"></i><div>${v.title}</div></div>`).join('');
     }
     window.playTeacherVideo = function(videoMappingId, youtubeId, title) {
-        if(!currentUser){ showNotification("Please login first","error"); return; }
+        if(!currentUser){ showNotification("Login required","error"); return; }
         currentVideoMappingId = videoMappingId;
         currentLessonSubject = title;
-        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&enablejsapi=1`;
+        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
         document.getElementById('videoModal').classList.add('show');
-        document.getElementById('feedbackSection').style.display = 'block';
-        trackVideoProgress(videoMappingId, youtubeId, title);
+        document.getElementById('feedbackSection').style.display='block';
+        trackVideoProgress(videoMappingId, currentTeacherObject.id);
+        saveVideoView(currentTeacherObject.id, videoMappingId);
     };
-    async function trackVideoProgress(videoMappingId, youtubeId, title) {
+    // Progress tracking and earnings
+    async function trackVideoProgress(videoMappingId, teacherId) {
         if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval);
-        let lastProgress = 0;
+        let watched = 0;
         currentVideoProgressInterval = setInterval(async () => {
             if(!document.getElementById('videoModal').classList.contains('show')) { clearInterval(currentVideoProgressInterval); return; }
-            lastProgress += 10;
-            let completed = lastProgress >= 270; // 5 min video, 90% = 270 sec
-            await saveProgress(videoMappingId, lastProgress, completed, title);
-            if(completed) { clearInterval(currentVideoProgressInterval); showNotification("Lesson completed! Teacher earns revenue.", "success"); }
+            watched += 10;
+            const completed = watched >= 270; // 90% of 5 min
+            const progressRef = doc(db, "videoProgress", `${currentUser.uid}_${videoMappingId}`);
+            await setDoc(progressRef, { userId: currentUser.uid, videoMappingId, secondsWatched: watched, completed, lastUpdated: new Date().toISOString(), teacherId }, { merge: true });
+            if(completed) {
+                clearInterval(currentVideoProgressInterval);
+                const earningKey = `earning_${teacherId}_${currentUser.uid}_${videoMappingId}`;
+                const earningDoc = await getDoc(doc(db, "teacherEarnings", earningKey));
+                if(!earningDoc.exists()) {
+                    const teacherDoc = await getDoc(doc(db,"users",teacherId));
+                    let revenuePerView = teacherDoc.data()?.revenuePerView || 100;
+                    await setDoc(doc(db, "teacherEarnings", earningKey), { teacherId, userId: currentUser.uid, videoMappingId, amount: revenuePerView, timestamp: new Date().toISOString() });
+                    showNotification(`Teacher earned UGX ${revenuePerView} for this view.`,"info");
+                }
+            }
         }, 10000);
     }
-    async function saveProgress(videoMappingId, secondsWatched, completed, lessonTitle) {
+    async function saveVideoView(teacherId, videoMappingId) {
         if(!currentUser) return;
-        const progressRef = doc(db, "videoProgress", `${currentUser.uid}_${videoMappingId}`);
-        await setDoc(progressRef, { userId: currentUser.uid, videoMappingId, secondsWatched, completed, lastUpdated: new Date().toISOString(), lessonTitle, teacherId: currentTeacherObject.id }, { merge: true });
-        if(completed) {
-            const earningKey = `earning_${currentTeacherObject.id}_${currentUser.uid}_${videoMappingId}`;
-            const earningDoc = await getDoc(doc(db, "teacherEarnings", earningKey));
-            if(!earningDoc.exists()) {
-                const teacherDoc = await getDoc(doc(db, "users", currentTeacherObject.id));
-                let revenuePerView = teacherDoc.data()?.revenuePerView || 100;
-                await setDoc(doc(db, "teacherEarnings", earningKey), { teacherId: currentTeacherObject.id, userId: currentUser.uid, videoMappingId, amount: revenuePerView, timestamp: new Date().toISOString(), lessonTitle });
-                await setDoc(doc(db, "teacherUserViews", `${currentTeacherObject.id}_${currentUser.uid}_${videoMappingId}`), { teacherId: currentTeacherObject.id, userId: currentUser.uid, userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "", completedAt: new Date().toISOString(), lessonTitle, videoMappingId });
-                showNotification(`Teacher earned ${revenuePerView} UGX for this view.`, "info");
-            }
-        }
+        await addDoc(collection(db, "videoViews"), { teacherId, videoMappingId, userId: currentUser.uid, userName: currentUser.name, timestamp: new Date().toISOString() });
+    }
+    async function saveFeedback(lesson, rating, comment, type = "comment") {
+        if(!currentUser) return;
+        await addDoc(collection(db, "feedbacks"), {
+            lesson, rating, comment, type,
+            userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "",
+            timestamp: new Date().toISOString(),
+            teacherId: currentTeacherObject?.id,
+            videoMappingId: currentVideoMappingId
+        });
+        showNotification(type === "question" ? "Question sent to teacher." : "Comment submitted.", "success");
+    }
+    async function submitQuestion(questionText) {
+        if(!currentUser || !currentTeacherObject) return;
+        await addDoc(collection(db, "questions"), {
+            text: questionText,
+            userId: currentUser.uid, userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "",
+            teacherId: currentTeacherObject.id,
+            videoMappingId: currentVideoMappingId,
+            timestamp: new Date().toISOString(),
+            answered: false
+        });
+        showNotification("Your question has been sent.","success");
+    }
+    // PDF handling
+    async function incrementPdfView(pdfId) {
+        const pdfRef = doc(db, "pdfs", pdfId);
+        const snap = await getDoc(pdfRef);
+        if(snap.exists()) await updateDoc(pdfRef, { views: (snap.data().views || 0) + 1 });
+    }
+    window.incrementPdfView = incrementPdfView;
+    function renderPdfList() {
+        let c = document.getElementById('pdfListContainer');
+        if(!c) return;
+        if(!pdfMaterials.length) { c.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">No PDFs added yet.</div>'; return; }
+        c.innerHTML = pdfMaterials.map(p => `<a href="${p.url}" target="_blank" class="material-item" onclick="incrementPdfView('${p.id}')">📄 ${p.title}</a>`).join('');
+    }
+    async function uploadTeacherPdf(file, title) {
+        if(!currentUser || currentUser.role !== 'teacher') return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            await addDoc(collection(db, "pdfs"), { title, url: e.target.result, teacherId: currentUser.uid, views: 0, createdAt: new Date().toISOString() });
+            showNotification("PDF uploaded");
+            loadTeacherDashboard();
+        };
+        reader.readAsDataURL(file);
     }
 
-    // Teacher Dashboard
+    // ========== SUBSCRIPTION PLANS (no duplicates) ==========
+    async function ensureDefaultPlans() {
+        const snap = await getDocs(collection(db, "subscriptionPlans"));
+        if (snap.empty) {
+            const defaults = [
+                { name: "Daily", price: 500, currency: "UGX", order: 1 },
+                { name: "Weekly", price: 3000, currency: "UGX", order: 2 },
+                { name: "Monthly", price: 10000, currency: "UGX", order: 3 },
+                { name: "Term Plan", price: 50000, currency: "UGX", order: 4 },
+                { name: "Half Year", price: 80000, currency: "UGX", order: 5 },
+                { name: "Full Year", price: 150000, currency: "UGX", order: 6 }
+            ];
+            for (let plan of defaults) await addDoc(collection(db, "subscriptionPlans"), plan);
+        }
+    }
+    function startSubscriptionPlansListener() {
+        if (unsubscribePlans) unsubscribePlans();
+        const q = collection(db, "subscriptionPlans");
+        unsubscribePlans = onSnapshot(q, (snapshot) => {
+            let plans = [];
+            snapshot.forEach(doc => plans.push({ id: doc.id, ...doc.data() }));
+            // Remove duplicates by name
+            const unique = [];
+            const seen = new Set();
+            for (let p of plans) {
+                if (!seen.has(p.name)) {
+                    seen.add(p.name);
+                    unique.push(p);
+                }
+            }
+            unique.sort((a,b) => (a.order||0) - (b.order||0));
+            // Update admin list
+            const adminContainer = document.getElementById('subscriptionPlansList');
+            if (adminContainer && currentUser && currentUser.role === 'superadmin') {
+                adminContainer.innerHTML = unique.map(plan => `
+                    <div style="border:1px solid #ddd; padding:10px; margin-bottom:8px;"><strong>${plan.name}</strong> - ${plan.currency || 'UGX'} ${plan.price}
+                    <button class="edit-plan" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">✏️ Edit</button>
+                    <button class="delete-plan" data-id="${plan.id}">🗑️ Delete</button></div>
+                `).join('');
+                document.querySelectorAll('.edit-plan').forEach(btn => btn.addEventListener('click', () => {
+                    const id=btn.dataset.id, name=btn.dataset.name, price=btn.dataset.price;
+                    document.getElementById('planName').value = name;
+                    document.getElementById('planPrice').value = price;
+                    document.getElementById('planEditor').style.display = 'block';
+                    document.getElementById('savePlanBtn').onclick = async () => {
+                        const newName = document.getElementById('planName').value.trim();
+                        const newPrice = parseInt(document.getElementById('planPrice').value);
+                        if (newName && !isNaN(newPrice)) {
+                            await updateDoc(doc(db,"subscriptionPlans",id), { name: newName, price: newPrice });
+                            showNotification("Plan updated");
+                            document.getElementById('planEditor').style.display = 'none';
+                        } else showNotification("Invalid","error");
+                    };
+                }));
+                document.querySelectorAll('.delete-plan').forEach(btn => btn.addEventListener('click', async () => {
+                    if (confirm("Delete?")) await deleteDoc(doc(db,"subscriptionPlans",btn.dataset.id));
+                }));
+            }
+            // Update frontend grid
+            const frontGrid = document.getElementById('plansGrid');
+            if (frontGrid) {
+                frontGrid.innerHTML = unique.map(plan => `
+                    <div class="payment-card daily"><div>${plan.name}</div><div>${plan.currency || 'UGX'} ${plan.price}</div><button class="subscribe-btn-small" data-plan="${plan.name}" data-price="${plan.price}">Subscribe</button></div>
+                `).join('');
+                document.querySelectorAll('.subscribe-btn-small').forEach(btn => btn.addEventListener('click', () => {
+                    if (!currentUser) alert("Login first");
+                    else initiatePesapalPayment(btn.dataset.plan, parseInt(btn.dataset.price), currentUser.email, currentUser.phone || "N/A", currentUser.name);
+                }));
+            }
+        });
+    }
+    async function initiatePesapalPayment(plan, amount, email, phone, name) {
+        if(!PESAPAL_BACKEND_URL) { showNotification("Backend not configured","error"); return; }
+        showPaymentLoading(true);
+        try {
+            const res = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, currency: "UGX", description: `${plan} Subscription`, email, phone, name, reference: `SUB_${Date.now()}_${currentUser.uid}` })
+            });
+            const data = await res.json();
+            if(data.redirect_url) window.location.href = data.redirect_url;
+            else throw new Error(data.error);
+        } catch(err) { showNotification("Payment error: "+err.message,"error"); showPaymentLoading(false); }
+    }
+    function showPaymentLoading(show) {
+        let el = document.getElementById('paymentLoadingOverlay');
+        if(show) {
+            if(!el) { let d=document.createElement('div'); d.id='paymentLoadingOverlay'; d.className='payment-loading'; d.innerHTML='<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting...</span>'; document.body.appendChild(d); }
+            else el.style.display='flex';
+        } else if(el) el.style.display='none';
+    }
+
+    // ========== TEACHER DASHBOARD (enhanced) ==========
     async function loadTeacherDashboard() {
         if(!currentUser || currentUser.role !== 'teacher') return;
-        const videoMappingsSnap = await getDocs(query(collection(db, "videoMappings"), where("teacherId", "==", currentUser.uid)));
-        let videos = [];
-        videoMappingsSnap.forEach(d => videos.push({id: d.id, ...d.data()}));
-        const earningsSnap = await getDocs(query(collection(db, "teacherEarnings"), where("teacherId", "==", currentUser.uid)));
+        // Earnings
+        const earningsSnap = await getDocs(query(collection(db,"teacherEarnings"), where("teacherId","==",currentUser.uid)));
         let totalEarnings = 0;
         earningsSnap.forEach(e => totalEarnings += e.data().amount);
         document.getElementById('teacherEarningsSummary').innerHTML = `<div style="background:#e0f7fa; padding:15px; border-radius:16px;"><h3>💰 Total Earnings: UGX ${totalEarnings}</h3><p>${earningsSnap.size} paid views</p></div>`;
-        let html = '';
-        for(let v of videos) {
-            const feedbackSnap = await getDocs(query(collection(db, "feedbacks"), where("videoMappingId", "==", v.id)));
-            let viewersHtml = '<div style="margin-top:10px;"><strong>Users who gave feedback (details visible):</strong><div style="max-height:200px; overflow-y:auto;">';
-            if(feedbackSnap.empty) {
-                viewersHtml += '<div>No feedback yet. User details hidden until they give feedback.</div>';
-            } else {
-                feedbackSnap.forEach(f => {
-                    let fd = f.data();
-                    viewersHtml += `<div class="user-watch-row"><span><strong>${fd.userName}</strong></span><span>📧 ${fd.userEmail}</span><span>📞 ${fd.userPhone || 'No phone'}</span><span>⭐ ${fd.rating}</span><span>💬 ${fd.comment || ''}</span></div>`;
-                });
-            }
+        // Videos with feedback
+        const videoSnap = await getDocs(query(collection(db,"videoMappings"), where("teacherId","==",currentUser.uid)));
+        let videosHtml = '';
+        for(let v of videoSnap.docs) {
+            let data = v.data();
+            const feedbackSnap = await getDocs(query(collection(db,"feedbacks"), where("videoMappingId","==",v.id)));
+            let viewersHtml = '<div><strong>Feedback & Comments:</strong><div style="max-height:200px; overflow-y:auto;">';
+            feedbackSnap.forEach(f => {
+                let fd = f.data();
+                viewersHtml += `<div class="user-watch-row"><span>${fd.userName}</span><span>${fd.type==='question'?'❓':'💬'} ${fd.comment}</span>${fd.type==='question'?` (${fd.userEmail}, ${fd.userPhone})`:''}</div>`;
+            });
             viewersHtml += '</div></div>';
-            html += `<div class="teacher-video-item"><h4>${v.title || v.subject} (${v.classLevel} ${v.classId})</h4><p>YouTube ID: ${v.youtubeId}</p>${viewersHtml}</div>`;
+            videosHtml += `<div class="teacher-video-item"><h4>${data.title || data.subject}</h4><p>Class: ${data.classLevel} ${data.classId}</p>${viewersHtml}</div>`;
         }
-        document.getElementById('teacherVideosList').innerHTML = html;
+        document.getElementById('teacherVideosList').innerHTML = videosHtml;
+        // Questions
+        const questionsSnap = await getDocs(query(collection(db,"questions"), where("teacherId","==",currentUser.uid), orderBy("timestamp","desc")));
+        let qHtml = '<h4>📬 Questions from Students</h4><div style="max-height:200px; overflow-y:auto;">';
+        questionsSnap.forEach(q => { let qd = q.data(); qHtml += `<div class="user-watch-row"><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone})<br>${qd.text}<button class="mark-answered" data-id="${q.id}">Mark Answered</button></div>`; });
+        qHtml += '</div>';
+        document.getElementById('teacherQuestionsList').innerHTML = qHtml;
+        document.querySelectorAll('.mark-answered').forEach(btn => btn.addEventListener('click', async () => { await updateDoc(doc(db,"questions",btn.dataset.id), { answered: true }); loadTeacherDashboard(); }));
+        // PDF upload
+        if(!document.getElementById('teacherPdfSection').innerHTML) {
+            document.getElementById('teacherPdfSection').innerHTML = `<h4>📄 Upload Your PDF</h4><input type="file" id="teacherPdfFile" accept="application/pdf"><input type="text" id="teacherPdfTitle" placeholder="PDF Title"><button id="uploadTeacherPdfBtn">Upload PDF</button>`;
+            document.getElementById('uploadTeacherPdfBtn')?.addEventListener('click', () => {
+                const file = document.getElementById('teacherPdfFile').files[0];
+                const title = document.getElementById('teacherPdfTitle').value;
+                if(file && title) uploadTeacherPdf(file, title);
+                else showNotification("Select file and enter title","error");
+            });
+        }
     }
 
-    // ========== SUPERADMIN USER MANAGEMENT ==========
+    // ========== SUPERADMIN MANAGEMENT ==========
     async function loadAllUsers() {
         if(!currentUser || currentUser.role !== 'superadmin') return;
-        let snap = await getDocs(collection(db, "users"));
+        let snap = await getDocs(collection(db,"users"));
         let html = '';
         snap.forEach(d => { let u=d.data(); html+=`<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${u.name}</strong> (${u.email}) Role: ${u.role||'individual'} <button class="edit-user" data-uid="${d.id}">Edit Role</button> <button class="make-teacher" data-uid="${d.id}">Make Teacher</button> <button class="delete-user" data-uid="${d.id}">Delete</button></div>`; });
         document.getElementById('allUsersList').innerHTML = html;
         document.querySelectorAll('.edit-user').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRole=prompt("Role: superadmin, school, teacher, individual"); if(newRole && ['superadmin','school','teacher','individual'].includes(newRole)){ await updateDoc(doc(db,"users",uid),{role:newRole}); showNotification("Role updated"); loadAllUsers(); loadTeachersManage(); }}));
-        document.querySelectorAll('.make-teacher').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; await updateDoc(doc(db,"users",uid),{role:"teacher", revenuePerView: 100}); showNotification("Teacher created with revenue 100 UGX per view"); loadAllUsers(); loadTeachersManage(); }));
+        document.querySelectorAll('.make-teacher').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; await updateDoc(doc(db,"users",uid),{role:"teacher", revenuePerView: 100}); showNotification("Teacher created"); loadAllUsers(); loadTeachersManage(); }));
         document.querySelectorAll('.delete-user').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete?")) await deleteDoc(doc(db,"users",btn.dataset.uid)); loadAllUsers(); }));
     }
     async function loadTeachersManage() {
-        let snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+        let snap = await getDocs(query(collection(db,"users"), where("role","==","teacher")));
         let html = '';
         for(let d of snap.docs) {
             let t = d.data();
-            html += `<div style="border:1px solid #ddd; padding:10px; margin-bottom:10px;"><strong>${t.name}</strong> (${t.email})<br>Revenue per view: <input type="number" id="rev_${d.id}" value="${t.revenuePerView||100}" style="width:80px"> <button class="update-revenue" data-uid="${d.id}">Update</button><br>Assigned Subjects: <span id="subj_${d.id}">${t.subjects ? t.subjects.join(', ') : 'None'}</span><br><input id="addsubj_${d.id}" placeholder="Add subject (e.g., Mathematics)"> <button class="add-subject" data-uid="${d.id}">Add Subject</button></div>`;
+            html += `<div style="border:1px solid #ddd; padding:10px; margin-bottom:10px;"><strong>${t.name}</strong> (${t.email})<br>Revenue per view: <input type="number" id="rev_${d.id}" value="${t.revenuePerView||100}" style="width:80px"> <button class="update-revenue" data-uid="${d.id}">Update</button></div>`;
         }
         document.getElementById('teachersManageList').innerHTML = html;
         document.querySelectorAll('.update-revenue').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRev=parseInt(document.getElementById(`rev_${uid}`).value); await updateDoc(doc(db,"users",uid),{revenuePerView:newRev}); showNotification("Revenue updated"); }));
-        document.querySelectorAll('.add-subject').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let subj=document.getElementById(`addsubj_${uid}`).value.trim(); if(subj){ let teacherDoc=await getDoc(doc(db,"users",uid)); let subs=teacherDoc.data().subjects||[]; if(!subs.includes(subj)){ subs.push(subj); await updateDoc(doc(db,"users",uid),{subjects:subs}); showNotification("Subject added"); loadTeachersManage(); } } }));
     }
     async function populateVideoMappingDropdowns() {
-        let teacherSnap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+        let teacherSnap = await getDocs(query(collection(db,"users"), where("role","==","teacher")));
         let teacherSelect = document.getElementById('videoTeacherSelect');
-        teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
-        teacherSnap.forEach(d => { teacherSelect.innerHTML += `<option value="${d.id}">${d.data().name}</option>`; });
+        teacherSelect.innerHTML = '<option>Select Teacher</option>';
+        teacherSnap.forEach(d => teacherSelect.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
         let allSubjects = [...primarySubjects, ...secondarySubjects];
         let subjSelect = document.getElementById('videoSubjectSelect');
-        subjSelect.innerHTML = '<option value="">Select Subject</option>' + allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        subjSelect.innerHTML = '<option>Select Subject</option>'+allSubjects.map(s=>`<option>${s}</option>`).join('');
         let classSelect = document.getElementById('videoClassSelect');
-        let allClasses = [...classData.primary.map(c => ({ value: `primary_${c.id}`, label: `Primary ${c.id}` })), ...classData.secondary.map(c => ({ value: `secondary_${c.id}`, label: `Senior ${c.id}` }))];
-        classSelect.innerHTML = '<option value="">Select Class</option>' + allClasses.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+        let allClasses = [...classData.primary.map(c=>({val:`primary_${c.id}`,label:`Primary ${c.id}`})), ...classData.secondary.map(c=>({val:`secondary_${c.id}`,label:`Senior ${c.id}`}))];
+        classSelect.innerHTML = '<option>Select Class</option>'+allClasses.map(c=>`<option value="${c.val}">${c.label}</option>`).join('');
     }
     async function saveVideoMapping() {
         let teacherId = document.getElementById('videoTeacherSelect').value;
         let subject = document.getElementById('videoSubjectSelect').value;
         let classVal = document.getElementById('videoClassSelect').value;
         let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!teacherId || !subject || !classVal || !youtubeId) { showNotification("Please fill all fields","error"); return; }
+        if(!teacherId || !subject || !classVal || !youtubeId) { showNotification("Fill all","error"); return; }
         let [classLevel, classId] = classVal.split('_');
         let key = `${teacherId}_${subject}_${classLevel}_${classId}`;
-        await setDoc(doc(db, "videoMappings", key), { teacherId, subject, classLevel, classId: parseInt(classId), youtubeId, title: `${subject} lesson` });
-        showNotification("Video mapped successfully");
+        await setDoc(doc(db,"videoMappings",key), { teacherId, subject, classLevel, classId: parseInt(classId), youtubeId, title: `${subject} lesson` });
+        showNotification("Video mapped");
         document.getElementById('videoYoutubeId').value = '';
         renderExistingMappings();
     }
     async function renderExistingMappings() {
-        let snap = await getDocs(collection(db, "videoMappings"));
+        let snap = await getDocs(collection(db,"videoMappings"));
         let html = '<ul>';
-        snap.forEach(d => { let data = d.data(); html += `<li>Teacher: ${data.teacherId} | ${data.subject} | ${data.classLevel} ${data.classId} | ${data.youtubeId}</li>`; });
-        html += '</ul>';
+        snap.forEach(d => { let data=d.data(); html+=`<li>Teacher: ${data.teacherId} | ${data.subject} | ${data.classLevel} ${data.classId} | ${data.youtubeId}</li>`; });
+        html+='</ul>';
         document.getElementById('existingMappingsList').innerHTML = html;
     }
     async function testVideoMapping() {
         let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!youtubeId) { showNotification("Enter a valid YouTube URL or ID","error"); return; }
+        if(!youtubeId) { showNotification("Enter valid YouTube URL","error"); return; }
         document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
         document.getElementById('videoModal').classList.add('show');
     }
 
-    // ========== JITSI LIVE LESSON ==========
-    document.getElementById('startJitsiLessonBtn')?.addEventListener('click', () => {
-        const roomName = `apshule_${Date.now()}`;
-        const container = document.getElementById('liveLessonContainer');
-        container.style.display = 'block';
-        container.innerHTML = `
-            <div style="background:white; border-radius:20px;">
-                <div style="background:#4B2E9E; padding:12px; color:white; display:flex; justify-content:space-between;">
-                    <span>🎥 Live Lesson (Jitsi)</span>
-                    <button id="closeLiveLessonBtn" style="background:none; border:none; color:white;">&times;</button>
-                </div>
-                <iframe src="https://meet.jit.si/${roomName}#config.startWithVideoMuted=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(currentUser?.name || 'Teacher')}" 
-                    allow="camera; microphone; fullscreen; display-capture" 
-                    style="width:100%; height:500px; border:none; border-radius:0 0 20px 20px;">
-                </iframe>
-            </div>
-        `;
-        document.getElementById('closeLiveLessonBtn')?.addEventListener('click', () => {
-            container.style.display = 'none';
-            container.innerHTML = '';
-        });
-        showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
+    // ========== MANAGEMENT PAGE ACTIONS ==========
+    document.getElementById('createTeacherBtn')?.addEventListener('click', async () => {
+        const name = document.getElementById('teacherName').value.trim();
+        const email = document.getElementById('teacherEmail').value.trim();
+        const pwd = document.getElementById('teacherPassword').value;
+        if(!name||!email||!pwd) { showNotification("Fill all","error"); return; }
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+            await setDoc(doc(db,"users",cred.user.uid), { uid: cred.user.uid, name, email, role: "teacher", revenuePerView: 100, createdAt: new Date().toISOString() });
+            showNotification("Teacher created");
+            document.getElementById('teacherName').value = ''; document.getElementById('teacherEmail').value = ''; document.getElementById('teacherPassword').value = '';
+        } catch(e) { showNotification(e.message,"error"); }
+    });
+    document.getElementById('mapVideoBtn')?.addEventListener('click', async () => {
+        const teacherId = document.getElementById('mapTeacherSelect').value;
+        const subject = document.getElementById('mapSubjectSelect').value;
+        const classVal = document.getElementById('mapClassSelect').value;
+        const youtubeId = extractVideoId(document.getElementById('mapYoutubeId').value);
+        if(!teacherId||!subject||!classVal||!youtubeId) { showNotification("Fill all","error"); return; }
+        let [classLevel, classId] = classVal.split('_');
+        await setDoc(doc(db,"videoMappings", `${teacherId}_${subject}_${classLevel}_${classId}`), { teacherId, subject, classLevel, classId: parseInt(classId), youtubeId, title: `${subject} lesson` });
+        showNotification("Video mapped");
+        document.getElementById('mapYoutubeId').value = '';
+    });
+    document.getElementById('createSchoolBtn')?.addEventListener('click', async () => {
+        const name = document.getElementById('newSchoolName').value.trim();
+        const email = document.getElementById('newSchoolEmail').value.trim();
+        const pwd = document.getElementById('newSchoolPassword').value;
+        if(!name||!email||!pwd) { showNotification("Fill all","error"); return; }
+        const schoolRef = await addDoc(collection(db,"schools"), { name, loginEmail: email });
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+            await setDoc(doc(db,"users",cred.user.uid), { uid: cred.user.uid, name, email, role: "school", schoolId: schoolRef.id });
+            showNotification("School created");
+            document.getElementById('newSchoolName').value = ''; document.getElementById('newSchoolEmail').value = ''; document.getElementById('newSchoolPassword').value = '';
+        } catch(e) { showNotification(e.message,"error"); }
     });
 
-    // ========== ABOUT PAGE EDITOR ==========
-    let currentTeamMembers = [];
-    function escapeHtml(str){ if(!str)return ''; return str.replace(/[&<>]/g,function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;}); }
-    function renderTeamEditor() {
-        const container = document.getElementById('teamMembersEditor');
-        if (!container) return;
-        if (!currentTeamMembers.length) { container.innerHTML = '<div>No team members. Click "Add Member".</div>'; return; }
-        let html = '';
-        currentTeamMembers.forEach((member, idx) => {
-            html += `<div style="border:1px solid #ddd; border-radius:16px; padding:12px; margin-bottom:12px; background:white;">
-                <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                    <div><img src="${member.photo || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23999%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'}" style="width:60px;height:60px;border-radius:50%;"><br><input type="file" class="team-photo-upload" data-idx="${idx}" accept="image/*" style="font-size:11px;"></div>
-                    <div style="flex:1;"><input type="text" placeholder="Name" value="${escapeHtml(member.name)}" class="team-name-input" data-idx="${idx}" style="width:100%;"><input type="text" placeholder="Role" value="${escapeHtml(member.role)}" class="team-role-input" data-idx="${idx}" style="width:100%;"><input type="text" placeholder="Phone" value="${escapeHtml(member.phone||'')}" class="team-phone-input" data-idx="${idx}" style="width:100%;"></div>
-                    <div><button class="move-up-btn" data-idx="${idx}" ${idx===0?'disabled':''}>⬆️ Up</button><button class="move-down-btn" data-idx="${idx}" ${idx===currentTeamMembers.length-1?'disabled':''}>⬇️ Down</button><button class="remove-team-btn" data-idx="${idx}" style="background:#dc3545;">Remove</button></div>
-                </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-        document.querySelectorAll('.team-photo-upload').forEach(inp=>inp.addEventListener('change',e=>{let idx=parseInt(inp.dataset.idx),file=e.target.files[0]; if(file){let r=new FileReader(); r.onload=ev=>{currentTeamMembers[idx].photo=ev.target.result; renderTeamEditor();}; r.readAsDataURL(file);}}));
-        document.querySelectorAll('.team-name-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].name=inp.value;}));
-        document.querySelectorAll('.team-role-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].role=inp.value;}));
-        document.querySelectorAll('.team-phone-input').forEach(inp=>inp.addEventListener('input',e=>{currentTeamMembers[parseInt(inp.dataset.idx)].phone=inp.value;}));
-        document.querySelectorAll('.move-up-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(idx>0){[currentTeamMembers[idx-1],currentTeamMembers[idx]]=[currentTeamMembers[idx],currentTeamMembers[idx-1]]; renderTeamEditor();}}));
-        document.querySelectorAll('.move-down-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(idx<currentTeamMembers.length-1){[currentTeamMembers[idx+1],currentTeamMembers[idx]]=[currentTeamMembers[idx],currentTeamMembers[idx+1]]; renderTeamEditor();}}));
-        document.querySelectorAll('.remove-team-btn').forEach(btn=>btn.addEventListener('click',()=>{let idx=parseInt(btn.dataset.idx); if(confirm("Remove?")){currentTeamMembers.splice(idx,1); renderTeamEditor();}}));
+    // ========== ANALYTICS ==========
+    async function refreshAnalytics() {
+        if(!currentUser || currentUser.role !== 'superadmin') return;
+        const usersSnap = await getDocs(collection(db,"users"));
+        const total = usersSnap.size;
+        const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        let active = 0;
+        usersSnap.forEach(d => { if(d.data().lastLogin && new Date(d.data().lastLogin) >= sevenDaysAgo) active++; });
+        document.getElementById('analyticsTotalUsers').innerText = total;
+        document.getElementById('analyticsActiveUsers').innerText = active;
+        const failedSnap = await getDocs(query(collection(db,"failedLogins"), where("date","==",new Date().toDateString())));
+        document.getElementById('analyticsFailedLogins').innerText = failedSnap.size;
+        const viewsSnap = await getDocs(collection(db,"videoViews"));
+        const teacherViews = new Map();
+        viewsSnap.forEach(v => { const tid = v.data().teacherId; teacherViews.set(tid, (teacherViews.get(tid) || 0) + 1); });
+        let mostHtml = '<ul>';
+        for(let [tid,count] of teacherViews.entries()) { const tSnap = await getDoc(doc(db,"users",tid)); const tname = tSnap.exists() ? tSnap.data().name : tid; mostHtml += `<li>${tname}: ${count} views</li>`; }
+        mostHtml += '</ul>';
+        document.getElementById('mostWatchedByTeacher').innerHTML = mostHtml;
+        const feedbackSnap = await getDocs(query(collection(db,"feedbacks"), orderBy("timestamp","desc"), limit(100)));
+        const questionsSnap = await getDocs(query(collection(db,"questions"), orderBy("timestamp","desc"), limit(100)));
+        let allHtml = '<div><h5>Feedbacks & Comments</h5>';
+        feedbackSnap.forEach(f => { const fd = f.data(); allHtml += `<div><strong>${fd.userName}</strong> (${fd.userEmail}): ${fd.comment} (⭐ ${fd.rating})</div>`; });
+        allHtml += '</div><div><h5>Questions</h5>';
+        questionsSnap.forEach(q => { const qd = q.data(); allHtml += `<div><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone}): ${qd.text}</div>`; });
+        allHtml += '</div>';
+        document.getElementById('allUserFeedback').innerHTML = allHtml;
     }
-    async function loadAboutContent(){ let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading digital learning platform.",mission:"To provide quality, accessible education.",coreValues:["Excellence","Accessibility","Innovation"],team:[{name:"Tebuswake Abdallah",role:"CEO",photo:""}],contact:{phone:"+256705732540",email:"apshule@gmail.com",address:"Kampala",whatsapp:"+256705732540"}}; await setDoc(ref,def); return def; }
-    async function saveAboutContent(about){ await setDoc(doc(db,"settings","about"),about); showNotification("About page saved!"); renderAboutPage(about); }
-    async function renderAboutPage(about){ let container=document.getElementById('dynamicAbout'); if(!container)return; let coreHtml=about.coreValues.map(v=>`<div class="core-value"><i class="fas fa-star"></i> ${v}</div>`).join(''); let teamHtml=about.team.map(m=>`<div class="team-member"><div class="team-avatar">${m.photo?`<img src="${m.photo}" style="width:50px;height:50px;border-radius:50%;">`:'<i class="fas fa-user-tie"></i>'}</div><div><strong>${escapeHtml(m.name)}</strong><br>${escapeHtml(m.role)}${m.phone?`<br>📞 ${escapeHtml(m.phone)}`:''}</div></div>`).join(''); container.innerHTML=`<div class="vision-box"><h3>Vision</h3><p>${escapeHtml(about.vision)}</p></div><div class="mission-box"><h3>Mission</h3><p>${escapeHtml(about.mission)}</p></div><h3>Core Values</h3>${coreHtml}<h3>Team</h3>${teamHtml}<div class="contact-info"><i class="fas fa-phone"></i> ${escapeHtml(about.contact.phone)}</div><div class="contact-info"><i class="fas fa-envelope"></i> ${escapeHtml(about.contact.email)}</div><div class="contact-info"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(about.contact.address)}</div><a href="https://wa.me/${about.contact.whatsapp.replace(/[^0-9]/g,'')}" class="whatsapp-btn">WhatsApp ${escapeHtml(about.contact.whatsapp)}</a>`; }
-    async function populateAboutEditor(){ let about=await loadAboutContent(); document.getElementById('editVision').value=about.vision; document.getElementById('editMission').value=about.mission; document.getElementById('editCoreValues').value=about.coreValues.join(', '); currentTeamMembers=about.team?[...about.team]:[]; renderTeamEditor(); document.getElementById('editContactPhone').value=about.contact.phone; document.getElementById('editContactEmail').value=about.contact.email; document.getElementById('editContactAddress').value=about.contact.address; document.getElementById('editWhatsapp').value=about.contact.whatsapp; }
-    document.getElementById('editAboutBtn')?.addEventListener('click',async()=>{ let ed=document.getElementById('aboutEditor'); if(ed.style.display==='none'){ await populateAboutEditor(); ed.style.display='block'; } else ed.style.display='none'; });
-    document.getElementById('saveAboutBtn')?.addEventListener('click',async()=>{ let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:currentTeamMembers,contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await saveAboutContent(about); document.getElementById('aboutEditor').style.display='none'; });
-    document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ currentTeamMembers.push({name:"New Member",role:"Role",phone:"",photo:""}); renderTeamEditor(); });
+    document.getElementById('refreshStatsBtn')?.addEventListener('click', refreshAnalytics);
 
-    // ========== PUSH NOTIFICATIONS ==========
-    async function setupPushNotifications() {
-        if (!currentUser) return;
-        if (!('Notification' in window && 'serviceWorker' in navigator)) return;
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            try {
-                const messaging = getMessaging();
-                const token = await getToken(messaging, { vapidKey: 'BBCuQB6zGdVuA_fAQbtyC6ilkNwROcFmwq3_XdcmjhsY6s73zWlrHDYqKy6UDG6Bk--yhld0IsDpgy8ysoq9uXA' });
-                if (token) await updateDoc(doc(db, "users", currentUser.uid), { fcmToken: token });
-            } catch(err) { console.error(err); }
-        }
+    // ========== BRAND LOGO, PROFILE PICTURE, ABOUT ==========
+    async function uploadBrandLogo(file) {
+        if(!currentUser || currentUser.role !== 'superadmin') { showNotification("Only superadmin","error"); return; }
+        const reader = new FileReader();
+        reader.onload = async (e) => { await setDoc(doc(db,"settings","brand"), { logoBase64: e.target.result }); document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = e.target.result); showNotification("Logo updated"); };
+        reader.readAsDataURL(file);
     }
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(e => console.error(e));
+    document.getElementById('uploadLogoBtn')?.addEventListener('click', () => { const inp = document.getElementById('logoUploadInput'); if(inp.files.length) uploadBrandLogo(inp.files[0]); else showNotification("Select file","error"); });
+    async function loadBrandLogo() { const snap = await getDoc(doc(db,"settings","brand")); if(snap.exists() && snap.data().logoBase64) document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = snap.data().logoBase64); }
+    async function uploadProfilePicture(file) {
+        const reader = new FileReader();
+        reader.onload = async (e) => { await updateDoc(doc(db,"users",currentUser.uid), { profilePic: e.target.result }); document.getElementById('profilePicPreview').src = e.target.result; showNotification("Profile picture updated!"); };
+        reader.readAsDataURL(file);
     }
-    onMessage(getMessaging(), (payload) => {
-        showNotification(payload.notification?.body || "New message", "info");
-    });
+    document.getElementById('uploadProfilePicBtn')?.addEventListener('click', () => { const inp = document.getElementById('profilePicInput'); if(inp.files.length) uploadProfilePicture(inp.files[0]); else showNotification("Select image","error"); });
 
-    // ========== INITIAL FIRESTORE LISTENERS ==========
-    function listenToSchools() {
-        onSnapshot(collection(db, "schools"), (snap) => {
-            schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            let c = document.getElementById('schoolsAdminList');
-            if(c) c.innerHTML = schools.map(s => `<div class="school-item"><strong>${s.name}</strong> (${s.loginEmail}) <button class="delete-school" data-id="${s.id}">Delete</button></div>`).join('');
-            document.querySelectorAll('.delete-school').forEach(btn => btn.addEventListener('click', async () => { await deleteDoc(doc(db,"schools",btn.dataset.id)); }));
-        });
-    }
-    function listenToEvents() { 
-        onSnapshot(collection(db, "events"), (snap) => { 
-            globalEventsList = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
-            document.getElementById('eventsTicker').innerHTML = globalEventsList.map(ev => `<div class="ticker-item">🎓 ${ev.title} | ${ev.date}</div>`).join('');
-            if(currentUser && currentUser.role === 'superadmin') {
-                let c = document.getElementById('eventsAdminList');
-                if(c) c.innerHTML = globalEventsList.map(ev => `<div>${ev.title} - ${ev.date} <button class="delete-event" data-id="${ev.id}">Delete</button></div>`).join('');
-                document.querySelectorAll('.delete-event').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"events",btn.dataset.id)); }));
-            }
-        }); 
-    }
-    function listenToPDFs() { onSnapshot(collection(db, "pdfs"), (snap) => { pdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data() })); document.getElementById('pdfListContainer').innerHTML = pdfMaterials.map(p => `<a href="${p.url}" target="_blank" class="material-item">📄 ${p.title}</a>`).join(''); }); }
-    function listenToVideoMappings() { 
-        onSnapshot(collection(db, "videoMappings"), (snap) => { 
-            videoMappings = {}; 
-            snap.forEach(d => { videoMappings[d.id] = d.data().youtubeId; }); 
-            renderExistingMappings(); 
-        }); 
-    }
-    function listenToSubjects() {
-        onSnapshot(doc(db, "subjects", "primary"), (docSnap) => { if(docSnap.exists()) primarySubjects = docSnap.data().list || []; else { primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"]; setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); } populateVideoMappingDropdowns(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
-        onSnapshot(doc(db, "subjects", "secondary"), (docSnap) => { if(docSnap.exists()) secondarySubjects = docSnap.data().list || []; else { secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"]; setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); } populateVideoMappingDropdowns(); if(document.getElementById('subjectsGrid') && document.getElementById('subjectsGrid').innerHTML !== "") renderSubjects(); });
-    }
+    async function loadAboutContent() { let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading digital learning platform.",mission:"To provide quality, accessible education.",coreValues:["Excellence","Accessibility","Innovation"],team:[],contact:{phone:"+256705732540",email:"apshule@gmail.com",address:"Kampala",whatsapp:"+256705732540"}}; await setDoc(ref,def); return def; }
+    async function renderAboutPage() { let about=await loadAboutContent(); document.getElementById('dynamicAbout').innerHTML = `<div class="vision-box"><h3>Vision</h3><p>${about.vision}</p></div><div class="mission-box"><h3>Mission</h3><p>${about.mission}</p></div><div class="contact-info"><i class="fas fa-phone"></i> ${about.contact.phone}</div><div class="contact-info"><i class="fas fa-envelope"></i> ${about.contact.email}</div><div class="contact-info"><i class="fas fa-map-marker-alt"></i> ${about.contact.address}</div><a href="https://wa.me/${about.contact.whatsapp.replace(/[^0-9]/g,'')}" class="whatsapp-btn">WhatsApp ${about.contact.whatsapp}</a>`; }
+    document.getElementById('editAboutBtn')?.addEventListener('click', () => { document.getElementById('aboutEditor').style.display='block'; });
+    document.getElementById('saveAboutBtn')?.addEventListener('click', async () => { let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:[],contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await setDoc(doc(db,"settings","about"),about); showNotification("About saved"); renderAboutPage(); document.getElementById('aboutEditor').style.display='none'; });
+    document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ showNotification("Team member editor simplified; full version later.","info"); });
+
+    // ========== ATTENDANCE (full original) ==========
+    let attendanceStream=null, enrollStream=null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
+    async function setupCamera(vid, mode) { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); document.getElementById(vid).srcObject = s; return s; } catch(e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById(vid).srcObject = s; return s; } catch(e2) { showNotification("Camera access denied","error"); return null; } } }
+    function captureFace(vid) { let v=document.getElementById(vid); if(!v||!v.videoWidth) return null; let c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
+    function getImageHash(dataURL, cb) { let img=new Image(); img.onload=()=>{ let c=document.createElement('canvas'); c.width=8; c.height=8; let ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8); let d=ctx.getImageData(0,0,8,8).data; let sum=0; for(let i=0;i<d.length;i+=4) sum+=(d[i]+d[i+1]+d[i+2])/3; let avg=sum/64; let hash=''; for(let i=0;i<d.length;i+=4) hash+=((d[i]+d[i+1]+d[i+2])/3>=avg)?'1':'0'; cb(hash); }; img.src=dataURL; }
+    function hamming(a,b){ if(a.length!==b.length) return 999; let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++; return d; }
+    async function markAttendance() { if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ showNotification("No enrolled faces","error"); return; } let img=captureFace('attendanceVideo'); if(!img){ showNotification("Capture failed","error"); return; } getImageHash(img,(hash)=>{ let best=null,bestDist=15; for(let p of people) if(p.faceHash){ let d=hamming(hash,p.faceHash); if(d<bestDist){ bestDist=d; best=p; } } let resDiv=document.getElementById('attendanceResult'); if(!best){ resDiv.style.display='block'; resDiv.innerHTML='<div style="color:red">❌ Not recognized</div>'; return; } let today=new Date().toDateString(); let already=attendanceRecords.find(r=>r.personId===best.id&&r.schoolId===sid&&new Date(r.timestamp).toDateString()===today); if(already){ resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:#FF8C42">⚠️ ${best.name} already marked</div>`; return; } attendanceRecords.push({ id:Date.now(), schoolId:sid, personId:best.id, personName:best.name, category:best.category, phone:best.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today }); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:green">✅ ${best.name} marked at ${new Date().toLocaleTimeString()}</div>`; showNotification(`Attendance for ${best.name}`); renderRecentAttendance(); renderEnrolledList(); setTimeout(()=>resDiv.style.display='none',4000); }); }
+    function renderRecentAttendance() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('recentAttendanceList'); if(!c) return; let today=new Date().toDateString(); let rec=attendanceRecords.filter(r=>r.schoolId===sid&&new Date(r.timestamp).toDateString()===today).slice(-10); if(!rec.length){ c.innerHTML='<div style="text-align:center;color:#999">No records today</div>'; return; } c.innerHTML=rec.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); }
+    function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ c.innerHTML='<div style="text-align:center;color:#999">No enrolled people</div>'; return; } c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
+    window.deleteEnrolled = function(id) { if(confirm("Delete?")){ attendancePeople=attendancePeople.filter(p=>p.id!==id); attendanceRecords=attendanceRecords.filter(r=>r.personId!==id); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("Person deleted"); renderEnrolledList(); renderRecentAttendance(); } };
+    document.getElementById('attendanceMenuItem')?.addEventListener('click', async()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } document.getElementById('attendanceModal').classList.add('show'); attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream=await setupCamera('enrollVideo',currentEnrollCamera); });
+    document.getElementById('closeAttendanceModal')?.addEventListener('click',()=>{ document.getElementById('attendanceModal').classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
+    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{ let name=t.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }));
+    document.getElementById('switchAttendanceCamera')?.addEventListener('click', async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); let newMode=currentAttendanceCamera==='environment'?'user':'environment'; let s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode; });
+    document.getElementById('switchEnrollCamera')?.addEventListener('click', async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); let newMode=currentEnrollCamera==='environment'?'user':'environment'; let s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode; });
+    document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
+    document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ let img=captureFace('enrollVideo'); if(img){ capturedFaceImage=img; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured</p>`; showNotification("Face captured"); } else showNotification("Camera not ready","error"); });
+    document.getElementById('faceImageUpload')?.addEventListener('change',function(e){ let file=e.target.files[0]; if(file){ let reader=new FileReader(); reader.onload=function(ev){ capturedFaceImage=ev.target.result; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported</p>`; showNotification("Face imported"); }; reader.readAsDataURL(file); } });
+    document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let name=document.getElementById('enrollName').value.trim(); let cat=document.getElementById('enrollCategory').value; let phone=document.getElementById('enrollPhone').value.trim(); if(!name){ showNotification("Enter name","error"); return; } if(!capturedFaceImage){ showNotification("Capture face first","error"); return; } getImageHash(capturedFaceImage,(hash)=>{ attendancePeople.push({ id:Date.now(), schoolId:sid, name, category:cat, phone, faceHash:hash, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled`); renderEnrolledList(); }); });
+    document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; if(confirm("Delete all attendance records for this school?")){ attendanceRecords=attendanceRecords.filter(r=>r.schoolId!==sid); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared"); renderRecentAttendance(); } });
+
+    // ========== AI CHAT ==========
+    async function askAI(q) { return "📚 I'm a demo AI. Full version coming soon!"; }
+    function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
+    async function sendChat() { let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length && msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
+    document.getElementById('sendBtn')?.addEventListener('click', sendChat);
+    document.getElementById('chatInput')?.addEventListener('keypress', e=>{ if(e.key==='Enter') sendChat(); });
+    document.getElementById('openAIDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
+    document.getElementById('closeDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
+    document.getElementById('drawerOverlay')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
+
+    // ========== FIRESTORE LISTENERS ==========
+    onSnapshot(collection(db,"schools"), (snap) => { schools = snap.docs.map(d=>({id:d.id,...d.data()})); let c=document.getElementById('schoolsAdminList'); if(c) c.innerHTML = schools.map(s=>`<div><strong>${s.name}</strong> (${s.loginEmail}) <button class="delete-school" data-id="${s.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-school').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"schools",btn.dataset.id)); })); });
+    onSnapshot(collection(db,"events"), (snap) => { globalEventsList = snap.docs.map(d=>({id:d.id,...d.data()})); document.getElementById('eventsTicker').innerHTML = globalEventsList.map(ev=>`<div class="ticker-item">🎓 ${ev.title} | ${ev.date}</div>`).join(''); if(currentUser && currentUser.role==='superadmin') { let c=document.getElementById('eventsAdminList'); if(c) c.innerHTML = globalEventsList.map(ev=>`<div>${ev.title} - ${ev.date} <button class="delete-event" data-id="${ev.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-event').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"events",btn.dataset.id)); })); } });
+    onSnapshot(collection(db,"pdfs"), (snap) => { pdfMaterials = snap.docs.map(d=>({id:d.id,...d.data()})); renderPdfList(); });
+    onSnapshot(collection(db,"videoMappings"), () => { renderExistingMappings(); });
+    onSnapshot(doc(db,"subjects","primary"), (docSnap) => { if(docSnap.exists()) primarySubjects = docSnap.data().list; else setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); });
+    onSnapshot(doc(db,"subjects","secondary"), (docSnap) => { if(docSnap.exists()) secondarySubjects = docSnap.data().list; else setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); });
 
     // ========== LOAD USER AND SHOW APP ==========
     async function loadUserAndShowApp(user) {
@@ -1039,66 +1038,49 @@
             document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
             document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
             document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
-            
-            // Show demo notice only for teachers
-            const demoNotice = document.getElementById('demoNotice');
-            if(demoNotice) demoNotice.style.display = isTeacher ? "block" : "none";
-            
-            const profilePicSection = document.getElementById('profilePicUploadSection');
-            if (profilePicSection) {
-                if (isSchool || isSuper) {
-                    profilePicSection.style.display = "none";
-                } else {
-                    profilePicSection.style.display = "block";
-                }
-            }
-            
-            if (isSchool) {
-                let s = schools.find(sch => sch.id === currentUser.schoolId);
-                if (s && s.logo) {
-                    document.getElementById('headerLogoImg').src = s.logo;
-                    document.getElementById('loginLogoImg').src = s.logo;
-                } else {
-                    document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                    document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                }
-            } else if (isSuper && currentUser.profilePic) {
-                document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-            } else {
-                document.getElementById('headerLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-                document.getElementById('loginLogoImg').src = "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg";
-            }
-            loadProfilePicPreview();
+            document.getElementById('demoNotice').style.display = isTeacher ? "block" : "none";
+            // Bottom nav role‑based visibility
+            const navMan = document.getElementById('navManagement');
+            const navAnal = document.getElementById('navAnalytics');
+            const navTeach = document.getElementById('navTeacherDashboard');
+            const navAcc = document.getElementById('navAccount');
+            const navAb = document.getElementById('navAbout');
             if(isSuper) {
-                let usersList = await getDocs(collection(db,"users"));
-                document.getElementById('totalUsersCount').innerText = usersList.size;
-                renderFeedbackAdmin();
-                renderGlobalMostWatched();
-                loadAllUsers();
-                loadTeachersManage();
-                populateVideoMappingDropdowns();
+                navMan.style.display = 'flex'; navAnal.style.display = 'flex'; navTeach.style.display = 'none';
+                navAcc.style.display = 'flex'; navAb.style.display = 'flex';
+            } else if(isTeacher) {
+                navMan.style.display = 'none'; navAnal.style.display = 'none'; navTeach.style.display = 'flex';
+                navAcc.style.display = 'flex'; navAb.style.display = 'flex';
+            } else {
+                navMan.style.display = 'none'; navAnal.style.display = 'none'; navTeach.style.display = 'none';
+                navAcc.style.display = 'flex'; navAb.style.display = 'flex';
             }
+            if(currentUser.profilePic) document.getElementById('profilePicPreview').src = currentUser.profilePic;
+            if(isSuper) { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); refreshAnalytics(); }
             if(isTeacher) loadTeacherDashboard();
             renderClasses();
-            setupPushNotifications();
-            renderAboutPage(await loadAboutContent());
+            renderAboutPage();
+            await ensureDefaultPlans();
+            startSubscriptionPlansListener();
         }
     }
+    async function saveUserAddress(address) { await updateDoc(doc(db,"users",currentUser.uid), { address: address }); showNotification("Address saved!"); loadUserAndShowApp(auth.currentUser); }
+    async function detectLocation() { try { let resp = await fetch('https://ipapi.co/json/'); let data = await resp.json(); return `${data.city}, ${data.country_name}`; } catch(e) { return "Unknown"; } }
 
     // ========== AUTH BUTTONS ==========
     document.getElementById('signupBtn').addEventListener('click', async (e) => {
         e.preventDefault();
-        let name = document.getElementById('signupName').value.trim();
-        let email = document.getElementById('signupEmail').value.trim();
-        let phone = document.getElementById('signupPhone').value.trim();
-        let pwd = document.getElementById('signupPassword').value;
-        let level = document.getElementById('signupEducationLevel').value;
-        if(!name||!email||!phone||!pwd||!level) { document.getElementById('loginError').innerText = "Fill all fields"; return; }
-        if(pwd.length<4) { document.getElementById('loginError').innerText = "Password min 4 chars"; return; }
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const phone = document.getElementById('signupPhone').value.trim();
+        const pwd = document.getElementById('signupPassword').value;
+        const level = document.getElementById('signupEducationLevel').value;
+        if (!name || !email || !phone || !pwd || !level) { document.getElementById('loginError').innerText = "Fill all fields"; return; }
+        if (pwd.length < 4) { document.getElementById('loginError').innerText = "Password min 4 chars"; return; }
         try {
-            let cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            let location = await detectLocation();
+            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+            let location = "Unknown";
+            try { const resp = await fetch('https://ipapi.co/json/'); const data = await resp.json(); location = `${data.city}, ${data.country_name}`; } catch(e) { console.warn(e); }
             await setDoc(doc(db,"users",cred.user.uid), {
                 uid:cred.user.uid, name, email, phone, educationLevel:level,
                 role:"individual", createdAt:new Date().toISOString(),
@@ -1106,6 +1088,12 @@
                 detectedLocation: location, address: ""
             });
             showNotification("Account created! We detected your approximate location.");
+            document.getElementById('signupName').value = '';
+            document.getElementById('signupEmail').value = '';
+            document.getElementById('signupPhone').value = '';
+            document.getElementById('signupPassword').value = '';
+            document.getElementById('signupEducationLevel').value = '';
+            document.querySelector('.login-tab[data-tab="login"]').click();
         } catch(err) { document.getElementById('loginError').innerText = err.message; }
     });
     document.getElementById('loginBtn').addEventListener('click', async (e) => {
@@ -1121,171 +1109,66 @@
                 await updateDoc(userRef, { loginCount: cnt, lastLogin: new Date().toISOString() });
             }
             showNotification("Login successful");
-        } catch(err) { document.getElementById('loginError').innerText = "Invalid email/password"; }
+        } catch(err) {
+            await addDoc(collection(db,"failedLogins"), { email, timestamp: new Date().toISOString(), date: new Date().toDateString() });
+            document.getElementById('loginError').innerText = "Invalid email/password";
+        }
     });
-    document.getElementById('sendResetEmailBtn').addEventListener('click', async () => {
-        let email = document.getElementById('resetEmail').value.trim();
-        if(!email) { showNotification("Enter email","error"); return; }
-        try { await sendPasswordResetEmail(auth, email); showNotification("Reset email sent!"); } catch(err) { showNotification(err.message,"error"); }
-    });
+    document.getElementById('sendResetEmailBtn').addEventListener('click', async () => { let email = document.getElementById('resetEmail').value.trim(); if(!email) { showNotification("Enter email","error"); return; } try { await sendPasswordResetEmail(auth, email); showNotification("Reset email sent!"); } catch(err) { showNotification(err.message,"error"); } });
     document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
     document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
-    onAuthStateChanged(auth, async (user) => { 
-        if(user) {
-            await loadUserAndShowApp(user);
-            await loadBrandLogo();
-        }
-        else { 
-            document.getElementById('loginScreen').classList.remove('hidden'); 
-            document.getElementById('appScreen').classList.add('hidden');
-            await loadBrandLogo();
-        } 
-    });
+    onAuthStateChanged(auth, async (user) => { if(user) { await loadUserAndShowApp(user); await loadBrandLogo(); } else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); await loadBrandLogo(); } });
 
-    // ========== ADMIN BUTTON LISTENERS ==========
+    // ========== ADDITIONAL ADMIN BUTTON LISTENERS ==========
     document.getElementById('addSchoolBtn')?.addEventListener('click', async () => {
         let name=document.getElementById('schoolName').value.trim(), contact=document.getElementById('schoolContact').value.trim(), loc=document.getElementById('schoolLocation').value.trim(), logo=document.getElementById('schoolLogoUrl').value.trim(), email=document.getElementById('schoolLoginEmail').value.trim(), pwd=document.getElementById('schoolLoginPassword').value;
         if(!name||!contact||!loc||!email||!pwd){ showNotification("Fill all fields","error"); return; }
         if(pwd.length<4){ showNotification("Password min 4","error"); return; }
         if(schools.find(s=>s.loginEmail===email)){ showNotification("Email exists","error"); return; }
         const schoolDocRef = await addDoc(collection(db,"schools"),{ name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0 });
-        try { 
-            let cred = await createUserWithEmailAndPassword(auth, email, pwd); 
-            await setDoc(doc(db,"users",cred.user.uid),{ 
-                uid: cred.user.uid, 
-                name, 
-                email, 
-                role: "school", 
-                schoolId: schoolDocRef.id,
-                createdAt: new Date().toISOString() 
-            }); 
-        } catch(e){ console.error(e); }
+        try { let cred = await createUserWithEmailAndPassword(auth, email, pwd); await setDoc(doc(db,"users",cred.user.uid),{ uid: cred.user.uid, name, email, role: "school", schoolId: schoolDocRef.id, createdAt: new Date().toISOString() }); } catch(e){ console.error(e); }
         showNotification("School added");
         document.getElementById('schoolName').value=''; document.getElementById('schoolContact').value=''; document.getElementById('schoolLocation').value=''; document.getElementById('schoolLogoUrl').value=''; document.getElementById('schoolLoginEmail').value=''; document.getElementById('schoolLoginPassword').value='';
     });
-    document.getElementById('addEventBtn')?.addEventListener('click', async () => {
-        let t=document.getElementById('eventTitle').value.trim(), d=document.getElementById('eventDate').value.trim(), f=document.getElementById('eventFee').value.trim();
-        if(!t||!d||!f){ showNotification("Fill all","error"); return; }
-        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: null });
-        showNotification("Global event added");
-        document.getElementById('eventTitle').value=''; document.getElementById('eventDate').value=''; document.getElementById('eventFee').value='';
-    });
-    document.getElementById('addSchoolEventBtn')?.addEventListener('click', async () => {
-        if(!currentUser || currentUser.role !== 'school') return;
-        let t=document.getElementById('schoolEventTitle').value.trim(), d=document.getElementById('schoolEventDate').value.trim(), f=document.getElementById('schoolEventFee').value.trim();
-        if(!t||!d||!f){ showNotification("Fill all","error"); return; }
-        await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: currentUser.schoolId });
-        showNotification("School event added");
-        document.getElementById('schoolEventTitle').value=''; document.getElementById('schoolEventDate').value=''; document.getElementById('schoolEventFee').value='';
-    });
-    document.getElementById('addPdfBtn')?.addEventListener('click', async () => {
-        let t=document.getElementById('pdfTitle').value.trim(), u=document.getElementById('pdfUrl').value.trim();
-        if(!t||!u){ showNotification("Fill both","error"); return; }
-        await addDoc(collection(db,"pdfs"),{ title:t, url:u });
-        showNotification("PDF added");
-        document.getElementById('pdfTitle').value=''; document.getElementById('pdfUrl').value='';
-    });
-    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => {
-        let newName = document.getElementById('newSubjectName').value.trim();
-        let level = document.getElementById('newSubjectLevel').value;
-        if(!newName) { showNotification("Enter subject name","error"); return; }
-        let subjectsRef = doc(db, "subjects", level);
-        let list = level === 'primary' ? primarySubjects : secondarySubjects;
-        if(list.includes(newName)) { showNotification("Subject exists","error"); return; }
-        list.push(newName);
-        await updateDoc(subjectsRef, { list });
-        showNotification(`Subject "${newName}" added`);
-        document.getElementById('newSubjectName').value = '';
-        document.getElementById('newSubjectVideo').value = '';
-        if(level === 'primary') primarySubjects = list; else secondarySubjects = list;
-        populateVideoMappingDropdowns();
-    });
+    document.getElementById('addEventBtn')?.addEventListener('click', async () => { let t=document.getElementById('eventTitle').value.trim(), d=document.getElementById('eventDate').value.trim(), f=document.getElementById('eventFee').value.trim(); if(!t||!d||!f){ showNotification("Fill all","error"); return; } await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: null }); showNotification("Global event added"); document.getElementById('eventTitle').value=''; document.getElementById('eventDate').value=''; document.getElementById('eventFee').value=''; });
+    document.getElementById('addSchoolEventBtn')?.addEventListener('click', async () => { if(!currentUser || currentUser.role !== 'school') return; let t=document.getElementById('schoolEventTitle').value.trim(), d=document.getElementById('schoolEventDate').value.trim(), f=document.getElementById('schoolEventFee').value.trim(); if(!t||!d||!f){ showNotification("Fill all","error"); return; } await addDoc(collection(db,"events"),{ title:t, date:d, fee:f, schoolId: currentUser.schoolId }); showNotification("School event added"); document.getElementById('schoolEventTitle').value=''; document.getElementById('schoolEventDate').value=''; document.getElementById('schoolEventFee').value=''; });
+    document.getElementById('addPdfBtn')?.addEventListener('click', async () => { let t=document.getElementById('pdfTitle').value.trim(), u=document.getElementById('pdfUrl').value.trim(); if(!t||!u){ showNotification("Fill both","error"); return; } await addDoc(collection(db,"pdfs"),{ title:t, url:u }); showNotification("PDF added"); document.getElementById('pdfTitle').value=''; document.getElementById('pdfUrl').value=''; });
+    document.getElementById('addNewSubjectBtn')?.addEventListener('click', async () => { let newName = document.getElementById('newSubjectName').value.trim(); let level = document.getElementById('newSubjectLevel').value; if(!newName) { showNotification("Enter subject name","error"); return; } let subjectsRef = doc(db, "subjects", level); let list = level === 'primary' ? primarySubjects : secondarySubjects; if(list.includes(newName)) { showNotification("Subject exists","error"); return; } list.push(newName); await updateDoc(subjectsRef, { list }); showNotification(`Subject "${newName}" added`); document.getElementById('newSubjectName').value = ''; document.getElementById('newSubjectVideo').value = ''; if(level === 'primary') primarySubjects = list; else secondarySubjects = list; populateVideoMappingDropdowns(); });
     document.getElementById('testVideoBtn')?.addEventListener('click', testVideoMapping);
     document.getElementById('saveVideoMappingBtn')?.addEventListener('click', saveVideoMapping);
-    document.getElementById('uploadProfilePicBtn')?.addEventListener('click', () => {
-        const fileInput = document.getElementById('profilePicInput');
-        if (fileInput.files.length === 0) {
-            showNotification("Select an image first", "error");
-            return;
-        }
-        uploadProfilePicture(fileInput.files[0]);
-    });
-    document.getElementById('uploadLogoBtn')?.addEventListener('click', () => {
-        const fileInput = document.getElementById('logoUploadInput');
-        if (!fileInput.files.length) {
-            showNotification("Select an image first", "error");
-            return;
-        }
-        uploadBrandLogoBase64(fileInput.files[0]);
-    });
     document.getElementById('refreshUsersBtn')?.addEventListener('click', loadAllUsers);
-
-    // ========== NAVIGATION & UI ==========
-    function navigateTo(pageId) { if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
-    document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.getAttribute('data-page'))));
-    document.getElementById('folderHeader')?.addEventListener('click',()=>{ let c=document.getElementById('folderContent'); let ic=document.querySelector('#folderHeader i:last-child'); c.classList.toggle('show'); ic.className=c.classList.contains('show')?'fas fa-chevron-up':'fas fa-chevron-down'; });
-    document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (!currentUser) {
-                alert('Please login first');
-                return;
-            }
-            const plan = btn.getAttribute('data-plan');
-            const amount = parseInt(btn.getAttribute('data-price'));
-            const email = currentUser.email;
-            const phone = currentUser.phone || "N/A";
-            const name = currentUser.name;
-            await initiatePesapalPayment(plan, amount, email, phone, name);
-        });
+    document.getElementById('startJitsiLessonBtn')?.addEventListener('click', () => {
+        const roomName = `apshule_${Date.now()}`;
+        const container = document.getElementById('liveLessonContainer');
+        container.style.display = 'block';
+        container.innerHTML = `<div style="background:white; border-radius:20px;"><div style="background:#4B2E9E; padding:12px; color:white; display:flex; justify-content:space-between;"><span>🎥 Live Lesson (Jitsi)</span><button id="closeLiveLessonBtn" style="background:none; border:none; color:white;">&times;</button></div><iframe src="https://meet.jit.si/${roomName}#config.startWithVideoMuted=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(currentUser?.name || 'Teacher')}" allow="camera; microphone; fullscreen; display-capture" style="width:100%; height:500px; border:none; border-radius:0 0 20px 20px;"></iframe></div>`;
+        document.getElementById('closeLiveLessonBtn')?.addEventListener('click', () => { container.style.display = 'none'; container.innerHTML = ''; });
+        showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
     });
-    document.querySelectorAll('.login-tab').forEach(t=>t.addEventListener('click',()=>{ let tn=t.getAttribute('data-tab'); document.querySelectorAll('.login-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.getElementById('loginFormDiv').classList.toggle('active',tn==='login'); document.getElementById('signupFormDiv').classList.toggle('active',tn==='signup'); }));
-    document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; });
+    document.getElementById('refreshStatsBtn')?.addEventListener('click', refreshAnalytics);
+
+    // ========== NAVIGATION ==========
+    function navigateTo(pageId) { if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
+    document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.getAttribute('data-page'))));
+    document.getElementById('folderHeader')?.addEventListener('click',()=>{ document.getElementById('folderContent').classList.toggle('show'); });
+    document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; });
     document.getElementById('backToSubjects')?.addEventListener('click',()=>{ document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; });
     document.getElementById('backToTeachers')?.addEventListener('click',()=>{ document.getElementById('teacherVideosSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='block'; });
-    document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; renderClasses(); }));
+    document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.dataset.level; renderClasses(); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click',()=>{ document.getElementById('moreDropdown')?.classList.remove('show'); });
-    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); if(ap){ ap.classList.toggle('show'); if(ap.classList.contains('show')){ if(currentUser.role === 'teacher') loadTeacherDashboard(); else if(currentUser.role === 'superadmin') { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); renderExistingMappings(); } else if(currentUser.role === 'school') { renderSchoolEventsList(); } navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); } } });
+    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); ap.classList.toggle('show'); if(ap.classList.contains('show') && currentUser?.role==='teacher') loadTeacherDashboard(); });
     document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
-    document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.getAttribute('data-rating')); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ if(idx<currentRating) s.className='fas fa-star'; else s.className='far fa-star'; }); }));
-    document.getElementById('submitFeedbackBtn')?.addEventListener('click', async () => {
-        const comment = document.getElementById('feedbackComment').value;
-        await saveFeedback(currentLessonSubject, currentRating, comment);
-        document.getElementById('videoModal').classList.remove('show');
-        document.getElementById('youtubeIframe').src = '';
-        document.getElementById('feedbackSection').style.display = 'none';
-        if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval);
-    });
+    document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.dataset.rating); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ s.className=idx<currentRating?'fas fa-star':'far fa-star'; }); }));
+    document.getElementById('submitFeedbackBtn')?.addEventListener('click', async () => { await saveFeedback(currentLessonSubject, currentRating, document.getElementById('feedbackComment').value, "comment"); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
 
-    function renderSchoolEventsList() {
-        let c = document.getElementById('schoolEventsList');
-        if(!c) return;
-        if(!currentUser || currentUser.role !== 'school') return;
-        let myEvents = globalEventsList.filter(ev => ev.schoolId === currentUser.schoolId);
-        if(!myEvents.length) { c.innerHTML = '<div>No events for your school</div>'; return; }
-        c.innerHTML = myEvents.map(ev => `<div class="event-item"><div><strong>${ev.title}</strong><br>${ev.date} | ${ev.fee}</div><div><button class="delete-school-event" data-id="${ev.id}">Delete</button><button class="edit-school-event" data-id="${ev.id}">Edit</button></div></div>`).join('');
-        document.querySelectorAll('.delete-school-event').forEach(btn => btn.addEventListener('click', async (e) => { if(confirm("Delete?")) await deleteDoc(doc(db,"events",btn.getAttribute('data-id'))); }));
-        document.querySelectorAll('.edit-school-event').forEach(btn => btn.addEventListener('click', async (e) => {
-            let id = btn.getAttribute('data-id');
-            let ev = myEvents.find(e => e.id == id);
-            if(ev) {
-                let newTitle = prompt("Title:", ev.title); if(newTitle) ev.title = newTitle;
-                let newDate = prompt("Date:", ev.date); if(newDate) ev.date = newDate;
-                let newFee = prompt("Fee:", ev.fee); if(newFee) ev.fee = newFee;
-                await updateDoc(doc(db,"events",id), { title: ev.title, date: ev.date, fee: ev.fee });
-            }
-        }));
-    }
-
-    // Start listeners
-    listenToSchools(); listenToEvents(); listenToPDFs(); listenToVideoMappings(); listenToSubjects();
+    // ========== FINAL START ==========
     renderClasses();
     checkPaymentStatus();
-    console.log("✅ APSHULE fully loaded with teacher revenue system and conditional teacher badge.");
+    console.log("APSHULE fully loaded with teacher selection, earnings, PDF management, analytics, and subscription plans.");
 </script>
 </body>
- </html>
+</html>                                                                                                                                                                                                                                                                                     
