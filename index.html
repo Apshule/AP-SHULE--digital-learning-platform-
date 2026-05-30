@@ -8,7 +8,6 @@
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== FULL ORIGINAL CSS (restored) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
         .logo--responsive { max-width: 100%; height: auto; display: block; }
@@ -30,11 +29,7 @@
         .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 30px; font-size: 16px; }
         .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
-        .success-message { color: green; margin-top: 16px; font-size: 14px; }
         .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
-        .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
-        .reset-btn { background: #FF8C42; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; cursor: pointer; font-weight: bold; }
-        .hidden { display: none; }
         .header { background: #5B4FCF; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
         .header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
         .header-logo-img { width: 48px; height: 48px; object-fit: contain; border-radius: 12px; background: white; padding: 2px; }
@@ -43,12 +38,9 @@
         .greeting { color: white; font-weight: bold; font-size: 14px; margin-top: 4px; }
         .header-right { display: flex; align-items: center; gap: 12px; position: relative; }
         .ai-icon-btn, .more-menu-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
-        .ai-icon-btn i, .more-menu-btn i { font-size: 20px; color: white; }
         .more-dropdown { position: absolute; top: 60px; right: 0; background: white; border-radius: 16px; min-width: 200px; z-index: 1000; display: none; overflow: hidden; }
         .more-dropdown.show { display: block; }
         .dropdown-item { padding: 14px 18px; display: flex; align-items: center; gap: 12px; color: #333; cursor: pointer; }
-        .dropdown-item:hover { background: #f5f5f5; }
-        .dropdown-item i { width: 24px; color: #4B2E9E; }
         .main-content { padding: 20px 16px; padding-bottom: 80px; }
         .section-title { color: white; font-weight: bold; font-size: 20px; margin-bottom: 16px; }
         .education-level { display: flex; gap: 16px; margin-bottom: 20px; }
@@ -56,100 +48,65 @@
         .level-btn.active { background: white; color: #4B2E9E; }
         .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 16px; margin-top: 16px; }
         .class-card { background: white; border-radius: 20px; padding: 20px 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .class-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         .class-card i { font-size: 48px; margin-bottom: 12px; display: block; }
         .class-name { font-weight: bold; font-size: 14px; color: #333; margin-top: 8px; }
-        .class-details { font-size: 11px; color: #999; margin-top: 4px; }
         .subjects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; max-height: 500px; overflow-y: auto; }
-        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; transition: transform 0.2s; }
-        .subject-card:hover { transform: translateY(-3px); }
+        .subject-card { background: white; border-radius: 20px; padding: 20px 12px; text-align: center; cursor: pointer; }
         .subject-icon { width: 60px; height: 60px; border-radius: 30px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
         .subject-icon i { font-size: 28px; color: white; }
         .subject-name { font-weight: 600; font-size: 14px; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; padding: 10px 16px; border-radius: 30px; color: white; margin-bottom: 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .welcome-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border-radius: 24px; padding: 40px 20px; text-align: center; margin-bottom: 20px; }
-        .welcome-title { color: white; font-size: 22px; }
-        .welcome-subtitle { color: rgba(255,255,255,0.9); font-size: 14px; margin-top: 8px; }
-        .announcements-section { background: linear-gradient(135deg, #FF8C42, #FF6B35); border-radius: 20px; margin: 20px 0; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .announcements-header { background: rgba(0,0,0,0.2); padding: 12px 16px; color: white; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.3); }
-        .announcements-header i { font-size: 18px; }
-        .announcements-header span { flex: 1; text-align: center; letter-spacing: 1px; }
-        .announcements-ticker { background: #FF8C42; padding: 12px 0; overflow: hidden; position: relative; }
+        .announcements-section { background: linear-gradient(135deg, #FF8C42, #FF6B35); border-radius: 20px; margin: 20px 0; overflow: hidden; }
+        .announcements-header { background: rgba(0,0,0,0.2); padding: 12px 16px; color: white; font-weight: bold; display: flex; justify-content: space-between; }
+        .announcements-ticker { background: #FF8C42; padding: 12px 0; overflow: hidden; }
         .ticker-wrap { width: 100%; overflow: hidden; white-space: nowrap; }
-        .ticker { display: inline-block; animation: ticker-scroll 25s linear infinite; white-space: nowrap; }
-        .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; letter-spacing: 0.5px; }
-        .ticker-item strong { color: #FFF9C4; font-weight: bold; }
+        .ticker { display: inline-block; animation: ticker-scroll 25s linear infinite; }
+        .ticker-item { display: inline-block; padding: 0 30px; color: white; font-size: 14px; font-weight: 500; }
         @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .announcements-ticker:hover .ticker { animation-play-state: paused; }
-        @media (max-width: 600px) { .ticker-item { font-size: 11px; padding: 0 20px; } .announcements-header span { font-size: 11px; } }
         .materials-folder { background: white; border-radius: 20px; margin-bottom: 20px; overflow: hidden; }
         .folder-header { background: #4B2E9E; padding: 16px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .folder-header i:last-child { margin-left: auto; transition: transform 0.2s; }
         .folder-content { padding: 16px; display: none; background: #f9f9f9; }
         .folder-content.show { display: block; }
-        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; color: #333; }
+        .material-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .payment-plans-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
         .payment-plans-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
         .payment-card { border-radius: 16px; padding: 12px; text-align: center; color: white; }
         .payment-card.daily { background: linear-gradient(135deg,#2196F3,#1976D2); }
         .payment-card.weekly { background: linear-gradient(135deg,#4CAF50,#388E3C); }
         .payment-card.monthly { background: linear-gradient(135deg,#FF9800,#F57C00); }
-        .payment-card.half { background: linear-gradient(135deg,#9C27B0,#7B1FA2); }
-        .payment-card.full { background: linear-gradient(135deg,#F44336,#D32F2F); }
-        .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; cursor: pointer; width: 100%; }
+        .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; margin-top: 8px; cursor: pointer; width: 100%; }
         .account-card, .about-card { background: white; border-radius: 20px; padding: 24px; }
-        .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
         .nav-item i { font-size: 22px; }
         .nav-item.active { color: #FF8C42; }
         .page { display: none; }
         .page.active-page { display: block; }
-        .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px 20px; border-radius: 10px; display: none; z-index: 4000; animation: slideIn 0.3s ease; max-width: 300px; }
-        .notification.success { background: #2E7D32; }
-        .notification.info { background: #FF8C42; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px; border-radius: 10px; display: none; z-index: 4000; }
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
-        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
-        .video-content:fullscreen { max-width: none; border-radius: 0; background: #000; }
-        .video-content:fullscreen .video-header { position: absolute; top: 0; left: 0; right: 0; z-index: 10; background: rgba(0,0,0,0.7); }
-        .video-header { background: #4B2E9E; padding: 15px; color: white; display: flex; justify-content: space-between; align-items: center; }
-        .video-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 12px; }
+        .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; }
         .youtube-player-container { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
         .youtube-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .video-title { padding: 12px; color: white; text-align: center; background: #2a2a3e; font-weight: 500; }
-        .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; display: none; }
-        .feedback-section h4 { color: #4B2E9E; margin-bottom: 12px; }
-        #starRating { margin-bottom: 12px; }
-        #starRating i { font-size: 28px; cursor: pointer; margin-right: 5px; color: #FFD700; }
-        #starRating i.far { color: #ccc; }
-        #feedbackComment { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin: 10px 0; resize: vertical; }
-        .feedback-buttons { display: flex; gap: 10px; }
-        .feedback-buttons button { flex: 1; padding: 12px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; }
-        .submit-feedback { background: #4B2E9E; color: white; }
-        .skip-feedback { background: #ccc; color: #333; }
+        .feedback-section { background: white; padding: 20px; display: none; border-radius: 0 0 20px 20px; }
         .attendance-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .attendance-modal.show { display: flex; }
-        .attendance-modal-content { background: white; border-radius: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 20px; }
-        .attendance-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .attendance-tab { flex: 1; padding: 10px; text-align: center; background: #e0e0e0; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .attendance-modal-content { background: white; border-radius: 24px; width: 100%; max-width: 500px; padding: 20px; }
+        .attendance-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .attendance-tab { flex: 1; padding: 10px; text-align: center; background: #e0e0e0; border: none; border-radius: 30px; cursor: pointer; }
         .attendance-tab.active { background: #FF8C42; color: white; }
         .attendance-tab-content { display: none; }
         .attendance-tab-content.active { display: block; }
         .camera-container { background: #2E7D32; border-radius: 16px; overflow: hidden; margin-bottom: 15px; }
         #attendanceVideo, #enrollVideo { width: 100%; background: #1B5E20; }
-        .btn-primary { background: #FF8C42; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
-        .btn-secondary { background: #2E7D32; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; flex: 1; }
+        .btn-primary { background: #FF8C42; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; }
+        .btn-secondary { background: #2E7D32; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; }
         .btn-danger { background: #dc3545; color: white; padding: 12px; border-radius: 30px; border: none; cursor: pointer; }
         .recognition-result { background: #E8F5E9; padding: 15px; border-radius: 12px; margin: 15px 0; }
-        .recent-attendance-list, .enrolled-list { max-height: 200px; overflow-y: auto; }
-        .attendance-item, .enrolled-person { background: white; padding: 10px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
         .preview-image { max-width: 100px; border-radius: 10px; margin-top: 10px; border: 2px solid #FF8C42; }
-        .file-input-label { background: #FF8C42; color: white; padding: 10px 15px; border-radius: 25px; cursor: pointer; display: inline-block; font-size: 12px; }
+        .file-input-label { background: #FF8C42; color: white; padding: 10px 15px; border-radius: 25px; cursor: pointer; display: inline-block; }
         #faceImageUpload { display: none; }
-        .form-group { margin-bottom: 15px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #FF8C42; border-radius: 10px; }
         .ai-drawer { position: fixed; top: 0; right: -100%; width: 100%; max-width: 400px; height: 100vh; background: white; z-index: 2000; transition: right 0.3s ease; display: flex; flex-direction: column; }
         .ai-drawer.open { right: 0; }
         .ai-drawer-header { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; display: flex; justify-content: space-between; }
@@ -165,78 +122,31 @@
         .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
         .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
         .overlay.show { display: block; }
-        .vision-box, .mission-box { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center; }
-        .core-value { padding: 12px; background: #f0f0f0; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-        .team-member { display: flex; align-items: center; gap: 16px; padding: 12px; background: #f9f9f9; border-radius: 12px; margin-bottom: 10px; }
-        .team-avatar { width: 50px; height: 50px; background: linear-gradient(135deg, #4B2E9E, #7B5FCF); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; overflow: hidden; }
-        .team-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .whatsapp-btn { background: #25D366; color: white; padding: 12px; border-radius: 30px; text-align: center; text-decoration: none; display: block; margin-top: 12px; font-weight: bold; }
-        .contact-info { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
-        @media (orientation: landscape) { .video-modal { padding: 0; } .video-content { max-width: 100%; height: 100%; border-radius: 0; } }
         .admin-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; display: none; }
         .admin-panel.show { display: block; }
-        .admin-panel h3 { color: #4B2E9E; margin-bottom: 15px; }
         .admin-section { margin-bottom: 30px; border-top: 1px solid #ddd; padding-top: 15px; }
-        .admin-section h4 { color: #4B2E9E; margin-bottom: 10px; }
-        .admin-subject { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 16px; padding: 12px; }
-        .admin-subject label { font-weight: bold; display: block; margin-bottom: 5px; }
-        .admin-subject input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 25px; margin-bottom: 8px; }
-        .admin-subject button { background: #FF8C42; color: white; border: none; padding: 8px 16px; border-radius: 25px; cursor: pointer; margin-right: 8px; }
-        .admin-subject .status { font-size: 12px; color: green; margin-top: 5px; }
         .admin-toggle { background: #FF8C42; color: white; border: none; padding: 10px 20px; border-radius: 30px; margin: 10px 0; cursor: pointer; font-weight: bold; }
-        .pdf-item { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; margin-bottom: 8px; padding: 10px; border-radius: 12px; }
-        .pdf-item a { text-decoration: none; color: #4B2E9E; flex: 1; }
-        .pdf-item button { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 20px; cursor: pointer; }
-        .add-pdf-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
-        .add-pdf-form input { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
-        .add-subject-form { background: #f0f0f0; padding: 15px; border-radius: 16px; margin-top: 20px; }
-        .add-subject-form input, .add-subject-form select { margin: 5px 0; padding: 8px; width: 100%; border-radius: 20px; border: 1px solid #ccc; }
-        .analytics-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        .analytics-table th, .analytics-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .analytics-table th { background: #4B2E9E; color: white; }
-        .most-watched-list { list-style: none; padding: 0; }
-        .most-watched-list li { background: #f5f5f5; margin: 8px 0; padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; }
-        .school-item, .event-item { background: #f9f9f9; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .school-actions button, .event-actions button { margin-left: 8px; background: #FF8C42; border: none; padding: 6px 12px; border-radius: 20px; color: white; cursor: pointer; }
-        .school-actions button.delete, .event-actions button.delete { background: #dc3545; }
-        .school-logo { width: 50px; height: 50px; object-fit: cover; border-radius: 12px; margin-right: 12px; }
-        .video-mapping-form { background: #f0f0f0; padding: 20px; border-radius: 20px; margin-bottom: 20px; }
-        .video-mapping-form select, .video-mapping-form input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 30px; border: 1px solid #ccc; }
-        .form-row { display: flex; gap: 10px; align-items: center; }
-        .form-row button { flex: 1; }
-        .profile-pic-upload { background: white; border-radius: 20px; padding: 20px; margin-top: 16px; text-align: center; }
-        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid #4B2E9E; background: #f0f0f0; }
-        .payment-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-direction: column; gap: 15px; }
-        .default-avatar { background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white; }
-        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 13px; padding: 8px 16px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; pointer-events: none; backdrop-filter: blur(6px); font-family: monospace; white-space: nowrap; }
-        @media (max-width: 480px) { .demo-notice { font-size: 10px; bottom: 70px; } }
         .teacher-video-item { background: #f9f9f9; border-radius: 16px; padding: 15px; margin-bottom: 15px; }
-        .user-watch-row { border-bottom: 1px solid #eee; padding: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; }
+        .user-watch-row { border-bottom: 1px solid #eee; padding: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; }
         .management-panel, .analytics-panel { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
-        .pdf-viewer { width: 100%; height: 500px; border: none; margin-top: 10px; }
+        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 12px; padding: 8px 12px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; }
+        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid #4B2E9E; }
+        .payment-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-direction: column; gap: 15px; }
     </style>
 </head>
 <body>
-
-<!-- DEMO NOTICE - visible only to teachers (controlled by JS) -->
 <div id="demoNotice" class="demo-notice" style="display: none;">APSHULE - Teacher Revenue System</div>
 
 <!-- LOGIN SCREEN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
-        <img class="login-logo-img logo--responsive logo--desktop logo--tablet logo--mobile" 
-             src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" 
-             alt="APSHULE Logo">
+        <img class="login-logo-img" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="Logo">
         <div class="login-title">APSHULE</div>
-        <div class="login-subtitle">Let's Learn With Ease From Anywhere at Anytime</div>
-        <div class="login-tabs">
-            <div class="login-tab active" data-tab="login">Login</div>
-            <div class="login-tab" data-tab="signup">Sign Up</div>
-        </div>
+        <div class="login-subtitle">Learn With Ease</div>
+        <div class="login-tabs"><div class="login-tab active" data-tab="login">Login</div><div class="login-tab" data-tab="signup">Sign Up</div></div>
         <div id="loginFormDiv" class="login-form active">
             <input type="email" id="loginEmail" placeholder="Email" class="login-input">
             <input type="password" id="loginPassword" placeholder="Password" class="login-input">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;"><label><input type="checkbox" id="rememberMeCheckbox"> Remember Me</label><span id="forgotPasswordLink" style="color:#FF8C42; cursor:pointer;">Forgot?</span></div>
             <button id="loginBtn" class="login-btn">Login</button>
         </div>
         <div id="signupFormDiv" class="login-form">
@@ -248,7 +158,7 @@
             <button id="signupBtn" class="login-btn">Create Account</button>
         </div>
         <div id="loginError" class="error-message"></div>
-        <div class="reset-section" id="resetSection" style="display:none;"><input type="email" id="resetEmail" placeholder="Email"><button id="sendResetEmailBtn">Send Reset Email</button></div>
+        <div id="resetSection" class="reset-section"><input id="resetEmail" placeholder="Email"><button id="sendResetEmailBtn">Reset</button></div>
     </div>
 </div>
 
@@ -257,16 +167,16 @@
     <div class="header">
         <div class="header-left">
             <img id="headerLogoImg" class="header-logo-img" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="Logo">
-            <div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
+            <div><div class="app-title">APSHULE</div><div class="tagline">Learn With Ease</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
         </div>
-        <div class="header-right"><button class="ai-icon-btn" id="openAIDrawerBtn">🤖</button><div style="position:relative"><button class="more-menu-btn" id="moreMenuBtn">⋮</button><div class="more-dropdown" id="moreDropdown"><div class="dropdown-item" id="attendanceMenuItem" style="display:none;">📸 Facial Attendance</div><div class="dropdown-item" id="adminMenuItem" style="display:none;">Admin Panel</div><div class="dropdown-item" id="logoutBtn">Logout</div></div></div></div>
+        <div class="header-right"><button class="ai-icon-btn" id="openAIDrawerBtn">🤖</button><div><button class="more-menu-btn" id="moreMenuBtn">⋮</button><div class="more-dropdown" id="moreDropdown"><div class="dropdown-item" id="attendanceMenuItem">📸 Facial Attendance</div><div class="dropdown-item" id="adminMenuItem">Admin Panel</div><div class="dropdown-item" id="logoutBtn">Logout</div></div></div></div>
     </div>
 
     <!-- VIDEO MODAL -->
-    <div id="videoModal" class="video-modal"><div class="video-content"><div class="video-header"><span id="videoTitle">Lesson</span><button id="closeVideoBtn">&times;</button></div><div class="youtube-player-container"><iframe id="youtubeIframe" src="" allowfullscreen></iframe></div><div class="feedback-section" id="feedbackSection"><h4>Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback"></textarea><button id="submitFeedbackBtn">Submit</button><button id="closeFeedbackBtn">Skip</button></div></div></div>
+    <div id="videoModal" class="video-modal"><div class="video-content"><div class="youtube-player-container"><iframe id="youtubeIframe" src="" allowfullscreen></iframe></div><div class="feedback-section" id="feedbackSection"><h4>Rate this lesson</h4><div id="starRating"><i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i></div><textarea id="feedbackComment" placeholder="Your feedback or question"></textarea><div><button id="submitCommentBtn">Submit Comment</button><button id="submitQuestionBtn">Ask Question</button><button id="closeFeedbackBtn">Skip</button></div></div></div></div>
 
     <!-- ATTENDANCE MODAL -->
-    <div id="attendanceModal" class="attendance-modal"><div class="attendance-modal-content"><div style="display:flex; justify-content:space-between;"><h3>Facial Attendance</h3><button id="closeAttendanceModal">&times;</button></div><div class="attendance-tabs"><button class="attendance-tab active" data-attendance-tab="mark">Mark</button><button class="attendance-tab" data-attendance-tab="enroll">Enroll</button><button class="attendance-tab" data-attendance-tab="manage">Manage</button></div><div id="markTab" class="attendance-tab-content active"><video id="attendanceVideo" autoplay playsinline></video><button id="markAttendanceBtn">Mark</button><div id="attendanceResult"></div><div id="recentAttendanceList"></div></div><div id="enrollTab" class="attendance-tab-content"><video id="enrollVideo" autoplay playsinline></video><button id="captureEnrollBtn">Capture</button><input type="file" id="faceImageUpload"><div id="enrollPreview"></div><input id="enrollName" placeholder="Name"><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option></select><input id="enrollPhone" placeholder="Phone"><button id="saveEnrolledPersonBtn">Save</button></div><div id="manageTab" class="attendance-tab-content"><div id="enrolledPersonsList"></div><button id="clearAllAttendanceBtn">Clear All</button></div></div></div>
+    <div id="attendanceModal" class="attendance-modal"><div class="attendance-modal-content"><div><h3>Facial Attendance</h3><button id="closeAttendanceModal">&times;</button></div><div class="attendance-tabs"><button class="attendance-tab active" data-tab="mark">Mark</button><button class="attendance-tab" data-tab="enroll">Enroll</button><button class="attendance-tab" data-tab="manage">Manage</button></div><div id="markTab" class="attendance-tab-content active"><video id="attendanceVideo" autoplay playsinline></video><button id="markAttendanceBtn">Mark</button><div id="attendanceResult"></div><div id="recentAttendanceList"></div></div><div id="enrollTab" class="attendance-tab-content"><video id="enrollVideo" autoplay playsinline></video><button id="captureEnrollBtn">Capture</button><input type="file" id="faceImageUpload"><div id="enrollPreview"></div><input id="enrollName" placeholder="Name"><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option></select><input id="enrollPhone" placeholder="Phone"><button id="saveEnrolledPersonBtn">Save</button></div><div id="manageTab" class="attendance-tab-content"><div id="enrolledPersonsList"></div><button id="clearAllAttendanceBtn">Clear All</button></div></div></div>
 
     <!-- AI DRAWER -->
     <div class="overlay" id="drawerOverlay"></div>
@@ -288,16 +198,18 @@
                 <h3>Admin Panel</h3>
                 <div id="superAdminSection" class="admin-section" style="display:none;">
                     <h4>Manage Schools</h4>
-                    <input id="schoolName" placeholder="School Name"><input id="schoolLoginEmail" placeholder="Email"><input id="schoolLoginPassword" placeholder="Password"><button id="addSchoolBtn">Add School</button><div id="schoolsAdminList"></div>
+                    <input id="schoolName" placeholder="Name"><input id="schoolLoginEmail" placeholder="Email"><input id="schoolLoginPassword" placeholder="Password"><button id="addSchoolBtn">Add School</button><div id="schoolsAdminList"></div>
                     <h4>Manage Users & Teachers</h4><div id="allUsersList"></div><button id="refreshUsersBtn">Refresh</button>
                     <h4>Teacher Revenue</h4><div id="teachersManageList"></div>
                     <h4>Map Video Lessons</h4>
                     <select id="videoTeacherSelect"><option>Select Teacher</option></select>
                     <select id="videoSubjectSelect"><option>Select Subject</option></select>
                     <select id="videoClassSelect"><option>Select Class</option></select>
-                    <input id="videoYoutubeId" placeholder="YouTube URL or ID"><button id="saveVideoMappingBtn">Save Mapping</button><div id="existingMappingsList"></div>
+                    <input id="videoYoutubeId" placeholder="YouTube URL or ID"><button id="testVideoBtn">Test Video</button><button id="saveVideoMappingBtn">Save Mapping</button><div id="existingMappingsList"></div>
                     <h4>Subscription Plans</h4><div id="subscriptionPlansList"></div><button id="addPlanBtn">Add Plan</button><div id="planEditor" style="display:none;"><input id="planName" placeholder="Plan name"><input id="planPrice" placeholder="Price"><button id="savePlanBtn">Save</button><button id="cancelPlanBtn">Cancel</button></div>
-                    <h4>User Analytics</h4><div id="userStats"><p>Total Users: <strong id="statTotal">0</strong></p><p>Active (7d): <strong id="statActive">0</strong></p><p>Inactive: <strong id="statInactive">0</strong></p><p>Failed logins today: <strong id="failedLogins">0</strong></p></div><button id="refreshStatsBtn">Refresh</button>
+                    <h4>Add New Subject</h4><input id="newSubjectName" placeholder="Subject name"><select id="newSubjectLevel"><option>Primary</option><option>Secondary</option></select><button id="addNewSubjectBtn">Add Subject</button>
+                    <h4>User Analytics</h4><div id="userStats"><p>Total Users: <strong id="statTotal">0</strong></p><p>Active (7d): <strong id="statActive">0</strong></p><p>Failed Logins Today: <strong id="failedLogins">0</strong></p></div><button id="refreshStatsBtn">Refresh</button>
+                    <h4>Live Lesson</h4><button id="startJitsiLessonBtn">Start Live Lesson</button><div id="liveLessonContainer"></div>
                 </div>
                 <div id="teacherDashboardSection" class="admin-section" style="display:none;">
                     <h4>My Teacher Dashboard</h4>
@@ -309,48 +221,34 @@
             </div>
         </div>
 
-        <!-- Management and Analytics pages -->
         <div id="managementPage" class="page">
             <div class="section-title">Management Tools</div>
             <div class="management-panel">
-                <h4>Create Teacher</h4>
-                <input id="teacherName" placeholder="Name"><input id="teacherEmail" placeholder="Email"><input id="teacherPassword" placeholder="Password"><button id="createTeacherBtn">Create</button>
-                <h4>Map Video</h4>
-                <select id="mapTeacherSelect"><option>Select Teacher</option></select>
-                <select id="mapSubjectSelect"><option>Select Subject</option></select>
-                <select id="mapClassSelect"><option>Select Class</option></select>
-                <input id="mapYoutubeId" placeholder="YouTube ID"><button id="mapVideoBtn">Map</button>
-                <h4>Create School</h4>
-                <input id="newSchoolName" placeholder="School Name"><input id="newSchoolEmail" placeholder="Email"><input id="newSchoolPassword" placeholder="Password"><button id="createSchoolBtn">Create</button>
+                <h4>Create Teacher</h4><input id="teacherName" placeholder="Name"><input id="teacherEmail" placeholder="Email"><input id="teacherPassword" placeholder="Password"><button id="createTeacherBtn">Create</button>
+                <h4>Map Video</h4><select id="mapTeacherSelect"><option>Teacher</option></select><select id="mapSubjectSelect"><option>Subject</option></select><select id="mapClassSelect"><option>Class</option></select><input id="mapYoutubeId" placeholder="YouTube ID"><button id="mapVideoBtn">Map</button>
+                <h4>Create School</h4><input id="newSchoolName" placeholder="Name"><input id="newSchoolEmail" placeholder="Email"><input id="newSchoolPassword" placeholder="Password"><button id="createSchoolBtn">Create</button>
             </div>
         </div>
         <div id="analyticsPage" class="page">
             <div class="section-title">Analytics & Feedback</div>
             <div class="analytics-panel">
-                <h4>Platform Stats</h4>
                 <p>Total Users: <span id="analyticsTotalUsers">0</span></p>
                 <p>Active Users (7d): <span id="analyticsActiveUsers">0</span></p>
                 <p>Failed Logins Today: <span id="analyticsFailedLogins">0</span></p>
-                <h4>Most Watched Videos (by teacher)</h4>
-                <div id="mostWatchedByTeacher"></div>
-                <h4>All Feedback & Questions</h4>
-                <div id="allUserFeedback"></div>
+                <h4>Most Watched Videos (by teacher)</h4><div id="mostWatchedByTeacher"></div>
+                <h4>All Feedback & Questions</h4><div id="allUserFeedback"></div>
             </div>
         </div>
 
-        <!-- Account and About -->
         <div id="accountPage" class="page">
             <div class="section-title">My Account</div>
             <div id="accountInfo" class="account-card"></div>
-            <div class="profile-pic-upload"><h4>Profile Picture</h4><img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><input type="file" id="profilePicInput" accept="image/*"><button id="uploadProfilePicBtn">Upload</button></div>
+            <div><h4>Profile Picture</h4><img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"><input type="file" id="profilePicInput" accept="image/*"><button id="uploadProfilePicBtn">Upload</button></div>
         </div>
-        <div id="aboutPage" class="page">
-            <div class="section-title">About APSHULE</div>
-            <div id="dynamicAbout" class="about-card">Loading...</div>
-        </div>
+        <div id="aboutPage" class="page"><div class="section-title">About APSHULE</div><div id="dynamicAbout" class="about-card">Loading...</div></div>
     </div>
 
-    <div class="bottom-nav" id="bottomNav">
+    <div class="bottom-nav">
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
         <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
@@ -359,15 +257,10 @@
         <div class="nav-item" data-page="teacherDashboard" style="display:none;"><i class="fas fa-chalkboard-teacher"></i><span>My Dashboard</span></div>
     </div>
 </div>
-  <div id="notification" class="notification"></div>
-  <script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-        }
-    }
+<div id="notification" class="notification"></div>
+
+<script type="importmap">
+    {"imports": {"firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js","firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js","firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"}}
 </script>
 
 <script type="module">
@@ -390,7 +283,6 @@
 
     const PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
 
-    // ========== GLOBAL VARIABLES ==========
     let currentUser = null;
     let schools = [];
     let globalEventsList = [];
@@ -412,622 +304,206 @@
         secondary: [{id:1,name:"Senior 1",icon:"fa-seedling",color:"#4CAF50"},{id:2,name:"Senior 2",icon:"fa-tree",color:"#8BC34A"},{id:3,name:"Senior 3",icon:"fa-book",color:"#FF9800"},{id:4,name:"Senior 4",icon:"fa-chart-line",color:"#F44336"},{id:5,name:"Senior 5",icon:"fa-flask",color:"#9C27B0"},{id:6,name:"Senior 6",icon:"fa-university",color:"#2196F3"}]
     };
 
-    // ========== HELPER FUNCTIONS ==========
     function showNotification(msg, type="success") { let n=document.getElementById('notification'); n.textContent=msg; n.className=`notification ${type}`; n.style.display='block'; setTimeout(()=>n.style.display='none',3000); }
-    function extractVideoId(url) { if(!url) return ""; let m=url.match(/(?:youtube\.com\/watch\?v=)([^&]+)/); return m ? m[1] : url; }
-    function updateGreeting() {
-        const hour = new Date().getHours();
-        let greeting = "";
-        if (hour < 12) greeting = "Good morning";
-        else if (hour < 18) greeting = "Good afternoon";
-        else greeting = "Good evening";
-        const nameSpan = document.getElementById('userName');
-        if (nameSpan && currentUser) {
-            let firstName = currentUser.name?.split(' ')[0] || "Student";
-            nameSpan.innerText = `${greeting}, ${firstName}!`;
-        }
-    }
-    setInterval(updateGreeting, 60000);
+    function extractVideoId(url) { let m=url.match(/(?:youtube\.com\/watch\?v=)([^&]+)/); return m ? m[1] : url; }
+    function updateGreeting() { let hour=new Date().getHours(); let greeting=hour<12?"Good morning":hour<18?"Good afternoon":"Good evening"; let nameSpan=document.getElementById('userName'); if(nameSpan&&currentUser) nameSpan.innerText=`${greeting}, ${currentUser.name.split(' ')[0]}!`; }
+    setInterval(updateGreeting,60000);
 
-    // ========== RENDER CLASSES, SUBJECTS, TEACHERS, VIDEOS ==========
+    // ========== RENDER CLASSES ==========
     function renderClasses() {
-        let grid = document.getElementById('classGrid');
-        if(!grid) return;
-        let classes = classData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}')" style="background: linear-gradient(135deg, ${c.color}22, white); border: 2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background: linear-gradient(135deg, ${c.color}, ${c.color}cc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 52px;"></i><div class="class-name" style="color: ${c.color};">${c.name}</div><div class="class-details">${currentLevel === 'primary' ? primarySubjects.length : secondarySubjects.length} Subjects</div></div>`).join('');
+        let grid=document.getElementById('classGrid'); if(!grid) return;
+        let classes=classData[currentLevel];
+        grid.innerHTML=classes.map(c=>`<div class="class-card" onclick="selectClass(${c.id},'${c.name}')" style="background:linear-gradient(135deg,${c.color}22,white);border:2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background:linear-gradient(135deg,${c.color},${c.color}cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:52px;"></i><div class="class-name" style="color:${c.color};">${c.name}</div><div class="class-details">${currentLevel==='primary'?primarySubjects.length:secondarySubjects.length} Subjects</div></div>`).join('');
     }
-    window.selectClass = function(id, name) {
-        currentSelectedClassId = { id, name, level: currentLevel };
-        document.getElementById('classSelectionSection').style.display = 'none';
-        document.getElementById('subjectsSection').style.display = 'block';
-        renderSubjects();
-    };
+    window.selectClass=function(id,name){ currentSelectedClassId={id,name,level:currentLevel}; document.getElementById('classSelectionSection').style.display='none'; document.getElementById('subjectsSection').style.display='block'; renderSubjects(); };
     function renderSubjects() {
-        let subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
-        let grid = document.getElementById('subjectsGrid');
-        if(!grid) return;
-        grid.innerHTML = subjects.map(s => `<div class="subject-card" onclick="selectSubject('${s}')"><div class="subject-icon" style="background:#2196F3;"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div><div style="font-size:10px;"><i class="fab fa-youtube"></i> Lesson</div></div>`).join('');
+        let subjects=currentLevel==='primary'?primarySubjects:secondarySubjects;
+        let grid=document.getElementById('subjectsGrid'); if(!grid) return;
+        grid.innerHTML=subjects.map(s=>`<div class="subject-card" onclick="selectSubject('${s}')"><div class="subject-icon" style="background:#2196F3;"><i class="fas fa-book"></i></div><div class="subject-name">${s}</div><div style="font-size:10px;"><i class="fab fa-youtube"></i> Lesson</div></div>`).join('');
     }
-    window.selectSubject = async function(subject) {
-        currentSubject = subject;
-        const q = query(collection(db, "videoMappings"), where("subject","==",subject), where("classLevel","==",currentSelectedClassId.level), where("classId","==",currentSelectedClassId.id));
-        const snap = await getDocs(q);
-        const teacherIds = new Set();
-        snap.forEach(d => { if(d.data().teacherId) teacherIds.add(d.data().teacherId); });
-        if(teacherIds.size === 0) { showNotification("No teachers for this subject","info"); return; }
-        let teacherList = [];
-        for(let tid of teacherIds) { let tSnap = await getDoc(doc(db,"users",tid)); if(tSnap.exists()) teacherList.push({id:tid, name:tSnap.data().name}); }
-        let grid = document.getElementById('teacherGrid');
-        if(!grid) { let div=document.createElement('div'); div.id='teacherGrid'; div.className='class-grid'; document.getElementById('teacherSelectionSection').appendChild(div); grid=div; }
-        grid.innerHTML = teacherList.map(t => `<div class="class-card" onclick="selectTeacher('${t.id}','${t.name}')"><i class="fas fa-chalkboard-user"></i><div>${t.name}</div></div>`).join('');
-        document.getElementById('subjectsSection').style.display='none';
-        document.getElementById('teacherSelectionSection').style.display='block';
+    window.selectSubject=async function(subject){
+        currentSubject=subject;
+        const q=query(collection(db,"videoMappings"),where("subject","==",subject),where("classLevel","==",currentSelectedClassId.level),where("classId","==",currentSelectedClassId.id));
+        const snap=await getDocs(q);
+        const teacherIds=new Set(); snap.forEach(d=>{if(d.data().teacherId) teacherIds.add(d.data().teacherId);});
+        if(teacherIds.size===0){ showNotification("No teachers for this subject","info"); return; }
+        let teacherList=[];
+        for(let tid of teacherIds){ let tSnap=await getDoc(doc(db,"users",tid)); if(tSnap.exists()) teacherList.push({id:tid,name:tSnap.data().name}); }
+        let grid=document.getElementById('teacherGrid'); if(!grid){ let div=document.createElement('div'); div.id='teacherGrid'; div.className='class-grid'; document.getElementById('teacherSelectionSection').appendChild(div); grid=div; }
+        grid.innerHTML=teacherList.map(t=>`<div class="class-card" onclick="selectTeacher('${t.id}','${t.name}')"><i class="fas fa-chalkboard-user"></i><div>${t.name}</div></div>`).join('');
+        document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='block';
     };
-    window.selectTeacher = function(teacherId, teacherName) {
-        currentTeacherObject = {id:teacherId, name:teacherName};
-        document.getElementById('selectedTeacherName').innerText = teacherName;
+    window.selectTeacher=function(teacherId,teacherName){
+        currentTeacherObject={id:teacherId,name:teacherName};
+        document.getElementById('selectedTeacherName').innerText=teacherName;
         loadTeacherVideos();
-        document.getElementById('teacherSelectionSection').style.display='none';
-        document.getElementById('teacherVideosSection').style.display='block';
+        document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='block';
     };
     async function loadTeacherVideos() {
-        const q = query(collection(db,"videoMappings"), where("teacherId","==",currentTeacherObject.id), where("subject","==",currentSubject), where("classLevel","==",currentSelectedClassId.level), where("classId","==",currentSelectedClassId.id));
-        const snap = await getDocs(q);
-        let videos = [];
-        snap.forEach(d => videos.push({id:d.id, youtubeId:d.data().youtubeId, title:d.data().title||`${currentSubject} lesson`}));
-        let grid = document.getElementById('teacherVideosGrid');
-        if(!grid) { let d=document.createElement('div'); d.id='teacherVideosGrid'; d.className='subjects-grid'; document.getElementById('teacherVideosSection').appendChild(d); grid=d; }
-        grid.innerHTML = videos.map(v => `<div class="subject-card" onclick="playTeacherVideo('${v.id}', '${v.youtubeId}', '${v.title}')"><i class="fab fa-youtube"></i><div>${v.title}</div></div>`).join('');
+        const q=query(collection(db,"videoMappings"),where("teacherId","==",currentTeacherObject.id),where("subject","==",currentSubject),where("classLevel","==",currentSelectedClassId.level),where("classId","==",currentSelectedClassId.id));
+        const snap=await getDocs(q);
+        let videos=[]; snap.forEach(d=>videos.push({id:d.id,youtubeId:d.data().youtubeId,title:d.data().title||`${currentSubject} lesson`}));
+        let grid=document.getElementById('teacherVideosGrid'); if(!grid){ let d=document.createElement('div'); d.id='teacherVideosGrid'; d.className='subjects-grid'; document.getElementById('teacherVideosSection').appendChild(d); grid=d; }
+        grid.innerHTML=videos.map(v=>`<div class="subject-card" onclick="playTeacherVideo('${v.id}','${v.youtubeId}','${v.title}')"><i class="fab fa-youtube"></i><div>${v.title}</div></div>`).join('');
     }
-    window.playTeacherVideo = function(videoMappingId, youtubeId, title) {
+    window.playTeacherVideo=function(videoMappingId,youtubeId,title){
         if(!currentUser){ showNotification("Login required","error"); return; }
-        currentVideoMappingId = videoMappingId;
-        currentLessonSubject = title;
-        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
-        document.getElementById('videoModal').classList.add('show');
-        document.getElementById('feedbackSection').style.display='block';
-        trackVideoProgress(videoMappingId, currentTeacherObject.id);
-        saveVideoView(currentTeacherObject.id, videoMappingId);
+        currentVideoMappingId=videoMappingId; currentLessonSubject=title;
+        document.getElementById('youtubeIframe').src=`https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
+        document.getElementById('videoModal').classList.add('show'); document.getElementById('feedbackSection').style.display='block';
+        trackVideoProgress(videoMappingId,currentTeacherObject.id);
+        saveVideoView(currentTeacherObject.id,videoMappingId);
     };
-    // Progress tracking and earnings
-    async function trackVideoProgress(videoMappingId, teacherId) {
+    async function trackVideoProgress(videoMappingId,teacherId){
         if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval);
-        let watched = 0;
-        currentVideoProgressInterval = setInterval(async () => {
-            if(!document.getElementById('videoModal').classList.contains('show')) { clearInterval(currentVideoProgressInterval); return; }
-            watched += 10;
-            const completed = watched >= 270; // 90% of 5 min
-            const progressRef = doc(db, "videoProgress", `${currentUser.uid}_${videoMappingId}`);
-            await setDoc(progressRef, { userId: currentUser.uid, videoMappingId, secondsWatched: watched, completed, lastUpdated: new Date().toISOString(), teacherId }, { merge: true });
-            if(completed) {
+        let watched=0;
+        currentVideoProgressInterval=setInterval(async()=>{
+            if(!document.getElementById('videoModal').classList.contains('show')){ clearInterval(currentVideoProgressInterval); return; }
+            watched+=10;
+            let completed=watched>=270;
+            await setDoc(doc(db,"videoProgress",`${currentUser.uid}_${videoMappingId}`),{userId:currentUser.uid,videoMappingId,secondsWatched:watched,completed,lastUpdated:new Date().toISOString(),teacherId},{merge:true});
+            if(completed){
                 clearInterval(currentVideoProgressInterval);
-                const earningKey = `earning_${teacherId}_${currentUser.uid}_${videoMappingId}`;
-                const earningDoc = await getDoc(doc(db, "teacherEarnings", earningKey));
-                if(!earningDoc.exists()) {
-                    const teacherDoc = await getDoc(doc(db,"users",teacherId));
-                    let revenuePerView = teacherDoc.data()?.revenuePerView || 100;
-                    await setDoc(doc(db, "teacherEarnings", earningKey), { teacherId, userId: currentUser.uid, videoMappingId, amount: revenuePerView, timestamp: new Date().toISOString() });
+                const earningKey=`earning_${teacherId}_${currentUser.uid}_${videoMappingId}`;
+                const earningDoc=await getDoc(doc(db,"teacherEarnings",earningKey));
+                if(!earningDoc.exists()){
+                    const teacherDoc=await getDoc(doc(db,"users",teacherId));
+                    let revenuePerView=teacherDoc.data()?.revenuePerView||100;
+                    await setDoc(doc(db,"teacherEarnings",earningKey),{teacherId,userId:currentUser.uid,videoMappingId,amount:revenuePerView,timestamp:new Date().toISOString()});
                     showNotification(`Teacher earned UGX ${revenuePerView} for this view.`,"info");
                 }
             }
-        }, 10000);
+        },10000);
     }
-    async function saveVideoView(teacherId, videoMappingId) {
-        if(!currentUser) return;
-        await addDoc(collection(db, "videoViews"), { teacherId, videoMappingId, userId: currentUser.uid, userName: currentUser.name, timestamp: new Date().toISOString() });
-    }
-    async function saveFeedback(lesson, rating, comment, type = "comment") {
-        if(!currentUser) return;
-        await addDoc(collection(db, "feedbacks"), {
-            lesson, rating, comment, type,
-            userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "",
-            timestamp: new Date().toISOString(),
-            teacherId: currentTeacherObject?.id,
-            videoMappingId: currentVideoMappingId
-        });
-        showNotification(type === "question" ? "Question sent to teacher." : "Comment submitted.", "success");
-    }
-    async function submitQuestion(questionText) {
-        if(!currentUser || !currentTeacherObject) return;
-        await addDoc(collection(db, "questions"), {
-            text: questionText,
-            userId: currentUser.uid, userName: currentUser.name, userEmail: currentUser.email, userPhone: currentUser.phone || "",
-            teacherId: currentTeacherObject.id,
-            videoMappingId: currentVideoMappingId,
-            timestamp: new Date().toISOString(),
-            answered: false
-        });
-        showNotification("Your question has been sent.","success");
-    }
-    // PDF handling (view inline)
-    function renderPdfList() {
-        let c = document.getElementById('folderContent');
-        if(!c) return;
-        if(!pdfMaterials.length) { c.innerHTML = '<div>No PDFs added yet.</div>'; return; }
-        c.innerHTML = pdfMaterials.map(p => `<div class="material-item" onclick="viewPdf('${p.url}')">📄 ${p.title}</div>`).join('');
-    }
-    window.viewPdf = function(url) {
-        const modal = document.createElement('div');
-        modal.style.position = 'fixed'; modal.style.top = 0; modal.style.left = 0; modal.style.right = 0; modal.style.bottom = 0; modal.style.background = 'rgba(0,0,0,0.9)'; modal.style.zIndex = 10001; modal.style.display = 'flex'; modal.style.alignItems = 'center'; modal.style.justifyContent = 'center';
-        modal.innerHTML = `<div style="background:white; width:90%; max-width:800px; border-radius:20px; overflow:hidden;"><div style="background:#4B2E9E; padding:12px; color:white; display:flex; justify-content:space-between;"><span>PDF Viewer</span><button id="closePdfBtn" style="background:none; border:none; color:white; font-size:20px;">&times;</button></div><iframe src="${url}" style="width:100%; height:500px; border:none;"></iframe></div>`;
-        document.body.appendChild(modal);
-        document.getElementById('closePdfBtn').onclick = () => modal.remove();
-    };
-    async function uploadTeacherPdf(file, title) {
-        if(!currentUser || currentUser.role !== 'teacher') return;
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            await addDoc(collection(db, "pdfs"), { title, url: e.target.result, teacherId: currentUser.uid, views: 0, createdAt: new Date().toISOString() });
-            showNotification("PDF uploaded");
-            loadTeacherDashboard();
-        };
-        reader.readAsDataURL(file);
-    }
+    async function saveVideoView(teacherId,videoMappingId){ if(!currentUser) return; await addDoc(collection(db,"videoViews"),{teacherId,videoMappingId,userId:currentUser.uid,userName:currentUser.name,timestamp:new Date().toISOString()}); }
+    async function saveFeedback(lesson,rating,comment,type="comment"){ if(!currentUser) return; await addDoc(collection(db,"feedbacks"),{lesson,rating,comment,type,userName:currentUser.name,userEmail:currentUser.email,userPhone:currentUser.phone||"",timestamp:new Date().toISOString(),teacherId:currentTeacherObject?.id,videoMappingId:currentVideoMappingId}); showNotification(type==="question"?"Question sent to teacher.":"Comment submitted.","success"); }
+    async function submitQuestion(questionText){ if(!currentUser||!currentTeacherObject) return; await addDoc(collection(db,"questions"),{text:questionText,userId:currentUser.uid,userName:currentUser.name,userEmail:currentUser.email,userPhone:currentUser.phone||"",teacherId:currentTeacherObject.id,videoMappingId:currentVideoMappingId,timestamp:new Date().toISOString(),answered:false}); showNotification("Question sent.","success"); }
 
-    // ========== SUBSCRIPTION PLANS (no duplicates) ==========
-    async function ensureDefaultPlans() {
-        const snap = await getDocs(collection(db, "subscriptionPlans"));
-        if (snap.empty) {
-            const defaults = [
-                { name: "Daily", price: 500, currency: "UGX", order: 1 },
-                { name: "Weekly", price: 3000, currency: "UGX", order: 2 },
-                { name: "Monthly", price: 10000, currency: "UGX", order: 3 },
-                { name: "Term Plan", price: 50000, currency: "UGX", order: 4 },
-                { name: "Half Year", price: 80000, currency: "UGX", order: 5 },
-                { name: "Full Year", price: 150000, currency: "UGX", order: 6 }
-            ];
-            for (let plan of defaults) await addDoc(collection(db, "subscriptionPlans"), plan);
-        }
-    }
-    function startSubscriptionPlansListener() {
-        if (unsubscribePlans) unsubscribePlans();
-        const q = collection(db, "subscriptionPlans");
-        unsubscribePlans = onSnapshot(q, (snapshot) => {
-            let plans = [];
-            snapshot.forEach(doc => plans.push({ id: doc.id, ...doc.data() }));
-            const unique = [];
-            const seen = new Set();
-            for (let p of plans) {
-                if (!seen.has(p.name)) {
-                    seen.add(p.name);
-                    unique.push(p);
-                }
-            }
-            unique.sort((a,b) => (a.order||0) - (b.order||0));
-            const adminContainer = document.getElementById('subscriptionPlansList');
-            if (adminContainer && currentUser && currentUser.role === 'superadmin') {
-                adminContainer.innerHTML = unique.map(plan => `
-                    <div style="border:1px solid #ddd; padding:10px; margin-bottom:8px;"><strong>${plan.name}</strong> - ${plan.currency || 'UGX'} ${plan.price}
-                    <button class="edit-plan" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">✏️ Edit</button>
-                    <button class="delete-plan" data-id="${plan.id}">🗑️ Delete</button></div>
-                `).join('');
-                document.querySelectorAll('.edit-plan').forEach(btn => btn.addEventListener('click', () => {
-                    const id=btn.dataset.id, name=btn.dataset.name, price=btn.dataset.price;
-                    document.getElementById('planName').value = name;
-                    document.getElementById('planPrice').value = price;
-                    document.getElementById('planEditor').style.display = 'block';
-                    document.getElementById('savePlanBtn').onclick = async () => {
-                        const newName = document.getElementById('planName').value.trim();
-                        const newPrice = parseInt(document.getElementById('planPrice').value);
-                        if (newName && !isNaN(newPrice)) {
-                            await updateDoc(doc(db,"subscriptionPlans",id), { name: newName, price: newPrice });
-                            showNotification("Plan updated");
-                            document.getElementById('planEditor').style.display = 'none';
-                        } else showNotification("Invalid","error");
-                    };
-                }));
-                document.querySelectorAll('.delete-plan').forEach(btn => btn.addEventListener('click', async () => {
-                    if (confirm("Delete?")) await deleteDoc(doc(db,"subscriptionPlans",btn.dataset.id));
-                }));
-            }
-            const frontGrid = document.getElementById('plansGrid');
-            if (frontGrid) {
-                frontGrid.innerHTML = unique.map(plan => `
-                    <div class="payment-card daily"><div>${plan.name}</div><div>${plan.currency || 'UGX'} ${plan.price}</div><button class="subscribe-btn-small" data-plan="${plan.name}" data-price="${plan.price}">Subscribe</button></div>
-                `).join('');
-                document.querySelectorAll('.subscribe-btn-small').forEach(btn => btn.addEventListener('click', () => {
-                    if (!currentUser) alert("Login first");
-                    else initiatePesapalPayment(btn.dataset.plan, parseInt(btn.dataset.price), currentUser.email, currentUser.phone || "N/A", currentUser.name);
-                }));
-            }
-        });
-    }
-    async function initiatePesapalPayment(plan, amount, email, phone, name) {
-        if(!PESAPAL_BACKEND_URL) { showNotification("Backend not configured","error"); return; }
-        showPaymentLoading(true);
-        try {
-            const res = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, currency: "UGX", description: `${plan} Subscription`, email, phone, name, reference: `SUB_${Date.now()}_${currentUser.uid}` })
-            });
-            const data = await res.json();
-            if(data.redirect_url) window.location.href = data.redirect_url;
-            else throw new Error(data.error);
-        } catch(err) { showNotification("Payment error: "+err.message,"error"); showPaymentLoading(false); }
-    }
-    function showPaymentLoading(show) {
-        let el = document.getElementById('paymentLoadingOverlay');
-        if(show) {
-            if(!el) { let d=document.createElement('div'); d.id='paymentLoadingOverlay'; d.className='payment-loading'; d.innerHTML='<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting...</span>'; document.body.appendChild(d); }
-            else el.style.display='flex';
-        } else if(el) el.style.display='none';
-    }
+    // PDF viewing inline
+    function viewPdf(url){ let modal=document.createElement('div'); modal.style.position='fixed';modal.style.top=0;modal.style.left=0;modal.style.right=0;modal.style.bottom=0;modal.style.background='rgba(0,0,0,0.9)';modal.style.zIndex=10001;modal.style.display='flex';modal.style.alignItems='center';modal.style.justifyContent='center'; modal.innerHTML=`<div style="background:white;width:90%;max-width:800px;border-radius:20px;overflow:hidden;"><div style="background:#4B2E9E;padding:12px;color:white;display:flex;justify-content:space-between;"><span>PDF Viewer</span><button id="closePdfBtn" style="background:none;border:none;color:white;font-size:20px;">&times;</button></div><iframe src="${url}" style="width:100%;height:500px;border:none;"></iframe></div>`; document.body.appendChild(modal); document.getElementById('closePdfBtn').onclick=()=>modal.remove(); }
+    window.viewPdf=viewPdf;
+    function renderPdfList(){ let c=document.getElementById('folderContent'); if(!c) return; if(!pdfMaterials.length){ c.innerHTML='<div>No PDFs added yet.</div>'; return; } c.innerHTML=pdfMaterials.map(p=>`<div class="material-item" onclick="viewPdf('${p.url}')">📄 ${p.title}</div>`).join(''); }
+    async function uploadTeacherPdf(file,title){ if(!currentUser||currentUser.role!=='teacher') return; const reader=new FileReader(); reader.onload=async(e)=>{ await addDoc(collection(db,"pdfs"),{title,url:e.target.result,teacherId:currentUser.uid,views:0,createdAt:new Date().toISOString()}); showNotification("PDF uploaded"); loadTeacherDashboard(); }; reader.readAsDataURL(file); }
 
-    // ========== TEACHER DASHBOARD ==========
-    async function loadTeacherDashboard() {
-        if(!currentUser || currentUser.role !== 'teacher') return;
-        // Earnings summary
-        const earningsSnap = await getDocs(query(collection(db,"teacherEarnings"), where("teacherId","==",currentUser.uid)));
-        let totalEarnings = 0;
-        earningsSnap.forEach(e => totalEarnings += e.data().amount);
-        document.getElementById('teacherEarningsSummary').innerHTML = `<div style="background:#e0f7fa; padding:15px;"><h3>💰 Total Earnings: UGX ${totalEarnings}</h3><p>${earningsSnap.size} paid views</p></div>`;
-        // Videos with feedback and completion counts
-        const videoSnap = await getDocs(query(collection(db,"videoMappings"), where("teacherId","==",currentUser.uid)));
-        let videosHtml = '';
-        for(let v of videoSnap.docs) {
-            let data = v.data();
-            const progressSnap = await getDocs(query(collection(db,"videoProgress"), where("teacherId","==",currentUser.uid), where("videoMappingId","==",v.id), where("completed","==",true)));
-            const completions = progressSnap.size;
-            const feedbackSnap = await getDocs(query(collection(db,"feedbacks"), where("videoMappingId","==",v.id)));
-            let viewersHtml = `<div><strong>Completed views:</strong> ${completions}</div><div><strong>Feedback & Comments:</strong><div style="max-height:150px; overflow-y:auto;">`;
-            feedbackSnap.forEach(f => {
-                let fd = f.data();
-                viewersHtml += `<div class="user-watch-row"><span>${fd.userName}</span><span>${fd.type==='question'?'❓':'💬'} ${fd.comment}</span>${fd.type==='question'?` (${fd.userEmail}, ${fd.userPhone})`:''}</div>`;
-            });
-            viewersHtml += '</div></div>';
-            videosHtml += `<div class="teacher-video-item"><h4>${data.title || data.subject}</h4><p>Class: ${data.classLevel} ${data.classId}</p>${viewersHtml}</div>`;
+    // Subscription plans
+    async function ensureDefaultPlans(){ const snap=await getDocs(collection(db,"subscriptionPlans")); if(snap.empty){ const defaults=[{name:"Daily",price:500,currency:"UGX",order:1},{name:"Weekly",price:3000,currency:"UGX",order:2},{name:"Monthly",price:10000,currency:"UGX",order:3},{name:"Term Plan",price:50000,currency:"UGX",order:4},{name:"Half Year",price:80000,currency:"UGX",order:5},{name:"Full Year",price:150000,currency:"UGX",order:6}]; for(let plan of defaults) await addDoc(collection(db,"subscriptionPlans"),plan); } }
+    function startSubscriptionPlansListener(){ if(unsubscribePlans) unsubscribePlans(); const q=collection(db,"subscriptionPlans"); unsubscribePlans=onSnapshot(q,(snapshot)=>{ let plans=[]; snapshot.forEach(doc=>plans.push({id:doc.id,...doc.data()})); const unique=[]; const seen=new Set(); for(let p of plans) if(!seen.has(p.name)){ seen.add(p.name); unique.push(p); } unique.sort((a,b)=>(a.order||0)-(b.order||0)); const adminContainer=document.getElementById('subscriptionPlansList'); if(adminContainer&&currentUser&&currentUser.role==='superadmin'){ adminContainer.innerHTML=unique.map(plan=>`<div style="border:1px solid #ddd;padding:10px;margin-bottom:8px;"><strong>${plan.name}</strong> - ${plan.currency||'UGX'} ${plan.price}<button class="edit-plan" data-id="${plan.id}" data-name="${plan.name}" data-price="${plan.price}">Edit</button><button class="delete-plan" data-id="${plan.id}">Delete</button></div>`).join(''); document.querySelectorAll('.edit-plan').forEach(btn=>btn.addEventListener('click',()=>{ const id=btn.dataset.id,name=btn.dataset.name,price=btn.dataset.price; document.getElementById('planName').value=name; document.getElementById('planPrice').value=price; document.getElementById('planEditor').style.display='block'; document.getElementById('savePlanBtn').onclick=async()=>{ const newName=document.getElementById('planName').value.trim(); const newPrice=parseInt(document.getElementById('planPrice').value); if(newName&&!isNaN(newPrice)){ await updateDoc(doc(db,"subscriptionPlans",id),{name:newName,price:newPrice}); showNotification("Plan updated"); document.getElementById('planEditor').style.display='none'; } else showNotification("Invalid","error"); }; })); document.querySelectorAll('.delete-plan').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete?")) await deleteDoc(doc(db,"subscriptionPlans",btn.dataset.id)); })); } const frontGrid=document.getElementById('plansGrid'); if(frontGrid){ frontGrid.innerHTML=unique.map(plan=>`<div class="payment-card daily"><div>${plan.name}</div><div>${plan.currency||'UGX'} ${plan.price}</div><button class="subscribe-btn-small" data-plan="${plan.name}" data-price="${plan.price}">Subscribe</button></div>`).join(''); document.querySelectorAll('.subscribe-btn-small').forEach(btn=>btn.addEventListener('click',()=>{ if(!currentUser) alert("Login first"); else initiatePesapalPayment(btn.dataset.plan,parseInt(btn.dataset.price),currentUser.email,currentUser.phone||"N/A",currentUser.name); })); } }); }
+    async function initiatePesapalPayment(plan,amount,email,phone,name){ if(!PESAPAL_BACKEND_URL){ showNotification("Backend not configured","error"); return; } showPaymentLoading(true); try{ const res=await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,currency:"UGX",description:`${plan} Subscription`,email,phone,name,reference:`SUB_${Date.now()}_${currentUser.uid}`})}); const data=await res.json(); if(data.redirect_url) window.location.href=data.redirect_url; else throw new Error(data.error); }catch(err){ showNotification("Payment error: "+err.message,"error"); showPaymentLoading(false); } }
+    function showPaymentLoading(show){ let el=document.getElementById('paymentLoadingOverlay'); if(show){ if(!el){ let d=document.createElement('div'); d.id='paymentLoadingOverlay'; d.className='payment-loading'; d.innerHTML='<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting...</span>'; document.body.appendChild(d); } else el.style.display='flex'; }else if(el) el.style.display='none'; }
+
+    // Teacher dashboard
+    async function loadTeacherDashboard(){
+        if(!currentUser||currentUser.role!=='teacher') return;
+        const earningsSnap=await getDocs(query(collection(db,"teacherEarnings"),where("teacherId","==",currentUser.uid)));
+        let totalEarnings=0; earningsSnap.forEach(e=>totalEarnings+=e.data().amount);
+        document.getElementById('teacherEarningsSummary').innerHTML=`<div style="background:#e0f7fa;padding:15px;"><h3>💰 Total Earnings: UGX ${totalEarnings}</h3><p>${earningsSnap.size} paid views</p></div>`;
+        const videoSnap=await getDocs(query(collection(db,"videoMappings"),where("teacherId","==",currentUser.uid)));
+        let videosHtml='';
+        for(let v of videoSnap.docs){
+            let data=v.data();
+            const progressSnap=await getDocs(query(collection(db,"videoProgress"),where("teacherId","==",currentUser.uid),where("videoMappingId","==",v.id),where("completed","==",true)));
+            const completions=progressSnap.size;
+            const feedbackSnap=await getDocs(query(collection(db,"feedbacks"),where("videoMappingId","==",v.id)));
+            let viewersHtml=`<div><strong>Completed views:</strong> ${completions}</div><div><strong>Feedback & Comments:</strong><div style="max-height:150px;overflow-y:auto;">`;
+            feedbackSnap.forEach(f=>{ let fd=f.data(); viewersHtml+=`<div class="user-watch-row"><span>${fd.userName}</span><span>${fd.type==='question'?'❓':'💬'} ${fd.comment}</span>${fd.type==='question'?` (${fd.userEmail}, ${fd.userPhone})`:''}</div>`; });
+            viewersHtml+='</div></div>';
+            videosHtml+=`<div class="teacher-video-item"><h4>${data.title||data.subject}</h4><p>Class: ${data.classLevel} ${data.classId}</p>${viewersHtml}</div>`;
         }
-        document.getElementById('teacherVideosList').innerHTML = videosHtml;
-        // Questions
-        const questionsSnap = await getDocs(query(collection(db,"questions"), where("teacherId","==",currentUser.uid), orderBy("timestamp","desc")));
-        let qHtml = '<h4>📬 Questions from Students</h4><div style="max-height:200px; overflow-y:auto;">';
-        questionsSnap.forEach(q => { let qd = q.data(); qHtml += `<div class="user-watch-row"><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone})<br>${qd.text}<button class="mark-answered" data-id="${q.id}">Mark Answered</button></div>`; });
-        qHtml += '</div>';
-        document.getElementById('teacherQuestionsList').innerHTML = qHtml;
-        document.querySelectorAll('.mark-answered').forEach(btn => btn.addEventListener('click', async () => { await updateDoc(doc(db,"questions",btn.dataset.id), { answered: true }); loadTeacherDashboard(); }));
-        // PDF upload
-        if(!document.getElementById('teacherPdfSection').innerHTML) {
-            document.getElementById('teacherPdfSection').innerHTML = `<h4>📄 Upload Your PDF</h4><input type="file" id="teacherPdfFile" accept="application/pdf"><input type="text" id="teacherPdfTitle" placeholder="PDF Title"><button id="uploadTeacherPdfBtn">Upload PDF</button>`;
-            document.getElementById('uploadTeacherPdfBtn')?.addEventListener('click', () => {
-                const file = document.getElementById('teacherPdfFile').files[0];
-                const title = document.getElementById('teacherPdfTitle').value;
-                if(file && title) uploadTeacherPdf(file, title);
-                else showNotification("Select file and enter title","error");
-            });
+        document.getElementById('teacherVideosList').innerHTML=videosHtml;
+        const questionsSnap=await getDocs(query(collection(db,"questions"),where("teacherId","==",currentUser.uid),orderBy("timestamp","desc")));
+        let qHtml='<h4>📬 Questions</h4><div style="max-height:200px;overflow-y:auto;">';
+        questionsSnap.forEach(q=>{ let qd=q.data(); qHtml+=`<div class="user-watch-row"><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone})<br>${qd.text}<button class="mark-answered" data-id="${q.id}">Mark Answered</button></div>`; });
+        qHtml+='</div>';
+        document.getElementById('teacherQuestionsList').innerHTML=qHtml;
+        document.querySelectorAll('.mark-answered').forEach(btn=>btn.addEventListener('click',async()=>{ await updateDoc(doc(db,"questions",btn.dataset.id),{answered:true}); loadTeacherDashboard(); }));
+        if(!document.getElementById('teacherPdfSection').innerHTML){
+            document.getElementById('teacherPdfSection').innerHTML=`<h4>📄 Upload PDF</h4><input type="file" id="teacherPdfFile" accept="application/pdf"><input id="teacherPdfTitle" placeholder="Title"><button id="uploadTeacherPdfBtn">Upload</button>`;
+            document.getElementById('uploadTeacherPdfBtn')?.addEventListener('click',()=>{ const file=document.getElementById('teacherPdfFile').files[0]; const title=document.getElementById('teacherPdfTitle').value; if(file&&title) uploadTeacherPdf(file,title); else showNotification("Select file and title","error"); });
         }
     }
 
-    // ========== SUPERADMIN USER & TEACHER MANAGEMENT ==========
-    async function loadAllUsers() {
-        if(!currentUser || currentUser.role !== 'superadmin') return;
-        let snap = await getDocs(collection(db,"users"));
-        let html = '';
-        snap.forEach(d => { let u=d.data(); html+=`<div style="border-bottom:1px solid #ccc; padding:8px;"><strong>${u.name}</strong> (${u.email}) Role: ${u.role||'individual'} <button class="edit-user" data-uid="${d.id}">Edit Role</button> <button class="make-teacher" data-uid="${d.id}">Make Teacher</button> <button class="delete-user" data-uid="${d.id}">Delete</button></div>`; });
-        document.getElementById('allUsersList').innerHTML = html;
-        document.querySelectorAll('.edit-user').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRole=prompt("Role: superadmin, school, teacher, individual"); if(newRole && ['superadmin','school','teacher','individual'].includes(newRole)){ await updateDoc(doc(db,"users",uid),{role:newRole}); showNotification("Role updated"); loadAllUsers(); loadTeachersManage(); }}));
-        document.querySelectorAll('.make-teacher').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; await updateDoc(doc(db,"users",uid),{role:"teacher", revenuePerView: 100}); showNotification("Teacher created"); loadAllUsers(); loadTeachersManage(); }));
-        document.querySelectorAll('.delete-user').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete?")) await deleteDoc(doc(db,"users",btn.dataset.uid)); loadAllUsers(); }));
-    }
-    async function loadTeachersManage() {
-        let snap = await getDocs(query(collection(db,"users"), where("role","==","teacher")));
-        let html = '';
-        for(let d of snap.docs) {
-            let t = d.data();
-            html += `<div style="border:1px solid #ddd; padding:10px; margin-bottom:10px;"><strong>${t.name}</strong> (${t.email})<br>Revenue per view: <input type="number" id="rev_${d.id}" value="${t.revenuePerView||100}" style="width:80px"> <button class="update-revenue" data-uid="${d.id}">Update</button></div>`;
-        }
-        document.getElementById('teachersManageList').innerHTML = html;
-        document.querySelectorAll('.update-revenue').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRev=parseInt(document.getElementById(`rev_${uid}`).value); await updateDoc(doc(db,"users",uid),{revenuePerView:newRev}); showNotification("Revenue updated"); loadTeacherDashboard(); }));
-    }
-    async function populateVideoMappingDropdowns() {
-        let teacherSnap = await getDocs(query(collection(db,"users"), where("role","==","teacher")));
-        let teacherSelect = document.getElementById('videoTeacherSelect');
-        teacherSelect.innerHTML = '<option>Select Teacher</option>';
-        teacherSnap.forEach(d => teacherSelect.innerHTML += `<option value="${d.id}">${d.data().name}</option>`);
-        let allSubjects = [...primarySubjects, ...secondarySubjects];
-        let subjSelect = document.getElementById('videoSubjectSelect');
-        subjSelect.innerHTML = '<option>Select Subject</option>'+allSubjects.map(s=>`<option>${s}</option>`).join('');
-        let classSelect = document.getElementById('videoClassSelect');
-        let allClasses = [...classData.primary.map(c=>({val:`primary_${c.id}`,label:`Primary ${c.id}`})), ...classData.secondary.map(c=>({val:`secondary_${c.id}`,label:`Senior ${c.id}`}))];
-        classSelect.innerHTML = '<option>Select Class</option>'+allClasses.map(c=>`<option value="${c.val}">${c.label}</option>`).join('');
-    }
-    async function saveVideoMapping() {
-        let teacherId = document.getElementById('videoTeacherSelect').value;
-        let subject = document.getElementById('videoSubjectSelect').value;
-        let classVal = document.getElementById('videoClassSelect').value;
-        let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!teacherId || !subject || !classVal || !youtubeId) { showNotification("Fill all","error"); return; }
-        let [classLevel, classId] = classVal.split('_');
-        let key = `${teacherId}_${subject}_${classLevel}_${classId}`;
-        await setDoc(doc(db,"videoMappings",key), { teacherId, subject, classLevel, classId: parseInt(classId), youtubeId, title: `${subject} lesson` });
-        showNotification("Video mapped");
-        document.getElementById('videoYoutubeId').value = '';
-        renderExistingMappings();
-    }
-    async function renderExistingMappings() {
-        let snap = await getDocs(collection(db,"videoMappings"));
-        let html = '<ul>';
-        snap.forEach(d => { let data=d.data(); html+=`<li>Teacher: ${data.teacherId} | ${data.subject} | ${data.classLevel} ${data.classId} | ${data.youtubeId}</li>`; });
-        html+='</ul>';
-        document.getElementById('existingMappingsList').innerHTML = html;
-    }
-    async function testVideoMapping() {
-        let youtubeId = extractVideoId(document.getElementById('videoYoutubeId').value);
-        if(!youtubeId) { showNotification("Enter valid YouTube URL","error"); return; }
-        document.getElementById('youtubeIframe').src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
-        document.getElementById('videoModal').classList.add('show');
-    }
+    // Superadmin management
+    async function loadAllUsers(){ if(!currentUser||currentUser.role!=='superadmin') return; let snap=await getDocs(collection(db,"users")); let html=''; snap.forEach(d=>{ let u=d.data(); html+=`<div><strong>${u.name}</strong> (${u.email}) Role: ${u.role||'individual'} <button class="edit-user" data-uid="${d.id}">Edit Role</button> <button class="make-teacher" data-uid="${d.id}">Make Teacher</button> <button class="delete-user" data-uid="${d.id}">Delete</button></div>`; }); document.getElementById('allUsersList').innerHTML=html; document.querySelectorAll('.edit-user').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRole=prompt("Role: superadmin, school, teacher, individual"); if(newRole&&['superadmin','school','teacher','individual'].includes(newRole)){ await updateDoc(doc(db,"users",uid),{role:newRole}); showNotification("Role updated"); loadAllUsers(); loadTeachersManage(); } })); document.querySelectorAll('.make-teacher').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; await updateDoc(doc(db,"users",uid),{role:"teacher",revenuePerView:100}); showNotification("Teacher created"); loadAllUsers(); loadTeachersManage(); })); document.querySelectorAll('.delete-user').forEach(btn=>btn.addEventListener('click',async()=>{ if(confirm("Delete?")) await deleteDoc(doc(db,"users",btn.dataset.uid)); loadAllUsers(); })); }
+    async function loadTeachersManage(){ let snap=await getDocs(query(collection(db,"users"),where("role","==","teacher"))); let html=''; for(let d of snap.docs){ let t=d.data(); html+=`<div><strong>${t.name}</strong> (${t.email}) Revenue per view: <input id="rev_${d.id}" value="${t.revenuePerView||100}" size="5"><button class="update-revenue" data-uid="${d.id}">Update</button></div>`; } document.getElementById('teachersManageList').innerHTML=html; document.querySelectorAll('.update-revenue').forEach(btn=>btn.addEventListener('click',async()=>{ let uid=btn.dataset.uid; let newRev=parseInt(document.getElementById(`rev_${uid}`).value); await updateDoc(doc(db,"users",uid),{revenuePerView:newRev}); showNotification("Revenue updated"); loadTeacherDashboard(); })); }
+    async function populateVideoMappingDropdowns(){ let teacherSnap=await getDocs(query(collection(db,"users"),where("role","==","teacher"))); let teacherSelect=document.getElementById('videoTeacherSelect'); teacherSelect.innerHTML='<option>Select Teacher</option>'; teacherSnap.forEach(d=>teacherSelect.innerHTML+=`<option value="${d.id}">${d.data().name}</option>`); let allSubjects=[...primarySubjects,...secondarySubjects]; let subjSelect=document.getElementById('videoSubjectSelect'); subjSelect.innerHTML='<option>Select Subject</option>'+allSubjects.map(s=>`<option>${s}</option>`).join(''); let classSelect=document.getElementById('videoClassSelect'); let allClasses=[...classData.primary.map(c=>({val:`primary_${c.id}`,label:`Primary ${c.id}`})),...classData.secondary.map(c=>({val:`secondary_${c.id}`,label:`Senior ${c.id}`}))]; classSelect.innerHTML='<option>Select Class</option>'+allClasses.map(c=>`<option value="${c.val}">${c.label}</option>`).join(''); }
+    async function saveVideoMapping(){ let teacherId=document.getElementById('videoTeacherSelect').value; let subject=document.getElementById('videoSubjectSelect').value; let classVal=document.getElementById('videoClassSelect').value; let youtubeId=extractVideoId(document.getElementById('videoYoutubeId').value); if(!teacherId||!subject||!classVal||!youtubeId){ showNotification("Fill all","error"); return; } let [classLevel,classId]=classVal.split('_'); let key=`${teacherId}_${subject}_${classLevel}_${classId}`; await setDoc(doc(db,"videoMappings",key),{teacherId,subject,classLevel,classId:parseInt(classId),youtubeId,title:`${subject} lesson`}); showNotification("Video mapped"); document.getElementById('videoYoutubeId').value=''; renderExistingMappings(); }
+    async function renderExistingMappings(){ let snap=await getDocs(collection(db,"videoMappings")); let html='<ul>'; snap.forEach(d=>{ let data=d.data(); html+=`<li>Teacher: ${data.teacherId} | ${data.subject} | ${data.classLevel} ${data.classId} | ${data.youtubeId}</li>`; }); html+='</ul>'; document.getElementById('existingMappingsList').innerHTML=html; }
+    async function testVideoMapping(){ let youtubeId=extractVideoId(document.getElementById('videoYoutubeId').value); if(!youtubeId){ showNotification("Enter valid YouTube URL","error"); return; } document.getElementById('youtubeIframe').src=`https://www.youtube.com/embed/${youtubeId}?autoplay=1`; document.getElementById('videoModal').classList.add('show'); }
+    document.getElementById('testVideoBtn')?.addEventListener('click',testVideoMapping);
+    document.getElementById('saveVideoMappingBtn')?.addEventListener('click',saveVideoMapping);
 
-    // ========== MANAGEMENT PAGE ACTIONS ==========
-    document.getElementById('createTeacherBtn')?.addEventListener('click', async () => {
-        const name = document.getElementById('teacherName').value.trim();
-        const email = document.getElementById('teacherEmail').value.trim();
-        const pwd = document.getElementById('teacherPassword').value;
-        if(!name||!email||!pwd) { showNotification("Fill all","error"); return; }
-        try {
-            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            await setDoc(doc(db,"users",cred.user.uid), { uid: cred.user.uid, name, email, role: "teacher", revenuePerView: 100, createdAt: new Date().toISOString() });
-            showNotification("Teacher created");
-            document.getElementById('teacherName').value = ''; document.getElementById('teacherEmail').value = ''; document.getElementById('teacherPassword').value = '';
-            populateVideoMappingDropdowns(); // refresh dropdowns
-        } catch(e) { showNotification(e.message,"error"); }
-    });
-    document.getElementById('mapVideoBtn')?.addEventListener('click', async () => {
-        const teacherId = document.getElementById('mapTeacherSelect').value;
-        const subject = document.getElementById('mapSubjectSelect').value;
-        const classVal = document.getElementById('mapClassSelect').value;
-        const youtubeId = extractVideoId(document.getElementById('mapYoutubeId').value);
-        if(!teacherId||!subject||!classVal||!youtubeId) { showNotification("Fill all","error"); return; }
-        let [classLevel, classId] = classVal.split('_');
-        await setDoc(doc(db,"videoMappings", `${teacherId}_${subject}_${classLevel}_${classId}`), { teacherId, subject, classLevel, classId: parseInt(classId), youtubeId, title: `${subject} lesson` });
-        showNotification("Video mapped");
-        document.getElementById('mapYoutubeId').value = '';
-    });
-    document.getElementById('createSchoolBtn')?.addEventListener('click', async () => {
-        const name = document.getElementById('newSchoolName').value.trim();
-        const email = document.getElementById('newSchoolEmail').value.trim();
-        const pwd = document.getElementById('newSchoolPassword').value;
-        if(!name||!email||!pwd) { showNotification("Fill all","error"); return; }
-        const schoolRef = await addDoc(collection(db,"schools"), { name, loginEmail: email });
-        try {
-            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            await setDoc(doc(db,"users",cred.user.uid), { uid: cred.user.uid, name, email, role: "school", schoolId: schoolRef.id });
-            showNotification("School created");
-            document.getElementById('newSchoolName').value = ''; document.getElementById('newSchoolEmail').value = ''; document.getElementById('newSchoolPassword').value = '';
-        } catch(e) { showNotification(e.message,"error"); }
-    });
+    // Management page actions
+    document.getElementById('createTeacherBtn')?.addEventListener('click',async()=>{ let name=document.getElementById('teacherName').value.trim(); let email=document.getElementById('teacherEmail').value.trim(); let pwd=document.getElementById('teacherPassword').value; if(!name||!email||!pwd){ showNotification("Fill all","error"); return; } try{ let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"teacher",revenuePerView:100,createdAt:new Date().toISOString()}); showNotification("Teacher created"); document.getElementById('teacherName').value=''; document.getElementById('teacherEmail').value=''; document.getElementById('teacherPassword').value=''; populateVideoMappingDropdowns(); }catch(e){ showNotification(e.message,"error"); } });
+    document.getElementById('mapVideoBtn')?.addEventListener('click',async()=>{ let teacherId=document.getElementById('mapTeacherSelect').value; let subject=document.getElementById('mapSubjectSelect').value; let classVal=document.getElementById('mapClassSelect').value; let youtubeId=extractVideoId(document.getElementById('mapYoutubeId').value); if(!teacherId||!subject||!classVal||!youtubeId){ showNotification("Fill all","error"); return; } let [classLevel,classId]=classVal.split('_'); await setDoc(doc(db,"videoMappings",`${teacherId}_${subject}_${classLevel}_${classId}`),{teacherId,subject,classLevel,classId:parseInt(classId),youtubeId,title:`${subject} lesson`}); showNotification("Video mapped"); document.getElementById('mapYoutubeId').value=''; });
+    document.getElementById('createSchoolBtn')?.addEventListener('click',async()=>{ let name=document.getElementById('newSchoolName').value.trim(); let email=document.getElementById('newSchoolEmail').value.trim(); let pwd=document.getElementById('newSchoolPassword').value; if(!name||!email||!pwd){ showNotification("Fill all","error"); return; } let schoolRef=await addDoc(collection(db,"schools"),{name,loginEmail:email}); try{ let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolRef.id}); showNotification("School created"); document.getElementById('newSchoolName').value=''; document.getElementById('newSchoolEmail').value=''; document.getElementById('newSchoolPassword').value=''; }catch(e){ showNotification(e.message,"error"); } });
+    document.getElementById('addNewSubjectBtn')?.addEventListener('click',async()=>{ let newName=document.getElementById('newSubjectName').value.trim(); let level=document.getElementById('newSubjectLevel').value; if(!newName){ showNotification("Enter subject name","error"); return; } let subjectsRef=doc(db,"subjects",level); let list=level==='primary'?primarySubjects:secondarySubjects; if(list.includes(newName)){ showNotification("Subject exists","error"); return; } list.push(newName); await updateDoc(subjectsRef,{list}); showNotification(`Subject "${newName}" added`); document.getElementById('newSubjectName').value=''; if(level==='primary') primarySubjects=list; else secondarySubjects=list; populateVideoMappingDropdowns(); });
+    document.getElementById('addPlanBtn')?.addEventListener('click',()=>{ document.getElementById('planEditor').style.display='block'; document.getElementById('savePlanBtn').onclick=async()=>{ let name=document.getElementById('planName').value.trim(); let price=parseInt(document.getElementById('planPrice').value); if(name&&!isNaN(price)){ let order=(await getDocs(collection(db,"subscriptionPlans"))).size+1; await addDoc(collection(db,"subscriptionPlans"),{name,price,currency:"UGX",order}); showNotification("Plan added"); document.getElementById('planEditor').style.display='none'; } else showNotification("Invalid","error"); }; });
+    document.getElementById('cancelPlanBtn')?.addEventListener('click',()=>{ document.getElementById('planEditor').style.display='none'; });
+    document.getElementById('startJitsiLessonBtn')?.addEventListener('click',()=>{ let roomName=`apshule_${Date.now()}`; let container=document.getElementById('liveLessonContainer'); container.style.display='block'; container.innerHTML=`<div style="background:white;border-radius:20px;"><div style="background:#4B2E9E;padding:12px;color:white;"><span>Live Lesson</span><button id="closeLiveLessonBtn" style="float:right;background:none;border:none;color:white;">&times;</button></div><iframe src="https://meet.jit.si/${roomName}?config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(currentUser?.name||'Teacher')}" allow="camera;microphone;fullscreen" style="width:100%;height:500px;border:none;"></iframe></div>`; document.getElementById('closeLiveLessonBtn').onclick=()=>{ container.style.display='none'; container.innerHTML=''; }; showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`,"success"); });
 
-    // ========== ANALYTICS ==========
-    async function refreshAnalytics() {
-        if(!currentUser || currentUser.role !== 'superadmin') return;
-        const usersSnap = await getDocs(collection(db,"users"));
-        const total = usersSnap.size;
-        const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        let active = 0;
-        usersSnap.forEach(d => { if(d.data().lastLogin && new Date(d.data().lastLogin) >= sevenDaysAgo) active++; });
-        document.getElementById('analyticsTotalUsers').innerText = total;
-        document.getElementById('analyticsActiveUsers').innerText = active;
-        const failedSnap = await getDocs(query(collection(db,"failedLogins"), where("date","==",new Date().toDateString())));
-        document.getElementById('analyticsFailedLogins').innerText = failedSnap.size;
-        const viewsSnap = await getDocs(collection(db,"videoViews"));
-        const teacherViews = new Map();
-        viewsSnap.forEach(v => { const tid = v.data().teacherId; teacherViews.set(tid, (teacherViews.get(tid) || 0) + 1); });
-        let mostHtml = '<ul>';
-        for(let [tid,count] of teacherViews.entries()) { const tSnap = await getDoc(doc(db,"users",tid)); const tname = tSnap.exists() ? tSnap.data().name : tid; mostHtml += `<li>${tname}: ${count} views</li>`; }
-        mostHtml += '</ul>';
-        document.getElementById('mostWatchedByTeacher').innerHTML = mostHtml;
-        const feedbackSnap = await getDocs(query(collection(db,"feedbacks"), orderBy("timestamp","desc"), limit(100)));
-        const questionsSnap = await getDocs(query(collection(db,"questions"), orderBy("timestamp","desc"), limit(100)));
-        let allHtml = '<div><h5>Feedbacks & Comments</h5>';
-        feedbackSnap.forEach(f => { const fd = f.data(); allHtml += `<div><strong>${fd.userName}</strong> (${fd.userEmail}): ${fd.comment} (⭐ ${fd.rating})</div>`; });
-        allHtml += '</div><div><h5>Questions</h5>';
-        questionsSnap.forEach(q => { const qd = q.data(); allHtml += `<div><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone}): ${qd.text}</div>`; });
-        allHtml += '</div>';
-        document.getElementById('allUserFeedback').innerHTML = allHtml;
+    // Analytics
+    async function refreshAnalytics(){
+        if(!currentUser||currentUser.role!=='superadmin') return;
+        let usersSnap=await getDocs(collection(db,"users")); let total=usersSnap.size;
+        let sevenDaysAgo=new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7); let active=0; usersSnap.forEach(d=>{ if(d.data().lastLogin&&new Date(d.data().lastLogin)>=sevenDaysAgo) active++; });
+        document.getElementById('analyticsTotalUsers').innerText=total; document.getElementById('analyticsActiveUsers').innerText=active;
+        let failedSnap=await getDocs(query(collection(db,"failedLogins"),where("date","==",new Date().toDateString()))); document.getElementById('analyticsFailedLogins').innerText=failedSnap.size;
+        let viewsSnap=await getDocs(collection(db,"videoViews")); let teacherViews=new Map(); viewsSnap.forEach(v=>{ let tid=v.data().teacherId; teacherViews.set(tid,(teacherViews.get(tid)||0)+1); }); let mostHtml='<ul>'; for(let [tid,count] of teacherViews.entries()){ let tSnap=await getDoc(doc(db,"users",tid)); let tname=tSnap.exists()?tSnap.data().name:tid; mostHtml+=`<li>${tname}: ${count} views</li>`; } mostHtml+='</ul>'; document.getElementById('mostWatchedByTeacher').innerHTML=mostHtml;
+        let feedbackSnap=await getDocs(query(collection(db,"feedbacks"),orderBy("timestamp","desc"),limit(100))); let questionsSnap=await getDocs(query(collection(db,"questions"),orderBy("timestamp","desc"),limit(100))); let allHtml='<div><h5>Feedbacks & Comments</h5>'; feedbackSnap.forEach(f=>{ let fd=f.data(); allHtml+=`<div><strong>${fd.userName}</strong> (${fd.userEmail}): ${fd.comment} (⭐ ${fd.rating})</div>`; }); allHtml+='</div><div><h5>Questions</h5>'; questionsSnap.forEach(q=>{ let qd=q.data(); allHtml+=`<div><strong>${qd.userName}</strong> (${qd.userEmail}, ${qd.userPhone}): ${qd.text}</div>`; }); allHtml+='</div>'; document.getElementById('allUserFeedback').innerHTML=allHtml;
     }
-    document.getElementById('refreshStatsBtn')?.addEventListener('click', refreshAnalytics);
-    document.getElementById('refreshUsersBtn')?.addEventListener('click', loadAllUsers);
-    document.getElementById('saveVideoMappingBtn')?.addEventListener('click', saveVideoMapping);
-    document.getElementById('testVideoBtn')?.addEventListener('click', testVideoMapping);
+    document.getElementById('refreshStatsBtn')?.addEventListener('click',refreshAnalytics);
+    document.getElementById('refreshUsersBtn')?.addEventListener('click',loadAllUsers);
+    document.getElementById('addSchoolBtn')?.addEventListener('click',async()=>{ let name=document.getElementById('schoolName').value.trim(); let email=document.getElementById('schoolLoginEmail').value.trim(); let pwd=document.getElementById('schoolLoginPassword').value; if(!name||!email||!pwd){ showNotification("Fill all","error"); return; } let schoolRef=await addDoc(collection(db,"schools"),{name,loginEmail:email}); try{ let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolRef.id}); showNotification("School added"); }catch(e){ showNotification(e.message,"error"); } });
+    async function loadBrandLogo(){}
+    async function uploadProfilePicture(file){ const reader=new FileReader(); reader.onload=async(e)=>{ await updateDoc(doc(db,"users",currentUser.uid),{profilePic:e.target.result}); document.getElementById('profilePicPreview').src=e.target.result; showNotification("Profile picture updated!"); }; reader.readAsDataURL(file); }
+    document.getElementById('uploadProfilePicBtn')?.addEventListener('click',()=>{ let inp=document.getElementById('profilePicInput'); if(inp.files.length) uploadProfilePicture(inp.files[0]); else showNotification("Select image","error"); });
+    async function renderAboutPage(){ let about=await loadAboutContent(); document.getElementById('dynamicAbout').innerHTML=`<div class="vision-box"><h3>Vision</h3><p>${about.vision}</p></div><div class="mission-box"><h3>Mission</h3><p>${about.mission}</p></div><div><i class="fas fa-phone"></i> ${about.contact.phone}</div><div><i class="fas fa-envelope"></i> ${about.contact.email}</div>`; }
+    async function loadAboutContent(){ let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading digital learning platform.",mission:"To provide quality, accessible education.",coreValues:["Excellence","Accessibility","Innovation"],team:[],contact:{phone:"+256705732540",email:"apshule@gmail.com",address:"Kampala",whatsapp:"+256705732540"}}; await setDoc(ref,def); return def; }
+    document.getElementById('editAboutBtn')?.addEventListener('click',()=>{ document.getElementById('aboutEditor').style.display='block'; });
+    document.getElementById('saveAboutBtn')?.addEventListener('click',async()=>{ let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:[],contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await setDoc(doc(db,"settings","about"),about); showNotification("About saved"); renderAboutPage(); document.getElementById('aboutEditor').style.display='none'; });
+    document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ showNotification("Team member editor simplified","info"); });
 
-    // ========== ABOUT PAGE (simplified) ==========
-    async function loadAboutContent() { let ref=doc(db,"settings","about"); let snap=await getDoc(ref); if(snap.exists()) return snap.data(); let def={vision:"To be Africa's leading digital learning platform.",mission:"To provide quality, accessible education.",coreValues:["Excellence","Accessibility","Innovation"],team:[],contact:{phone:"+256705732540",email:"apshule@gmail.com",address:"Kampala",whatsapp:"+256705732540"}}; await setDoc(ref,def); return def; }
-    async function renderAboutPage() { let about=await loadAboutContent(); document.getElementById('dynamicAbout').innerHTML = `<div class="vision-box"><h3>Vision</h3><p>${about.vision}</p></div><div class="mission-box"><h3>Mission</h3><p>${about.mission}</p></div><div class="contact-info"><i class="fas fa-phone"></i> ${about.contact.phone}</div><div class="contact-info"><i class="fas fa-envelope"></i> ${about.contact.email}</div><div class="contact-info"><i class="fas fa-map-marker-alt"></i> ${about.contact.address}</div><a href="https://wa.me/${about.contact.whatsapp.replace(/[^0-9]/g,'')}" class="whatsapp-btn">WhatsApp ${about.contact.whatsapp}</a>`; }
-    document.getElementById('editAboutBtn')?.addEventListener('click', () => { document.getElementById('aboutEditor').style.display='block'; });
-    document.getElementById('saveAboutBtn')?.addEventListener('click', async () => { let about={vision:document.getElementById('editVision').value,mission:document.getElementById('editMission').value,coreValues:document.getElementById('editCoreValues').value.split(',').map(s=>s.trim()),team:[],contact:{phone:document.getElementById('editContactPhone').value,email:document.getElementById('editContactEmail').value,address:document.getElementById('editContactAddress').value,whatsapp:document.getElementById('editWhatsapp').value}}; await setDoc(doc(db,"settings","about"),about); showNotification("About saved"); renderAboutPage(); document.getElementById('aboutEditor').style.display='none'; });
-    document.getElementById('addTeamMemberBtn')?.addEventListener('click',()=>{ showNotification("Team member editor simplified; full version later.","info"); });
-
-    // ========== PROFILE PICTURE ==========
-    async function uploadProfilePicture(file) {
-        const reader = new FileReader();
-        reader.onload = async (e) => { await updateDoc(doc(db,"users",currentUser.uid), { profilePic: e.target.result }); document.getElementById('profilePicPreview').src = e.target.result; showNotification("Profile picture updated!"); };
-        reader.readAsDataURL(file);
-    }
-    document.getElementById('uploadProfilePicBtn')?.addEventListener('click', () => { const inp = document.getElementById('profilePicInput'); if(inp.files.length) uploadProfilePicture(inp.files[0]); else showNotification("Select image","error"); });
-
-    // ========== ATTENDANCE (full original) ==========
+    // Attendance simplified (original functions kept)
     let attendanceStream=null, enrollStream=null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
-    async function setupCamera(vid, mode) { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: mode } } }); document.getElementById(vid).srcObject = s; return s; } catch(e) { try { const s = await navigator.mediaDevices.getUserMedia({ video: true }); document.getElementById(vid).srcObject = s; return s; } catch(e2) { showNotification("Camera access denied","error"); return null; } } }
-    function captureFace(vid) { let v=document.getElementById(vid); if(!v||!v.videoWidth) return null; let c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
-    function getImageHash(dataURL, cb) { let img=new Image(); img.onload=()=>{ let c=document.createElement('canvas'); c.width=8; c.height=8; let ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8); let d=ctx.getImageData(0,0,8,8).data; let sum=0; for(let i=0;i<d.length;i+=4) sum+=(d[i]+d[i+1]+d[i+2])/3; let avg=sum/64; let hash=''; for(let i=0;i<d.length;i+=4) hash+=((d[i]+d[i+1]+d[i+2])/3>=avg)?'1':'0'; cb(hash); }; img.src=dataURL; }
+    async function setupCamera(vid,mode){ try{ let s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:mode}}}); document.getElementById(vid).srcObject=s; return s; }catch(e){ try{ let s=await navigator.mediaDevices.getUserMedia({video:true}); document.getElementById(vid).srcObject=s; return s; }catch(e2){ showNotification("Camera access denied","error"); return null; } } }
+    function captureFace(vid){ let v=document.getElementById(vid); if(!v||!v.videoWidth) return null; let c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
+    function getImageHash(dataURL,cb){ let img=new Image(); img.onload=()=>{ let c=document.createElement('canvas'); c.width=8; c.height=8; let ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8); let d=ctx.getImageData(0,0,8,8).data; let sum=0; for(let i=0;i<d.length;i+=4) sum+=(d[i]+d[i+1]+d[i+2])/3; let avg=sum/64; let hash=''; for(let i=0;i<d.length;i+=4) hash+=((d[i]+d[i+1]+d[i+2])/3>=avg)?'1':'0'; cb(hash); }; img.src=dataURL; }
     function hamming(a,b){ if(a.length!==b.length) return 999; let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++; return d; }
-    async function markAttendance() { if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ showNotification("No enrolled faces","error"); return; } let img=captureFace('attendanceVideo'); if(!img){ showNotification("Capture failed","error"); return; } getImageHash(img,(hash)=>{ let best=null,bestDist=15; for(let p of people) if(p.faceHash){ let d=hamming(hash,p.faceHash); if(d<bestDist){ bestDist=d; best=p; } } let resDiv=document.getElementById('attendanceResult'); if(!best){ resDiv.style.display='block'; resDiv.innerHTML='<div style="color:red">❌ Not recognized</div>'; return; } let today=new Date().toDateString(); let already=attendanceRecords.find(r=>r.personId===best.id&&r.schoolId===sid&&new Date(r.timestamp).toDateString()===today); if(already){ resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:#FF8C42">⚠️ ${best.name} already marked</div>`; return; } attendanceRecords.push({ id:Date.now(), schoolId:sid, personId:best.id, personName:best.name, category:best.category, phone:best.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today }); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:green">✅ ${best.name} marked at ${new Date().toLocaleTimeString()}</div>`; showNotification(`Attendance for ${best.name}`); renderRecentAttendance(); renderEnrolledList(); setTimeout(()=>resDiv.style.display='none',4000); }); }
-    function renderRecentAttendance() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('recentAttendanceList'); if(!c) return; let today=new Date().toDateString(); let rec=attendanceRecords.filter(r=>r.schoolId===sid&&new Date(r.timestamp).toDateString()===today).slice(-10); if(!rec.length){ c.innerHTML='<div>No records today</div>'; return; } c.innerHTML=rec.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); }
-    function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ c.innerHTML='<div>No enrolled people</div>'; return; } c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
-    window.deleteEnrolled = function(id) { if(confirm("Delete?")){ attendancePeople=attendancePeople.filter(p=>p.id!==id); attendanceRecords=attendanceRecords.filter(r=>r.personId!==id); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("Person deleted"); renderEnrolledList(); renderRecentAttendance(); } };
-    document.getElementById('attendanceMenuItem')?.addEventListener('click', async()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } document.getElementById('attendanceModal').classList.add('show'); attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream=await setupCamera('enrollVideo',currentEnrollCamera); });
+    async function markAttendance(){ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ showNotification("No enrolled faces","error"); return; } let img=captureFace('attendanceVideo'); if(!img){ showNotification("Capture failed","error"); return; } getImageHash(img,(hash)=>{ let best=null,bestDist=15; for(let p of people) if(p.faceHash){ let d=hamming(hash,p.faceHash); if(d<bestDist){ bestDist=d; best=p; } } let resDiv=document.getElementById('attendanceResult'); if(!best){ resDiv.style.display='block'; resDiv.innerHTML='<div style="color:red">❌ Not recognized</div>'; return; } let today=new Date().toDateString(); let already=attendanceRecords.find(r=>r.personId===best.id&&r.schoolId===sid&&new Date(r.timestamp).toDateString()===today); if(already){ resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:#FF8C42">⚠️ ${best.name} already marked</div>`; return; } attendanceRecords.push({ id:Date.now(), schoolId:sid, personId:best.id, personName:best.name, category:best.category, phone:best.phone, timestamp:new Date().toISOString(), timeIn:new Date().toLocaleTimeString(), date:today }); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:green">✅ ${best.name} marked at ${new Date().toLocaleTimeString()}</div>`; showNotification(`Attendance for ${best.name}`); renderRecentAttendance(); renderEnrolledList(); setTimeout(()=>resDiv.style.display='none',4000); }); }
+    function renderRecentAttendance(){ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('recentAttendanceList'); if(!c) return; let today=new Date().toDateString(); let rec=attendanceRecords.filter(r=>r.schoolId===sid&&new Date(r.timestamp).toDateString()===today).slice(-10); if(!rec.length){ c.innerHTML='<div>No records today</div>'; return; } c.innerHTML=rec.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); }
+    function renderEnrolledList(){ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){ c.innerHTML='<div>No enrolled people</div>'; return; } c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
+    window.deleteEnrolled=function(id){ if(confirm("Delete?")){ attendancePeople=attendancePeople.filter(p=>p.id!==id); attendanceRecords=attendanceRecords.filter(r=>r.personId!==id); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("Person deleted"); renderEnrolledList(); renderRecentAttendance(); } };
+    document.getElementById('attendanceMenuItem')?.addEventListener('click',async()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } document.getElementById('attendanceModal').classList.add('show'); attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream=await setupCamera('enrollVideo',currentEnrollCamera); });
     document.getElementById('closeAttendanceModal')?.addEventListener('click',()=>{ document.getElementById('attendanceModal').classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
-    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{ let name=t.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }));
-    document.getElementById('switchAttendanceCamera')?.addEventListener('click', async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); let newMode=currentAttendanceCamera==='environment'?'user':'environment'; let s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode; });
-    document.getElementById('switchEnrollCamera')?.addEventListener('click', async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); let newMode=currentEnrollCamera==='environment'?'user':'environment'; let s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode; });
-    document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
+    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{ let name=t.getAttribute('data-tab'); document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }));
+    document.getElementById('switchAttendanceCamera')?.addEventListener('click',async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); let newMode=currentAttendanceCamera==='environment'?'user':'environment'; let s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode; });
+    document.getElementById('switchEnrollCamera')?.addEventListener('click',async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); let newMode=currentEnrollCamera==='environment'?'user':'environment'; let s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode; });
+    document.getElementById('markAttendanceBtn')?.addEventListener('click',markAttendance);
     document.getElementById('captureEnrollBtn')?.addEventListener('click',()=>{ let img=captureFace('enrollVideo'); if(img){ capturedFaceImage=img; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured</p>`; showNotification("Face captured"); } else showNotification("Camera not ready","error"); });
     document.getElementById('faceImageUpload')?.addEventListener('change',function(e){ let file=e.target.files[0]; if(file){ let reader=new FileReader(); reader.onload=function(ev){ capturedFaceImage=ev.target.result; document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported</p>`; showNotification("Face imported"); }; reader.readAsDataURL(file); } });
     document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; } let sid=currentUser.schoolId; let name=document.getElementById('enrollName').value.trim(); let cat=document.getElementById('enrollCategory').value; let phone=document.getElementById('enrollPhone').value.trim(); if(!name){ showNotification("Enter name","error"); return; } if(!capturedFaceImage){ showNotification("Capture face first","error"); return; } getImageHash(capturedFaceImage,(hash)=>{ attendancePeople.push({ id:Date.now(), schoolId:sid, name, category:cat, phone, faceHash:hash, enrolledAt:new Date().toISOString() }); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; capturedFaceImage=null; document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled`); renderEnrolledList(); }); });
     document.getElementById('clearAllAttendanceBtn')?.addEventListener('click',()=>{ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; if(confirm("Delete all attendance records for this school?")){ attendanceRecords=attendanceRecords.filter(r=>r.schoolId!==sid); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); showNotification("All records cleared"); renderRecentAttendance(); } });
 
-    // ========== AI CHAT ==========
-    async function askAI(q) { return "📚 I'm a demo AI. Full version coming soon!"; }
-    function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
-    async function sendChat() { let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length && msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
-    document.getElementById('sendBtn')?.addEventListener('click', sendChat);
-    document.getElementById('chatInput')?.addEventListener('keypress', e=>{ if(e.key==='Enter') sendChat(); });
+    // AI chat
+    async function askAI(q){ return "📚 I'm a demo AI. Full version coming soon!"; }
+    function addMsg(t,s){ let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
+    async function sendChat(){ let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length&&msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
+    document.getElementById('sendBtn')?.addEventListener('click',sendChat);
+    document.getElementById('chatInput')?.addEventListener('keypress',e=>{ if(e.key==='Enter') sendChat(); });
     document.getElementById('openAIDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
     document.getElementById('closeDrawerBtn')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
     document.getElementById('drawerOverlay')?.addEventListener('click',()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
 
-    // ========== FIRESTORE LISTENERS ==========
-    onSnapshot(collection(db,"schools"), (snap) => { schools = snap.docs.map(d=>({id:d.id,...d.data()})); let c=document.getElementById('schoolsAdminList'); if(c) c.innerHTML = schools.map(s=>`<div><strong>${s.name}</strong> (${s.loginEmail}) <button class="delete-school" data-id="${s.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-school').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"schools",btn.dataset.id)); })); });
-    onSnapshot(collection(db,"events"), (snap) => { globalEventsList = snap.docs.map(d=>({id:d.id,...d.data()})); document.getElementById('eventsTicker').innerHTML = globalEventsList.map(ev=>`<div class="ticker-item">🎓 ${ev.title} | ${ev.date}</div>`).join(''); if(currentUser && currentUser.role==='superadmin') { let c=document.getElementById('eventsAdminList'); if(c) c.innerHTML = globalEventsList.map(ev=>`<div>${ev.title} - ${ev.date} <button class="delete-event" data-id="${ev.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-event').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"events",btn.dataset.id)); })); } });
-    onSnapshot(collection(db,"pdfs"), (snap) => { pdfMaterials = snap.docs.map(d=>({id:d.id,...d.data()})); renderPdfList(); });
-    onSnapshot(collection(db,"videoMappings"), () => { renderExistingMappings(); });
-    onSnapshot(doc(db,"subjects","primary"), (docSnap) => { if(docSnap.exists()) primarySubjects = docSnap.data().list; else setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); });
-    onSnapshot(doc(db,"subjects","secondary"), (docSnap) => { if(docSnap.exists()) secondarySubjects = docSnap.data().list; else setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); });
+    // Firestore listeners
+    onSnapshot(collection(db,"schools"),(snap)=>{ schools=snap.docs.map(d=>({id:d.id,...d.data()})); let c=document.getElementById('schoolsAdminList'); if(c) c.innerHTML=schools.map(s=>`<div><strong>${s.name}</strong> (${s.loginEmail}) <button class="delete-school" data-id="${s.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-school').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"schools",btn.dataset.id)); })); });
+    onSnapshot(collection(db,"events"),(snap)=>{ globalEventsList=snap.docs.map(d=>({id:d.id,...d.data()})); document.getElementById('eventsTicker').innerHTML=globalEventsList.map(ev=>`<div class="ticker-item">🎓 ${ev.title} | ${ev.date}</div>`).join(''); if(currentUser&&currentUser.role==='superadmin'){ let c=document.getElementById('eventsAdminList'); if(c) c.innerHTML=globalEventsList.map(ev=>`<div>${ev.title} - ${ev.date} <button class="delete-event" data-id="${ev.id}">Delete</button></div>`).join(''); document.querySelectorAll('.delete-event').forEach(btn=>btn.addEventListener('click',async()=>{ await deleteDoc(doc(db,"events",btn.dataset.id)); })); } });
+    onSnapshot(collection(db,"pdfs"),(snap)=>{ pdfMaterials=snap.docs.map(d=>({id:d.id,...d.data()})); renderPdfList(); });
+    onSnapshot(collection(db,"videoMappings"),()=>{ renderExistingMappings(); });
+    onSnapshot(doc(db,"subjects","primary"),(docSnap)=>{ if(docSnap.exists()) primarySubjects=docSnap.data().list; else setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); });
+    onSnapshot(doc(db,"subjects","secondary"),(docSnap)=>{ if(docSnap.exists()) secondarySubjects=docSnap.data().list; else setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); });
 
-    // ========== LOAD USER AND SHOW APP ==========
-    async function loadUserAndShowApp(user) {
-        let docSnap = await getDoc(doc(db,"users",user.uid));
-        if(docSnap.exists()) {
-            currentUser = { uid:user.uid, ...docSnap.data() };
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('appScreen').classList.remove('hidden');
-            updateGreeting();
-            let address = currentUser.address || 'Not set';
-            document.getElementById('accountInfo').innerHTML = `
-                <div class="account-field"><label>Name</label><div>${currentUser.name}</div></div>
-                <div class="account-field"><label>Email</label><div>${currentUser.email}</div></div>
-                <div class="account-field"><label>Phone</label><div>${currentUser.phone||'N/A'}</div></div>
-                <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':(currentUser.role==='school'?'School Admin':(currentUser.role==='teacher'?'Teacher':'Individual'))}</div></div>
-                <div class="account-field"><label>Address</label><div id="userAddressDisplay">${address}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
-                <div class="account-field"><label>Logins</label><div>${currentUser.loginCount||0}</div></div>
-            `;
-            document.getElementById('editAddressBtn')?.addEventListener('click', () => {
-                let newAddr = prompt("Enter your physical address:", address);
-                if (newAddr) saveUserAddress(newAddr);
-            });
-            let isSuper = currentUser.role === 'superadmin';
-            let isSchool = currentUser.role === 'school';
-            let isTeacher = currentUser.role === 'teacher';
-            document.getElementById('adminMenuItem').style.display = (isSuper || isSchool || isTeacher) ? "flex" : "none";
-            document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('teacherDashboardSection').style.display = isTeacher ? "block" : "none";
-            document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
-            document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
-            document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
-            document.getElementById('demoNotice').style.display = isTeacher ? "block" : "none";
-            // Bottom nav visibility
-            const navMan = document.getElementById('navManagement');
-            const navAnal = document.getElementById('navAnalytics');
-            const navTeach = document.getElementById('navTeacherDashboard');
-            if(isSuper) {
-                navMan.style.display = 'flex'; navAnal.style.display = 'flex'; navTeach.style.display = 'none';
-            } else if(isTeacher) {
-                navMan.style.display = 'none'; navAnal.style.display = 'none'; navTeach.style.display = 'flex';
-            } else {
-                navMan.style.display = 'none'; navAnal.style.display = 'none'; navTeach.style.display = 'none';
-            }
-            if(currentUser.profilePic) document.getElementById('profilePicPreview').src = currentUser.profilePic;
-            if(isSuper) { loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); refreshAnalytics(); }
-            if(isTeacher) loadTeacherDashboard();
-            renderClasses();
-            renderAboutPage();
-            await ensureDefaultPlans();
-            startSubscriptionPlansListener();
-        }
-    }
-    async function saveUserAddress(address) { await updateDoc(doc(db,"users",currentUser.uid), { address: address }); showNotification("Address saved!"); loadUserAndShowApp(auth.currentUser); }
-    async function detectLocation() { try { let resp = await fetch('https://ipapi.co/json/'); let data = await resp.json(); return `${data.city}, ${data.country_name}`; } catch(e) { return "Unknown"; } }
-
-    // ========== AUTH BUTTONS ==========
-    document.getElementById('signupBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('signupName').value.trim();
-        const email = document.getElementById('signupEmail').value.trim();
-        const phone = document.getElementById('signupPhone').value.trim();
-        const pwd = document.getElementById('signupPassword').value;
-        const level = document.getElementById('signupEducationLevel').value;
-        if (!name || !email || !phone || !pwd || !level) { document.getElementById('loginError').innerText = "Fill all fields"; return; }
-        if (pwd.length < 4) { document.getElementById('loginError').innerText = "Password min 4 chars"; return; }
-        try {
-            const cred = await createUserWithEmailAndPassword(auth, email, pwd);
-            let location = "Unknown";
-            try { const resp = await fetch('https://ipapi.co/json/'); const data = await resp.json(); location = `${data.city}, ${data.country_name}`; } catch(e) { console.warn(e); }
-            await setDoc(doc(db,"users",cred.user.uid), {
-                uid:cred.user.uid, name, email, phone, educationLevel:level,
-                role:"individual", createdAt:new Date().toISOString(),
-                loginCount:1, lastLogin:new Date().toISOString(),
-                detectedLocation: location, address: ""
-            });
-            showNotification("Account created! Please login.");
-            document.getElementById('signupName').value = '';
-            document.getElementById('signupEmail').value = '';
-            document.getElementById('signupPhone').value = '';
-            document.getElementById('signupPassword').value = '';
-            document.getElementById('signupEducationLevel').value = '';
-            document.querySelector('.login-tab[data-tab="login"]').click();
-        } catch(err) { document.getElementById('loginError').innerText = err.message; }
-    });
-    document.getElementById('loginBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        let email = document.getElementById('loginEmail').value.trim();
-        let pwd = document.getElementById('loginPassword').value;
-        try {
-            let cred = await signInWithEmailAndPassword(auth, email, pwd);
-            let userRef = doc(db,"users",cred.user.uid);
-            let snap = await getDoc(userRef);
-            if(snap.exists()) {
-                let cnt = (snap.data().loginCount||0)+1;
-                await updateDoc(userRef, { loginCount: cnt, lastLogin: new Date().toISOString() });
-            }
-            showNotification("Login successful");
-        } catch(err) {
-            await addDoc(collection(db,"failedLogins"), { email, timestamp: new Date().toISOString(), date: new Date().toDateString() });
-            document.getElementById('loginError').innerText = "Invalid email/password";
-        }
-    });
-    document.getElementById('sendResetEmailBtn').addEventListener('click', async () => { let email = document.getElementById('resetEmail').value.trim(); if(!email) { showNotification("Enter email","error"); return; } try { await sendPasswordResetEmail(auth, email); showNotification("Reset email sent!"); } catch(err) { showNotification(err.message,"error"); } });
-    document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
-    document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
-    onAuthStateChanged(auth, async (user) => { if(user) { await loadUserAndShowApp(user); } else { document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
-
-    // ========== ADDITIONAL ADMIN BUTTONS ==========
-    document.getElementById('addSchoolBtn')?.addEventListener('click', async () => {
-        let name=document.getElementById('schoolName').value.trim(), email=document.getElementById('schoolLoginEmail').value.trim(), pwd=document.getElementById('schoolLoginPassword').value;
-        if(!name||!email||!pwd){ showNotification("Fill all","error"); return; }
-        if(pwd.length<4){ showNotification("Password min 4","error"); return; }
-        const schoolDocRef = await addDoc(collection(db,"schools"),{ name, loginEmail:email, loginPassword:pwd, createdAt:new Date().toISOString() });
-        try { let cred = await createUserWithEmailAndPassword(auth, email, pwd); await setDoc(doc(db,"users",cred.user.uid),{ uid: cred.user.uid, name, email, role: "school", schoolId: schoolDocRef.id }); } catch(e){ console.error(e); }
-        showNotification("School added");
-        document.getElementById('schoolName').value=''; document.getElementById('schoolLoginEmail').value=''; document.getElementById('schoolLoginPassword').value='';
-    });
-    document.getElementById('addPlanBtn')?.addEventListener('click', () => {
-        document.getElementById('planEditor').style.display = 'block';
-        document.getElementById('savePlanBtn').onclick = async () => {
-            const name = document.getElementById('planName').value.trim();
-            const price = parseInt(document.getElementById('planPrice').value);
-            if(name && !isNaN(price)) {
-                const order = (await getDocs(collection(db,"subscriptionPlans"))).size + 1;
-                await addDoc(collection(db,"subscriptionPlans"), { name, price, currency:"UGX", order });
-                showNotification("Plan added");
-                document.getElementById('planEditor').style.display = 'none';
-            } else showNotification("Invalid","error");
-        };
-    });
-    document.getElementById('cancelPlanBtn')?.addEventListener('click', () => {
-        document.getElementById('planEditor').style.display = 'none';
-    });
-    document.getElementById('startJitsiLessonBtn')?.addEventListener('click', () => {
-        const roomName = `apshule_${Date.now()}`;
-        const container = document.getElementById('liveLessonContainer');
-        container.style.display = 'block';
-        container.innerHTML = `<div style="background:white; border-radius:20px;"><div style="background:#4B2E9E; padding:12px; color:white; display:flex; justify-content:space-between;"><span>🎥 Live Lesson (Jitsi)</span><button id="closeLiveLessonBtn" style="background:none; border:none; color:white;">&times;</button></div><iframe src="https://meet.jit.si/${roomName}#config.startWithVideoMuted=false&config.startWithAudioMuted=false&userInfo.displayName=${encodeURIComponent(currentUser?.name || 'Teacher')}" allow="camera; microphone; fullscreen; display-capture" style="width:100%; height:500px; border:none;"></iframe></div>`;
-        document.getElementById('closeLiveLessonBtn')?.addEventListener('click', () => { container.style.display = 'none'; container.innerHTML = ''; });
-        showNotification(`Live lesson started! Share link: meet.jit.si/${roomName}`, "success");
-    });
-
-    // ========== NAVIGATION ==========
-    function navigateTo(pageId) { if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
+    // Navigation
+    function navigateTo(pageId){ if(document.getElementById('videoModal').classList.contains('show')){ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); } document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page')); let tp=document.getElementById(`${pageId}Page`); if(tp) tp.classList.add('active-page'); else document.getElementById('homePage').classList.add('active-page'); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); let an=document.querySelector(`.nav-item[data-page="${pageId}"]`); if(an) an.classList.add('active'); }
     document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigateTo(i.getAttribute('data-page'))));
     document.getElementById('folderHeader')?.addEventListener('click',()=>{ document.getElementById('folderContent').classList.toggle('show'); });
     document.getElementById('backToClasses')?.addEventListener('click',()=>{ document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; });
@@ -1036,34 +512,92 @@
     document.querySelectorAll('.level-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.dataset.level; renderClasses(); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; document.getElementById('teacherSelectionSection').style.display='none'; document.getElementById('teacherVideosSection').style.display='none'; }));
     document.getElementById('moreMenuBtn')?.addEventListener('click',(e)=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click',()=>{ document.getElementById('moreDropdown')?.classList.remove('show'); });
-    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); ap.classList.toggle('show'); if(ap.classList.contains('show') && currentUser?.role==='teacher') loadTeacherDashboard(); });
+    document.getElementById('adminMenuItem')?.addEventListener('click',()=>{ let ap=document.getElementById('adminPanel'); ap.classList.toggle('show'); if(ap.classList.contains('show')&&currentUser?.role==='teacher') loadTeacherDashboard(); });
     document.getElementById('closeVideoBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('fullscreenBtn')?.addEventListener('click',()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange',()=>{ let btn=document.getElementById('fullscreenBtn'); if(document.fullscreenElement) btn.innerHTML='<i class="fas fa-compress"></i>'; else btn.innerHTML='<i class="fas fa-expand"></i>'; });
     document.querySelectorAll('#starRating i').forEach(star=>star.addEventListener('click',function(){ currentRating=parseInt(this.dataset.rating); document.querySelectorAll('#starRating i').forEach((s,idx)=>{ s.className=idx<currentRating?'fas fa-star':'far fa-star'; }); }));
-    document.getElementById('submitFeedbackBtn')?.addEventListener('click', async () => { await saveFeedback(currentLessonSubject, currentRating, document.getElementById('feedbackComment').value, "comment"); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
+    document.getElementById('submitCommentBtn')?.addEventListener('click',async()=>{ await saveFeedback(currentLessonSubject,currentRating,document.getElementById('feedbackComment').value,"comment"); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
+    document.getElementById('submitQuestionBtn')?.addEventListener('click',async()=>{ await submitQuestion(document.getElementById('feedbackComment').value); document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
     document.getElementById('closeFeedbackBtn')?.addEventListener('click',()=>{ document.getElementById('videoModal').classList.remove('show'); document.getElementById('youtubeIframe').src=''; document.getElementById('feedbackSection').style.display='none'; if(currentVideoProgressInterval) clearInterval(currentVideoProgressInterval); });
 
-    // ========== DEMO VIDEO MAPPINGS ==========
-    async function createDemoMappings() {
-        const demoVideos = [
-            { teacherId: "demoTeacher1", subject: "Mathematics", classLevel: "primary", classId: 1, youtubeId: "dQw4w9WgXcQ", title: "Maths Demo" },
-            { teacherId: "demoTeacher2", subject: "English", classLevel: "primary", classId: 1, youtubeId: "dQw4w9WgXcQ", title: "English Demo" }
-        ];
-        for(let v of demoVideos) {
-            const key = `${v.teacherId}_${v.subject}_${v.classLevel}_${v.classId}`;
-            const existing = await getDoc(doc(db,"videoMappings",key));
-            if(!existing.exists()) {
-                await setDoc(doc(db,"videoMappings",key), v);
-            }
+    async function loadUserAndShowApp(user){
+        let docSnap=await getDoc(doc(db,"users",user.uid));
+        if(docSnap.exists()){
+            currentUser={uid:user.uid,...docSnap.data()};
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appScreen').classList.remove('hidden');
+            updateGreeting();
+            let address=currentUser.address||'Not set';
+            document.getElementById('accountInfo').innerHTML=`<div class="account-field"><label>Name</label><div>${currentUser.name}</div></div><div class="account-field"><label>Email</label><div>${currentUser.email}</div></div><div class="account-field"><label>Phone</label><div>${currentUser.phone||'N/A'}</div></div><div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':(currentUser.role==='school'?'School Admin':(currentUser.role==='teacher'?'Teacher':'Individual'))}</div></div><div class="account-field"><label>Address</label><div>${address}</div><button id="editAddressBtn" class="admin-toggle">Edit Address</button></div>`;
+            document.getElementById('editAddressBtn')?.addEventListener('click',()=>{ let newAddr=prompt("Enter address:",address); if(newAddr) saveUserAddress(newAddr); });
+            let isSuper=currentUser.role==='superadmin';
+            let isSchool=currentUser.role==='school';
+            let isTeacher=currentUser.role==='teacher';
+            document.getElementById('adminMenuItem').style.display=(isSuper||isSchool||isTeacher)?"flex":"none";
+            document.getElementById('superAdminSection').style.display=isSuper?"block":"none";
+            document.getElementById('teacherDashboardSection').style.display=isTeacher?"block":"none";
+            document.getElementById('schoolEventsSection').style.display=isSchool?"block":"none";
+            document.getElementById('globalEventsSection').style.display=isSuper?"block":"none";
+            document.getElementById('addSubjectSection').style.display=isSuper?"block":"none";
+            document.getElementById('pdfManagementSection').style.display=isSuper?"block":"none";
+            document.getElementById('attendanceMenuItem').style.display=isSchool?"flex":"none";
+            document.getElementById('demoNotice').style.display=isTeacher?"block":"none";
+            let navMan=document.getElementById('navManagement'), navAnal=document.getElementById('navAnalytics'), navTeach=document.getElementById('navTeacherDashboard');
+            if(isSuper){ navMan.style.display='flex'; navAnal.style.display='flex'; navTeach.style.display='none'; }
+            else if(isTeacher){ navMan.style.display='none'; navAnal.style.display='none'; navTeach.style.display='flex'; }
+            else{ navMan.style.display='none'; navAnal.style.display='none'; navTeach.style.display='none'; }
+            if(currentUser.profilePic) document.getElementById('profilePicPreview').src=currentUser.profilePic;
+            if(isSuper){ loadAllUsers(); loadTeachersManage(); populateVideoMappingDropdowns(); refreshAnalytics(); }
+            if(isTeacher) loadTeacherDashboard();
+            renderClasses(); renderAboutPage(); await ensureDefaultPlans(); startSubscriptionPlansListener();
         }
-        console.log("Demo video mappings created");
     }
-    // createDemoMappings(); // uncomment to add demo videos
-
+    async function saveUserAddress(address){ await updateDoc(doc(db,"users",currentUser.uid),{address}); showNotification("Address saved!"); loadUserAndShowApp(auth.currentUser); }
+    async function detectLocation(){ try{ let resp=await fetch('https://ipapi.co/json/'); let data=await resp.json(); return `${data.city}, ${data.country_name}`; }catch(e){ return "Unknown"; } }
+    document.getElementById('signupBtn').addEventListener('click',async(e)=>{
+        e.preventDefault();
+        const name=document.getElementById('signupName').value.trim();
+        const email=document.getElementById('signupEmail').value.trim();
+        const phone=document.getElementById('signupPhone').value.trim();
+        const pwd=document.getElementById('signupPassword').value;
+        const level=document.getElementById('signupEducationLevel').value;
+        if(!name||!email||!phone||!pwd||!level){ document.getElementById('loginError').innerText="Fill all fields"; return; }
+        if(pwd.length<4){ document.getElementById('loginError').innerText="Password min 4 chars"; return; }
+        try{
+            const cred=await createUserWithEmailAndPassword(auth,email,pwd);
+            let location="Unknown";
+            try{ const resp=await fetch('https://ipapi.co/json/'); const data=await resp.json(); location=`${data.city}, ${data.country_name}`; }catch(e){}
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:""});
+            showNotification("Account created! Please login.");
+            document.getElementById('signupName').value='';document.getElementById('signupEmail').value='';document.getElementById('signupPhone').value='';document.getElementById('signupPassword').value='';document.getElementById('signupEducationLevel').value='';
+            document.querySelector('.login-tab[data-tab="login"]').click();
+        }catch(err){ document.getElementById('loginError').innerText=err.message; }
+    });
+    document.getElementById('loginBtn').addEventListener('click',async(e)=>{
+        e.preventDefault();
+        let email=document.getElementById('loginEmail').value.trim();
+        let pwd=document.getElementById('loginPassword').value;
+        try{
+            let cred=await signInWithEmailAndPassword(auth,email,pwd);
+            let userRef=doc(db,"users",cred.user.uid);
+            let snap=await getDoc(userRef);
+            if(snap.exists()){
+                let cnt=(snap.data().loginCount||0)+1;
+                await updateDoc(userRef,{loginCount:cnt,lastLogin:new Date().toISOString()});
+            }
+            showNotification("Login successful");
+        }catch(err){
+            await addDoc(collection(db,"failedLogins"),{email,timestamp:new Date().toISOString(),date:new Date().toDateString()});
+            document.getElementById('loginError').innerText="Invalid email/password";
+        }
+    });
+    document.getElementById('sendResetEmailBtn').addEventListener('click',async()=>{ let email=document.getElementById('resetEmail').value.trim(); if(!email){ showNotification("Enter email","error"); return; } try{ await sendPasswordResetEmail(auth,email); showNotification("Reset email sent!"); }catch(err){ showNotification(err.message,"error"); } });
+    document.getElementById('logoutBtn').addEventListener('click',()=>signOut(auth));
+    document.getElementById('forgotPasswordLink').addEventListener('click',()=>{ document.getElementById('resetSection').style.display='block'; });
+    onAuthStateChanged(auth,async(user)=>{ if(user){ await loadUserAndShowApp(user); await loadBrandLogo(); } else{ document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('appScreen').classList.add('hidden'); } });
     renderClasses();
-    checkPaymentStatus();
-    console.log("APSHULE fully loaded with all features.");
+    console.log("APSHULE fully loaded.");
 </script>
 </body>
 </html>
