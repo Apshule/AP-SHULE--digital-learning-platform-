@@ -460,8 +460,7 @@
                     <!-- Populated dynamically by listenToSubscriptionPlans() -->
                     <div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div>
                     <div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div>
-                    <div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div>
-                    <div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div>
+                    <div class="payment-card monthly"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div>
                     <div class="payment-card half"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div>
                     <div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div>
                 </div>
@@ -1135,7 +1134,7 @@
         });
     }
 
-    const planColorClasses = ['daily','weekly','monthly','half','full','plan-custom'];
+    const planColorClasses = ['daily','weekly','monthly','half','full'];
     function renderSubscriptionPlansGrid() {
         const grid = document.getElementById('paymentPlansGrid');
         if(!grid) return;
