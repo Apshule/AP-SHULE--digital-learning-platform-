@@ -285,6 +285,36 @@
         /* Video completion progress bar */
         .video-progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); margin-top: 4px; }
         .video-progress-fill { height: 100%; background: #FF8C42; width: 0%; transition: width 1s linear; }
+
+        /* ===== VIDEO QUESTION BOX ===== */
+        .vq-box { background: #1e1e3a; border-top: 2px solid #FF8C42; padding: 14px 16px; animation: slideUpFade 0.4s ease; }
+        @keyframes slideUpFade { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        .vq-box-title { color: #FF8C42; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+        .vq-box textarea { width: 100%; padding: 10px 12px; border: 1px solid #555; border-radius: 12px; background: #2a2a4a; color: white; font-size: 14px; resize: none; margin-bottom: 8px; }
+        .vq-box textarea::placeholder { color: #aaa; }
+        .vq-submit-btn { background: #FF8C42; color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .vq-status { font-size: 12px; color: #aaa; margin-top: 6px; }
+
+        /* ===== Q&A ITEMS (teacher & admin view) ===== */
+        .vqa-item { background: #f9f9f9; border-radius: 14px; padding: 14px; margin-bottom: 12px; border-left: 4px solid #e0e0e0; }
+        .vqa-item.unanswered { border-left-color: #FF8C42; background: #fff8f4; }
+        .vqa-item.answered { border-left-color: #4CAF50; background: #f4fff6; }
+        .vqa-meta { font-size: 11px; color: #999; margin-bottom: 4px; }
+        .vqa-question { font-weight: 600; color: #222; font-size: 14px; margin-bottom: 8px; }
+        .vqa-answer { background: #e8f5e9; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #2e7d32; margin-bottom: 6px; }
+        .vqa-answer strong { display: block; font-size: 11px; color: #4CAF50; margin-bottom: 4px; }
+        .vqa-reply-area { display: flex; gap: 8px; margin-top: 8px; }
+        .vqa-reply-area textarea { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 12px; font-size: 13px; resize: none; }
+        .vqa-reply-btn { background: #4B2E9E; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; align-self: flex-end; }
+
+        /* ===== MY QUESTIONS (student account view) ===== */
+        .my-q-item { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-left: 4px solid #4B2E9E; }
+        .my-q-item.answered { border-left-color: #4CAF50; }
+        .my-q-subject { font-size: 11px; color: #999; margin-bottom: 4px; }
+        .my-q-text { font-weight: 600; color: #222; font-size: 14px; margin-bottom: 8px; }
+        .my-q-answer { background: #e8f5e9; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #2e7d32; }
+        .my-q-answer strong { display: block; font-size: 11px; color: #4CAF50; margin-bottom: 4px; }
+        .my-q-pending { font-size: 12px; color: #FF8C42; font-style: italic; }
     </style>
 </head>
 <body>
@@ -357,6 +387,13 @@
             </div>
             <div class="video-title" id="currentVideoTitle"></div>
             <div class="video-progress-bar"><div class="video-progress-fill" id="videoProgressFill"></div></div>
+            <!-- VIDEO QUESTION BOX — appears at ≤120s remaining -->
+            <div id="videoQuestionBox" class="vq-box" style="display:none;">
+                <div class="vq-box-title">💬 Got a question about this lesson?</div>
+                <textarea id="vqTextarea" rows="3" placeholder="Type your question here... it will go directly to your teacher."></textarea>
+                <button class="vq-submit-btn" id="vqSubmitBtn">📨 Send to Teacher</button>
+                <div class="vq-status" id="vqStatus"></div>
+            </div>
             <div class="feedback-section" id="feedbackSection">
                 <h4>⭐ Rate this lesson</h4>
                 <div id="starRating">
@@ -495,10 +532,11 @@
                         <div id="feedbackAdminList"></div>
                     </div>
 
-                    <!-- User Questions -->
+                    <!-- Video Q&A — all questions from all students, with reply -->
                     <div class="admin-section">
-                        <h4>❓ User Questions</h4>
-                        <div id="questionsAdminList"></div>
+                        <h4>❓ Student Q&A (All Lessons)</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Private questions sent by students during lessons. Reply to notify them instantly.</p>
+                        <div id="adminVideoQList"><div style="color:#999;font-size:13px;">Loading...</div></div>
                     </div>
 
                     <!-- ===== SEND ANNOUNCEMENT ===== -->
@@ -688,10 +726,11 @@
                 <div id="teacherPdfList"></div>
             </div>
 
-            <!-- Questions from students (NEW) -->
+            <!-- Questions from students — with reply -->
             <div class="teacher-card">
-                <h4 style="color:#4B2E9E;margin-bottom:12px;">❓ Student Questions</h4>
-                <div id="teacherQuestionsList"><div style="text-align:center;color:#999;padding:12px;">No questions yet</div></div>
+                <h4 style="color:#4B2E9E;margin-bottom:4px;">❓ Student Questions</h4>
+                <p style="font-size:12px;color:#999;margin-bottom:12px;">Questions sent to you from lessons — reply below each one.</p>
+                <div id="teacherVideoQList"><div style="text-align:center;color:#999;padding:12px;">No questions yet</div></div>
             </div>
 
             <!-- Comments from students (NEW) -->
@@ -711,16 +750,11 @@
                 <input type="file" id="profilePicInput" accept="image/*" style="margin-top:10px;">
                 <button id="uploadProfilePicBtn" class="admin-toggle" style="margin-top:10px;">Upload Picture</button>
             </div>
-            <!-- Ask a Question section -->
+            <!-- My Questions & Answers -->
             <div class="account-card" style="margin-top:16px;">
-                <h4 style="color:#4B2E9E;margin-bottom:12px;">❓ Ask a Question / Leave a Comment</h4>
-                <select id="questionTypeSelect" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
-                    <option value="question">Question (name visible to teacher)</option>
-                    <option value="comment">Anonymous Comment</option>
-                </select>
-                <input type="text" id="questionTeacherTarget" placeholder="Teacher name / subject (optional)" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
-                <textarea id="questionText" placeholder="Write your question or comment..." rows="3" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-bottom:8px;resize:vertical;"></textarea>
-                <button id="submitQuestionBtn" class="admin-toggle">📨 Submit</button>
+                <h4 style="color:#4B2E9E;margin-bottom:4px;">❓ My Questions & Answers</h4>
+                <p style="font-size:12px;color:#999;margin-bottom:12px;">Questions you asked during lessons. You'll get a notification when your teacher replies.</p>
+                <div id="myVideoQList"><div style="text-align:center;color:#999;padding:16px;">No questions yet — ask one during a lesson!</div></div>
             </div>
         </div>
 
@@ -898,8 +932,10 @@
         }
     }
 
+    let vqBoxShown = false;
     function startProgressTracking() {
         stopProgressTracking();
+        vqBoxShown = false;
         videoProgressInterval = setInterval(() => {
             if(!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
             try {
@@ -910,6 +946,13 @@
                     const fill = document.getElementById('videoProgressFill');
                     if(fill) fill.style.width = (pct * 100) + '%';
                     checkAndRecordCompletion(pct);
+                    // Show question box when ≤120 seconds remain
+                    const remaining = duration - current;
+                    if(!vqBoxShown && remaining > 0 && remaining <= 120) {
+                        vqBoxShown = true;
+                        const qbox = document.getElementById('videoQuestionBox');
+                        if(qbox) qbox.style.display = 'block';
+                    }
                 }
             } catch(e) {}
         }, 3000);
@@ -959,6 +1002,14 @@
         document.getElementById('feedbackSection').style.display = 'none';
         const fill = document.getElementById('videoProgressFill');
         if(fill) fill.style.width = '0%';
+        // Reset question box
+        const qbox = document.getElementById('videoQuestionBox');
+        if(qbox) qbox.style.display = 'none';
+        const vqt = document.getElementById('vqTextarea');
+        if(vqt) vqt.value = '';
+        const vqs = document.getElementById('vqStatus');
+        if(vqs) vqs.textContent = '';
+        vqBoxShown = false;
     }
 
     // ===== PESAPAL =====
@@ -1250,6 +1301,7 @@
         loadTeacherPdfs();
         loadTeacherQuestions();
         loadTeacherComments();
+        loadTeacherVideoQuestions();
     }
 
     function loadTeacherEarnings() {
@@ -1496,23 +1548,140 @@
         );
     });
 
-    // ===== QUESTIONS & COMMENTS (from account page) =====
-    document.getElementById('submitQuestionBtn')?.addEventListener('click', async () => {
-        const type = document.getElementById('questionTypeSelect').value;
-        const target = document.getElementById('questionTeacherTarget').value.trim();
-        const text = document.getElementById('questionText').value.trim();
-        if(!text) { showNotification("Write something first","error"); return; }
-        if(!currentUser) { showNotification("Login required","error"); return; }
-        await addDoc(collection(db,"questions"), {
-            type, targetTeacher: target || "General",
-            text, userId: currentUser.uid,
-            userName: type === 'comment' ? 'Anonymous' : currentUser.name,
-            timestamp: new Date().toISOString()
-        });
-        document.getElementById('questionText').value = '';
-        document.getElementById('questionTeacherTarget').value = '';
-        showNotification("Submitted! ✅");
+    // ===== VIDEO Q&A SYSTEM =====
+
+    // Submit question from video modal
+    document.getElementById('vqSubmitBtn')?.addEventListener('click', async () => {
+        const text = document.getElementById('vqTextarea').value.trim();
+        const status = document.getElementById('vqStatus');
+        if(!text) { status.textContent = 'Please write your question first.'; return; }
+        if(!currentUser) { status.textContent = 'You must be logged in.'; return; }
+        if(!currentTeacherId) { status.textContent = 'No teacher assigned to this lesson yet.'; return; }
+        const teacher = allTeachers.find(t => t.uid === currentTeacherId);
+        try {
+            document.getElementById('vqSubmitBtn').disabled = true;
+            await addDoc(collection(db, "videoQuestions"), {
+                studentId: currentUser.uid,
+                studentName: currentUser.name || currentUser.email,
+                teacherId: currentTeacherId,
+                teacherName: teacher?.name || 'Teacher',
+                videoKey: currentVideoKey,
+                videoTitle: document.getElementById('currentVideoTitle').innerText || currentVideoKey,
+                question: text,
+                answered: false,
+                answer: null,
+                answeredBy: null,
+                answeredByName: null,
+                answeredAt: null,
+                createdAt: new Date().toISOString()
+            });
+            status.style.color = '#4CAF50';
+            status.textContent = '✅ Question sent! You\'ll be notified when your teacher replies.';
+            document.getElementById('vqTextarea').value = '';
+            document.getElementById('vqSubmitBtn').disabled = false;
+        } catch(e) {
+            status.textContent = 'Error sending question. Try again.';
+            document.getElementById('vqSubmitBtn').disabled = false;
+        }
     });
+
+    // Answer a question (called by teacher or admin)
+    window.answerVideoQuestion = async function(docId, responderId, responderName) {
+        const ta = document.getElementById('vqa-reply-' + docId);
+        if(!ta) return;
+        const answer = ta.value.trim();
+        if(!answer) { showNotification("Write an answer first", "error"); return; }
+        const btn = document.getElementById('vqa-btn-' + docId);
+        if(btn) btn.disabled = true;
+        try {
+            const ref = doc(db, "videoQuestions", docId);
+            const snap = await getDoc(ref);
+            const qdata = snap.data();
+            await updateDoc(ref, {
+                answered: true,
+                answer,
+                answeredBy: responderId,
+                answeredByName: responderName,
+                answeredAt: new Date().toISOString()
+            });
+            // Notify the student personally
+            await addDoc(collection(db, "notifications"), {
+                type: 'answer',
+                title: '✅ Your question was answered!',
+                body: `"${(qdata.question||'').substring(0,60)}…"\n\nAnswer: ${answer.substring(0,120)}`,
+                timestamp: new Date().toISOString(),
+                author: responderName,
+                targetUserId: qdata.studentId
+            });
+            showNotification("Answer sent! Student has been notified. ✅", "success");
+            if(btn) btn.disabled = false;
+        } catch(e) {
+            showNotification("Error saving answer", "error");
+            if(btn) btn.disabled = false;
+        }
+    };
+
+    // Render Q&A items (shared between teacher and admin views)
+    function renderVQAItems(docs, containerId, responderId, responderName) {
+        const c = document.getElementById(containerId);
+        if(!c) return;
+        if(!docs.length) { c.innerHTML = '<div style="text-align:center;color:#999;padding:16px;">No questions yet.</div>'; return; }
+        c.innerHTML = docs.map(d => {
+            const q = d.data ? d.data() : d;
+            const id = d.id || d._id;
+            const ts = q.createdAt ? new Date(q.createdAt).toLocaleString() : '';
+            const answered = q.answered && q.answer;
+            return `<div class="vqa-item ${answered ? 'answered' : 'unanswered'}">
+                <div class="vqa-meta">👤 <strong>${escHtml(q.studentName)}</strong> · 📚 ${escHtml(q.videoTitle||q.videoKey)} · ${ts}</div>
+                <div class="vqa-question">❓ ${escHtml(q.question)}</div>
+                ${answered ? `<div class="vqa-answer"><strong>✅ Answered by ${escHtml(q.answeredByName)}</strong>${escHtml(q.answer)}</div>` : ''}
+                ${!answered ? `<div class="vqa-reply-area">
+                    <textarea id="vqa-reply-${id}" rows="2" placeholder="Type your answer here..."></textarea>
+                    <button class="vqa-reply-btn" id="vqa-btn-${id}" onclick="answerVideoQuestion('${id}','${responderId}','${escHtml(responderName)}')">Send Reply</button>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // Load questions for teacher (only their own)
+    function loadTeacherVideoQuestions() {
+        if(!currentUser) return;
+        const q = query(collection(db,"videoQuestions"), where("teacherId","==",currentUser.uid), orderBy("createdAt","desc"), limit(100));
+        onSnapshot(q, (snap) => {
+            renderVQAItems(snap.docs, 'teacherVideoQList', currentUser.uid, currentUser.name);
+        });
+    }
+
+    // Load ALL questions for superadmin
+    function loadAdminVideoQuestions() {
+        const q = query(collection(db,"videoQuestions"), orderBy("createdAt","desc"), limit(200));
+        onSnapshot(q, (snap) => {
+            renderVQAItems(snap.docs, 'adminVideoQList', currentUser.uid, currentUser.name);
+        });
+    }
+
+    // Load student's own questions (for Account page)
+    function loadMyVideoQuestions() {
+        if(!currentUser) return;
+        const c = document.getElementById('myVideoQList');
+        if(!c) return;
+        const q = query(collection(db,"videoQuestions"), where("studentId","==",currentUser.uid), orderBy("createdAt","desc"), limit(50));
+        onSnapshot(q, (snap) => {
+            if(snap.empty) { c.innerHTML = '<div style="text-align:center;color:#999;padding:16px;">No questions yet — ask one during a lesson!</div>'; return; }
+            c.innerHTML = snap.docs.map(d => {
+                const q2 = d.data();
+                const ts = q2.createdAt ? new Date(q2.createdAt).toLocaleDateString() : '';
+                const answered = q2.answered && q2.answer;
+                return `<div class="my-q-item ${answered ? 'answered' : ''}">
+                    <div class="my-q-subject">📚 ${escHtml(q2.videoTitle||q2.videoKey)} · ${ts}</div>
+                    <div class="my-q-text">❓ ${escHtml(q2.question)}</div>
+                    ${answered
+                        ? `<div class="my-q-answer"><strong>✅ ${escHtml(q2.answeredByName)} replied:</strong>${escHtml(q2.answer)}</div>`
+                        : `<div class="my-q-pending">⏳ Waiting for teacher reply…</div>`}
+                </div>`;
+            }).join('');
+        });
+    }
 
     // ===== RENDER EVENTS / SCHOOLS / MAPPINGS =====
     function renderEventsTicker() {
@@ -1669,6 +1838,7 @@
         let an = document.querySelector(`.nav-item[data-page="${pageId}"]`);
         if(an) an.classList.add('active');
         if(pageId==='teacher') loadTeacherDashboard();
+        if(pageId==='account') loadMyVideoQuestions();
         if(pageId==='resources') {
             renderResources();
             const searchEl = document.getElementById('resourcesSearch');
@@ -1735,6 +1905,7 @@
             renderFeedbackAdmin();
             renderGlobalMostWatched();
             renderQuestionsAdmin();
+            loadAdminVideoQuestions();
         }
         renderClasses();
         renderRecentAttendance();
@@ -1794,28 +1965,32 @@
 
     function listenToNotifications() {
         if(_notifUnsub) _notifUnsub();
-        const q = query(collection(db,"notifications"), orderBy("timestamp","desc"), limit(50));
-        _notifUnsub = onSnapshot(q, (snap) => {
-            _allNotifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Merge global broadcasts + personal answer notifications for this user
+        const globalQ = query(collection(db,"notifications"), where("targetUserId","==",null), orderBy("timestamp","desc"), limit(30));
+        const personalQ = query(collection(db,"notifications"), where("targetUserId","==",currentUser?.uid||''), orderBy("timestamp","desc"), limit(30));
+        let globalDocs = [], personalDocs = [];
+        const merge = () => {
+            const combined = [...personalDocs, ...globalDocs]
+                .sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''))
+                .slice(0,50);
+            _allNotifs = combined;
             updateNotifBadge();
             renderNotificationsList();
-            // Trigger browser push for new notifications (most recent only)
-            if(!snap.empty && snap.docChanges().length > 0) {
-                snap.docChanges().forEach(change => {
-                    if(change.type === 'added') {
-                        const n = change.doc.data();
-                        const lastRead = currentUser?.lastNotifReadAt || '0';
-                        if(n.timestamp > lastRead && Notification.permission === 'granted') {
-                            const iconMap = { pdf:'📄', video:'🎬', general:'📢' };
-                            new Notification('APSHULE – ' + n.title, {
-                                body: n.body,
-                                icon: '/favicon.ico',
-                                tag: change.doc.id
-                            });
-                        }
+        };
+        _notifUnsub = onSnapshot(globalQ, snap => { globalDocs = snap.docs.map(d=>({id:d.id,...d.data()})); merge(); });
+        onSnapshot(personalQ, snap => {
+            personalDocs = snap.docs.map(d=>({id:d.id,...d.data()}));
+            merge();
+            // Push browser notification for new personal answers
+            snap.docChanges().forEach(change => {
+                if(change.type==='added') {
+                    const n = change.doc.data();
+                    const lastRead = currentUser?.lastNotifReadAt || '0';
+                    if(n.timestamp > lastRead && Notification.permission==='granted') {
+                        new Notification('APSHULE – '+n.title, { body: n.body, icon:'/favicon.ico', tag: change.doc.id });
                     }
-                });
-            }
+                }
+            });
         });
     }
 
