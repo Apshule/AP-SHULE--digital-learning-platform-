@@ -113,6 +113,12 @@
         .notification.info { background: #FF8C42; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        #splashScreen { position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#4B2E9E,#7B5FCF);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;gap:12px; }
+        #splashScreen img { width:90px;height:90px;border-radius:20px;object-fit:cover; }
+        #splashScreen .splash-title { font-size:26px;font-weight:800;letter-spacing:1px; }
+        #splashScreen .splash-sub { font-size:13px;opacity:0.75; }
+        #splashScreen .splash-spinner { width:36px;height:36px;border:3px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;margin-top:8px; }
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
         .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
@@ -164,9 +170,12 @@
         .message.ai .message-bubble { background: white; color: #333; border-radius: 20px 20px 20px 5px; }
         .message-bubble { max-width: 80%; padding: 12px 16px; }
         .message-avatar { width: 32px; height: 32px; border-radius: 50%; background: #FF8C42; display: flex; align-items: center; justify-content: center; color: white; }
-        .ai-chat-input { display: flex; padding: 12px; gap: 10px; background: white; border-top: 1px solid #eee; }
-        .ai-chat-input input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; }
-        .ai-chat-input button { background: #4B2E9E; color: white; border: none; padding: 12px 20px; border-radius: 25px; cursor: pointer; }
+        .ai-chat-input { display:flex;align-items:center;padding:10px 12px;gap:8px;background:white;border-top:1px solid #eee; }
+        .ai-chat-input input { flex:1;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:15px;color:#222;background:#f9f9f9;outline:none;transition:border-color 0.2s; }
+        .ai-chat-input input:focus { border-color:#4B2E9E;background:white; }
+        .ai-chat-input input::placeholder { color:#aaa; }
+        .ai-chat-input button { background:#4B2E9E;color:white;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:background 0.2s; }
+        .ai-chat-input button:hover { background:#6B4EC8; }
         .overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
         .overlay.show { display: block; }
         .vision-box, .mission-box { background: linear-gradient(135deg, #4B2E9E, #7B5FCF); color: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; text-align: center; }
@@ -324,7 +333,13 @@
 <div class="demo-notice" id="responsiveDemoNotice">🖥️ Desktop | 🖥️ Tablet | 📱 Phone</div>
 
 <!-- LOGIN SCREEN -->
-<div id="loginScreen" class="login-screen">
+<div id="splashScreen">
+    <img src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE" id="splashLogoImg">
+    <div class="splash-title">APSHULE</div>
+    <div class="splash-sub">Loading your session…</div>
+    <div class="splash-spinner"></div>
+</div>
+<div id="loginScreen" class="login-screen hidden">
     <div class="login-card">
         <img class="login-logo-img logo--responsive logo--desktop logo--tablet logo--mobile"
              src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg"
@@ -350,7 +365,17 @@
             <button id="signupBtn" class="login-btn">Create Account</button>
         </div>
         <div id="loginError" class="error-message"></div>
-        <div class="reset-section" id="resetSection" style="display:none;"><h4><i class="fas fa-key"></i> Forgot Password?</h4><input type="email" id="resetEmail" placeholder="Email" class="reset-input"><div id="resetMessage" class="success-message"></div><button id="sendResetEmailBtn" class="reset-btn">Send Reset Email</button></div>
+        <div class="reset-section" id="resetSection" style="display:none;">
+            <h4><i class="fas fa-key"></i> Reset Your Password</h4>
+            <p style="font-size:13px;color:#666;margin-bottom:12px;">Enter the email you registered with and we'll send a reset link.</p>
+            <input type="email" id="resetEmail" placeholder="Your email address" class="reset-input">
+            <div id="resetMessage" class="success-message"></div>
+            <button id="sendResetEmailBtn" class="reset-btn">Send Reset Link</button>
+            <div id="resetHint" style="display:none;background:#fff8e1;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px;color:#795548;border-left:4px solid #FF8C42;">
+                <strong>📬 Email sent!</strong> Check your <strong>inbox</strong> and <strong>spam / junk</strong> folder.<br>
+                <span style="font-size:12px;opacity:0.85;">Didn't receive it? Wait 2 minutes, then try again or contact support.</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -367,6 +392,7 @@
                 <button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
                 <div class="more-dropdown" id="moreDropdown">
                     <div class="dropdown-item" id="attendanceMenuItem" style="display:none;"><i class="fas fa-camera"></i><span>📸 Facial Attendance</span></div>
+                    <div class="dropdown-item" id="liveLessonMenuItem" style="display:none;"><i class="fas fa-satellite-dish" style="color:#FF8C42;"></i><span>📡 Live Lessons</span></div>
                     <div class="dropdown-item" id="adminMenuItem" style="display:none;"><i class="fas fa-user-cog"></i><span>Admin Panel</span></div>
                     <div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
                 </div>
@@ -494,7 +520,7 @@
     <div class="ai-drawer" id="aiDrawer">
         <div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button id="closeDrawerBtn" style="background:none;border:none;color:white;font-size:24px;">&times;</button></div>
         <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div>
-        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask me..."><button id="sendBtn">Send</button></div>
+        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask anything… (press Enter to send)" autocomplete="off"><button id="sendBtn"><i class="fas fa-paper-plane"></i></button></div>
     </div>
 
     <div class="main-content">
@@ -556,6 +582,10 @@
                         <div class="analytics-card"><div class="a-value" id="activeUsersCount">0</div><div class="a-label">Active (7 days)</div></div>
                         <div class="analytics-card"><div class="a-value" id="failedLoginsCount">0</div><div class="a-label">Failed Logins Today</div></div>
                         <div class="analytics-card"><div class="a-value" id="totalVideoViews">0</div><div class="a-label">Total Video Views</div></div>
+                    </div>
+                    <div id="failedLoginsDetails" style="margin-top:12px;display:none;">
+                        <h5 style="color:#c62828;margin-bottom:8px;"><i class="fas fa-exclamation-triangle"></i> Failed Login Attempts Today</h5>
+                        <div id="failedLoginsTable"></div>
                     </div>
 
                     <!-- Most Watched Videos -->
@@ -994,38 +1024,78 @@
         // Player will be created per-video in openVideoLesson
     };
 
-    function createYTPlayer(videoId) {
-        if(ytPlayer) {
-            try { ytPlayer.destroy(); } catch(e) {}
-            ytPlayer = null;
-        }
-        document.getElementById('ytPlayerDiv').innerHTML = '';
-        earningRecorded = false;
-        ytPlayer = new YT.Player('ytPlayerDiv', {
-            width: '100%',
-            height: '100%',
-            videoId: videoId,
-            playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
-            events: {
-                onReady: onPlayerReady,
-                onStateChange: onPlayerStateChange
-            }
-        });
-    }
+    let _ytMsgHandler = null;
+    let _ytListeningReady = false;
 
-    function onPlayerReady(event) {
-        event.target.playVideo();
+    function createYTPlayer(videoId) {
+        if(ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
+        earningRecorded = false;
+        vqBoxShown = false;
+        stopProgressTracking();
+        if(_ytMsgHandler) { window.removeEventListener('message', _ytMsgHandler); _ytMsgHandler = null; }
+        _ytListeningReady = false;
+
+        // Inject iframe immediately — instant playback, no delay
+        const div = document.getElementById('ytPlayerDiv');
+        div.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.id = 'ytIframe';
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1`;
+        iframe.frameBorder = '0';
+        iframe.allow = 'autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.allowFullscreen = true;
+        iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+        div.appendChild(iframe);
+
+        // Listen for YouTube postMessage events (state + timing)
+        _ytMsgHandler = (e) => {
+            if(e.source !== iframe.contentWindow) return;
+            let data;
+            try { data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch(_) { return; }
+            if(!data) return;
+            // Register as listener once iframe is ready
+            if(!_ytListeningReady) {
+                _ytListeningReady = true;
+                try { iframe.contentWindow.postMessage(JSON.stringify({event:'listening',id:1}), '*'); } catch(_) {}
+            }
+            if(data.event === 'infoDelivery' && data.info) {
+                const cur = data.info.currentTime, dur = data.info.duration;
+                if(cur != null && dur > 0) {
+                    const pct = cur / dur;
+                    const fill = document.getElementById('videoProgressFill');
+                    if(fill) fill.style.width = (pct * 100) + '%';
+                    checkAndRecordCompletion(pct);
+                    if(!vqBoxShown && (dur - cur) > 0 && (dur - cur) <= 120) {
+                        vqBoxShown = true;
+                        const qbox = document.getElementById('videoQuestionBox');
+                        if(qbox) qbox.style.display = 'block';
+                    }
+                }
+            }
+            if(data.event === 'onStateChange' && data.info === 0) {
+                // Video ended
+                checkAndRecordCompletion(1.0);
+            }
+        };
+        window.addEventListener('message', _ytMsgHandler);
+
+        // Send listening after load as fallback
+        iframe.onload = () => {
+            setTimeout(() => {
+                if(!_ytListeningReady) {
+                    try { iframe.contentWindow.postMessage(JSON.stringify({event:'listening',id:1}), '*'); _ytListeningReady = true; } catch(_) {}
+                }
+            }, 800);
+        };
         startProgressTracking();
     }
 
+    function onPlayerReady(event) { event.target.playVideo(); startProgressTracking(); }
     function onPlayerStateChange(event) {
-        if(event.data === YT.PlayerState.PLAYING) {
-            startProgressTracking();
-        } else {
-            stopProgressTracking();
-        }
-        if(event.data === YT.PlayerState.ENDED) {
-            checkAndRecordCompletion(1.0);
+        if(typeof YT !== 'undefined') {
+            if(event.data === YT.PlayerState.PLAYING) startProgressTracking();
+            else stopProgressTracking();
+            if(event.data === YT.PlayerState.ENDED) checkAndRecordCompletion(1.0);
         }
     }
 
@@ -1033,25 +1103,24 @@
     function startProgressTracking() {
         stopProgressTracking();
         vqBoxShown = false;
+        // Periodically re-send listening event to keep YouTube sending infoDelivery
         videoProgressInterval = setInterval(() => {
-            if(!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
-            try {
-                const current = ytPlayer.getCurrentTime();
-                const duration = ytPlayer.getDuration();
-                if(duration > 0) {
-                    const pct = current / duration;
-                    const fill = document.getElementById('videoProgressFill');
-                    if(fill) fill.style.width = (pct * 100) + '%';
-                    checkAndRecordCompletion(pct);
-                    // Show question box when ≤120 seconds remain
-                    const remaining = duration - current;
-                    if(!vqBoxShown && remaining > 0 && remaining <= 120) {
-                        vqBoxShown = true;
-                        const qbox = document.getElementById('videoQuestionBox');
-                        if(qbox) qbox.style.display = 'block';
+            const iframe = document.getElementById('ytIframe');
+            if(iframe) {
+                try { iframe.contentWindow.postMessage(JSON.stringify({event:'listening',id:1}), '*'); } catch(_) {}
+            } else if(ytPlayer && typeof ytPlayer.getCurrentTime === 'function') {
+                try {
+                    const cur = ytPlayer.getCurrentTime(), dur = ytPlayer.getDuration();
+                    if(dur > 0) {
+                        const pct = cur / dur;
+                        const fill = document.getElementById('videoProgressFill');
+                        if(fill) fill.style.width = (pct * 100) + '%';
+                        checkAndRecordCompletion(pct);
+                        const rem = dur - cur;
+                        if(!vqBoxShown && rem > 0 && rem <= 120) { vqBoxShown = true; const qbox = document.getElementById('videoQuestionBox'); if(qbox) qbox.style.display = 'block'; }
                     }
-                }
-            } catch(e) {}
+                } catch(e) {}
+            }
         }, 3000);
     }
 
@@ -1234,13 +1303,8 @@
         currentRating = 0;
         document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
         document.getElementById('feedbackComment').value = '';
-        // Use YouTube IFrame API for progress tracking
-        if(typeof YT !== 'undefined' && YT.Player) {
-            createYTPlayer(vid);
-        } else {
-            // Fallback: plain iframe
-            document.getElementById('ytPlayerDiv').innerHTML = `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>`;
-        }
+        // Instant playback — always use iframe-based player
+        createYTPlayer(vid);
     };
 
     // ===== PDF LIST (home page, inline viewer) =====
@@ -1541,9 +1605,26 @@
         document.getElementById('activeUsersCount').textContent = active;
         // Failed logins today
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        const failQ = query(collection(db,"failedLogins"), where("timestamp",">=",todayStart.toISOString()));
+        const failQ = query(collection(db,"failedLogins"), where("timestamp",">=",todayStart.toISOString()), orderBy("timestamp","desc"));
         const failSnap = await getDocs(failQ);
         document.getElementById('failedLoginsCount').textContent = failSnap.size;
+        // Render failed login detail table
+        const detailDiv = document.getElementById('failedLoginsDetails');
+        const tableDiv = document.getElementById('failedLoginsTable');
+        if(failSnap.size > 0 && detailDiv && tableDiv) {
+            detailDiv.style.display = 'block';
+            let rows = '';
+            failSnap.forEach(d => {
+                const fd = d.data();
+                const ts = fd.timestamp ? new Date(fd.timestamp).toLocaleString() : 'Unknown time';
+                const em = fd.email ? escHtml(fd.email) : '<em style="color:#999">unknown</em>';
+                rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fff5f5;border-radius:8px;margin-bottom:6px;font-size:13px;border-left:3px solid #c62828;">
+                    <span><i class="fas fa-user-times" style="color:#c62828;margin-right:6px;"></i>${em}</span>
+                    <span style="color:#999;font-size:11px;">${ts}</span>
+                </div>`;
+            });
+            tableDiv.innerHTML = rows;
+        } else if(detailDiv) { detailDiv.style.display = 'none'; }
     }
 
     // ===== BRAND LOGO UPLOAD =====
@@ -1554,6 +1635,7 @@
             const base64 = e.target.result;
             await setDoc(doc(db,"settings","brand"), { logoBase64: base64 });
             document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = base64);
+            const splashImg = document.getElementById('splashLogoImg'); if(splashImg) splashImg.src = base64;
             let faviconLink = document.querySelector("link[rel='icon']");
             if(faviconLink) faviconLink.href = base64;
             showNotification("Brand logo updated!");
@@ -1566,6 +1648,7 @@
         if(docSnap.exists() && docSnap.data().logoBase64) {
             const logoUrl = docSnap.data().logoBase64;
             document.querySelectorAll('.login-logo-img, .header-logo-img').forEach(img => img.src = logoUrl);
+            const splashImg = document.getElementById('splashLogoImg'); if(splashImg) splashImg.src = logoUrl;
             let faviconLink = document.querySelector("link[rel='icon']");
             if(faviconLink) faviconLink.href = logoUrl;
         }
@@ -2360,7 +2443,23 @@
         }
     }
     function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
-    async function sendChat() { let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length&&msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
+    async function sendChat() {
+        let inp=document.getElementById('chatInput');
+        let q=inp.value.trim();
+        if(!q) return;
+        addMsg(q,'user');
+        inp.value='';
+        inp.focus();
+        const sendBtn=document.getElementById('sendBtn');
+        if(sendBtn) sendBtn.disabled=true;
+        addMsg("🤔 Thinking...",'ai');
+        let ans=await askAI(q);
+        let msgs=document.querySelectorAll('#chatMessages .message');
+        if(msgs.length&&msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove();
+        addMsg(ans,'ai');
+        if(sendBtn) sendBtn.disabled=false;
+        inp.focus();
+    }
 
     // ===== NAVIGATION =====
     function navigateTo(pageId) {
@@ -2419,6 +2518,7 @@
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';
         document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
+        document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
@@ -2673,6 +2773,11 @@
     document.querySelectorAll('.level-btn').forEach(btn => btn.addEventListener('click', ()=>{ document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); currentLevel=btn.getAttribute('data-level'); document.getElementById('classSelectionSection').style.display='block'; document.getElementById('subjectsSection').style.display='none'; renderClasses(); }));
     document.getElementById('moreMenuBtn')?.addEventListener('click', e=>{ e.stopPropagation(); document.getElementById('moreDropdown').classList.toggle('show'); });
     document.addEventListener('click', ()=> document.getElementById('moreDropdown')?.classList.remove('show'));
+    document.getElementById('liveLessonMenuItem')?.addEventListener('click', ()=>{
+        document.getElementById('moreDropdown').classList.remove('show');
+        navigateTo('home');
+        setTimeout(()=>{ const el=document.getElementById('liveLessonsBanner'); if(el) el.scrollIntoView({behavior:'smooth'}); }, 300);
+    });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
         if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); } } }
@@ -2861,11 +2966,25 @@
         uploadBrandLogoBase64(fileInput.files[0]);
     });
 
-    document.getElementById('forgotPasswordLink')?.addEventListener('click', ()=>{ document.getElementById('resetSection').style.display='block'; });
+    document.getElementById('forgotPasswordLink')?.addEventListener('click', ()=>{
+        document.getElementById('resetSection').style.display='block';
+        document.getElementById('resetHint').style.display='none';
+        document.getElementById('resetEmail').focus();
+    });
     document.getElementById('sendResetEmailBtn')?.addEventListener('click', async ()=>{
         let email=document.getElementById('resetEmail').value.trim();
-        if(!email){showNotification("Enter email","error");return;}
-        try { await sendPasswordResetEmail(auth,email); showNotification("Reset email sent!"); } catch(err){ showNotification(err.message,"error"); }
+        if(!email){showNotification("Enter your email address","error");return;}
+        const btn = document.getElementById('sendResetEmailBtn');
+        btn.disabled=true; btn.textContent='Sending…';
+        try {
+            await sendPasswordResetEmail(auth,email);
+            document.getElementById('resetHint').style.display='block';
+            btn.textContent='Resend Reset Link';
+        } catch(err){
+            showNotification(err.message,"error");
+            btn.textContent='Send Reset Link';
+        }
+        btn.disabled=false;
     });
 
     document.querySelectorAll('.login-tab').forEach(t => t.addEventListener('click', ()=>{
@@ -2917,6 +3036,9 @@
             document.getElementById('appScreen').classList.add('hidden');
             await loadBrandLogo();
         }
+        // Hide splash screen once auth state is known (covers refresh case)
+        const splash = document.getElementById('splashScreen');
+        if(splash) splash.style.display = 'none';
     });
 
     // ===== START LISTENERS =====
