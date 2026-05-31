@@ -419,6 +419,36 @@
         <iframe id="pdfViewerIframe" src="" title="PDF Viewer"></iframe>
     </div>
 
+    <!-- LIVE LESSON PAYMENT MODAL -->
+    <div id="livePayModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:white;border-radius:24px;width:100%;max-width:440px;padding:24px;">
+            <h3 style="color:#FF8C42;margin:0 0 6px;">📡 Live Lesson Access</h3>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px;" id="livePayLessonTitle"></div>
+            <div style="font-size:13px;color:#888;margin-bottom:16px;">Access fee: <strong id="livePayFeeLabel" style="color:#FF8C42;"></strong></div>
+            <input type="hidden" id="livePayLessonId">
+
+            <p style="font-size:13px;color:#555;margin-bottom:12px;">
+                Send the fee via <strong>MTN MoMo / Airtel Money</strong> to <strong>+256705732540 (APSHULE)</strong>, then enter your transaction reference below. Admin will verify and send your unique access link.
+            </p>
+
+            <label style="font-size:13px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:4px;">Payment Method</label>
+            <select id="livePayMethod" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-bottom:10px;box-sizing:border-box;">
+                <option value="MTN MoMo">MTN Mobile Money</option>
+                <option value="Airtel Money">Airtel Money</option>
+            </select>
+
+            <label style="font-size:13px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:4px;">Transaction Reference / ID</label>
+            <input type="text" id="livePayTransRef" placeholder="e.g. 1234567890" style="width:100%;box-sizing:border-box;padding:10px;border:1.5px solid #ddd;border-radius:12px;margin-bottom:10px;">
+
+            <div id="livePayStatus" style="font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+
+            <div style="display:flex;gap:10px;">
+                <button id="livePayCancelBtn" style="flex:1;background:#f5f5f5;color:#333;border:none;padding:12px;border-radius:20px;font-weight:600;cursor:pointer;">Cancel</button>
+                <button id="livePaySubmitBtn" style="flex:2;background:#FF8C42;color:white;border:none;padding:12px;border-radius:20px;font-weight:700;cursor:pointer;">💸 Submit Payment Request</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ATTENDANCE MODAL -->
     <div id="attendanceModal" class="attendance-modal">
         <div class="attendance-modal-content">
@@ -485,7 +515,7 @@
             </div>
             <!-- LIVE LESSONS BANNER -->
             <div id="liveLessonsBanner" style="display:none;margin:0 0 12px;">
-                <div style="font-size:13px;font-weight:700;color:#FF4444;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:50%;animation:livePulse 1.2s infinite;"></span>📡 LIVE NOW</div>
+                <div style="font-size:13px;font-weight:700;color:#FF8C42;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;background:#FF8C42;border-radius:50%;animation:livePulse 1.2s infinite;"></span>📡 SCHEDULED LIVE LESSONS</div>
                 <div id="liveLessonsCards"></div>
             </div>
 
@@ -545,6 +575,30 @@
                         <h4>❓ Student Q&A (All Lessons)</h4>
                         <p style="font-size:12px;color:#888;margin:0 0 10px;">Private questions sent by students during lessons. Reply to notify them instantly.</p>
                         <div id="adminVideoQList"><div style="color:#999;font-size:13px;">Loading...</div></div>
+                    </div>
+
+                    <!-- ===== LIVE LESSON MANAGEMENT ===== -->
+                    <div class="admin-section" style="background:#fff8f0;border:1.5px solid #ffcc99;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;color:#FF8C42;">📡 Live Lesson Requests</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Review and approve live lesson requests from teachers. Set access fee and confirm/edit meeting link before approving.</p>
+                        <div id="adminLiveLessons"><div style="color:#999;font-size:13px;">Loading…</div></div>
+                    </div>
+
+                    <!-- ===== ACCESS TOKEN GENERATOR ===== -->
+                    <div class="admin-section" style="background:#f0fff4;border:1.5px solid #99ddbb;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;color:#2E7D32;">🔑 Generate Student Access Token</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Manually generate a unique, one-device access link for a specific student. Use after confirming their payment.</p>
+                        <select id="tokenLessonSelect" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-bottom:8px;box-sizing:border-box;">
+                            <option value="">— Select approved lesson —</option>
+                        </select>
+                        <input type="email" id="tokenStudentEmail" placeholder="Student email address" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:12px;margin-bottom:8px;">
+                        <button id="generateTokenBtn" class="admin-toggle" style="width:100%;background:#2E7D32;color:white;font-weight:700;">🔑 Generate & Send Token</button>
+                        <div id="generateTokenStatus" style="font-size:12px;color:#2E7D32;margin-top:6px;text-align:center;min-height:16px;"></div>
+                        <h4 style="color:#2E7D32;margin:14px 0 6px;font-size:13px;">📋 All Active Tokens</h4>
+                        <div id="adminActiveTokens" style="font-size:13px;color:#999;">Loading…</div>
+
+                        <h4 style="color:#FF8C42;margin:16px 0 6px;font-size:13px;">💸 Student Payment Requests</h4>
+                        <div id="adminPaymentRequests" style="font-size:13px;color:#999;">Loading…</div>
                     </div>
 
                     <!-- ===== EDIT ABOUT PAGE ===== -->
@@ -729,16 +783,18 @@
         <div id="teacherPage" class="page">
             <div class="section-title">👨‍🏫 Teacher Dashboard</div>
 
-            <!-- Live Lesson control -->
-            <div class="teacher-card" style="border:2px solid #FF4444;">
-                <h4 style="color:#FF4444;margin-bottom:8px;">📡 Live Lessons</h4>
-                <p style="font-size:12px;color:#888;margin-bottom:12px;">Start a live lesson — students see a pulsing "LIVE" banner and can join instantly.</p>
+            <!-- Live Lesson REQUEST (teacher submits, superadmin approves) -->
+            <div class="teacher-card" style="border:2px solid #FF8C42;">
+                <h4 style="color:#FF8C42;margin-bottom:8px;">📡 Request a Live Lesson</h4>
+                <p style="font-size:12px;color:#888;margin-bottom:12px;">Submit a lesson for superadmin approval. Once approved, students will be able to purchase access. Access links are issued per student by the admin.</p>
                 <input type="text" id="liveLessonTitle" placeholder="Lesson title (e.g. P7 Maths – Fractions)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
-                <input type="text" id="liveLessonLink" placeholder="Meeting link (Zoom/Google Meet/WhatsApp group URL)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
-                <textarea id="liveLessonDesc" rows="2" placeholder="Brief description (optional)" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:10px;font-size:13px;font-family:inherit;resize:none;margin-bottom:8px;"></textarea>
-                <button id="startLiveLessonBtn" style="background:#FF4444;color:white;border:none;padding:12px 24px;border-radius:25px;font-weight:700;cursor:pointer;width:100%;">🔴 Go Live Now</button>
-                <div id="liveLessonTeacherStatus" style="font-size:12px;color:#FF4444;margin-top:6px;text-align:center;min-height:16px;"></div>
-                <div id="myActiveLessons" style="margin-top:12px;"></div>
+                <input type="text" id="liveLessonLink" placeholder="Your meeting link (Zoom / Google Meet / WhatsApp)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
+                <input type="text" id="liveLessonDate" placeholder="Scheduled date & time (e.g. Mon 2 June, 3:00 PM)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
+                <textarea id="liveLessonDesc" rows="2" placeholder="Brief description / what will be covered" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:10px;font-size:13px;font-family:inherit;resize:none;margin-bottom:8px;"></textarea>
+                <button id="startLiveLessonBtn" style="background:#FF8C42;color:white;border:none;padding:12px 24px;border-radius:25px;font-weight:700;cursor:pointer;width:100%;">📨 Submit for Approval</button>
+                <div id="liveLessonTeacherStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:16px;"></div>
+                <h4 style="color:#FF8C42;margin:14px 0 6px;">My Lesson Requests</h4>
+                <div id="myLessonRequests" style="font-size:13px;color:#999;">Loading…</div>
             </div>
 
             <!-- Earnings stats -->
@@ -1343,6 +1399,7 @@
         loadTeacherQuestions();
         loadTeacherComments();
         loadTeacherVideoQuestions();
+        loadMyLessonRequests();
     }
 
     function loadTeacherEarnings() {
@@ -1863,81 +1920,374 @@
     function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){c.innerHTML='<div style="text-align:center;color:#999">No enrolled people</div>';return;} c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
     window.deleteEnrolled = function(id) { if(confirm("Delete?")){attendancePeople=attendancePeople.filter(p=>p.id!==id);attendanceRecords=attendanceRecords.filter(r=>r.personId!==id);localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople));localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));showNotification("Person deleted");renderEnrolledList();renderRecentAttendance();} };
 
-    // ===== LIVE LESSONS =====
+    // ===== LIVE LESSONS — TEACHER SIDE =====
     document.getElementById('startLiveLessonBtn')?.addEventListener('click', async () => {
         const title = document.getElementById('liveLessonTitle').value.trim();
         const link  = document.getElementById('liveLessonLink').value.trim();
         const desc  = document.getElementById('liveLessonDesc').value.trim();
+        const date  = document.getElementById('liveLessonDate').value.trim();
         const status = document.getElementById('liveLessonTeacherStatus');
-        if(!title) { status.textContent = 'Enter a lesson title first.'; return; }
+        if(!title) { status.style.color='red'; status.textContent = 'Enter a lesson title first.'; return; }
         if(!currentUser) return;
         try {
             document.getElementById('startLiveLessonBtn').disabled = true;
             await addDoc(collection(db, 'liveLessons'), {
                 teacherId: currentUser.uid,
                 teacherName: currentUser.name || currentUser.email,
-                title, link, desc,
-                status: 'live',
+                title, link, desc, scheduledDate: date,
+                status: 'pending',
+                accessFee: 0,
                 createdAt: new Date().toISOString()
             });
-            // Announce to all students
+            // Notify superadmin via Firestore
             await addDoc(collection(db, 'notifications'), {
-                type: 'live', title: '📡 Live Lesson Started!',
-                body: `${currentUser.name} is now live: "${title}". Join now!`,
+                type: 'admin',
+                title: '📡 New Live Lesson Request',
+                body: `${currentUser.name} requests a live lesson: "${title}". Please review in Admin Panel.`,
                 timestamp: new Date().toISOString(),
                 author: currentUser.name,
-                targetUserId: null
+                targetUserId: 'superadmin_only'
             });
             status.style.color = '#4CAF50';
-            status.textContent = '🔴 You are live! Students can see your lesson.';
+            status.textContent = '✅ Request submitted! Awaiting superadmin approval.';
             document.getElementById('liveLessonTitle').value = '';
             document.getElementById('liveLessonLink').value = '';
+            document.getElementById('liveLessonDate').value = '';
             document.getElementById('liveLessonDesc').value = '';
             document.getElementById('startLiveLessonBtn').disabled = false;
+            loadMyLessonRequests();
         } catch(e) {
-            status.textContent = 'Error going live. Try again.';
+            status.style.color = 'red';
+            status.textContent = 'Error submitting. Try again.';
             document.getElementById('startLiveLessonBtn').disabled = false;
         }
     });
 
-    window.endLiveLesson = async function(docId) {
-        if(!confirm('End this live lesson?')) return;
-        await updateDoc(doc(db, 'liveLessons', docId), { status: 'ended', endedAt: new Date().toISOString() });
-        showNotification('Live lesson ended.');
-    };
-
-    function listenLiveLessons() {
-        const q = query(collection(db, 'liveLessons'), where('status', '==', 'live'), orderBy('createdAt', 'desc'));
+    function loadMyLessonRequests() {
+        if(!currentUser || currentUser.role !== 'teacher') return;
+        const c = document.getElementById('myLessonRequests'); if(!c) return;
+        const q = query(collection(db,'liveLessons'), where('teacherId','==',currentUser.uid), orderBy('createdAt','desc'), limit(20));
         onSnapshot(q, snap => {
-            const banner  = document.getElementById('liveLessonsBanner');
-            const cards   = document.getElementById('liveLessonsCards');
-            const myDiv   = document.getElementById('myActiveLessons');
-            if(!banner || !cards) return;
-            if(snap.empty) { banner.style.display = 'none'; if(myDiv) myDiv.innerHTML = ''; return; }
-            banner.style.display = 'block';
-            cards.innerHTML = snap.docs.map(d => {
+            if(snap.empty) { c.innerHTML = '<div style="color:#999;">No requests yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d => {
                 const l = d.data();
-                const linkHtml = l.link ? `<a href="${escHtml(l.link)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;background:#FF4444;color:white;padding:8px 20px;border-radius:20px;text-decoration:none;font-weight:700;">🔗 Join Lesson</a>` : '';
-                return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid #FF4444;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
-                    <div style="font-weight:700;font-size:15px;">${escHtml(l.title)}</div>
-                    <div style="font-size:12px;color:#888;">Teacher: ${escHtml(l.teacherName)}</div>
-                    ${l.desc ? `<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(l.desc)}</div>` : ''}
-                    ${linkHtml}
+                const badge = l.status==='approved' ? '<span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">✅ Approved</span>'
+                    : l.status==='ended' ? '<span style="background:#999;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">Ended</span>'
+                    : '<span style="background:#FF8C42;color:white;padding:2px 8px;border-radius:10px;font-size:11px;">⏳ Pending</span>';
+                return `<div style="background:#fafafa;border-radius:12px;padding:10px 12px;margin-bottom:8px;border-left:3px solid ${l.status==='approved'?'#4CAF50':'#FF8C42'};">
+                    <div style="font-weight:600;">${escHtml(l.title)} ${badge}</div>
+                    <div style="font-size:12px;color:#888;">${escHtml(l.scheduledDate||'')} ${l.accessFee>0?'· Fee: UGX '+Number(l.accessFee).toLocaleString():''}</div>
                 </div>`;
             }).join('');
-            // Teacher's own active lessons (for end button)
-            if(myDiv && currentUser?.role === 'teacher') {
-                const mine = snap.docs.filter(d => d.data().teacherId === currentUser.uid);
-                myDiv.innerHTML = mine.length ? '<div style="font-size:12px;font-weight:700;color:#FF4444;margin-bottom:6px;">Your active lessons:</div>' + mine.map(d => {
-                    const l = d.data();
-                    return `<div style="display:flex;justify-content:space-between;align-items:center;background:#fff5f5;border-radius:12px;padding:10px 12px;margin-bottom:6px;">
-                        <span style="font-size:13px;font-weight:600;">${escHtml(l.title)}</span>
-                        <button onclick="endLiveLesson('${d.id}')" style="background:#FF4444;color:white;border:none;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;">⏹ End</button>
-                    </div>`;
-                }).join('') : '';
-            }
         });
     }
+
+    // ===== LIVE LESSONS — SUPERADMIN SIDE =====
+    let _approvedLessonsForDropdown = [];
+
+    function loadLiveLessonsAdmin() {
+        const c = document.getElementById('adminLiveLessons'); if(!c) return;
+        const q = query(collection(db,'liveLessons'), orderBy('createdAt','desc'), limit(50));
+        onSnapshot(q, snap => {
+            _approvedLessonsForDropdown = snap.docs.filter(d=>d.data().status==='approved').map(d=>({id:d.id,...d.data()}));
+            populateTokenLessonDropdown();
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No requests yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d => {
+                const l = d.data();
+                const isApproved = l.status === 'approved';
+                const isEnded    = l.status === 'ended';
+                return `<div style="background:${isApproved?'#f0fff4':isEnded?'#f5f5f5':'#fff8f0'};border-radius:14px;padding:12px 14px;margin-bottom:10px;border-left:4px solid ${isApproved?'#4CAF50':isEnded?'#999':'#FF8C42'};">
+                    <div style="font-weight:700;">${escHtml(l.title)}</div>
+                    <div style="font-size:12px;color:#888;">By: ${escHtml(l.teacherName)} · ${escHtml(l.scheduledDate||'')} · Status: <strong>${l.status}</strong></div>
+                    ${l.desc?`<div style="font-size:12px;color:#555;margin-top:4px;">${escHtml(l.desc)}</div>`:''}
+                    ${l.link?`<div style="font-size:12px;color:#4B2E9E;margin-top:2px;">🔗 ${escHtml(l.link)}</div>`:''}
+                    ${!isApproved && !isEnded ? `<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+                        <input id="approveFee-${d.id}" type="number" placeholder="Access fee (UGX, 0 = free)" value="${l.accessFee||0}" style="padding:8px;border:1px solid #ddd;border-radius:10px;font-size:13px;">
+                        <input id="approveLink-${d.id}" type="text" placeholder="Confirm/edit meeting link" value="${escHtml(l.link||'')}" style="padding:8px;border:1px solid #ddd;border-radius:10px;font-size:13px;">
+                        <div style="display:flex;gap:8px;">
+                            <button onclick="approveLiveLesson('${d.id}')" style="flex:1;background:#4CAF50;color:white;border:none;padding:8px;border-radius:20px;font-weight:700;cursor:pointer;">✅ Approve</button>
+                            <button onclick="rejectLiveLesson('${d.id}')" style="flex:1;background:#dc3545;color:white;border:none;padding:8px;border-radius:20px;font-weight:700;cursor:pointer;">❌ Reject</button>
+                        </div>
+                    </div>` : ''}
+                    ${isApproved ? `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <span style="font-size:12px;color:#4CAF50;">Fee: UGX ${Number(l.accessFee||0).toLocaleString()}</span>
+                        <button onclick="endLiveLesson('${d.id}')" style="background:#dc3545;color:white;border:none;padding:4px 12px;border-radius:14px;font-size:12px;cursor:pointer;">⏹ End Lesson</button>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+        });
+    }
+
+    function populateTokenLessonDropdown() {
+        const sel = document.getElementById('tokenLessonSelect'); if(!sel) return;
+        sel.innerHTML = '<option value="">— Select approved lesson —</option>' +
+            _approvedLessonsForDropdown.map(l=>`<option value="${l.id}">${escHtml(l.title)} (${escHtml(l.scheduledDate||'no date')})</option>`).join('');
+    }
+
+    window.approveLiveLesson = async function(docId) {
+        const fee  = parseInt(document.getElementById('approveFee-'+docId)?.value||0);
+        const link = document.getElementById('approveLink-'+docId)?.value.trim()||'';
+        await updateDoc(doc(db,'liveLessons',docId), {
+            status:'approved', accessFee:fee, link,
+            approvedBy:currentUser.uid, approvedAt: new Date().toISOString()
+        });
+        // Notify all students
+        const snap = await getDoc(doc(db,'liveLessons',docId));
+        const l = snap.data();
+        await addDoc(collection(db,'notifications'), {
+            type:'live', title:'📡 Live Lesson Available!',
+            body:`"${l.title}" by ${l.teacherName} is now open for enrolment. Fee: UGX ${Number(fee).toLocaleString()}. Open the Home tab to join!`,
+            timestamp:new Date().toISOString(), author:'APSHULE Admin', targetUserId:null
+        });
+        showNotification('Lesson approved & students notified ✅');
+    };
+
+    window.rejectLiveLesson = async function(docId) {
+        if(!confirm('Reject this lesson request?')) return;
+        await updateDoc(doc(db,'liveLessons',docId), { status:'rejected' });
+        showNotification('Lesson request rejected.');
+    };
+
+    window.endLiveLesson = async function(docId) {
+        if(!confirm('Mark this lesson as ended?')) return;
+        await updateDoc(doc(db,'liveLessons',docId), { status:'ended', endedAt:new Date().toISOString() });
+        showNotification('Lesson marked as ended.');
+    };
+
+    // Generate token for a student (manual, by superadmin)
+    document.getElementById('generateTokenBtn')?.addEventListener('click', async () => {
+        const lessonId = document.getElementById('tokenLessonSelect').value;
+        const email    = document.getElementById('tokenStudentEmail').value.trim().toLowerCase();
+        const status   = document.getElementById('generateTokenStatus');
+        if(!lessonId) { status.style.color='red'; status.textContent='Select a lesson first.'; return; }
+        if(!email)    { status.style.color='red'; status.textContent='Enter student email.'; return; }
+        try {
+            document.getElementById('generateTokenBtn').disabled = true;
+            status.style.color='#4B2E9E'; status.textContent='Looking up student…';
+            // Find student by email
+            const uq = query(collection(db,'users'), where('email','==',email), limit(1));
+            const usnap = await getDocs(uq);
+            if(usnap.empty) { status.style.color='red'; status.textContent='Student not found. Check email.'; document.getElementById('generateTokenBtn').disabled=false; return; }
+            const studentDoc = usnap.docs[0];
+            const student = { uid: studentDoc.id, ...studentDoc.data() };
+            // Generate unique token
+            const token = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2));
+            const lessonSnap = await getDoc(doc(db,'liveLessons',lessonId));
+            const lesson = lessonSnap.data();
+            await addDoc(collection(db,'liveAccess'), {
+                lessonId, lessonTitle: lesson.title,
+                meetingLink: lesson.link,
+                userId: student.uid, userEmail: student.email, userName: student.name,
+                token, deviceId: null, used: false,
+                createdBy:'superadmin', createdByName: currentUser.name,
+                createdAt: new Date().toISOString()
+            });
+            // Notify student
+            await addDoc(collection(db,'notifications'), {
+                type:'token', title:'🔑 Your Live Lesson Access is Ready!',
+                body:`You have been granted access to "${lesson.title}". Open your Alerts tab and tap "Join Live Lesson" to get your unique link. This link works on ONE device only.`,
+                timestamp:new Date().toISOString(), author:'APSHULE Admin',
+                targetUserId: student.uid, liveToken: token, lessonId
+            });
+            status.style.color='#4CAF50';
+            status.textContent=`✅ Token sent to ${student.name || email}!`;
+            document.getElementById('tokenStudentEmail').value='';
+            document.getElementById('generateTokenBtn').disabled=false;
+            loadAdminActiveTokens();
+        } catch(e) {
+            status.style.color='red'; status.textContent='Error. Try again.';
+            document.getElementById('generateTokenBtn').disabled=false;
+        }
+    });
+
+    function loadAdminActiveTokens() {
+        const c = document.getElementById('adminActiveTokens'); if(!c) return;
+        const q = query(collection(db,'liveAccess'), orderBy('createdAt','desc'), limit(50));
+        onSnapshot(q, snap => {
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No tokens yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d => {
+                const t = d.data();
+                return `<div style="background:#fafafa;border-radius:10px;padding:8px 12px;margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:600;">${escHtml(t.userName||t.userEmail)}</div>
+                        <div style="color:#888;">${escHtml(t.lessonTitle)} · ${t.used?'<span style="color:#4CAF50">✅ Used (device locked)</span>':'<span style="color:#FF8C42">⏳ Not used yet</span>'}</div>
+                    </div>
+                    <button onclick="revokeToken('${d.id}')" style="background:#dc3545;color:white;border:none;padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;">Revoke</button>
+                </div>`;
+            }).join('');
+        });
+    }
+
+    window.revokeToken = async function(docId) {
+        if(!confirm('Revoke this access token? The student will lose access.')) return;
+        await updateDoc(doc(db,'liveAccess',docId), { used:false, deviceId:null, revoked:true });
+        showNotification('Token revoked.');
+    };
+
+    function loadAdminPaymentRequests() {
+        const c = document.getElementById('adminPaymentRequests'); if(!c) return;
+        const q = query(collection(db,'livePaymentRequests'), orderBy('createdAt','desc'), limit(50));
+        onSnapshot(q, snap => {
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No payment requests yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d => {
+                const r = d.data();
+                if(r.approved) return '';
+                return `<div style="background:#fff8f0;border-radius:12px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #FF8C42;">
+                    <div style="font-weight:600;">${escHtml(r.userName)} · ${escHtml(r.userEmail)}</div>
+                    <div style="font-size:12px;color:#888;">Lesson: ${escHtml(r.lessonTitle)} · Fee: UGX ${Number(r.fee||0).toLocaleString()}</div>
+                    <div style="font-size:12px;color:#555;">Ref: ${escHtml(r.transactionRef)} · ${escHtml(r.paymentMethod)}</div>
+                    <button onclick="approvePaymentAndGenToken('${d.id}')" style="margin-top:8px;background:#2E7D32;color:white;border:none;padding:6px 16px;border-radius:20px;font-weight:700;cursor:pointer;">✅ Confirm & Generate Link</button>
+                </div>`;
+            }).join('') || '<div style="color:#999;">No pending requests.</div>';
+        });
+    }
+
+    window.approvePaymentAndGenToken = async function(requestDocId) {
+        const rsnap = await getDoc(doc(db,'livePaymentRequests',requestDocId));
+        const r = rsnap.data();
+        const token = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2));
+        const lsnap = await getDoc(doc(db,'liveLessons',r.lessonId));
+        const lesson = lsnap.data();
+        await addDoc(collection(db,'liveAccess'), {
+            lessonId:r.lessonId, lessonTitle:lesson.title, meetingLink:lesson.link,
+            userId:r.userId, userEmail:r.userEmail, userName:r.userName,
+            token, deviceId:null, used:false,
+            createdBy:'payment_approved', createdByName:currentUser.name,
+            createdAt:new Date().toISOString()
+        });
+        await updateDoc(doc(db,'livePaymentRequests',requestDocId), { approved:true, approvedAt:new Date().toISOString() });
+        await addDoc(collection(db,'notifications'), {
+            type:'token', title:'🔑 Your Live Lesson Access is Ready!',
+            body:`Payment confirmed! Your unique access link for "${lesson.title}" is ready. Open Alerts → "Join Live Lesson". ONE device only.`,
+            timestamp:new Date().toISOString(), author:'APSHULE Admin',
+            targetUserId:r.userId, liveToken:token, lessonId:r.lessonId
+        });
+        showNotification(`✅ Token generated and sent to ${r.userName}`);
+    };
+
+    // ===== LIVE LESSONS — STUDENT SIDE =====
+    function listenLiveLessons() {
+        const q = query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc'));
+        onSnapshot(q, async snap => {
+            const banner = document.getElementById('liveLessonsBanner');
+            const cards  = document.getElementById('liveLessonsCards');
+            if(!banner||!cards) return;
+            if(snap.empty) { banner.style.display='none'; return; }
+            banner.style.display='block';
+            // Check which lessons this student already has a token for
+            let myTokens = {};
+            if(currentUser) {
+                const tq = query(collection(db,'liveAccess'), where('userId','==',currentUser.uid), where('revoked','!=',true));
+                const tsnap = await getDocs(tq).catch(()=>({docs:[]}));
+                tsnap.docs.forEach(d => { myTokens[d.data().lessonId] = d.data().token; });
+            }
+            cards.innerHTML = snap.docs.map(d => {
+                const l = d.data();
+                const hasToken = !!myTokens[d.id];
+                const feeLabel = l.accessFee>0 ? `UGX ${Number(l.accessFee).toLocaleString()}` : 'FREE';
+                const feeColor = l.accessFee>0 ? '#FF8C42' : '#4CAF50';
+                return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid #FF8C42;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div style="font-weight:700;font-size:15px;">${escHtml(l.title)}</div>
+                        <span style="background:${feeColor};color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${feeLabel}</span>
+                    </div>
+                    <div style="font-size:12px;color:#888;">👨‍🏫 ${escHtml(l.teacherName)}${l.scheduledDate?' · 📅 '+escHtml(l.scheduledDate):''}</div>
+                    ${l.desc?`<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(l.desc)}</div>`:''}
+                    <div style="margin-top:10px;">
+                        ${hasToken
+                            ? `<button onclick="useLiveToken('${d.id}')" style="background:#4CAF50;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;width:100%;">🔗 Join Live Lesson</button>`
+                            : `<button onclick="requestLiveAccess('${d.id}','${escHtml(l.title)}',${l.accessFee||0})" style="background:#FF8C42;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;width:100%;">📅 ${l.accessFee>0?'Pay & Get Access':'Get Free Access'}</button>`
+                        }
+                    </div>
+                </div>`;
+            }).join('');
+        });
+    }
+
+    // Show meeting link to a student using their token (device-locked)
+    window.useLiveToken = async function(lessonId) {
+        if(!currentUser) { showNotification('Please log in first','error'); return; }
+        // Find student's token for this lesson
+        const tq = query(collection(db,'liveAccess'), where('userId','==',currentUser.uid), where('lessonId','==',lessonId), limit(1));
+        const tsnap = await getDocs(tq);
+        if(tsnap.empty) { showNotification('No access token found for this lesson.','error'); return; }
+        const tokenDoc = tsnap.docs[0];
+        const tdata    = tokenDoc.data();
+        if(tdata.revoked) { showNotification('This token has been revoked. Contact admin.','error'); return; }
+        // Device locking
+        let myDeviceId = localStorage.getItem('apshule_device_id');
+        if(!myDeviceId) { myDeviceId = (Date.now().toString(36)+Math.random().toString(36).slice(2)); localStorage.setItem('apshule_device_id',myDeviceId); }
+        if(tdata.deviceId && tdata.deviceId !== myDeviceId) {
+            showNotification('⛔ This access link is locked to another device. Each token works on ONE device only.','error');
+            return;
+        }
+        if(!tdata.deviceId) {
+            await updateDoc(doc(db,'liveAccess',tokenDoc.id), { deviceId:myDeviceId, used:true, firstUsedAt:new Date().toISOString() });
+        }
+        if(tdata.meetingLink) {
+            window.open(tdata.meetingLink,'_blank','noopener');
+        } else {
+            showNotification('Meeting link not available yet. Check back soon.','info');
+        }
+    };
+
+    // Student requests access (triggers payment flow)
+    window.requestLiveAccess = function(lessonId, lessonTitle, fee) {
+        if(!currentUser) { showNotification('Please log in first','error'); return; }
+        if(fee <= 0) {
+            // Free lesson — just create a free token immediately
+            (async () => {
+                const token = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2));
+                const lsnap = await getDoc(doc(db,'liveLessons',lessonId));
+                const lesson = lsnap.data();
+                await addDoc(collection(db,'liveAccess'), {
+                    lessonId, lessonTitle:lesson.title, meetingLink:lesson.link,
+                    userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.name,
+                    token, deviceId:null, used:false,
+                    createdBy:'free_access', createdAt:new Date().toISOString()
+                });
+                showNotification('✅ Free access granted! Tap "Join Live Lesson".');
+                listenLiveLessons();
+            })();
+            return;
+        }
+        // Show payment modal
+        document.getElementById('livePayLessonId').value   = lessonId;
+        document.getElementById('livePayLessonTitle').textContent = lessonTitle;
+        document.getElementById('livePayFeeLabel').textContent = `UGX ${Number(fee).toLocaleString()}`;
+        document.getElementById('livePayTransRef').value   = '';
+        document.getElementById('livePayMethod').value     = 'MTN MoMo';
+        document.getElementById('livePayStatus').textContent = '';
+        document.getElementById('livePayModal').style.display='flex';
+    };
+
+    document.getElementById('livePaySubmitBtn')?.addEventListener('click', async () => {
+        const lessonId = document.getElementById('livePayLessonId').value;
+        const ref      = document.getElementById('livePayTransRef').value.trim();
+        const method   = document.getElementById('livePayMethod').value;
+        const status   = document.getElementById('livePayStatus');
+        if(!ref) { status.style.color='red'; status.textContent='Enter your transaction reference.'; return; }
+        if(!currentUser || !lessonId) return;
+        try {
+            document.getElementById('livePaySubmitBtn').disabled=true;
+            const lsnap = await getDoc(doc(db,'liveLessons',lessonId));
+            const lesson = lsnap.data();
+            await addDoc(collection(db,'livePaymentRequests'), {
+                lessonId, lessonTitle:lesson.title, fee:lesson.accessFee||0,
+                userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.name,
+                transactionRef:ref, paymentMethod:method,
+                approved:false, createdAt:new Date().toISOString()
+            });
+            status.style.color='#4CAF50';
+            status.textContent='✅ Payment request submitted! Admin will verify and send your access link shortly.';
+            document.getElementById('livePaySubmitBtn').disabled=false;
+            setTimeout(()=>document.getElementById('livePayModal').style.display='none',3000);
+        } catch(e) {
+            status.style.color='red'; status.textContent='Error. Try again.';
+            document.getElementById('livePaySubmitBtn').disabled=false;
+        }
+    });
+    document.getElementById('livePayCancelBtn')?.addEventListener('click',()=>document.getElementById('livePayModal').style.display='none');
 
     // ===== ABOUT PAGE (Firestore) =====
     async function loadAboutFromFirestore() {
@@ -2325,7 +2675,7 @@
     document.addEventListener('click', ()=> document.getElementById('moreDropdown')?.classList.remove('show'));
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
