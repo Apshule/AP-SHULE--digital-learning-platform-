@@ -31,6 +31,7 @@
         .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 30px; font-size: 16px; }
         .login-btn { width: 100%; padding: 14px; background: #4B2E9E; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         .error-message { color: red; margin-top: 16px; font-size: 14px; }
+        .error-message:empty { display: none; }
         .success-message { color: green; margin-top: 16px; font-size: 14px; }
         .reset-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
         .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
@@ -111,6 +112,7 @@
         .notification.success { background: #2E7D32; }
         .notification.info { background: #FF8C42; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
         .video-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .video-modal.show { display: flex; }
         .video-content { background: #1a1a2e; border-radius: 20px; width: 100%; max-width: 800px; overflow: hidden; position: relative; }
@@ -481,6 +483,12 @@
                 <div class="section-title">📖 Available Subjects</div>
                 <div id="subjectsGrid" class="subjects-grid"></div>
             </div>
+            <!-- LIVE LESSONS BANNER -->
+            <div id="liveLessonsBanner" style="display:none;margin:0 0 12px;">
+                <div style="font-size:13px;font-weight:700;color:#FF4444;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;background:#FF4444;border-radius:50%;animation:livePulse 1.2s infinite;"></span>📡 LIVE NOW</div>
+                <div id="liveLessonsCards"></div>
+            </div>
+
             <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
             <div class="announcements-section">
                 <div class="announcements-header"><i class="fas fa-bullhorn"></i><span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div>
@@ -537,6 +545,26 @@
                         <h4>❓ Student Q&A (All Lessons)</h4>
                         <p style="font-size:12px;color:#888;margin:0 0 10px;">Private questions sent by students during lessons. Reply to notify them instantly.</p>
                         <div id="adminVideoQList"><div style="color:#999;font-size:13px;">Loading...</div></div>
+                    </div>
+
+                    <!-- ===== EDIT ABOUT PAGE ===== -->
+                    <div class="admin-section" style="background:#faf8ff;border:1.5px solid #ede0ff;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;">📖 Edit About Page</h4>
+                        <p style="font-size:13px;color:#888;margin:0 0 10px;">Update Vision, Mission, values, team, and contact info shown to all users.</p>
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">Our Vision</label>
+                        <textarea id="editAboutVision" rows="3" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:13px;margin:4px 0 10px;resize:vertical;"></textarea>
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">Our Mission</label>
+                        <textarea id="editAboutMission" rows="3" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:13px;margin:4px 0 10px;resize:vertical;"></textarea>
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">Contact Phone</label>
+                        <input type="text" id="editAboutPhone" placeholder="+256..." style="width:100%;box-sizing:border-box;margin:4px 0 10px;">
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">Contact Email</label>
+                        <input type="text" id="editAboutEmail" placeholder="email@example.com" style="width:100%;box-sizing:border-box;margin:4px 0 10px;">
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">WhatsApp Number (digits only)</label>
+                        <input type="text" id="editAboutWhatsapp" placeholder="256705732540" style="width:100%;box-sizing:border-box;margin:4px 0 10px;">
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;">Extra Message / Announcement (optional)</label>
+                        <textarea id="editAboutExtra" rows="2" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:13px;margin:4px 0 10px;resize:vertical;" placeholder="e.g. Exams start June 5th…"></textarea>
+                        <button id="saveAboutBtn" class="admin-toggle" style="width:100%;background:#4B2E9E;color:white;font-weight:700;">💾 Save About Page</button>
+                        <div id="saveAboutStatus" style="font-size:12px;color:#4B2E9E;margin-top:6px;text-align:center;min-height:16px;"></div>
                     </div>
 
                     <!-- ===== SEND ANNOUNCEMENT ===== -->
@@ -701,6 +729,18 @@
         <div id="teacherPage" class="page">
             <div class="section-title">👨‍🏫 Teacher Dashboard</div>
 
+            <!-- Live Lesson control -->
+            <div class="teacher-card" style="border:2px solid #FF4444;">
+                <h4 style="color:#FF4444;margin-bottom:8px;">📡 Live Lessons</h4>
+                <p style="font-size:12px;color:#888;margin-bottom:12px;">Start a live lesson — students see a pulsing "LIVE" banner and can join instantly.</p>
+                <input type="text" id="liveLessonTitle" placeholder="Lesson title (e.g. P7 Maths – Fractions)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
+                <input type="text" id="liveLessonLink" placeholder="Meeting link (Zoom/Google Meet/WhatsApp group URL)" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
+                <textarea id="liveLessonDesc" rows="2" placeholder="Brief description (optional)" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:10px;font-size:13px;font-family:inherit;resize:none;margin-bottom:8px;"></textarea>
+                <button id="startLiveLessonBtn" style="background:#FF4444;color:white;border:none;padding:12px 24px;border-radius:25px;font-weight:700;cursor:pointer;width:100%;">🔴 Go Live Now</button>
+                <div id="liveLessonTeacherStatus" style="font-size:12px;color:#FF4444;margin-top:6px;text-align:center;min-height:16px;"></div>
+                <div id="myActiveLessons" style="margin-top:12px;"></div>
+            </div>
+
             <!-- Earnings stats -->
             <div class="teacher-stat" id="teacherStatBoxes">
                 <div class="stat-box"><div class="stat-value" id="teacherTotalEarnings">0</div><div class="stat-label">Total Earnings (UGX)</div></div>
@@ -761,9 +801,10 @@
         <!-- ABOUT PAGE -->
         <div id="aboutPage" class="page">
             <div class="section-title">📖 About APSHULE</div>
-            <div class="about-card">
-                <div class="vision-box"><i class="fas fa-eye" style="font-size:32px;margin-bottom:10px;"></i><h3>Our Vision</h3><p>To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
-                <div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px;margin-bottom:10px;"></i><h3>Our Mission</h3><p>To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div>
+            <div id="aboutDynamicContent"></div>
+            <div class="about-card" id="aboutStaticCard">
+                <div class="vision-box"><i class="fas fa-eye" style="font-size:32px;margin-bottom:10px;"></i><h3>Our Vision</h3><p id="aboutVisionText">To be Africa's leading digital learning platform transforming education through innovation and accessibility for every student across the continent and beyond.</p></div>
+                <div class="mission-box"><i class="fas fa-bullseye" style="font-size:32px;margin-bottom:10px;"></i><h3>Our Mission</h3><p id="aboutMissionText">To provide quality, accessible, and affordable education to every student in Uganda and beyond through innovative technology.</p></div>
                 <h3><i class="fas fa-gem"></i> Core Values</h3>
                 <div class="core-value"><i class="fas fa-star"></i> <strong>Excellence:</strong> Striving for the highest quality in education delivery</div>
                 <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div>
@@ -1822,8 +1863,152 @@
     function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){c.innerHTML='<div style="text-align:center;color:#999">No enrolled people</div>';return;} c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
     window.deleteEnrolled = function(id) { if(confirm("Delete?")){attendancePeople=attendancePeople.filter(p=>p.id!==id);attendanceRecords=attendanceRecords.filter(r=>r.personId!==id);localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople));localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));showNotification("Person deleted");renderEnrolledList();renderRecentAttendance();} };
 
+    // ===== LIVE LESSONS =====
+    document.getElementById('startLiveLessonBtn')?.addEventListener('click', async () => {
+        const title = document.getElementById('liveLessonTitle').value.trim();
+        const link  = document.getElementById('liveLessonLink').value.trim();
+        const desc  = document.getElementById('liveLessonDesc').value.trim();
+        const status = document.getElementById('liveLessonTeacherStatus');
+        if(!title) { status.textContent = 'Enter a lesson title first.'; return; }
+        if(!currentUser) return;
+        try {
+            document.getElementById('startLiveLessonBtn').disabled = true;
+            await addDoc(collection(db, 'liveLessons'), {
+                teacherId: currentUser.uid,
+                teacherName: currentUser.name || currentUser.email,
+                title, link, desc,
+                status: 'live',
+                createdAt: new Date().toISOString()
+            });
+            // Announce to all students
+            await addDoc(collection(db, 'notifications'), {
+                type: 'live', title: '📡 Live Lesson Started!',
+                body: `${currentUser.name} is now live: "${title}". Join now!`,
+                timestamp: new Date().toISOString(),
+                author: currentUser.name,
+                targetUserId: null
+            });
+            status.style.color = '#4CAF50';
+            status.textContent = '🔴 You are live! Students can see your lesson.';
+            document.getElementById('liveLessonTitle').value = '';
+            document.getElementById('liveLessonLink').value = '';
+            document.getElementById('liveLessonDesc').value = '';
+            document.getElementById('startLiveLessonBtn').disabled = false;
+        } catch(e) {
+            status.textContent = 'Error going live. Try again.';
+            document.getElementById('startLiveLessonBtn').disabled = false;
+        }
+    });
+
+    window.endLiveLesson = async function(docId) {
+        if(!confirm('End this live lesson?')) return;
+        await updateDoc(doc(db, 'liveLessons', docId), { status: 'ended', endedAt: new Date().toISOString() });
+        showNotification('Live lesson ended.');
+    };
+
+    function listenLiveLessons() {
+        const q = query(collection(db, 'liveLessons'), where('status', '==', 'live'), orderBy('createdAt', 'desc'));
+        onSnapshot(q, snap => {
+            const banner  = document.getElementById('liveLessonsBanner');
+            const cards   = document.getElementById('liveLessonsCards');
+            const myDiv   = document.getElementById('myActiveLessons');
+            if(!banner || !cards) return;
+            if(snap.empty) { banner.style.display = 'none'; if(myDiv) myDiv.innerHTML = ''; return; }
+            banner.style.display = 'block';
+            cards.innerHTML = snap.docs.map(d => {
+                const l = d.data();
+                const linkHtml = l.link ? `<a href="${escHtml(l.link)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;background:#FF4444;color:white;padding:8px 20px;border-radius:20px;text-decoration:none;font-weight:700;">🔗 Join Lesson</a>` : '';
+                return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid #FF4444;box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                    <div style="font-weight:700;font-size:15px;">${escHtml(l.title)}</div>
+                    <div style="font-size:12px;color:#888;">Teacher: ${escHtml(l.teacherName)}</div>
+                    ${l.desc ? `<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(l.desc)}</div>` : ''}
+                    ${linkHtml}
+                </div>`;
+            }).join('');
+            // Teacher's own active lessons (for end button)
+            if(myDiv && currentUser?.role === 'teacher') {
+                const mine = snap.docs.filter(d => d.data().teacherId === currentUser.uid);
+                myDiv.innerHTML = mine.length ? '<div style="font-size:12px;font-weight:700;color:#FF4444;margin-bottom:6px;">Your active lessons:</div>' + mine.map(d => {
+                    const l = d.data();
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;background:#fff5f5;border-radius:12px;padding:10px 12px;margin-bottom:6px;">
+                        <span style="font-size:13px;font-weight:600;">${escHtml(l.title)}</span>
+                        <button onclick="endLiveLesson('${d.id}')" style="background:#FF4444;color:white;border:none;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;">⏹ End</button>
+                    </div>`;
+                }).join('') : '';
+            }
+        });
+    }
+
+    // ===== ABOUT PAGE (Firestore) =====
+    async function loadAboutFromFirestore() {
+        try {
+            const snap = await getDoc(doc(db, 'settings', 'about'));
+            if(snap.exists()) {
+                const d = snap.data();
+                if(d.vision) { const el = document.getElementById('aboutVisionText'); if(el) el.textContent = d.vision; }
+                if(d.mission) { const el = document.getElementById('aboutMissionText'); if(el) el.textContent = d.mission; }
+                if(d.phone) {
+                    document.querySelectorAll('.contact-info').forEach(ci => {
+                        if(ci.querySelector('.fa-phone')) ci.querySelector('div').innerHTML = `<strong>Phone:</strong> ${escHtml(d.phone)}`;
+                        if(ci.querySelector('.fa-envelope')) ci.querySelector('div').innerHTML = `<strong>Email:</strong> ${escHtml(d.email||'apshule@gmail.com')}`;
+                    });
+                    const wa = document.querySelector('.whatsapp-btn');
+                    if(wa && d.whatsapp) { wa.href = `https://wa.me/${d.whatsapp.replace(/\D/g,'')}`; wa.innerHTML = `<i class="fab fa-whatsapp"></i> WhatsApp Us: +${d.whatsapp.replace(/\D/g,'')}`; }
+                }
+                if(d.extra) {
+                    const dyn = document.getElementById('aboutDynamicContent');
+                    if(dyn) dyn.innerHTML = `<div style="background:linear-gradient(135deg,#FF8C42,#FF6B35);color:white;border-radius:16px;padding:14px 16px;margin-bottom:16px;font-size:14px;font-weight:600;">📢 ${escHtml(d.extra)}</div>`;
+                }
+            }
+        } catch(e) {}
+    }
+
+    async function loadAboutEditorData() {
+        try {
+            const snap = await getDoc(doc(db, 'settings', 'about'));
+            if(snap.exists()) {
+                const d = snap.data();
+                if(d.vision)   document.getElementById('editAboutVision').value = d.vision;
+                if(d.mission)  document.getElementById('editAboutMission').value = d.mission;
+                if(d.phone)    document.getElementById('editAboutPhone').value = d.phone;
+                if(d.email)    document.getElementById('editAboutEmail').value = d.email;
+                if(d.whatsapp) document.getElementById('editAboutWhatsapp').value = d.whatsapp;
+                if(d.extra)    document.getElementById('editAboutExtra').value = d.extra;
+            }
+        } catch(e) {}
+    }
+
+    document.getElementById('saveAboutBtn')?.addEventListener('click', async () => {
+        const status = document.getElementById('saveAboutStatus');
+        status.textContent = 'Saving…';
+        try {
+            await setDoc(doc(db, 'settings', 'about'), {
+                vision:   document.getElementById('editAboutVision').value.trim(),
+                mission:  document.getElementById('editAboutMission').value.trim(),
+                phone:    document.getElementById('editAboutPhone').value.trim(),
+                email:    document.getElementById('editAboutEmail').value.trim(),
+                whatsapp: document.getElementById('editAboutWhatsapp').value.trim(),
+                extra:    document.getElementById('editAboutExtra').value.trim(),
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            status.style.color = '#4CAF50';
+            status.textContent = '✅ About page saved! All users will see changes immediately.';
+        } catch(e) { status.style.color = 'red'; status.textContent = 'Error saving. Try again.'; }
+    });
+
     // ===== AI CHAT =====
-    async function askAI(q) { if(typeof puter !== 'undefined' && puter.ai) { try { let resp = await puter.ai.chat(q); return resp.message.content; } catch(e) { return "Connection error"; } } else return "📚 I'm a demo AI. Full version coming soon!"; }
+    async function askAI(q) {
+        try {
+            const systemPrompt = 'You are APSHULE AI Tutor, a helpful and friendly educational assistant for Ugandan students (Primary and Secondary school). Give concise, clear, curriculum-relevant answers. ';
+            const fullPrompt = systemPrompt + 'Student asks: ' + q;
+            const resp = await fetch('https://text.pollinations.ai/' + encodeURIComponent(fullPrompt), { signal: AbortSignal.timeout(15000) });
+            if(!resp.ok) throw new Error('bad response');
+            const text = await resp.text();
+            return text.trim() || "📚 I couldn't get a response. Please try again!";
+        } catch(e) {
+            return "📚 AI is temporarily offline. Try again in a moment!";
+        }
+    }
     function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
     async function sendChat() { let inp=document.getElementById('chatInput'); let q=inp.value.trim(); if(!q) return; addMsg(q,'user'); inp.value=''; addMsg("🤔 Thinking...",'ai'); let ans=await askAI(q); let msgs=document.querySelectorAll('#chatMessages .message'); if(msgs.length&&msgs[msgs.length-1].querySelector('.message-bubble')?.innerText==="🤔 Thinking...") msgs[msgs.length-1].remove(); addMsg(ans,'ai'); }
 
@@ -1839,6 +2024,7 @@
         if(an) an.classList.add('active');
         if(pageId==='teacher') loadTeacherDashboard();
         if(pageId==='account') loadMyVideoQuestions();
+        if(pageId==='about') loadAboutFromFirestore();
         if(pageId==='resources') {
             renderResources();
             const searchEl = document.getElementById('resourcesSearch');
@@ -1918,6 +2104,8 @@
         }
         // Start notification listener for this user
         listenToNotifications();
+        listenLiveLessons();
+        loadAboutFromFirestore();
     }
 
     // ===== FIRESTORE LISTENERS =====
@@ -2137,7 +2325,7 @@
     document.addEventListener('click', ()=> document.getElementById('moreDropdown')?.classList.remove('show'));
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
@@ -2335,6 +2523,7 @@
         document.querySelectorAll('.login-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active');
         document.getElementById('loginFormDiv').classList.toggle('active',tn==='login');
         document.getElementById('signupFormDiv').classList.toggle('active',tn==='signup');
+        document.getElementById('loginError').innerText = '';
     }));
 
     // ===== AUTH =====
