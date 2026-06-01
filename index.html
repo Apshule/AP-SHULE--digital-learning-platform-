@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://i.ibb.co" crossorigin>
     <link rel="dns-prefetch" href="https://www.youtube.com">
     <link rel="dns-prefetch" href="https://www.googleapis.com">
-    <!-- Preload self-hosted Firebase SDK (served from GitHub Pages CDN — no Google CDN dependency) -->
-    <link rel="modulepreload" href="/firebase-app.js" crossorigin>
-    <link rel="modulepreload" href="/firebase-auth.js" crossorigin>
-    <link rel="modulepreload" href="/firebase-firestore.js" crossorigin>
-    <link rel="modulepreload" href="/firebase-storage.js" crossorigin>
+    <!-- Preload Firebase Compat SDK — regular scripts, work in ALL browsers including Opera Mini -->
+    <link rel="preload" href="/firebase-app-compat.js" as="script">
+    <link rel="preload" href="/firebase-auth-compat.js" as="script">
+    <link rel="preload" href="/firebase-firestore-compat.js" as="script">
+    <link rel="preload" href="/firebase-storage-compat.js" as="script">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1304,24 +1304,15 @@
 <!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
-<script type="importmap">
-{
-    "imports": {
-        "firebase/app":       "/firebase-app.js",
-        "firebase/auth":      "/firebase-auth.js",
-        "firebase/firestore": "/firebase-firestore.js",
-        "firebase/storage":   "/firebase-storage.js"
-    }
-}
-</script>
+<!-- Firebase Compat SDK — works in ALL browsers (Chrome, Opera Mini, Samsung Internet, etc.) -->
+<script src="/firebase-app-compat.js"></script>
+<script src="/firebase-auth-compat.js"></script>
+<script src="/firebase-firestore-compat.js"></script>
+<script src="/firebase-storage-compat.js"></script>
 
-<script type="module">
-    import { initializeApp } from "firebase/app";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "firebase/auth";
-    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, orderBy, limit, increment } from "firebase/firestore";
-    import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-
-    const firebaseConfig = {
+<script>
+    // Initialise Firebase
+    var firebaseConfig = {
         apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
         authDomain: "apshule-app.firebaseapp.com",
         projectId: "apshule-app",
@@ -1329,13 +1320,87 @@
         messagingSenderId: "610368652834",
         appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
     };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+    firebase.initializeApp(firebaseConfig);
+    var auth    = firebase.auth();
+    var db      = firebase.firestore();
+    var storage = firebase.storage();
     window.db = db; window.auth = auth; window.storage = storage;
 
-    const PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
+    // ---- Modular-API shims so ALL existing code works unchanged ----
+    function getAuth()   { return auth; }
+    function signOut(a)  { return a.signOut(); }
+    function onAuthStateChanged(a,cb,err) { return a.onAuthStateChanged(cb,err); }
+    function signInWithEmailAndPassword(a,email,pw)     { return a.signInWithEmailAndPassword(email,pw); }
+    function createUserWithEmailAndPassword(a,email,pw) { return a.createUserWithEmailAndPassword(email,pw); }
+    function sendPasswordResetEmail(a,email)             { return a.sendPasswordResetEmail(email); }
+    function getFirestore() { return db; }
+    function getStorage()   { return storage; }
+
+    // Snapshot wrapper: compat has .exists as a property; modular code calls .exists() as a method
+    function _wrapDoc(d) {
+        if(!d) return d;
+        return { id:d.id, ref:d.ref, exists:function(){ return d.exists; }, data:function(){ return d.data(); }, metadata:d.metadata };
+    }
+    function _wrapSnap(snap) {
+        if(snap && typeof snap.docs !== 'undefined') {
+            var docs = snap.docs.map(_wrapDoc);
+            return { docs:docs, empty:snap.empty, size:snap.size, forEach:function(fn){ docs.forEach(fn); } };
+        }
+        return _wrapDoc(snap);
+    }
+
+    // Firestore document/collection helpers
+    function collection(ref) {
+        var path = Array.prototype.slice.call(arguments, 1).join('/');
+        return ref.collection(path);
+    }
+    function doc(ref) {
+        var path = Array.prototype.slice.call(arguments, 1).join('/');
+        return ref.doc ? ref.doc(path) : db.doc(path);
+    }
+    function getDoc(ref)  { return ref.get().then(_wrapDoc); }
+    function getDocs(q)   { return q.get().then(_wrapSnap); }
+    function setDoc(ref,data,opts) { return opts ? ref.set(data,opts) : ref.set(data); }
+    function addDoc(ref,data)      { return ref.add(data); }
+    function updateDoc(ref,data)   { return ref.update(data); }
+    function deleteDoc(ref)        { return ref.delete(); }
+    function onSnapshot(ref) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        var cb   = typeof args[0] === 'function' ? args[0] : args[1];
+        var errCb= typeof args[0] === 'function' ? args[1] : args[2];
+        if(typeof args[0] === 'function') {
+            return ref.onSnapshot(function(s){ cb(_wrapSnap(s)); }, errCb || function(){});
+        }
+        return ref.onSnapshot(args[0], function(s){ args[1](_wrapSnap(s)); }, args[2]||function(){});
+    }
+
+    // Query constraint builders
+    function where(f,op,v)   { return {_t:'w',f:f,op:op,v:v}; }
+    function orderBy(f,dir)  { return {_t:'o',f:f,d:dir||'asc'}; }
+    function limit(n)        { return {_t:'l',n:n}; }
+    function query(ref) {
+        var q = ref;
+        for(var i=1;i<arguments.length;i++){
+            var c=arguments[i]; if(!c) continue;
+            if(c._t==='w') q=q.where(c.f,c.op,c.v);
+            else if(c._t==='o') q=q.orderBy(c.f,c.d);
+            else if(c._t==='l') q=q.limit(c.n);
+        }
+        return q;
+    }
+    function increment(n)         { return firebase.firestore.FieldValue.increment(n); }
+    function serverTimestamp()    { return firebase.firestore.FieldValue.serverTimestamp(); }
+    function arrayUnion()         { return firebase.firestore.FieldValue.arrayUnion.apply(null,arguments); }
+    function arrayRemove()        { return firebase.firestore.FieldValue.arrayRemove.apply(null,arguments); }
+    function deleteField()        { return firebase.firestore.FieldValue.delete(); }
+
+    // Storage shims
+    function storageRef(s,path) { return path===undefined ? s : (s.ref ? s.ref(path) : storage.ref(path)); }
+    function uploadBytesResumable(ref,data) { return ref.put(data); }
+    function getDownloadURL(ref)            { return ref.getDownloadURL(); }
+    function deleteObject(ref)              { return ref.delete(); }
+
+    var PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
 
     // ===== GLOBAL STATE =====
     let currentUser = null;
