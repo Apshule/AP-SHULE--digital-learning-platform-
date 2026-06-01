@@ -1307,11 +1307,11 @@
 <!-- YouTube IFrame API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
-<!-- Firebase Compat SDK — works in ALL browsers (Chrome, Opera Mini, Samsung Internet, etc.) -->
-<script src="/firebase-app-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
-<script src="/firebase-auth-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
-<script src="/firebase-firestore-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
-<script src="/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<!-- Firebase Compat SDK — Google CDN (best global coverage; same infrastructure as Firebase itself) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 
 <script>
     // Initialise Firebase (wrapped in try-catch so any error unblocks the login form)
@@ -1344,48 +1344,67 @@
 
     // ---- Modular-API shims so ALL existing code works unchanged ----
     function getAuth()   { return auth; }
-    function signOut(a)  { return a.signOut(); }
-    function onAuthStateChanged(a,cb,err) { return a.onAuthStateChanged(cb,err); }
-    function signInWithEmailAndPassword(a,email,pw)     { return a.signInWithEmailAndPassword(email,pw); }
-    function createUserWithEmailAndPassword(a,email,pw) { return a.createUserWithEmailAndPassword(email,pw); }
-    function sendPasswordResetEmail(a,email)             { return a.sendPasswordResetEmail(email); }
+    function signOut(a)  { return a ? a.signOut() : Promise.resolve(); }
+    function onAuthStateChanged(a,cb,err) {
+        // If Firebase failed to load, simulate "logged out" so the UI still shows
+        if(!a || typeof a.onAuthStateChanged !== 'function') {
+            setTimeout(function(){ try{ cb(null); }catch(x){} }, 0);
+            return function(){};
+        }
+        return a.onAuthStateChanged(cb,err);
+    }
+    function signInWithEmailAndPassword(a,email,pw) {
+        if(!a) return Promise.reject(new Error('Service unavailable — please reload'));
+        return a.signInWithEmailAndPassword(email,pw);
+    }
+    function createUserWithEmailAndPassword(a,email,pw) {
+        if(!a) return Promise.reject(new Error('Service unavailable — please reload'));
+        return a.createUserWithEmailAndPassword(email,pw);
+    }
+    function sendPasswordResetEmail(a,email) {
+        if(!a) return Promise.reject(new Error('Service unavailable — please reload'));
+        return a.sendPasswordResetEmail(email);
+    }
     function getFirestore() { return db; }
     function getStorage()   { return storage; }
 
     // Snapshot wrapper: compat has .exists as a property; modular code calls .exists() as a method
+    var _emptySnap = { docs:[], empty:true, size:0, forEach:function(){} };
     function _wrapDoc(d) {
-        if(!d) return d;
+        if(!d) return { id:'', ref:null, exists:function(){ return false; }, data:function(){ return null; }, metadata:{} };
         return { id:d.id, ref:d.ref, exists:function(){ return d.exists; }, data:function(){ return d.data(); }, metadata:d.metadata };
     }
     function _wrapSnap(snap) {
-        if(snap && typeof snap.docs !== 'undefined') {
+        if(!snap) return _emptySnap;
+        if(typeof snap.docs !== 'undefined') {
             var docs = snap.docs.map(_wrapDoc);
             return { docs:docs, empty:snap.empty, size:snap.size, forEach:function(fn){ docs.forEach(fn); } };
         }
         return _wrapDoc(snap);
     }
 
-    // Firestore document/collection helpers
+    // Firestore document/collection helpers (null-safe: return null if db unavailable)
     function collection(ref) {
+        if(!ref || typeof ref.collection !== 'function') return null;
         var path = Array.prototype.slice.call(arguments, 1).join('/');
         return ref.collection(path);
     }
     function doc(ref) {
+        if(!ref) return null;
         var path = Array.prototype.slice.call(arguments, 1).join('/');
-        return ref.doc ? ref.doc(path) : db.doc(path);
+        return (ref.doc ? ref : db) ? (ref.doc ? ref.doc(path) : db.doc(path)) : null;
     }
-    function getDoc(ref)  { return ref.get().then(_wrapDoc); }
-    function getDocs(q)   { return q.get().then(_wrapSnap); }
-    function setDoc(ref,data,opts) { return opts ? ref.set(data,opts) : ref.set(data); }
-    function addDoc(ref,data)      { return ref.add(data); }
-    function updateDoc(ref,data)   { return ref.update(data); }
-    function deleteDoc(ref)        { return ref.delete(); }
+    function getDoc(ref)  { return ref ? ref.get().then(_wrapDoc) : Promise.resolve(_wrapDoc(null)); }
+    function getDocs(q)   { return q ? q.get().then(_wrapSnap) : Promise.resolve(_emptySnap); }
+    function setDoc(ref,data,opts) { return ref ? (opts ? ref.set(data,opts) : ref.set(data)) : Promise.resolve(); }
+    function addDoc(ref,data)      { return ref ? ref.add(data) : Promise.resolve({id:''}); }
+    function updateDoc(ref,data)   { return ref ? ref.update(data) : Promise.resolve(); }
+    function deleteDoc(ref)        { return ref ? ref.delete() : Promise.resolve(); }
     function onSnapshot(ref) {
+        if(!ref || typeof ref.onSnapshot !== 'function') return function(){};
         var args = Array.prototype.slice.call(arguments, 1);
-        var cb   = typeof args[0] === 'function' ? args[0] : args[1];
-        var errCb= typeof args[0] === 'function' ? args[1] : args[2];
         if(typeof args[0] === 'function') {
-            return ref.onSnapshot(function(s){ cb(_wrapSnap(s)); }, errCb || function(){});
+            return ref.onSnapshot(function(s){ args[0](_wrapSnap(s)); }, args[1]||function(){});
         }
         return ref.onSnapshot(args[0], function(s){ args[1](_wrapSnap(s)); }, args[2]||function(){});
     }
@@ -1395,6 +1414,7 @@
     function orderBy(f,dir)  { return {_t:'o',f:f,d:dir||'asc'}; }
     function limit(n)        { return {_t:'l',n:n}; }
     function query(ref) {
+        if(!ref) return null;
         var q = ref;
         for(var i=1;i<arguments.length;i++){
             var c=arguments[i]; if(!c) continue;
@@ -1404,11 +1424,13 @@
         }
         return q;
     }
-    function increment(n)         { return firebase.firestore.FieldValue.increment(n); }
-    function serverTimestamp()    { return firebase.firestore.FieldValue.serverTimestamp(); }
-    function arrayUnion()         { return firebase.firestore.FieldValue.arrayUnion.apply(null,arguments); }
-    function arrayRemove()        { return firebase.firestore.FieldValue.arrayRemove.apply(null,arguments); }
-    function deleteField()        { return firebase.firestore.FieldValue.delete(); }
+    var _FV = (typeof firebase!=='undefined' && firebase.firestore) ? firebase.firestore.FieldValue : null;
+    function _fv() { return (typeof firebase!=='undefined' && firebase.firestore) ? firebase.firestore.FieldValue : null; }
+    function increment(n)      { var fv=_fv(); return fv ? fv.increment(n) : n; }
+    function serverTimestamp() { var fv=_fv(); return fv ? fv.serverTimestamp() : new Date(); }
+    function arrayUnion()      { var fv=_fv(); return fv ? fv.arrayUnion.apply(fv,arguments) : []; }
+    function arrayRemove()     { var fv=_fv(); return fv ? fv.arrayRemove.apply(fv,arguments) : []; }
+    function deleteField()     { var fv=_fv(); return fv ? fv.delete() : null; }
 
     // Storage shims
     function storageRef(s,path) { return path===undefined ? s : (s.ref ? s.ref(path) : storage.ref(path)); }
