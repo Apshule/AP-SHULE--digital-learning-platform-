@@ -123,6 +123,21 @@
         .nav-item.active { color: #FF8C42; }
         .page { display: none; }
         .page.active-page { display: block; }
+        /* ===== CONTENT PROTECTION ===== */
+        /* Prevent text selection on learning content */
+        #videoPlayerModal, #pdfViewerModal, .lesson-video, .resources-pdf-item, .material-item {
+            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+        }
+        /* Hide any native download arrows on PDF embeds */
+        #pdfViewerModal embed, #pdfViewerModal iframe, #pdfViewerModal object {
+            -webkit-user-select: none; user-select: none; pointer-events: none;
+        }
+        /* Pointer-events wrapper allows scroll/zoom but blocks download toolbar */
+        #pdfViewerModal .pdf-embed-wrap { position:relative; }
+        #pdfViewerModal .pdf-embed-wrap::after {
+            content:''; position:absolute; bottom:0; left:0; right:0; height:44px;
+            background:rgba(255,255,255,0.01); pointer-events:auto; z-index:2;
+        }
         .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px 20px; border-radius: 10px; display: none; z-index: 4000; animation: slideIn 0.3s ease; max-width: 300px; }
         .notification.success { background: #2E7D32; }
         .notification.info { background: #FF8C42; }
@@ -1046,6 +1061,18 @@
                         </div>
                         <div id="existingMappingsList" style="font-size:13px;margin-top:10px;"></div>
                     </div>
+                </div>
+
+                <!-- LIVE LESSON PLAN EDIT SECTION (superadmin only) -->
+                <div class="admin-section" id="livePlanEditSection" style="display:none;">
+                    <h4>💳 Edit Live Lesson Plans</h4>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                        <div><label style="font-size:12px;color:#555;display:block;margin-bottom:2px;">Weekly Price (UGX)</label><input type="number" id="editWeeklyPrice" placeholder="15000" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;box-sizing:border-box;"></div>
+                        <div><label style="font-size:12px;color:#555;display:block;margin-bottom:2px;">Monthly Price (UGX)</label><input type="number" id="editMonthlyPrice" placeholder="50000" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;box-sizing:border-box;"></div>
+                        <div style="grid-column:span 2"><label style="font-size:12px;color:#555;display:block;margin-bottom:2px;">Termly Price (UGX)</label><input type="number" id="editTermlyPrice" placeholder="120000" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;box-sizing:border-box;"></div>
+                    </div>
+                    <button id="saveLivePlansBtn" class="admin-toggle">💾 Save Plan Prices</button>
+                    <div id="livePlanSaveStatus" style="font-size:12px;color:#4CAF50;margin-top:4px;min-height:14px;"></div>
                 </div>
 
                 <!-- SCHOOL EVENTS SECTION -->
@@ -2044,6 +2071,42 @@
             allTeachers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
             renderTeachersAdmin();
             populateVideoTeacherDropdown();
+        });
+    }
+
+    // ===== LIVE PLAN SETTINGS (Firestore-backed, reflects immediately for all users) =====
+    function listenToLivePlanSettings() {
+        onSnapshot(doc(db,'settings','livePlans'), (snap) => {
+            if(!snap.exists()) return;
+            const d = snap.data();
+            // Update Weekly card
+            if(d.weeklyPrice) {
+                const wCard = document.querySelector('#livePlansGrid .live-plan-weekly');
+                if(wCard) {
+                    wCard.querySelector('.live-plan-price').textContent = 'UGX ' + Number(d.weeklyPrice).toLocaleString() + ' / week';
+                    wCard.querySelector('.live-plan-btn').onclick = function(){ openLivePlanPayment('Weekly', String(d.weeklyPrice)); };
+                }
+            }
+            // Update Monthly card
+            if(d.monthlyPrice) {
+                const mCard = document.querySelector('#livePlansGrid .live-plan-monthly');
+                if(mCard) {
+                    mCard.querySelector('.live-plan-price').textContent = 'UGX ' + Number(d.monthlyPrice).toLocaleString() + ' / month';
+                    mCard.querySelector('.live-plan-btn').onclick = function(){ openLivePlanPayment('Monthly', String(d.monthlyPrice)); };
+                }
+            }
+            // Update Termly card
+            if(d.termlyPrice) {
+                const tCard = document.querySelector('#livePlansGrid .live-plan-termly');
+                if(tCard) {
+                    tCard.querySelector('.live-plan-price').textContent = 'UGX ' + Number(d.termlyPrice).toLocaleString() + ' · 1 term (3 months)';
+                    tCard.querySelector('.live-plan-btn').onclick = function(){ openLivePlanPayment('Termly', String(d.termlyPrice)); };
+                }
+            }
+            // Pre-fill admin edit fields if they exist
+            const wp = document.getElementById('editWeeklyPrice');  if(wp && d.weeklyPrice)  wp.value = d.weeklyPrice;
+            const mp = document.getElementById('editMonthlyPrice'); if(mp && d.monthlyPrice) mp.value = d.monthlyPrice;
+            const tp = document.getElementById('editTermlyPrice');  if(tp && d.termlyPrice)  tp.value = d.termlyPrice;
         });
     }
 
@@ -3843,8 +3906,13 @@
         const pageMatches = SEARCH_PAGES.filter(p=> p.title.toLowerCase().includes(ql)||p.sub.toLowerCase().includes(ql));
         if(pageMatches.length) groups.push({ label:'Pages', items: pageMatches.map(p=>({...p, category:'page'})) });
 
-        // Features
-        const featMatches = SEARCH_FEATURES.filter(f=> f.title.toLowerCase().includes(ql)||f.sub.toLowerCase().includes(ql));
+        // Features — filter by role so teachers never see "Admin Panel"
+        const featMatches = SEARCH_FEATURES.filter(f=>{
+            if(f.title==='Admin Panel' && currentUser?.role!=='superadmin' && currentUser?.role!=='school') return false;
+            if(f.title==='Teacher Dashboard' && currentUser?.role!=='teacher') return false;
+            if(f.title==='Facial Attendance' && currentUser?.role!=='school' && currentUser?.role!=='superadmin') return false;
+            return f.title.toLowerCase().includes(ql)||f.sub.toLowerCase().includes(ql);
+        });
         if(featMatches.length) groups.push({ label:'Features', items: featMatches.map(f=>({...f, category:'feature'})) });
 
         // Subjects
@@ -4193,6 +4261,7 @@
         document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
         document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
+        document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
         if (isSuper) loadPushHistory();
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
@@ -4206,7 +4275,8 @@
         document.getElementById('teacherNavItem').style.display = isTeacher ? "flex" : "none";
         // Profile pic
         const profilePicSection = document.getElementById('profilePicUploadSection');
-        if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper||isTeacher) ? "none" : "block";
+        // Superadmin and School have no personal profile pic; Teachers and Students do
+        if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper) ? "none" : "block";
         // School logo
         if(isSchool) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
@@ -4643,6 +4713,23 @@
         uploadProfilePicture(fileInput.files[0]);
     });
 
+    document.getElementById('saveLivePlansBtn')?.addEventListener('click', async ()=>{
+        const wp = parseInt(document.getElementById('editWeeklyPrice')?.value||0);
+        const mp = parseInt(document.getElementById('editMonthlyPrice')?.value||0);
+        const tp = parseInt(document.getElementById('editTermlyPrice')?.value||0);
+        const st = document.getElementById('livePlanSaveStatus');
+        if(!wp||!mp||!tp){ showNotification('Enter all three prices','error'); return; }
+        const btn = document.getElementById('saveLivePlansBtn');
+        btn.disabled=true; btn.textContent='Saving…';
+        try {
+            await setDoc(doc(db,'settings','livePlans'), { weeklyPrice:wp, monthlyPrice:mp, termlyPrice:tp, updatedAt:new Date().toISOString() });
+            if(st) st.textContent='✅ Saved! All users see new prices immediately.';
+            showNotification('Live plan prices updated ✅');
+            setTimeout(()=>{ if(st) st.textContent=''; }, 5000);
+        } catch(e){ showNotification('Save failed: '+e.message,'error'); }
+        btn.disabled=false; btn.textContent='💾 Save Plan Prices';
+    });
+
     document.getElementById('uploadLogoBtn')?.addEventListener('click', ()=>{
         const fileInput=document.getElementById('logoUploadInput');
         if(!fileInput.files.length){showNotification("Select an image first","error");return;}
@@ -4721,6 +4808,9 @@
         if(user) {
             await loadUserAndShowApp(user);
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
+            // Show device banner for 5 min after login then auto-hide
+            const _banner = document.getElementById('responsiveDemoNotice');
+            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 300000); }
         } else {
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
@@ -4747,6 +4837,7 @@
     try { listenToSubjects(); } catch(e){ console.warn('listenToSubjects',e); }
     try { listenToSubscriptionPlans(); } catch(e){ console.warn('listenToSubscriptionPlans',e); }
     try { listenToTeachers(); } catch(e){ console.warn('listenToTeachers',e); }
+    try { listenToLivePlanSettings(); } catch(e){ console.warn('listenToLivePlanSettings',e); }
     // Mark-all-read button
     document.getElementById('markAllReadBtn')?.addEventListener('click', markAllNotifsRead);
 
