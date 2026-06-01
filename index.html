@@ -6,6 +6,21 @@
     <title>APSHULE - Learn With Ease</title>
     <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+    <!-- Preconnect to every CDN used so DNS+TLS handshakes happen in parallel -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin>
+    <link rel="dns-prefetch" href="https://www.youtube.com">
+    <link rel="dns-prefetch" href="https://www.googleapis.com">
+    <!-- Preload Firebase modules so they download in parallel before the module script runs -->
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js">
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -4540,6 +4555,17 @@
         const splash = document.getElementById('splashScreen');
         if(splash) splash.style.display = 'none';
     });
+
+    // Safety net: if Firebase never fires onAuthStateChanged within 14 s
+    // (e.g. network too slow), drop to login screen so the user isn't stuck
+    setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if(splash && splash.style.display !== 'none') {
+            splash.style.display = 'none';
+            document.getElementById('loginScreen')?.classList.remove('hidden');
+            document.getElementById('loginError').textContent = '⚠️ Slow connection detected. Please check your internet and try again.';
+        }
+    }, 14000);
 
     // ===== START LISTENERS =====
     listenToSchools();
