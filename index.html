@@ -4661,19 +4661,21 @@
     document.getElementById('logoutBtn')?.addEventListener('click', ()=> signOut(auth));
 
     onAuthStateChanged(auth, async (user)=>{
-        if(user) {
-            await loadUserAndShowApp(user);
-            await loadBrandLogo();
-        } else {
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('appScreen').classList.add('hidden');
-            await loadBrandLogo();
-        }
-        // Firebase is now ready — enable login buttons and hide splash
+        // ← Enable login button and hide splash IMMEDIATELY once auth state is known
+        //   (before any slow network calls like loadBrandLogo or loadUserAndShowApp)
         window._firebaseReady?.();
         window._clearSplashTimer?.();
         const splash = document.getElementById('splashScreen');
         if(splash) splash.style.display = 'none';
+
+        if(user) {
+            await loadUserAndShowApp(user);
+            loadBrandLogo().catch(()=>{}); // load logo in background, don't block
+        } else {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appScreen').classList.add('hidden');
+            loadBrandLogo().catch(()=>{}); // load logo in background, don't block
+        }
     });
 
     // Safety net: if Firebase never fires onAuthStateChanged within 14 s
