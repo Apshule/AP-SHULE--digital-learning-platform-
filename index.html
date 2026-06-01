@@ -441,16 +441,19 @@
         var err = document.getElementById('loginError');
         if(err && err.textContent.includes('Loading')) err.textContent = '';
     };
-    // Hard deadline: re-enable buttons after 20 s no matter what
+    // Hard deadline: re-enable buttons after 5 s max (not 20 s)
     window._clearSplashTimer = function(){}; // kept for compat
     setTimeout(function(){
         var btn = document.getElementById('loginBtn');
-        if(btn && btn.disabled){
-            window._firebaseReady();
-            var err = document.getElementById('loginError');
-            if(err) err.textContent = '⚠️ Taking longer than usual — tap Login to try anyway.';
-        }
-    }, 20000);
+        if(btn && btn.disabled){ window._firebaseReady(); }
+    }, 5000);
+    // Ultimate fallback: catch any uncaught JS error and unblock the form
+    window.onerror = function(msg, src, line, col, err){
+        window._firebaseReady && window._firebaseReady();
+        var el = document.getElementById('loginError');
+        if(el && !el.textContent) el.textContent = '⚠️ A script error occurred. Try reloading.';
+        return false; // don't suppress the error in devtools
+    };
 })();
 </script>
 
@@ -1305,26 +1308,39 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <!-- Firebase Compat SDK — works in ALL browsers (Chrome, Opera Mini, Samsung Internet, etc.) -->
-<script src="/firebase-app-compat.js"></script>
-<script src="/firebase-auth-compat.js"></script>
-<script src="/firebase-firestore-compat.js"></script>
-<script src="/firebase-storage-compat.js"></script>
+<script src="/firebase-app-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="/firebase-auth-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="/firebase-firestore-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 
 <script>
-    // Initialise Firebase
-    var firebaseConfig = {
-        apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
-        authDomain: "apshule-app.firebaseapp.com",
-        projectId: "apshule-app",
-        storageBucket: "apshule-app.firebasestorage.app",
-        messagingSenderId: "610368652834",
-        appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
-    };
-    firebase.initializeApp(firebaseConfig);
-    var auth    = firebase.auth();
-    var db      = firebase.firestore();
-    var storage = firebase.storage();
-    window.db = db; window.auth = auth; window.storage = storage;
+    // Initialise Firebase (wrapped in try-catch so any error unblocks the login form)
+    var auth, db, storage;
+    try {
+        var firebaseConfig = {
+            apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
+            authDomain: "apshule-app.firebaseapp.com",
+            projectId: "apshule-app",
+            storageBucket: "apshule-app.firebasestorage.app",
+            messagingSenderId: "610368652834",
+            appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
+        };
+        firebase.initializeApp(firebaseConfig);
+        auth    = firebase.auth();
+        db      = firebase.firestore();
+        storage = firebase.storage();
+        window.db = db; window.auth = auth; window.storage = storage;
+    } catch(e) {
+        // Firebase SDK failed — unblock the UI immediately and show a useful message
+        window._firebaseReady && window._firebaseReady();
+        var el = document.getElementById('loginError');
+        if(el) el.textContent = '⚠️ Could not connect. Tap Reload to try again.';
+        var rb = document.createElement('button');
+        rb.textContent = 'Reload'; rb.style.cssText = 'margin-left:8px;padding:4px 12px;border-radius:8px;background:#4B2E9E;color:#fff;border:none;font-size:14px;cursor:pointer;';
+        rb.onclick = function(){ location.reload(true); };
+        if(el) el.appendChild(rb);
+        console.error('Firebase init failed:', e);
+    }
 
     // ---- Modular-API shims so ALL existing code works unchanged ----
     function getAuth()   { return auth; }
