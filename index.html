@@ -958,16 +958,6 @@
                         <div id="adminLiveLessons"><div style="color:#999;font-size:13px;">Loading…</div></div>
                     </div>
 
-                    <!-- ===== LIVE ENROLLMENT FORM MANAGEMENT ===== -->
-                    <div class="admin-section" style="background:#f0f4ff;border:1.5px solid #9bb8ff;border-radius:16px;padding:16px;">
-                        <h4 style="margin-top:0;color:#4B2E9E;">📋 Termly Enrollment Form</h4>
-                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Upload the enrollment form PDF that students download, fill, and return.</p>
-                        <input type="url" id="adminEnrollFormUrl" placeholder="Paste Google Drive / Firebase PDF link" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:12px;margin-bottom:6px;font-size:13px;">
-                        <button id="adminSaveEnrollFormBtn" style="width:100%;background:#4B2E9E;color:white;border:none;padding:10px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">💾 Save Form URL</button>
-                        <div id="adminEnrollFormStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
-                        <h4 style="margin:14px 0 6px;color:#4B2E9E;font-size:13px;">📥 Student Form Submissions</h4>
-                        <div id="adminEnrollFormSubmissions" style="font-size:13px;color:#999;">Loading…</div>
-                    </div>
 
                     <!-- ===== LIVE LESSON ATTENDANCE ===== -->
                     <div class="admin-section" style="background:#f0fff4;border:1.5px solid #99ddbb;border-radius:16px;padding:16px;">
@@ -1249,22 +1239,6 @@
             <div class="live-section-title"><span style="display:inline-block;width:9px;height:9px;background:#FF8C42;border-radius:50%;animation:livePulse 1.2s infinite;"></span>Available Lessons</div>
             <div id="livePageLessonsContainer"><div style="text-align:center;color:#999;padding:20px;font-size:14px;">Loading…</div></div>
 
-            <!-- Enrollment form section (shown only for termly plan + non-enrolled) -->
-            <div id="liveEnrollFormSection" style="display:none;">
-                <div class="live-section-title">📋 Termly Enrollment Form</div>
-                <div class="enroll-form-card">
-                    <p style="font-size:13px;color:#666;margin:0 0 10px;">For the termly plan, download the enrollment form, fill it in, and upload your completed copy. Superadmin will confirm your enrollment.</p>
-                    <div id="enrollFormDownloadArea" style="margin-bottom:10px;"></div>
-                    <div id="enrollFormPreviousStatus" style="margin-bottom:8px;"></div>
-                    <div id="enrollFormUploadArea">
-                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:4px;">Upload your completed form</label>
-                        <input type="text" id="studentClassInput" placeholder="Your class (e.g. P7, S4, S6…)" style="width:100%;box-sizing:border-box;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;margin-bottom:6px;">
-                        <input type="file" id="enrollFormUploadInput" accept="image/*,.pdf" style="font-size:13px;margin-bottom:8px;display:block;">
-                        <button id="submitEnrollFormBtn" style="background:#FF8C42;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;width:100%;">📤 Submit Form</button>
-                        <div id="enrollFormSubmitStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Live lesson plans -->
             <div class="live-section-title">💳 Subscribe to Live Lessons</div>
@@ -1388,11 +1362,11 @@
                 <div id="myVideoQList"><div style="text-align:center;color:#999;padding:16px;">No questions yet — ask one during a lesson!</div></div>
             </div>
             <!-- Admission Form shortcut (students only) -->
-            <div id="admissionShortcut" class="account-card" style="margin-top:16px;display:none;">
-                <h4 style="color:#4B2E9E;margin-bottom:4px;">📋 Admission Form</h4>
-                <p style="font-size:12px;color:#666;margin-bottom:12px;">Fill in the official ApShule admission form online and download your personalised PDF on our headed paper.</p>
-                <div id="myAdmissionStatus"></div>
-                <button onclick="navigateTo('admission')" style="background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:white;border:none;padding:12px 24px;border-radius:24px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">📋 Open Admission Form</button>
+            <div id="admissionShortcut" class="account-card" style="margin-top:16px;display:none;border:2px solid #4B2E9E22;">
+                <h4 style="color:#4B2E9E;margin-bottom:4px;">📋 Official Admission Form</h4>
+                <p style="font-size:12px;color:#666;margin-bottom:10px;">Fill in the ApShule admission form online — get a PDF on official headed paper instantly.</p>
+                <div id="myAdmissionStatus" style="margin-bottom:10px;"></div>
+                <button id="openAdmFormBtn" onclick="navigateTo('admission')" style="background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:white;border:none;padding:12px 24px;border-radius:24px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">📋 Open Admission Form</button>
             </div>
         </div>
 
@@ -1901,6 +1875,47 @@
     let ytPlayer = null;
     let videoProgressInterval = null;
     let earningRecorded = false;
+
+    // ===== SESSION ISOLATION — wipe ALL user data on logout / auth-null =====
+    function clearSessionData() {
+        // Reset in-memory state so next login gets a clean slate
+        currentUser = null;
+        schools = []; globalEventsList = []; pdfMaterials = [];
+        videoMappings = {}; primarySubjects = []; secondarySubjects = [];
+        allTeachers = []; subscriptionPlans = [];
+        currentRating = 0; currentLessonSubject = "";
+        currentSelectedClassId = null; currentVideoKey = "";
+        currentTeacherId = ""; earningRecorded = false;
+        // Stop video + interval
+        if(videoProgressInterval){ clearInterval(videoProgressInterval); videoProgressInterval = null; }
+        if(ytPlayer){ try{ ytPlayer.stopVideo && ytPlayer.stopVideo(); }catch(e){} }
+        // Clear sessionStorage (payment tracking etc.)
+        sessionStorage.clear();
+        // Blank every data-bearing DOM container
+        [
+            'homeContainer','accountInfo','notificationsContainer','resourcesContainer',
+            'pdfAdminList','pdfListContainer','livePageLessonsContainer',
+            'liveEnrollmentStatusCard','myVideoQList','myAdmissionStatus',
+            'admissionFormsAdminList','adminLiveLessons','myLessonRequests',
+            'pushHistoryList','teachersAdminList','schoolsAdminList',
+            'eventsAdminList','globalEventsAdminList','existingMappingsList',
+            'adminLiveAttendanceList','adminActiveTokens','adminPaymentRequests',
+            'adminWeakAreasOverview','feedbackAdminList','adminVideoQList',
+            'liveExpiryWarnings','teacherStatBoxes','myWeakAreasTags'
+        ].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
+        // Reset greeting and profile
+        const greet = document.getElementById('greeting'); if(greet) greet.textContent = 'Welcome';
+        const pic = document.getElementById('profilePicImg'); if(pic) pic.src = '';
+        // Collapse admin panel
+        const ap = document.getElementById('adminPanel'); if(ap) ap.classList.remove('show');
+        // Navigate to home tab
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const hp = document.getElementById('homePage'); if(hp) hp.classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.remove('active');
+            if(n.dataset && n.dataset.page === 'home') n.classList.add('active');
+        });
+    }
 
     const classData = {
         primary: [{id:1,name:"Primary 1",icon:"fa-baby-carriage",color:"#FF6B6B"},{id:2,name:"Primary 2",icon:"fa-child",color:"#4ECDC4"},{id:3,name:"Primary 3",icon:"fa-graduation-cap",color:"#45B7D1"},{id:4,name:"Primary 4",icon:"fa-book-reader",color:"#96CEB4"},{id:5,name:"Primary 5",icon:"fa-pencil-alt",color:"#FFEAA7"},{id:6,name:"Primary 6",icon:"fa-chalkboard-teacher",color:"#DDA0DD"},{id:7,name:"Primary 7",icon:"fa-users",color:"#FF9F43"}],
@@ -2718,11 +2733,24 @@
 
     async function loadMyAdmissionStatus() {
         const el=document.getElementById('myAdmissionStatus'); if(!el||!currentUser) return;
+        const btn=document.getElementById('openAdmFormBtn');
         try {
             const snap=await getDocs(query(collection(db,'admissionForms'),where('studentUid','==',currentUser.uid)));
-            if(snap.empty){ el.innerHTML='<p style="font-size:12px;color:#888;margin:0 0 10px;">No form submitted yet.</p>'; return; }
+            if(snap.empty){
+                el.innerHTML='<div style="display:flex;align-items:center;gap:8px;background:#fff8ee;border:1.5px solid #ffe0b2;border-radius:10px;padding:10px;font-size:13px;color:#c77800;"><span style="font-size:16px;">📝</span><span>No admission form submitted yet. Fill it in now to get your official PDF.</span></div>';
+                if(btn) btn.textContent='📋 Start Admission Form';
+                return;
+            }
             const f={id:snap.docs[0].id,...snap.docs[0].data()};
-            el.innerHTML=`<div style="background:#f0f9f0;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;"><strong>✅ Form submitted</strong><br><span style="color:#888;">${f.formNo||''} — ${f.fullName||''} — ${f.class||''}</span><br><button onclick="reDownloadAdmissionPDF('${f.id}')" style="margin-top:8px;background:#4B2E9E;color:white;border:none;padding:6px 16px;border-radius:16px;font-size:12px;font-weight:700;cursor:pointer;">📥 Download PDF again</button></div>`;
+            const dateStr=f.submittedAt ? new Date(f.submittedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+            el.innerHTML=`<div style="background:#f0f9f0;border:1.5px solid #c8e6c9;border-radius:10px;padding:12px;font-size:13px;">
+                <div style="font-weight:700;color:#2E7D32;margin-bottom:4px;">✅ Form Submitted</div>
+                <div style="color:#555;margin-bottom:2px;"><strong>Form No:</strong> ${escHtml(f.formNo||'—')}</div>
+                <div style="color:#555;margin-bottom:2px;"><strong>Name:</strong> ${escHtml(f.fullName||'—')}</div>
+                <div style="color:#555;margin-bottom:6px;"><strong>Class:</strong> ${escHtml(f.class||'—')} &nbsp;•&nbsp; <strong>Date:</strong> ${escHtml(dateStr)}</div>
+                <button onclick="reDownloadAdmissionPDF('${escHtml(f.id)}')" style="background:#4B2E9E;color:white;border:none;padding:7px 18px;border-radius:18px;font-size:12px;font-weight:700;cursor:pointer;">📥 Re-download PDF</button>
+            </div>`;
+            if(btn) btn.textContent='✏️ Edit / Resubmit Form';
         } catch(e){ el.innerHTML=''; }
     }
 
@@ -5449,6 +5477,10 @@
         e.preventDefault();
         let email=document.getElementById('loginEmail').value.trim(),pwd=document.getElementById('loginPassword').value;
         try {
+            // Use SESSION persistence — auth clears when browser tab closes (shared-device safety)
+            if(auth && auth.setPersistence) {
+                await auth.setPersistence('session').catch(()=>{});
+            }
             let cred=await signInWithEmailAndPassword(auth,email,pwd);
             let userRef=doc(db,"users",cred.user.uid);
             let snap=await getDoc(userRef);
@@ -5461,7 +5493,12 @@
         }
     });
 
-    document.getElementById('logoutBtn')?.addEventListener('click', ()=> signOut(auth));
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+        clearSessionData();
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+        try { await signOut(auth); } catch(e) {}
+    });
 
     onAuthStateChanged(auth, async (user)=>{
         // ← Enable login button and hide splash IMMEDIATELY once auth state is known
@@ -5478,6 +5515,7 @@
             const _banner = document.getElementById('responsiveDemoNotice');
             if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 300000); }
         } else {
+            clearSessionData();
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('appScreen').classList.add('hidden');
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
