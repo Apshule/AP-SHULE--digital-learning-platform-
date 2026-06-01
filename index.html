@@ -128,6 +128,12 @@
         .video-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-left: 12px; }
         .youtube-player-container { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; }
         .youtube-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .video-controls { display:flex;align-items:center;justify-content:center;gap:8px;background:#2a2a3e;padding:8px 12px; }
+        .vc-btn { background:rgba(255,255,255,0.12);border:none;color:white;border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0; }
+        .vc-btn:hover { background:rgba(255,255,255,0.25); }
+        .vc-btn.play-pause { background:#FF8C42;width:46px;height:46px;font-size:18px; }
+        .vc-btn.play-pause:hover { background:#e07a35; }
+        .vc-time { color:rgba(255,255,255,0.7);font-size:12px;min-width:80px;text-align:center;font-family:monospace; }
         .video-title { padding: 12px; color: white; text-align: center; background: #2a2a3e; font-weight: 500; }
         .feedback-section { background: white; padding: 20px; margin-top: 0; border-radius: 0 0 20px 20px; display: none; }
         .feedback-section h4 { color: #4B2E9E; margin-bottom: 12px; }
@@ -413,6 +419,14 @@
             <div class="youtube-player-container">
                 <div id="ytPlayerDiv"></div>
             </div>
+            <div class="video-controls">
+                <button class="vc-btn" id="vcPrevBtn" title="Previous video"><i class="fas fa-step-backward"></i></button>
+                <button class="vc-btn" id="vcBack10Btn" title="Back 10 seconds"><i class="fas fa-undo"></i><span style="font-size:9px;position:absolute;margin-top:10px;">10</span></button>
+                <button class="vc-btn play-pause" id="vcPlayPauseBtn" title="Play / Pause"><i class="fas fa-pause" id="vcPlayPauseIcon"></i></button>
+                <button class="vc-btn" id="vcFwd10Btn" title="Forward 10 seconds"><i class="fas fa-redo"></i><span style="font-size:9px;position:absolute;margin-top:10px;">10</span></button>
+                <button class="vc-btn" id="vcNextBtn" title="Next video"><i class="fas fa-step-forward"></i></button>
+                <span class="vc-time" id="vcTimeDisplay">0:00 / 0:00</span>
+            </div>
             <div class="video-title" id="currentVideoTitle"></div>
             <div class="video-progress-bar"><div class="video-progress-fill" id="videoProgressFill"></div></div>
             <!-- VIDEO QUESTION BOX — appears at ≤120s remaining -->
@@ -609,8 +623,17 @@
 
                     <!-- ===== LIVE LESSON MANAGEMENT ===== -->
                     <div class="admin-section" style="background:#fff8f0;border:1.5px solid #ffcc99;border-radius:16px;padding:16px;">
-                        <h4 style="margin-top:0;color:#FF8C42;">📡 Live Lesson Requests</h4>
-                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Review and approve live lesson requests from teachers. Set access fee and confirm/edit meeting link before approving.</p>
+                        <h4 style="margin-top:0;color:#FF8C42;">📡 Schedule a Live Lesson</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Schedule directly — no approval needed. Teachers still submit requests below.</p>
+                        <input type="text" id="adminLiveTitle" placeholder="Lesson title" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:20px;margin-bottom:6px;font-size:13px;">
+                        <input type="text" id="adminLiveLink" placeholder="Meeting link (Zoom / Google Meet)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:20px;margin-bottom:6px;font-size:13px;">
+                        <input type="text" id="adminLiveDate" placeholder="Date & time (e.g. Mon 2 Jun, 3:00 PM)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:20px;margin-bottom:6px;font-size:13px;">
+                        <input type="number" id="adminLiveFee" placeholder="Access fee UGX (0 = free)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:20px;margin-bottom:6px;font-size:13px;" min="0">
+                        <textarea id="adminLiveDesc" rows="2" placeholder="Brief description" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:9px;font-size:13px;font-family:inherit;resize:none;margin-bottom:8px;"></textarea>
+                        <button id="adminScheduleLiveBtn" style="width:100%;background:#FF8C42;color:white;border:none;padding:10px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">📅 Schedule Lesson Now</button>
+                        <div id="adminLiveStatus" style="font-size:12px;margin-top:6px;text-align:center;color:#4B2E9E;min-height:14px;"></div>
+                        <hr style="border:none;border-top:1px dashed #ffcc99;margin:14px 0 10px;">
+                        <h4 style="margin:0 0 6px;color:#FF8C42;font-size:13px;">📋 Teacher Requests (pending approval)</h4>
                         <div id="adminLiveLessons"><div style="color:#999;font-size:13px;">Loading…</div></div>
                     </div>
 
@@ -649,6 +672,27 @@
                         <textarea id="editAboutExtra" rows="2" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:13px;margin:4px 0 10px;resize:vertical;" placeholder="e.g. Exams start June 5th…"></textarea>
                         <button id="saveAboutBtn" class="admin-toggle" style="width:100%;background:#4B2E9E;color:white;font-weight:700;">💾 Save About Page</button>
                         <div id="saveAboutStatus" style="font-size:12px;color:#4B2E9E;margin-top:6px;text-align:center;min-height:16px;"></div>
+
+                        <h4 style="margin:18px 0 8px;color:#4B2E9E;"><i class="fas fa-users"></i> Managing Team</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Add, edit or remove team members. Photos are stored in Firebase Storage.</p>
+                        <div id="teamAdminList" style="margin-bottom:10px;"></div>
+                        <div style="background:#f0f0f0;border-radius:12px;padding:12px;">
+                            <div style="font-weight:600;font-size:13px;color:#4B2E9E;margin-bottom:8px;">➕ Add / Edit Member</div>
+                            <input type="hidden" id="teamEditId">
+                            <input type="text" id="teamMemberName" placeholder="Full Name" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                            <input type="text" id="teamMemberRole" placeholder="Role / Title (e.g. Head of Academics)" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                            <input type="text" id="teamMemberPhone" placeholder="Phone (optional, e.g. +256...)" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                            <div style="margin-bottom:6px;">
+                                <label style="font-size:12px;color:#666;">Profile Photo (optional)</label>
+                                <input type="file" id="teamMemberPhoto" accept="image/*" style="display:block;margin-top:4px;font-size:12px;">
+                                <img id="teamPhotoPreview" src="" style="display:none;width:60px;height:60px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid #4B2E9E;">
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button id="saveTeamMemberBtn" style="flex:1;background:#4B2E9E;color:white;border:none;padding:10px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">💾 Save Member</button>
+                                <button id="cancelTeamEditBtn" style="background:#ddd;color:#333;border:none;padding:10px 16px;border-radius:20px;cursor:pointer;font-size:13px;display:none;">Cancel</button>
+                            </div>
+                            <div id="teamMemberStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
+                        </div>
                     </div>
 
                     <!-- ===== SEND ANNOUNCEMENT ===== -->
@@ -658,7 +702,27 @@
                         <input type="text" id="announcementTitle" placeholder="Announcement title (e.g. New Exam Timetable)" style="width:100%;box-sizing:border-box;margin-bottom:8px;">
                         <textarea id="announcementBody" placeholder="Write your message here…" rows="3"
                             style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#4B2E9E;">Frequency</label>
+                                <select id="notifFrequency" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:10px;margin-top:3px;font-size:13px;">
+                                    <option value="once">Send Once (Now)</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div id="notifTimesWrap">
+                                <label style="font-size:12px;font-weight:600;color:#4B2E9E;">Times per day</label>
+                                <select id="notifTimesPerDay" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:10px;margin-top:3px;font-size:13px;">
+                                    <option value="1">1×</option>
+                                    <option value="2">2×</option>
+                                    <option value="3">3×</option>
+                                </select>
+                            </div>
+                        </div>
                         <button id="sendAnnouncementBtn" class="admin-toggle" style="margin-top:8px;width:100%;background:#4B2E9E;color:white;font-weight:700;">📢 Send to All Students</button>
+                        <div id="scheduledNotifsList" style="margin-top:10px;"></div>
                         <div id="announcementStatus" style="font-size:12px;color:#4B2E9E;margin-top:6px;text-align:center;min-height:16px;"></div>
                     </div>
 
@@ -896,12 +960,14 @@
                 <div class="core-value"><i class="fas fa-globe"></i> <strong>Accessibility:</strong> Making education available to all students</div>
                 <div class="core-value"><i class="fas fa-lightbulb"></i> <strong>Innovation:</strong> Continuously improving our platform</div>
                 <h3><i class="fas fa-users"></i> Our Managing Team</h3>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing & HR Manager</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div>
-                <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div>
+                <div id="teamMembersDisplay">
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-user-tie"></i></div><div><strong>Tebuswake Abdallah</strong><br>Founder & CEO</div></div>
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-line"></i></div><div><strong>Mukasa Tadius</strong><br>Head of Operations</div></div>
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-chart-simple"></i></div><div><strong>Tusubira Alex</strong><br>Assistant Marketing &amp; HR Manager</div></div>
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-clipboard-list"></i></div><div><strong>Wasswa Fred</strong><br>Operations Supervisor<br>📞 +256755546291</div></div>
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Kasule Anthony</strong><br>Head of Academics Department</div></div>
+                    <div class="team-member"><div class="team-avatar"><i class="fas fa-chalkboard-user"></i></div><div><strong>Mawanda Ismail</strong><br>Senior Academics Officer</div></div>
+                </div>
                 <h3><i class="fas fa-address-card"></i> Contact Information</h3>
                 <div class="contact-info"><i class="fas fa-phone"></i><div><strong>Phone:</strong> +256705732540</div></div>
                 <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
@@ -1163,12 +1229,15 @@
 
     function closeVideoModal() {
         stopProgressTracking();
+        stopVcTimer();
         document.getElementById('videoModal').classList.remove('show');
         if(ytPlayer) { try { ytPlayer.stopVideo(); } catch(e) {} }
+        // Clear iframe too
+        const div = document.getElementById('ytPlayerDiv');
+        if(div) { const iframe = div.querySelector('iframe'); if(iframe) { iframe.src = ''; div.innerHTML = ''; } }
         document.getElementById('feedbackSection').style.display = 'none';
         const fill = document.getElementById('videoProgressFill');
         if(fill) fill.style.width = '0%';
-        // Reset question box
         const qbox = document.getElementById('videoQuestionBox');
         if(qbox) qbox.style.display = 'none';
         const vqt = document.getElementById('vqTextarea');
@@ -1177,6 +1246,103 @@
         if(vqs) vqs.textContent = '';
         vqBoxShown = false;
     }
+
+    // ===== VIDEO CONTROLS =====
+    let _vcIsPlaying = true;
+    let _vcCurrentTime = 0, _vcDuration = 0;
+    let _vcTimerInterval = null;
+    let _currentVideoList = []; // {title, videoKey} list for prev/next
+    let _currentVideoIdx = -1;
+
+    function ytCmd(func, args) {
+        const iframe = document.getElementById('ytIframe');
+        if(!iframe) return;
+        try { iframe.contentWindow.postMessage(JSON.stringify({event:'command', func, args: args||[]}), '*'); } catch(_) {}
+    }
+
+    function stopVcTimer() { if(_vcTimerInterval){ clearInterval(_vcTimerInterval); _vcTimerInterval=null; } }
+
+    function startVcTimer() {
+        stopVcTimer();
+        _vcTimerInterval = setInterval(() => {
+            if(_vcIsPlaying && _vcDuration > 0) {
+                _vcCurrentTime = Math.min(_vcCurrentTime + 1, _vcDuration);
+                updateVcDisplay();
+            }
+        }, 1000);
+    }
+
+    function updateVcDisplay() {
+        const display = document.getElementById('vcTimeDisplay');
+        if(!display) return;
+        const fmt = s => { s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); };
+        display.textContent = `${fmt(_vcCurrentTime)} / ${fmt(_vcDuration)}`;
+    }
+
+    function setVcPlayState(playing) {
+        _vcIsPlaying = playing;
+        const icon = document.getElementById('vcPlayPauseIcon');
+        if(icon) icon.className = playing ? 'fas fa-pause' : 'fas fa-play';
+    }
+
+    // Intercept infoDelivery from YouTube to update time
+    const _origYtMsgHandler_ref = { fn: null };
+    function patchVcOnYtMessage(e) {
+        let data;
+        try { data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; } catch(_) { return; }
+        if(!data) return;
+        if(data.event === 'infoDelivery' && data.info) {
+            if(data.info.currentTime != null) _vcCurrentTime = data.info.currentTime;
+            if(data.info.duration != null && data.info.duration > 0) {
+                _vcDuration = data.info.duration;
+                const prev = document.getElementById('vcPrevBtn');
+                const next = document.getElementById('vcNextBtn');
+                if(prev) prev.disabled = _currentVideoIdx <= 0;
+                if(next) next.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
+            }
+            updateVcDisplay();
+        }
+        if(data.event === 'onStateChange') {
+            if(data.info === 1) { setVcPlayState(true); startVcTimer(); }
+            else if(data.info === 2 || data.info === 0) { setVcPlayState(false); stopVcTimer(); }
+        }
+    }
+    window.addEventListener('message', patchVcOnYtMessage);
+
+    document.getElementById('vcPlayPauseBtn')?.addEventListener('click', () => {
+        if(_vcIsPlaying) { ytCmd('pauseVideo'); setVcPlayState(false); stopVcTimer(); }
+        else { ytCmd('playVideo'); setVcPlayState(true); startVcTimer(); }
+    });
+
+    document.getElementById('vcBack10Btn')?.addEventListener('click', () => {
+        const t = Math.max(0, _vcCurrentTime - 10);
+        _vcCurrentTime = t;
+        ytCmd('seekTo', [t, true]);
+        updateVcDisplay();
+    });
+
+    document.getElementById('vcFwd10Btn')?.addEventListener('click', () => {
+        const t = Math.min(_vcDuration || 999999, _vcCurrentTime + 10);
+        _vcCurrentTime = t;
+        ytCmd('seekTo', [t, true]);
+        updateVcDisplay();
+    });
+
+    document.getElementById('vcPrevBtn')?.addEventListener('click', () => {
+        if(_currentVideoIdx > 0 && _currentVideoList.length > 0) {
+            _currentVideoIdx--;
+            const v = _currentVideoList[_currentVideoIdx];
+            if(v) openVideo(v.videoKey, v.title, v.teacherId);
+        }
+    });
+
+    document.getElementById('vcNextBtn')?.addEventListener('click', () => {
+        if(_currentVideoIdx >= 0 && _currentVideoIdx < _currentVideoList.length - 1) {
+            _currentVideoIdx++;
+            const v = _currentVideoList[_currentVideoIdx];
+            if(v) openVideo(v.videoKey, v.title, v.teacherId);
+        }
+    });
 
     // ===== PESAPAL =====
     function showPaymentLoading(show) {
@@ -1290,9 +1456,16 @@
         const key = `${currentSelectedClassId.level}_${currentSelectedClassId.id}_${subject}`;
         let vid = videoMappings[key];
         if(!vid) { showNotification(`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`, "info"); return; }
+
+        // Build video list for prev/next (all subjects with videos in current class)
+        const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        _currentVideoList = subjects
+            .map((s, i) => { const k=`${currentSelectedClassId.level}_${currentSelectedClassId.id}_${s}`; return videoMappings[k] ? {videoKey:k, title:s, teacherId:(window._videoMappingData&&window._videoMappingData[k]?.teacherId)||''} : null; })
+            .filter(Boolean);
+        _currentVideoIdx = _currentVideoList.findIndex(v => v.videoKey === key);
+
         currentLessonSubject = `${subject} (${currentSelectedClassId.name})`;
         currentVideoKey = key;
-        // Find teacher for this video mapping
         const mappingData = window._videoMappingData && window._videoMappingData[key];
         currentTeacherId = mappingData?.teacherId || "";
         saveVideoView(subject, currentSelectedClassId.id, currentSelectedClassId.name);
@@ -1303,9 +1476,37 @@
         currentRating = 0;
         document.querySelectorAll('#starRating i').forEach(s => s.className = 'far fa-star');
         document.getElementById('feedbackComment').value = '';
+        // Reset controls state
+        _vcCurrentTime = 0; _vcDuration = 0;
+        setVcPlayState(true);
+        updateVcDisplay();
+        stopVcTimer();
+        // Update prev/next button visibility
+        const prevBtn = document.getElementById('vcPrevBtn');
+        const nextBtn = document.getElementById('vcNextBtn');
+        if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
+        if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
         // Instant playback — always use iframe-based player
         createYTPlayer(vid);
     };
+
+    // openVideo helper for vc prev/next (subject key already resolved)
+    function openVideo(videoKey, title, teacherId) {
+        const vid = videoMappings[videoKey];
+        if(!vid) return;
+        currentVideoKey = videoKey;
+        currentTeacherId = teacherId || '';
+        document.getElementById('currentVideoTitle').innerText = title || 'Lesson';
+        document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${title || 'Lesson'}`;
+        document.getElementById('videoModal').classList.add('show');
+        _vcCurrentTime = 0; _vcDuration = 0;
+        setVcPlayState(true); updateVcDisplay(); stopVcTimer();
+        const prevBtn = document.getElementById('vcPrevBtn');
+        const nextBtn = document.getElementById('vcNextBtn');
+        if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
+        if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
+        createYTPlayer(vid);
+    }
 
     // ===== PDF LIST (home page, inline viewer) =====
     function renderPdfList() {
@@ -1562,12 +1763,19 @@
             let html = '<div style="max-height:300px;overflow-y:auto;">';
             snap.forEach(d => {
                 let f = d.data();
-                html += `<div style="border-bottom:1px solid #ddd;padding:8px;"><strong>${escHtml(f.userName)}</strong> rated <em>${escHtml(f.lesson)}</em> ${f.rating}⭐<br><em>${escHtml(f.comment||'No comment')}</em><br><small>${new Date(f.timestamp).toLocaleString()}</small></div>`;
+                html += `<div style="border-bottom:1px solid #ddd;padding:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                    <div><strong>${escHtml(f.userName)}</strong> rated <em>${escHtml(f.lesson)}</em> ${f.rating}⭐<br><em>${escHtml(f.comment||'No comment')}</em><br><small style="color:#999;">${new Date(f.timestamp).toLocaleString()}</small></div>
+                    <button onclick="deleteFeedback('${d.id}')" title="Delete" style="background:#ffebee;border:none;color:#c62828;border-radius:8px;padding:4px 8px;cursor:pointer;flex-shrink:0;font-size:12px;">🗑️</button>
+                </div>`;
             });
             html += '</div>';
             container.innerHTML = html;
         });
     }
+    window.deleteFeedback = async function(id) {
+        if(!confirm('Delete this feedback entry?')) return;
+        try { await deleteDoc(doc(db,"feedbacks",id)); showNotification('Feedback deleted'); } catch(e) { showNotification('Error deleting','error'); }
+    };
 
     function renderQuestionsAdmin() {
         const container = document.getElementById('questionsAdminList'); if(!container) return;
@@ -1613,14 +1821,14 @@
         const tableDiv = document.getElementById('failedLoginsTable');
         if(failSnap.size > 0 && detailDiv && tableDiv) {
             detailDiv.style.display = 'block';
-            let rows = '';
+            let rows = `<button onclick="clearAllFailedLogins()" style="background:#ffebee;border:none;color:#c62828;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px;margin-bottom:8px;font-weight:600;">🗑️ Clear All</button>`;
             failSnap.forEach(d => {
                 const fd = d.data();
                 const ts = fd.timestamp ? new Date(fd.timestamp).toLocaleString() : 'Unknown time';
                 const em = fd.email ? escHtml(fd.email) : '<em style="color:#999">unknown</em>';
                 rows += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fff5f5;border-radius:8px;margin-bottom:6px;font-size:13px;border-left:3px solid #c62828;">
-                    <span><i class="fas fa-user-times" style="color:#c62828;margin-right:6px;"></i>${em}</span>
-                    <span style="color:#999;font-size:11px;">${ts}</span>
+                    <div><i class="fas fa-user-times" style="color:#c62828;margin-right:6px;"></i>${em}<br><span style="color:#999;font-size:11px;">${ts}</span></div>
+                    <button onclick="deleteFailedLogin('${d.id}')" style="background:#ffebee;border:none;color:#c62828;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0;">🗑️</button>
                 </div>`;
             });
             tableDiv.innerHTML = rows;
@@ -2065,6 +2273,39 @@
         });
     }
 
+    // Superadmin direct live lesson scheduling
+    document.getElementById('adminScheduleLiveBtn')?.addEventListener('click', async () => {
+        const title = document.getElementById('adminLiveTitle')?.value.trim();
+        const link  = document.getElementById('adminLiveLink')?.value.trim();
+        const date  = document.getElementById('adminLiveDate')?.value.trim();
+        const desc  = document.getElementById('adminLiveDesc')?.value.trim();
+        const fee   = parseInt(document.getElementById('adminLiveFee')?.value || '0') || 0;
+        const statusEl = document.getElementById('adminLiveStatus');
+        const btn = document.getElementById('adminScheduleLiveBtn');
+        if(!title) { statusEl.style.color='red'; statusEl.textContent='Enter a lesson title.'; return; }
+        btn.disabled = true; statusEl.style.color='#4B2E9E'; statusEl.textContent = 'Scheduling…';
+        try {
+            await addDoc(collection(db,'liveLessons'), {
+                teacherId: currentUser.uid,
+                teacherName: currentUser.name || currentUser.email || 'Admin',
+                title, link: link||'', desc: desc||'', scheduledDate: date||'',
+                status: 'approved', accessFee: fee,
+                createdAt: new Date().toISOString()
+            });
+            // Notify all users
+            await writeNotification('general', '📡 New Live Lesson Scheduled', `"${title}" ${date?'on '+date:''} — check Live Lessons tab for access.`);
+            statusEl.style.color='#4CAF50'; statusEl.textContent='✅ Lesson scheduled and visible to students!';
+            document.getElementById('adminLiveTitle').value='';
+            document.getElementById('adminLiveLink').value='';
+            document.getElementById('adminLiveDate').value='';
+            document.getElementById('adminLiveDesc').value='';
+            document.getElementById('adminLiveFee').value='';
+            showNotification('Live lesson scheduled!');
+            setTimeout(()=>{ if(statusEl) statusEl.textContent=''; }, 5000);
+        } catch(e) { statusEl.style.color='red'; statusEl.textContent='Error: '+e.message; }
+        btn.disabled = false;
+    });
+
     // ===== LIVE LESSONS — SUPERADMIN SIDE =====
     let _approvedLessonsForDropdown = [];
 
@@ -2375,6 +2616,14 @@
     // ===== ABOUT PAGE (Firestore) =====
     async function loadAboutFromFirestore() {
         try {
+            // Load team members from Firestore (public about page)
+            const teamSnap = await getDocs(collection(db,'teamMembers'));
+            if(!teamSnap.empty) {
+                const members = teamSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+                renderTeamDisplay(members);
+            }
+        } catch(e) {}
+        try {
             const snap = await getDoc(doc(db, 'settings', 'about'));
             if(snap.exists()) {
                 const d = snap.data();
@@ -2409,7 +2658,131 @@
                 if(d.extra)    document.getElementById('editAboutExtra').value = d.extra;
             }
         } catch(e) {}
+        renderTeamAdmin();
     }
+
+    // ===== TEAM MANAGEMENT =====
+    function renderTeamAdmin() {
+        const list = document.getElementById('teamAdminList'); if(!list) return;
+        onSnapshot(collection(db,'teamMembers'), snap => {
+            const members = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0));
+            renderTeamDisplay(members);
+            if(snap.empty) { list.innerHTML='<div style="color:#999;font-size:13px;">No members added yet.</div>'; return; }
+            list.innerHTML = members.map(m=>`
+                <div style="display:flex;align-items:center;gap:10px;padding:8px;background:white;border-radius:10px;margin-bottom:6px;">
+                    ${m.photoUrl?`<img src="${escHtml(m.photoUrl)}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">`:`<div style="width:40px;height:40px;border-radius:50%;background:#4B2E9E;display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0;"><i class="fas fa-user"></i></div>`}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:13px;">${escHtml(m.name)}</div>
+                        <div style="font-size:11px;color:#888;">${escHtml(m.role||'')}${m.phone?` · ${escHtml(m.phone)}`:''}</div>
+                    </div>
+                    <div style="display:flex;gap:4px;">
+                        <button onclick="editTeamMember('${m.id}')" style="background:#e8eaf6;border:none;color:#4B2E9E;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;">✏️</button>
+                        <button onclick="deleteTeamMember('${m.id}')" style="background:#ffebee;border:none;color:#c62828;border-radius:8px;padding:4px 8px;cursor:pointer;font-size:12px;">🗑️</button>
+                    </div>
+                </div>`).join('');
+        });
+    }
+
+    function renderTeamDisplay(members) {
+        const display = document.getElementById('teamMembersDisplay'); if(!display) return;
+        if(!members || !members.length) return;
+        display.innerHTML = members.map(m=>`
+            <div class="team-member">
+                <div class="team-avatar">${m.photoUrl?`<img src="${escHtml(m.photoUrl)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`:`<i class="fas fa-user-tie"></i>`}</div>
+                <div><strong>${escHtml(m.name)}</strong><br>${escHtml(m.role||'')}${m.phone?`<br>📞 ${escHtml(m.phone)}`:''}</div>
+            </div>`).join('');
+    }
+
+    window.editTeamMember = async function(id) {
+        const snap = await getDoc(doc(db,'teamMembers',id));
+        if(!snap.exists()) return;
+        const m = snap.data();
+        document.getElementById('teamEditId').value = id;
+        document.getElementById('teamMemberName').value = m.name||'';
+        document.getElementById('teamMemberRole').value = m.role||'';
+        document.getElementById('teamMemberPhone').value = m.phone||'';
+        if(m.photoUrl) { const prev=document.getElementById('teamPhotoPreview'); prev.src=m.photoUrl; prev.style.display='block'; }
+        document.getElementById('cancelTeamEditBtn').style.display='inline-block';
+        document.getElementById('teamMemberName').scrollIntoView({behavior:'smooth'});
+    };
+
+    window.deleteTeamMember = async function(id) {
+        if(!confirm('Remove this team member?')) return;
+        try { await deleteDoc(doc(db,'teamMembers',id)); showNotification('Team member removed'); } catch(e) { showNotification('Error','error'); }
+    };
+
+    window.clearAllFailedLogins = async function() {
+        if(!confirm('Clear ALL failed login records today? This cannot be undone.')) return;
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const failQ = query(collection(db,"failedLogins"), where("timestamp",">=",todayStart.toISOString()));
+        const snap = await getDocs(failQ);
+        const batch = snap.docs.map(d => deleteDoc(doc(db,"failedLogins",d.id)));
+        await Promise.all(batch);
+        showNotification('All failed login records cleared');
+        loadAnalytics();
+    };
+    window.deleteFailedLogin = async function(id) {
+        try { await deleteDoc(doc(db,"failedLogins",id)); showNotification('Entry deleted'); loadAnalytics(); } catch(e) { showNotification('Error','error'); }
+    };
+
+    // Team photo preview
+    document.getElementById('teamMemberPhoto')?.addEventListener('change', function() {
+        const prev = document.getElementById('teamPhotoPreview');
+        if(this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { prev.src = e.target.result; prev.style.display = 'block'; };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    document.getElementById('cancelTeamEditBtn')?.addEventListener('click', () => {
+        document.getElementById('teamEditId').value = '';
+        document.getElementById('teamMemberName').value = '';
+        document.getElementById('teamMemberRole').value = '';
+        document.getElementById('teamMemberPhone').value = '';
+        document.getElementById('teamMemberPhoto').value = '';
+        const prev = document.getElementById('teamPhotoPreview'); prev.src=''; prev.style.display='none';
+        document.getElementById('cancelTeamEditBtn').style.display='none';
+        document.getElementById('teamMemberStatus').textContent = '';
+    });
+
+    document.getElementById('saveTeamMemberBtn')?.addEventListener('click', async () => {
+        const name = document.getElementById('teamMemberName').value.trim();
+        const role = document.getElementById('teamMemberRole').value.trim();
+        const phone = document.getElementById('teamMemberPhone').value.trim();
+        const photoFile = document.getElementById('teamMemberPhoto').files[0];
+        const editId = document.getElementById('teamEditId').value;
+        const statusEl = document.getElementById('teamMemberStatus');
+        if(!name) { statusEl.textContent = 'Enter a name.'; statusEl.style.color='red'; return; }
+        statusEl.style.color='#4B2E9E'; statusEl.textContent = 'Saving…';
+        document.getElementById('saveTeamMemberBtn').disabled = true;
+        try {
+            let photoUrl = '';
+            if(editId) {
+                const existing = await getDoc(doc(db,'teamMembers',editId));
+                if(existing.exists()) photoUrl = existing.data().photoUrl || '';
+            }
+            if(photoFile) {
+                const path = `team/${Date.now()}_${photoFile.name}`;
+                const sref = storageRef(storage, path);
+                const uploadTask = uploadBytesResumable(sref, photoFile);
+                await new Promise((res,rej) => uploadTask.on('state_changed',null,rej,res));
+                photoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+            }
+            const data = { name, role, phone, photoUrl, updatedAt: new Date().toISOString() };
+            if(editId) {
+                await setDoc(doc(db,'teamMembers',editId), data, { merge: true });
+            } else {
+                const snap = await getDocs(collection(db,'teamMembers'));
+                data.order = snap.size;
+                data.createdAt = new Date().toISOString();
+                await addDoc(collection(db,'teamMembers'), data);
+            }
+            statusEl.style.color='#4CAF50'; statusEl.textContent = '✅ Saved!';
+            document.getElementById('cancelTeamEditBtn').click();
+        } catch(e) { statusEl.style.color='red'; statusEl.textContent = 'Error: ' + e.message; }
+        document.getElementById('saveTeamMemberBtn').disabled = false;
+    });
 
     document.getElementById('saveAboutBtn')?.addEventListener('click', async () => {
         const status = document.getElementById('saveAboutStatus');
@@ -2588,7 +2961,7 @@
     }
 
     // ===== NOTIFICATION ENGINE =====
-    let _notifUnsub = null;
+    let _notifUnsub = null; let _notifUnsub2 = null;
     let _allNotifs = [];
 
     async function writeNotification(type, title, body) {
@@ -2603,6 +2976,7 @@
 
     function listenToNotifications() {
         if(_notifUnsub) _notifUnsub();
+        if(_notifUnsub2) _notifUnsub2();
         // Merge global broadcasts + personal answer notifications for this user
         const globalQ = query(collection(db,"notifications"), where("targetUserId","==",null), orderBy("timestamp","desc"), limit(30));
         const personalQ = query(collection(db,"notifications"), where("targetUserId","==",currentUser?.uid||''), orderBy("timestamp","desc"), limit(30));
@@ -2616,7 +2990,7 @@
             renderNotificationsList();
         };
         _notifUnsub = onSnapshot(globalQ, snap => { globalDocs = snap.docs.map(d=>({id:d.id,...d.data()})); merge(); });
-        onSnapshot(personalQ, snap => {
+        _notifUnsub2 = onSnapshot(personalQ, snap => {
             personalDocs = snap.docs.map(d=>({id:d.id,...d.data()}));
             merge();
             // Push browser notification for new personal answers
@@ -2780,7 +3154,7 @@
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
@@ -3052,21 +3426,61 @@
     // Mark-all-read button
     document.getElementById('markAllReadBtn')?.addEventListener('click', markAllNotifsRead);
 
+    document.getElementById('notifFrequency')?.addEventListener('change', function() {
+        const wrap = document.getElementById('notifTimesWrap');
+        if(wrap) wrap.style.display = this.value === 'once' ? 'none' : 'block';
+    });
+
+    function loadScheduledNotifs() {
+        const container = document.getElementById('scheduledNotifsList'); if(!container) return;
+        onSnapshot(query(collection(db,'scheduledNotifications'), orderBy('createdAt','desc'), limit(10)), snap => {
+            if(snap.empty) { container.innerHTML=''; return; }
+            container.innerHTML = '<div style="font-size:12px;font-weight:600;color:#4B2E9E;margin-bottom:6px;">📅 Scheduled</div>' + snap.docs.map(d=>{
+                const s=d.data();
+                return `<div style="display:flex;justify-content:space-between;align-items:center;background:#f0eeff;border-radius:8px;padding:6px 10px;margin-bottom:4px;font-size:12px;">
+                    <div><strong>${escHtml(s.title)}</strong><br><span style="color:#888;">${s.frequency} · ${s.timesPerDay}×/day · next: ${s.nextSendAt?new Date(s.nextSendAt).toLocaleDateString():'soon'}</span></div>
+                    <button onclick="cancelScheduledNotif('${d.id}')" style="background:#ffebee;border:none;color:#c62828;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;">✕</button>
+                </div>`;
+            }).join('');
+        });
+    }
+    window.cancelScheduledNotif = async function(id) {
+        await deleteDoc(doc(db,'scheduledNotifications',id));
+        showNotification('Scheduled notification cancelled');
+    };
+
     document.getElementById('sendAnnouncementBtn')?.addEventListener('click', async () => {
         const title = document.getElementById('announcementTitle').value.trim();
         const body = document.getElementById('announcementBody').value.trim();
+        const freq = document.getElementById('notifFrequency')?.value || 'once';
+        const timesPerDay = parseInt(document.getElementById('notifTimesPerDay')?.value||1);
         const statusEl = document.getElementById('announcementStatus');
         const btn = document.getElementById('sendAnnouncementBtn');
         if(!title) { showNotification("Enter an announcement title","error"); return; }
-        btn.disabled = true;
-        statusEl.textContent = 'Sending…';
+        btn.disabled = true; statusEl.textContent = freq === 'once' ? 'Sending…' : 'Scheduling…';
+        // Always send immediately once
         await writeNotification('general', title, body);
-        statusEl.textContent = '✅ Announcement sent to all students!';
+        if(freq !== 'once') {
+            // Also save as scheduled for recurring sends
+            const now = new Date();
+            let nextSendAt;
+            if(freq === 'daily') { nextSendAt = new Date(now.getTime() + 24*60*60*1000/timesPerDay); }
+            else if(freq === 'weekly') { nextSendAt = new Date(now.getTime() + 7*24*60*60*1000); }
+            else if(freq === 'monthly') { nextSendAt = new Date(now.getTime() + 30*24*60*60*1000); }
+            await addDoc(collection(db,'scheduledNotifications'), {
+                title, body, frequency: freq, timesPerDay,
+                nextSendAt: nextSendAt.toISOString(),
+                createdAt: now.toISOString(), createdBy: currentUser.uid
+            });
+            statusEl.textContent = `✅ Sent now + scheduled ${freq}!`;
+        } else {
+            statusEl.textContent = '✅ Announcement sent to all students!';
+        }
         document.getElementById('announcementTitle').value = '';
         document.getElementById('announcementBody').value = '';
         btn.disabled = false;
-        showNotification("Announcement broadcast!");
-        setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000);
+        showNotification(freq !== 'once' ? `Sent + scheduled ${freq}!` : "Announcement broadcast!");
+        setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 5000);
     });
 
     renderClasses();
