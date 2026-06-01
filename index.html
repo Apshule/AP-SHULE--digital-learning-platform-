@@ -111,6 +111,7 @@
         .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px 20px; border-radius: 10px; display: none; z-index: 4000; animation: slideIn 0.3s ease; max-width: 300px; }
         .notification.success { background: #2E7D32; }
         .notification.info { background: #FF8C42; }
+        .notification.error { background: #C62828; }
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.4)} }
         @keyframes spin { to { transform:rotate(360deg); } }
@@ -277,6 +278,30 @@
         .question-item .q-text { font-weight: 500; }
         .comment-item { background: #f0f0f0; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 13px; }
 
+        /* ===== LIVE LESSONS PAGE ===== */
+        .live-page-card { background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid #FF8C42;box-shadow:0 2px 10px rgba(0,0,0,0.07); }
+        .live-enroll-status { border-radius:20px;padding:16px 18px;margin-bottom:12px; }
+        .live-plan-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px; }
+        .live-plan-card { border-radius:16px;padding:14px;color:white;text-align:center;cursor:pointer;transition:transform 0.1s; }
+        .live-plan-card:active { transform:scale(0.97); }
+        .live-plan-weekly { background:linear-gradient(135deg,#2196F3,#1565C0); }
+        .live-plan-monthly { background:linear-gradient(135deg,#FF8C42,#E64A19); }
+        .live-plan-termly { background:linear-gradient(135deg,#4B2E9E,#9C27B0);grid-column:span 2; }
+        .live-plan-name { font-weight:800;font-size:16px;margin-bottom:4px; }
+        .live-plan-price { font-size:13px;opacity:0.9;margin-bottom:6px; }
+        .live-plan-btn { background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.5);color:white;padding:8px 16px;border-radius:20px;cursor:pointer;font-weight:700;font-size:12px;width:100%;margin-top:6px; }
+        .expiry-warning-banner { display:flex;align-items:flex-start;gap:10px;border-radius:14px;padding:12px 14px;margin-bottom:10px;border:2px solid #FF8C42;background:#FFF8F0; }
+        .expiry-warning-banner.urgent { border-color:#c62828;background:#FFEBEE; }
+        .expiry-warning-banner i { flex-shrink:0;font-size:20px;margin-top:2px; }
+        .part-payment-bar { height:8px;background:#e0e0e0;border-radius:4px;margin:8px 0 4px;overflow:hidden; }
+        .part-payment-fill { height:100%;background:linear-gradient(90deg,#4B2E9E,#FF8C42);border-radius:4px;transition:width 0.4s; }
+        .live-section-title { font-weight:700;font-size:15px;color:#4B2E9E;margin:16px 0 8px;display:flex;align-items:center;gap:6px; }
+        .live-sign-in-btn { background:#4CAF50;color:white;border:none;padding:10px 18px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px; }
+        .live-sign-in-btn:disabled { background:#aaa;cursor:default; }
+        .live-attend-badge { display:inline-block;background:#e8f5e9;color:#2E7D32;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;margin-left:6px; }
+        .live-visit-badge { display:inline-block;background:#e3f2fd;color:#1565C0;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;margin-left:6px; }
+        .enroll-form-card { background:white;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+        .part-phase-row { display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f5f5f5;border-radius:10px;margin-bottom:6px;font-size:13px; }
         /* Superadmin teacher management */
         .teacher-item { background: #f9f9f9; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
         .teacher-item .teacher-name { font-weight: bold; }
@@ -529,6 +554,49 @@
         </div>
     </div>
 
+    <!-- LIVE PLAN PAYMENT MODAL -->
+    <div id="livePlanPayModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:white;border-radius:24px;width:100%;max-width:420px;padding:20px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="margin:0;color:#4B2E9E;">💳 Live Lesson Plan</h3>
+                <button id="livePlanPayClose" style="background:none;border:none;font-size:28px;cursor:pointer;color:#aaa;">&times;</button>
+            </div>
+            <div style="font-size:15px;font-weight:700;margin-bottom:4px;" id="livePlanPayPlanName"></div>
+            <div style="font-size:13px;color:#888;margin-bottom:4px;">Total: <strong id="livePlanPayAmount" style="color:#4B2E9E;"></strong></div>
+            <input type="hidden" id="livePlanPayType">
+            <input type="hidden" id="livePlanPayPrice">
+
+            <!-- Termly part payment toggle -->
+            <div id="livePlanPartPaySection" style="display:none;background:#f0f4ff;border-radius:12px;padding:12px;margin-bottom:10px;">
+                <div style="font-weight:700;font-size:13px;color:#4B2E9E;margin-bottom:8px;">📦 Part Payment Option (3 Phases)</div>
+                <label style="font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
+                    <input type="radio" name="livePlanPayMode" value="full" checked id="livePlanPayFull"> Pay in Full (UGX 120,000)
+                </label>
+                <label style="font-size:13px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="radio" name="livePlanPayMode" value="part" id="livePlanPayPart"> Pay Phase 1 only (UGX 48,000 = 40%)
+                </label>
+                <div id="livePlanPartPhases" style="display:none;margin-top:8px;">
+                    <div class="part-phase-row"><span>Phase 1 (Now)</span><strong>UGX 48,000 (40%)</strong></div>
+                    <div class="part-phase-row"><span>Phase 2 (later)</span><strong>UGX 42,000 (35%)</strong></div>
+                    <div class="part-phase-row"><span>Phase 3 (later)</span><strong>UGX 30,000 (25%)</strong></div>
+                </div>
+            </div>
+
+            <select id="livePlanPayMethod" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:12px;margin-bottom:8px;box-sizing:border-box;font-size:13px;">
+                <option>MTN MoMo</option>
+                <option>Airtel Money</option>
+                <option>Bank Transfer</option>
+                <option>Cash (in person)</option>
+            </select>
+            <input type="text" id="livePlanPayRef" placeholder="Transaction reference / receipt number" style="width:100%;box-sizing:border-box;padding:10px;border:1.5px solid #ddd;border-radius:12px;margin-bottom:8px;font-size:13px;">
+            <div id="livePlanPayStatus" style="font-size:13px;min-height:16px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+                <button id="livePlanPayCancelBtn" style="flex:1;background:#f5f5f5;color:#333;border:none;padding:12px;border-radius:20px;font-weight:600;cursor:pointer;">Cancel</button>
+                <button id="livePlanPaySubmitBtn" style="flex:2;background:#4B2E9E;color:white;border:none;padding:12px;border-radius:20px;font-weight:700;cursor:pointer;">💸 Submit Payment</button>
+            </div>
+        </div>
+    </div>
+
     <!-- AI DRAWER -->
     <div class="overlay" id="drawerOverlay"></div>
     <div class="ai-drawer" id="aiDrawer">
@@ -635,6 +703,30 @@
                         <hr style="border:none;border-top:1px dashed #ffcc99;margin:14px 0 10px;">
                         <h4 style="margin:0 0 6px;color:#FF8C42;font-size:13px;">📋 Teacher Requests (pending approval)</h4>
                         <div id="adminLiveLessons"><div style="color:#999;font-size:13px;">Loading…</div></div>
+                    </div>
+
+                    <!-- ===== LIVE ENROLLMENT FORM MANAGEMENT ===== -->
+                    <div class="admin-section" style="background:#f0f4ff;border:1.5px solid #9bb8ff;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;color:#4B2E9E;">📋 Termly Enrollment Form</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Upload the enrollment form PDF that students download, fill, and return.</p>
+                        <input type="url" id="adminEnrollFormUrl" placeholder="Paste Google Drive / Firebase PDF link" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:12px;margin-bottom:6px;font-size:13px;">
+                        <button id="adminSaveEnrollFormBtn" style="width:100%;background:#4B2E9E;color:white;border:none;padding:10px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">💾 Save Form URL</button>
+                        <div id="adminEnrollFormStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
+                        <h4 style="margin:14px 0 6px;color:#4B2E9E;font-size:13px;">📥 Student Form Submissions</h4>
+                        <div id="adminEnrollFormSubmissions" style="font-size:13px;color:#999;">Loading…</div>
+                    </div>
+
+                    <!-- ===== LIVE LESSON ATTENDANCE ===== -->
+                    <div class="admin-section" style="background:#f0fff4;border:1.5px solid #99ddbb;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;color:#2E7D32;">📊 Live Lesson Attendance</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">All student sign-ins during live lessons.</p>
+                        <select id="adminAttendanceLessonFilter" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:12px;margin-bottom:8px;box-sizing:border-box;font-size:13px;">
+                            <option value="">— All Lessons —</option>
+                        </select>
+                        <div id="adminLiveAttendanceList" style="font-size:13px;color:#999;">Loading…</div>
+
+                        <h4 style="margin:14px 0 6px;color:#4B2E9E;font-size:13px;">📋 Live Lesson Enrollments</h4>
+                        <div id="adminLiveEnrollmentsList" style="font-size:13px;color:#999;">Loading…</div>
                     </div>
 
                     <!-- ===== ACCESS TOKEN GENERATOR ===== -->
@@ -864,6 +956,61 @@
             <div id="myListContainer" style="background:white;border-radius:20px;padding:20px;text-align:center;color:#999;">Coming soon – save your favourite lessons!</div>
         </div>
 
+        <!-- ===== LIVE LESSONS PAGE ===== -->
+        <div id="livePage" class="page">
+            <div class="section-title">📡 Live Lessons</div>
+
+            <!-- Expiry warnings -->
+            <div id="liveExpiryWarnings"></div>
+
+            <!-- Enrollment status card -->
+            <div id="liveEnrollmentStatusCard"></div>
+
+            <!-- Current / Upcoming lessons -->
+            <div class="live-section-title"><span style="display:inline-block;width:9px;height:9px;background:#FF8C42;border-radius:50%;animation:livePulse 1.2s infinite;"></span>Available Lessons</div>
+            <div id="livePageLessonsContainer"><div style="text-align:center;color:#999;padding:20px;font-size:14px;">Loading…</div></div>
+
+            <!-- Enrollment form section (shown only for termly plan + non-enrolled) -->
+            <div id="liveEnrollFormSection" style="display:none;">
+                <div class="live-section-title">📋 Termly Enrollment Form</div>
+                <div class="enroll-form-card">
+                    <p style="font-size:13px;color:#666;margin:0 0 10px;">For the termly plan, download the enrollment form, fill it in, and upload your completed copy. Superadmin will confirm your enrollment.</p>
+                    <div id="enrollFormDownloadArea" style="margin-bottom:10px;"></div>
+                    <div id="enrollFormPreviousStatus" style="margin-bottom:8px;"></div>
+                    <div id="enrollFormUploadArea">
+                        <label style="font-size:13px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:4px;">Upload your completed form</label>
+                        <input type="text" id="studentClassInput" placeholder="Your class (e.g. P7, S4, S6…)" style="width:100%;box-sizing:border-box;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;margin-bottom:6px;">
+                        <input type="file" id="enrollFormUploadInput" accept="image/*,.pdf" style="font-size:13px;margin-bottom:8px;display:block;">
+                        <button id="submitEnrollFormBtn" style="background:#FF8C42;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;width:100%;">📤 Submit Form</button>
+                        <div id="enrollFormSubmitStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live lesson plans -->
+            <div class="live-section-title">💳 Subscribe to Live Lessons</div>
+            <div class="live-plan-grid" id="livePlansGrid">
+                <div class="live-plan-card live-plan-weekly">
+                    <div class="live-plan-name">Weekly</div>
+                    <div class="live-plan-price">UGX 15,000 / week</div>
+                    <div style="font-size:11px;opacity:0.85;margin-bottom:2px;">7 days access to all live lessons</div>
+                    <button class="live-plan-btn" onclick="openLivePlanPayment('Weekly','15000')">Subscribe</button>
+                </div>
+                <div class="live-plan-card live-plan-monthly">
+                    <div class="live-plan-name">Monthly</div>
+                    <div class="live-plan-price">UGX 50,000 / month</div>
+                    <div style="font-size:11px;opacity:0.85;margin-bottom:2px;">30 days full live access</div>
+                    <button class="live-plan-btn" onclick="openLivePlanPayment('Monthly','50000')">Subscribe</button>
+                </div>
+                <div class="live-plan-card live-plan-termly">
+                    <div class="live-plan-name">🏆 Termly Plan</div>
+                    <div class="live-plan-price">UGX 120,000 · 1 term (3 months)</div>
+                    <div style="font-size:11px;opacity:0.85;margin-bottom:4px;">Full access · In-session exams · Attendance tracked · Part payments in 3 phases</div>
+                    <button class="live-plan-btn" onclick="openLivePlanPayment('Termly','120000')">Enroll Now</button>
+                </div>
+            </div>
+        </div>
+
         <!-- NOTIFICATIONS PAGE -->
         <div id="notificationsPage" class="page">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -981,6 +1128,7 @@
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
         <div class="nav-item" data-page="resources"><i class="fas fa-book-open"></i><span>Resources</span></div>
         <div class="nav-item" id="teacherNavItem" data-page="teacher" style="display:none;"><i class="fas fa-chalkboard-user"></i><span>Dashboard</span></div>
+        <div class="nav-item" id="liveNavItem" data-page="live" style="display:none;"><i class="fas fa-satellite-dish" style="color:#FF8C42;font-size:20px;"></i><span style="color:#FF8C42;font-weight:700;">Live</span></div>
         <div class="nav-item" data-page="notifications" style="position:relative;"><i class="fas fa-bell"></i><span id="notifBadge" class="notif-badge" style="display:none;">0</span><span>Alerts</span></div>
         <div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div>
         <div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>
@@ -2613,6 +2761,566 @@
     });
     document.getElementById('livePayCancelBtn')?.addEventListener('click',()=>document.getElementById('livePayModal').style.display='none');
 
+    // =====================================================================
+    // ===== LIVE LESSONS PAGE — FEATURE SET (Features 1-7) ================
+    // =====================================================================
+
+    // ---- Feature 5: Expiry warning thresholds per plan type ----
+    function getExpiryThresholdMs(planType) {
+        const t = (planType||'').toLowerCase();
+        if(t.includes('daily'))   return 6*3600*1000;
+        if(t.includes('weekly'))  return 72*3600*1000;
+        if(t.includes('monthly')) return 7*24*3600*1000;
+        if(t.includes('termly') || t.includes('term')) return 14*24*3600*1000;
+        return 7*24*3600*1000; // default 7 days
+    }
+
+    function formatTimeLeft(ms) {
+        if(ms<=0) return 'expired';
+        const d=Math.floor(ms/(24*3600*1000));
+        const h=Math.floor((ms%(24*3600*1000))/(3600*1000));
+        if(d>0) return `${d} day${d!==1?'s':''} ${h}h`;
+        const m=Math.floor((ms%(3600*1000))/60000);
+        return h>0?`${h}h ${m}m`:`${m} minute${m!==1?'s':''}`;
+    }
+
+    async function checkExpiryWarnings() {
+        if(!currentUser) return;
+        const warnings = [];
+        // Check video subscription
+        try {
+            const subSnap = await getDocs(query(collection(db,'subscriptions'),
+                where('userId','==',currentUser.uid), where('approved','==',true), limit(5)));
+            subSnap.docs.forEach(d=>{
+                const s = d.data();
+                if(!s.expiresAt) return;
+                const exp = new Date(s.expiresAt).getTime();
+                const now = Date.now();
+                const msLeft = exp - now;
+                const threshold = getExpiryThresholdMs(s.plan||s.planType||'');
+                if(msLeft > 0 && msLeft < threshold) {
+                    warnings.push({ type:'video', plan:s.plan||s.planType||'Video', timeLeft:msLeft, urgent: msLeft<3600000 });
+                }
+            });
+        } catch(e){}
+        // Check live enrollment
+        try {
+            const leSnap = await getDocs(query(collection(db,'liveEnrollments'),
+                where('userId','==',currentUser.uid), where('status','==','active'), limit(5)));
+            leSnap.docs.forEach(d=>{
+                const s = d.data();
+                if(!s.expiresAt) return;
+                const exp = new Date(s.expiresAt).getTime();
+                const now = Date.now();
+                const msLeft = exp - now;
+                const threshold = getExpiryThresholdMs(s.planType||'');
+                if(msLeft > 0 && msLeft < threshold) {
+                    warnings.push({ type:'live', plan:s.planType||'Live', timeLeft:msLeft, urgent: msLeft<3600000 });
+                }
+            });
+        } catch(e){}
+        // Render warnings in liveExpiryWarnings and also at top of home page
+        const html = warnings.map(w=>`
+            <div class="expiry-warning-banner${w.urgent?' urgent':''}">
+                <i class="fas fa-clock" style="color:${w.urgent?'#c62828':'#FF8C42'};"></i>
+                <div>
+                    <div style="font-weight:700;font-size:13px;color:${w.urgent?'#c62828':'#FF8C42'};">${w.urgent?'⚠️ EXPIRING SOON':'⏰ Subscription Reminder'}</div>
+                    <div style="font-size:12px;color:#555;">${w.type==='video'?'📹 Video':'📡 Live'} · <strong>${w.plan}</strong> plan expires in <strong>${formatTimeLeft(w.timeLeft)}</strong></div>
+                </div>
+            </div>`).join('');
+        const expiryEl = document.getElementById('liveExpiryWarnings');
+        if(expiryEl) expiryEl.innerHTML = html;
+        // Also show on home page if any
+        let homeExpEl = document.getElementById('homeExpiryWarnings');
+        if(!homeExpEl) {
+            homeExpEl = document.createElement('div');
+            homeExpEl.id = 'homeExpiryWarnings';
+            const banner = document.getElementById('liveLessonsBanner');
+            if(banner && banner.parentNode) banner.parentNode.insertBefore(homeExpEl, banner);
+        }
+        homeExpEl.innerHTML = html;
+    }
+
+    // ---- Feature 3: Enrollment status card ----
+    async function renderLiveEnrollmentStatus() {
+        const card = document.getElementById('liveEnrollmentStatusCard');
+        if(!card||!currentUser) return;
+        let enrollment = null;
+        try {
+            const snap = await getDocs(query(collection(db,'liveEnrollments'),
+                where('userId','==',currentUser.uid), limit(1)));
+            if(!snap.empty) enrollment = { id:snap.docs[0].id, ...snap.docs[0].data() };
+        } catch(e){}
+
+        if(!enrollment) {
+            card.innerHTML = `<div style="background:linear-gradient(135deg,#f5f5f5,#ebebeb);border-radius:16px;padding:14px;margin-bottom:4px;display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-satellite-dish" style="font-size:28px;color:#bbb;"></i>
+                <div><div style="font-weight:700;font-size:15px;color:#555;">No Active Enrollment</div>
+                <div style="font-size:12px;color:#888;margin-top:2px;">Choose a plan below to get access to all live lessons.</div></div></div>`;
+            return;
+        }
+
+        const exp = enrollment.expiresAt ? new Date(enrollment.expiresAt) : null;
+        const now = Date.now();
+        const msLeft = exp ? exp.getTime() - now : 0;
+        const isActive = enrollment.status === 'active' && (!exp || exp.getTime() > now);
+        const gradients = { Weekly:'linear-gradient(135deg,#2196F3,#1565C0)', Monthly:'linear-gradient(135deg,#FF8C42,#E64A19)', Termly:'linear-gradient(135deg,#4B2E9E,#9C27B0)' };
+        const grad = gradients[enrollment.planType] || 'linear-gradient(135deg,#4B2E9E,#7B5FCF)';
+
+        // Part payment progress for termly
+        let partPayHtml = '';
+        if(enrollment.planType==='Termly' && enrollment.phases) {
+            const paid = enrollment.phases.filter(p=>p.confirmed).length;
+            const pct = Math.round((paid/3)*100);
+            partPayHtml = `<div style="font-size:11px;opacity:0.8;margin-top:6px;">Payment: ${paid}/3 phases completed</div>
+                <div class="part-payment-bar"><div class="part-payment-fill" style="width:${pct}%"></div></div>`;
+            if(paid < 3) {
+                const nextPhase = paid + 1;
+                const phaseAmts = [48000,42000,30000];
+                const amt = phaseAmts[paid] || 0;
+                partPayHtml += `<button onclick="openNextPhasePayment('${enrollment.id}',${nextPhase},${amt})" style="background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.5);color:white;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:700;margin-top:6px;">💳 Pay Phase ${nextPhase} (UGX ${amt.toLocaleString()})</button>`;
+            }
+        }
+
+        card.innerHTML = `<div style="background:${grad};border-radius:20px;padding:16px 18px;margin-bottom:12px;color:white;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div style="font-size:11px;opacity:0.8;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Live Lesson Enrollment</div>
+                    <div style="font-weight:800;font-size:18px;">${escHtml(enrollment.planType||'Unknown')} Plan</div>
+                    ${enrollment.class?`<div style="font-size:12px;opacity:0.85;margin-top:2px;">🏫 Class: ${escHtml(enrollment.class)}</div>`:''}
+                </div>
+                <span style="background:${isActive?'#4CAF50':'#f44336'};color:white;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">${isActive?'✅ Active':'⛔ Expired'}</span>
+            </div>
+            ${exp?`<div style="font-size:12px;opacity:0.85;margin-top:8px;">⏰ ${msLeft>0?'Expires '+formatTimeLeft(msLeft)+' left':'Expired on '+exp.toLocaleDateString()}</div>`:''}
+            ${partPayHtml}
+        </div>`;
+
+        // Show/hide enrollment form section based on enrollment status
+        const formSection = document.getElementById('liveEnrollFormSection');
+        if(formSection) formSection.style.display = (enrollment.planType==='Termly' || !enrollment) ? 'block' : 'none';
+    }
+
+    // ---- Feature 4: Attendance sign-in ----
+    window.signInToLesson = async function(lessonId, lessonTitle) {
+        if(!currentUser) { showNotification('Log in first','error'); return; }
+        const btn = document.getElementById('signInBtn_'+lessonId);
+        if(btn) { btn.disabled=true; btn.textContent='Signing in…'; }
+        try {
+            // Check if already signed in today
+            const today = new Date().toDateString();
+            const existing = await getDocs(query(collection(db,'liveAttendance'),
+                where('lessonId','==',lessonId), where('userId','==',currentUser.uid),
+                where('dateStr','==',today), limit(1)));
+            if(!existing.empty) {
+                showNotification('✅ You already signed in for this lesson today.','info');
+                if(btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-check"></i> Signed In'; }
+                return;
+            }
+            await addDoc(collection(db,'liveAttendance'), {
+                lessonId, lessonTitle,
+                userId:currentUser.uid, userName:currentUser.name||currentUser.email,
+                userEmail:currentUser.email,
+                class: currentUser.liveClass || '',
+                signedInAt: new Date().toISOString(),
+                dateStr: today
+            });
+            showNotification('✅ Attendance recorded!');
+            if(btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-check"></i> Signed In'; btn.style.background='#aaa'; }
+        } catch(e) {
+            showNotification('Error recording attendance. Try again.','error');
+            if(btn) { btn.disabled=false; btn.textContent='Sign In'; }
+        }
+    };
+
+    // ---- Features 2 + 4: Render live page lessons list ----
+    async function renderLivePageLessons() {
+        const container = document.getElementById('livePageLessonsContainer');
+        if(!container) return;
+        container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Loading…</div>';
+        try {
+            const snap = await getDocs(query(collection(db,'liveLessons'),
+                where('status','==','approved'), orderBy('createdAt','desc')));
+            if(snap.empty) {
+                container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;font-size:14px;">No live lessons scheduled right now.<br><small>Check back soon!</small></div>';
+                return;
+            }
+            // Get user tokens & today's attendance
+            let myTokens={}, myAttendance={};
+            if(currentUser) {
+                const [tsnap, asnap] = await Promise.all([
+                    getDocs(query(collection(db,'liveAccess'), where('userId','==',currentUser.uid), where('revoked','!=',true))).catch(()=>({docs:[]})),
+                    getDocs(query(collection(db,'liveAttendance'), where('userId','==',currentUser.uid), where('dateStr','==',new Date().toDateString()))).catch(()=>({docs:[]}))
+                ]);
+                tsnap.docs.forEach(d=>{ myTokens[d.data().lessonId]=d.data().token; });
+                asnap.docs.forEach(d=>{ myAttendance[d.data().lessonId]=true; });
+            }
+            // Check if enrolled
+            let isEnrolled = false;
+            try {
+                const eSnap = await getDocs(query(collection(db,'liveEnrollments'),
+                    where('userId','==',currentUser?.uid||''), where('status','==','active'), limit(1)));
+                isEnrolled = !eSnap.empty && eSnap.docs[0].data().expiresAt
+                    ? new Date(eSnap.docs[0].data().expiresAt).getTime() > Date.now() : !eSnap.empty;
+            } catch(e){}
+
+            container.innerHTML = snap.docs.map(d=>{
+                const l = d.data();
+                const hasToken = !!myTokens[d.id];
+                const signedIn = !!myAttendance[d.id];
+                const feeLabel = l.accessFee>0 ? `UGX ${Number(l.accessFee).toLocaleString()}` : 'FREE';
+                const feeColor = l.accessFee>0 ? '#FF8C42' : '#4CAF50';
+                const joinBtnHtml = hasToken
+                    ? `<button onclick="useLiveToken('${d.id}')" style="background:#4CAF50;color:white;border:none;padding:10px 0;border-radius:20px;font-weight:700;cursor:pointer;flex:1;font-size:13px;">🔗 Join Now</button>`
+                    : `<button onclick="requestLiveAccess('${d.id}','${escHtml(l.title).replace(/'/g,'\\'')}',${l.accessFee||0})" style="background:#FF8C42;color:white;border:none;padding:10px 0;border-radius:20px;font-weight:700;cursor:pointer;flex:1;font-size:13px;">${l.accessFee>0?'💳 Pay & Join':'🎓 Get Free Access'}</button>`;
+                const signInHtml = hasToken
+                    ? `<button id="signInBtn_${d.id}" ${signedIn?'disabled':''} onclick="signInToLesson('${d.id}','${escHtml(l.title).replace(/'/g,'\\'')}') " class="live-sign-in-btn" style="flex:1;${signedIn?'background:#aaa;':''}">${signedIn?'<i class=\\'fas fa-check\\'></i> Signed In':'✅ Sign In'}</button>`
+                    : '';
+                return `<div class="live-page-card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                        <div style="font-weight:700;font-size:15px;flex:1;padding-right:8px;">${escHtml(l.title)}</div>
+                        <span style="background:${feeColor};color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;flex-shrink:0;">${feeLabel}</span>
+                    </div>
+                    <div style="font-size:12px;color:#888;margin-bottom:4px;">👨‍🏫 ${escHtml(l.teacherName)}${l.scheduledDate?' · 📅 '+escHtml(l.scheduledDate):''}</div>
+                    ${l.desc?`<div style="font-size:13px;color:#555;margin-bottom:8px;">${escHtml(l.desc)}</div>`:''}
+                    ${isEnrolled?`<div style="font-size:11px;color:#4B2E9E;font-weight:700;margin-bottom:6px;"><i class="fas fa-star"></i> Enrolled — Exam access included</div>`:''}
+                    <div style="display:flex;gap:8px;margin-top:8px;">${joinBtnHtml}${signInHtml}</div>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
+        }
+    }
+
+    // ---- Feature 1: Render the full Live Page ----
+    async function renderLivePage() {
+        await Promise.all([
+            renderLiveEnrollmentStatus(),
+            renderLivePageLessons(),
+            checkExpiryWarnings(),
+            renderEnrollFormStatus()
+        ]);
+    }
+
+    // ---- Feature 6: Open next part-payment phase ----
+    window.openNextPhasePayment = function(enrollId, phase, amount) {
+        document.getElementById('livePlanPayPlanName').textContent = `Termly Plan — Phase ${phase} of 3`;
+        document.getElementById('livePlanPayAmount').textContent = `UGX ${amount.toLocaleString()}`;
+        document.getElementById('livePlanPayType').value = 'Termly_Phase';
+        document.getElementById('livePlanPayPrice').value = amount;
+        document.getElementById('livePlanPartPaySection').style.display = 'none';
+        document.getElementById('livePlanPayRef').value = '';
+        document.getElementById('livePlanPayStatus').textContent = '';
+        // store phase context
+        document.getElementById('livePlanPaySubmitBtn').dataset.enrollId = enrollId;
+        document.getElementById('livePlanPaySubmitBtn').dataset.phase = phase;
+        document.getElementById('livePlanPayModal').style.display = 'flex';
+    };
+
+    // ---- Feature 2 + 6: Open live plan payment modal ----
+    window.openLivePlanPayment = function(planType, price) {
+        if(!currentUser) { showNotification('Log in first','error'); return; }
+        const planNames = { Weekly:'Weekly Plan (7 days)', Monthly:'Monthly Plan (30 days)', Termly:'Termly Plan (1 Term = 3 months)' };
+        const prices = { Weekly:'15,000', Monthly:'50,000', Termly:'120,000' };
+        document.getElementById('livePlanPayPlanName').textContent = planNames[planType]||planType;
+        document.getElementById('livePlanPayAmount').textContent = `UGX ${prices[planType]||price}`;
+        document.getElementById('livePlanPayType').value = planType;
+        document.getElementById('livePlanPayPrice').value = price;
+        document.getElementById('livePlanPartPaySection').style.display = planType==='Termly' ? 'block' : 'none';
+        document.getElementById('livePlanPartPhases').style.display = 'none';
+        document.getElementById('livePlanPayFull').checked = true;
+        document.getElementById('livePlanPayRef').value = '';
+        document.getElementById('livePlanPayStatus').textContent = '';
+        delete document.getElementById('livePlanPaySubmitBtn').dataset.enrollId;
+        delete document.getElementById('livePlanPaySubmitBtn').dataset.phase;
+        document.getElementById('livePlanPayModal').style.display = 'flex';
+    };
+
+    // Part payment radio toggle
+    document.querySelectorAll('input[name="livePlanPayMode"]').forEach(r=>r.addEventListener('change',()=>{
+        const isPart = document.getElementById('livePlanPayPart')?.checked;
+        document.getElementById('livePlanPartPhases').style.display = isPart ? 'block' : 'none';
+        document.getElementById('livePlanPayAmount').textContent = isPart ? 'UGX 48,000 (Phase 1 of 3)' : 'UGX 120,000 (Full)';
+    }));
+
+    document.getElementById('livePlanPayClose')?.addEventListener('click',()=>document.getElementById('livePlanPayModal').style.display='none');
+    document.getElementById('livePlanPayCancelBtn')?.addEventListener('click',()=>document.getElementById('livePlanPayModal').style.display='none');
+
+    document.getElementById('livePlanPaySubmitBtn')?.addEventListener('click', async () => {
+        const planType = document.getElementById('livePlanPayType').value;
+        const ref = document.getElementById('livePlanPayRef').value.trim();
+        const method = document.getElementById('livePlanPayMethod').value;
+        const statusEl = document.getElementById('livePlanPayStatus');
+        const submitBtn = document.getElementById('livePlanPaySubmitBtn');
+        if(!ref) { statusEl.style.color='red'; statusEl.textContent='Enter your transaction reference.'; return; }
+        if(!currentUser) return;
+        submitBtn.disabled = true;
+        statusEl.style.color='#4B2E9E'; statusEl.textContent='Submitting…';
+        try {
+            const isPhase = planType === 'Termly_Phase';
+            const enrollId = submitBtn.dataset.enrollId;
+            const phase = parseInt(submitBtn.dataset.phase)||0;
+            const isPart = document.getElementById('livePlanPayPart')?.checked && planType==='Termly';
+            const paymentPhase = isPart ? 1 : (isPhase ? phase : null);
+            const totalPhases = (isPart||isPhase) ? 3 : null;
+            const durationDays = { Weekly:7, Monthly:30, Termly:90, Termly_Phase:90 };
+            const expiresAt = (() => {
+                const d = new Date(); d.setDate(d.getDate()+(durationDays[planType]||30)); return d.toISOString();
+            })();
+            await addDoc(collection(db,'livePaymentRequests'), {
+                planType: isPhase ? 'Termly' : planType,
+                fee: parseInt(document.getElementById('livePlanPayPrice').value)||0,
+                userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.name,
+                transactionRef:ref, paymentMethod:method,
+                approved:false,
+                ...(paymentPhase?{ partPayment:true, phase:paymentPhase, totalPhases }:{}),
+                ...(isPhase?{ existingEnrollId:enrollId }:{}),
+                createdAt:new Date().toISOString()
+            });
+            statusEl.style.color='#4CAF50';
+            statusEl.textContent='✅ Request submitted! Admin will verify and activate your plan.';
+            submitBtn.disabled=false;
+            setTimeout(()=>document.getElementById('livePlanPayModal').style.display='none',3000);
+            await writeNotification(currentUser.uid,'📡 Live Plan Request Received',`Your ${planType} live lesson plan payment has been submitted. We'll activate it after verification.`);
+        } catch(e) {
+            statusEl.style.color='red'; statusEl.textContent='Error. Try again.';
+            submitBtn.disabled=false;
+        }
+    });
+
+    // ---- Feature 7: Enrollment form logic ----
+    async function renderEnrollFormStatus() {
+        const formSection = document.getElementById('liveEnrollFormSection');
+        if(!formSection||!currentUser) return;
+        // Show enrollment form section always for non-superadmin
+        if(currentUser.role==='superadmin') { formSection.style.display='none'; return; }
+        formSection.style.display='block';
+        // Load the current form URL from settings
+        const downloadArea = document.getElementById('enrollFormDownloadArea');
+        try {
+            const fSnap = await getDoc(doc(db,'settings','liveEnrollForm'));
+            if(fSnap.exists() && fSnap.data().url) {
+                downloadArea.innerHTML = `<a href="${escHtml(fSnap.data().url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;background:#4B2E9E;color:white;padding:10px 20px;border-radius:20px;font-weight:700;font-size:13px;text-decoration:none;">📥 Download Enrollment Form</a>`;
+            } else {
+                downloadArea.innerHTML = '<div style="font-size:12px;color:#888;">Enrollment form not yet uploaded by admin.</div>';
+            }
+        } catch(e){ downloadArea.innerHTML=''; }
+        // Load previous submission status
+        const prevStatus = document.getElementById('enrollFormPreviousStatus');
+        try {
+            const subSnap = await getDocs(query(collection(db,'liveEnrollmentForms'),
+                where('userId','==',currentUser.uid), orderBy('submittedAt','desc'), limit(1)));
+            if(!subSnap.empty) {
+                const sub = subSnap.docs[0].data();
+                const statusColors = { pending:'#FF8C42', confirmed:'#4CAF50', rejected:'#c62828' };
+                const col = statusColors[sub.status]||'#888';
+                prevStatus.innerHTML = `<div style="background:#f9f9f9;border-radius:10px;padding:10px;font-size:13px;">
+                    <strong>Previous submission:</strong> <span style="color:${col};font-weight:700;">${sub.status?.toUpperCase()||'Pending'}</span>
+                    ${sub.status==='confirmed'?'<br><span style="color:#4CAF50;font-size:12px;">✅ You are enrolled! Your class: <strong>'+(sub.confirmedClass||sub.class||'TBA')+'</strong></span>':''}
+                    ${sub.status==='rejected'?'<br><span style="color:#c62828;font-size:12px;">❌ Rejected — please re-submit a clearer form.</span>':''}
+                </div>`;
+                if(sub.status==='pending') {
+                    document.getElementById('enrollFormUploadArea').innerHTML = '<div style="font-size:12px;color:#888;padding:8px;">⏳ Your form is pending review by admin.</div>';
+                }
+                return;
+            }
+        } catch(e){}
+        if(prevStatus) prevStatus.innerHTML='';
+    }
+
+    document.getElementById('submitEnrollFormBtn')?.addEventListener('click', async ()=>{
+        if(!currentUser) { showNotification('Log in first','error'); return; }
+        const fileInput = document.getElementById('enrollFormUploadInput');
+        const classInput = document.getElementById('studentClassInput');
+        const statusEl = document.getElementById('enrollFormSubmitStatus');
+        const file = fileInput?.files?.[0];
+        const cls = classInput?.value?.trim();
+        if(!cls) { statusEl.style.color='red'; statusEl.textContent='Enter your class.'; return; }
+        if(!file) { statusEl.style.color='red'; statusEl.textContent='Select your filled form file.'; return; }
+        const submitBtn = document.getElementById('submitEnrollFormBtn');
+        submitBtn.disabled=true; statusEl.style.color='#4B2E9E'; statusEl.textContent='Uploading…';
+        try {
+            const path = `enrollForms/${currentUser.uid}_${Date.now()}_${file.name}`;
+            const ref = storageRef(storage, path);
+            const task = uploadBytesResumable(ref, file);
+            task.on('state_changed', snap=>{
+                statusEl.textContent=`Uploading… ${Math.round(snap.bytesTransferred/snap.totalBytes*100)}%`;
+            });
+            await task;
+            const url = await getDownloadURL(ref);
+            await addDoc(collection(db,'liveEnrollmentForms'),{
+                userId:currentUser.uid, userName:currentUser.name||currentUser.email,
+                userEmail:currentUser.email, class:cls, formUrl:url,
+                status:'pending', submittedAt:new Date().toISOString()
+            });
+            statusEl.style.color='#4CAF50'; statusEl.textContent='✅ Form submitted! Admin will review and confirm your enrollment.';
+            submitBtn.disabled=false;
+            await writeNotification(currentUser.uid,'📋 Enrollment Form Submitted','Your termly enrollment form has been submitted. Admin will review and confirm soon.');
+            setTimeout(()=>renderEnrollFormStatus(),2000);
+        } catch(e) {
+            statusEl.style.color='red'; statusEl.textContent='Upload failed. Try again.';
+            submitBtn.disabled=false;
+        }
+    });
+
+    // ---- Superadmin: Enrollment form management ----
+    document.getElementById('adminSaveEnrollFormBtn')?.addEventListener('click', async ()=>{
+        const url = document.getElementById('adminEnrollFormUrl')?.value?.trim();
+        const statusEl = document.getElementById('adminEnrollFormStatus');
+        if(!url) { statusEl.style.color='red'; statusEl.textContent='Enter a URL.'; return; }
+        try {
+            await setDoc(doc(db,'settings','liveEnrollForm'), { url, savedAt:new Date().toISOString(), savedBy:currentUser?.uid });
+            statusEl.style.color='#4CAF50'; statusEl.textContent='✅ Form URL saved.';
+        } catch(e){ statusEl.style.color='red'; statusEl.textContent='Error saving.'; }
+    });
+
+    async function loadAdminEnrollFormSubmissions() {
+        const c = document.getElementById('adminEnrollFormSubmissions'); if(!c) return;
+        try {
+            const snap = await getDocs(query(collection(db,'liveEnrollmentForms'), orderBy('submittedAt','desc'), limit(50)));
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No submissions yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d=>{
+                const s=d.data();
+                const statusColors={pending:'#FF8C42',confirmed:'#4CAF50',rejected:'#c62828'};
+                const col=statusColors[s.status]||'#888';
+                return `<div style="background:#f9f9f9;border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div><strong>${escHtml(s.userName||s.userEmail)}</strong><br><small style="color:#888;">${escHtml(s.class||'')} · ${new Date(s.submittedAt).toLocaleDateString()}</small></div>
+                        <span style="color:${col};font-weight:700;font-size:11px;">${(s.status||'pending').toUpperCase()}</span>
+                    </div>
+                    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+                        <a href="${escHtml(s.formUrl)}" target="_blank" style="background:#4B2E9E;color:white;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;text-decoration:none;">📄 View Form</a>
+                        ${s.status!=='confirmed'?`<button onclick="confirmEnrollForm('${d.id}','${escHtml(s.userId)}','${escHtml(s.class||'')}','${escHtml(s.userName||'')}' )" style="background:#4CAF50;color:white;border:none;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">✅ Confirm</button>`:''}
+                        ${s.status!=='rejected'?`<button onclick="rejectEnrollForm('${d.id}','${escHtml(s.userId)}','${escHtml(s.userName||'')}' )" style="background:#c62828;color:white;border:none;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">❌ Reject</button>`:''}
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e){ c.innerHTML='<div style="color:#c62828;">Error loading.</div>'; }
+    }
+
+    window.confirmEnrollForm = async function(docId, userId, cls, userName) {
+        if(!confirm(`Confirm enrollment for ${userName}?`)) return;
+        try {
+            await updateDoc(doc(db,'liveEnrollmentForms',docId), { status:'confirmed', confirmedClass:cls, confirmedAt:new Date().toISOString(), confirmedBy:currentUser?.uid });
+            // Create or update liveEnrollments record
+            const existing = await getDocs(query(collection(db,'liveEnrollments'), where('userId','==',userId), limit(1)));
+            const termEnd = new Date(); termEnd.setMonth(termEnd.getMonth()+3);
+            const enrollData = { userId, planType:'Termly', status:'active', class:cls, expiresAt:termEnd.toISOString(), phases:[{phase:1,confirmed:true,confirmedAt:new Date().toISOString()}], enrolledAt:new Date().toISOString() };
+            if(existing.empty) await addDoc(collection(db,'liveEnrollments'), enrollData);
+            else await updateDoc(doc(db,'liveEnrollments',existing.docs[0].id), enrollData);
+            await writeNotification(userId,'🎉 Enrollment Confirmed!',`Your termly live lesson enrollment has been confirmed. Class: ${cls}. Welcome aboard!`);
+            showNotification(`${userName} enrolled successfully.`);
+            loadAdminEnrollFormSubmissions();
+            loadAdminLiveEnrollments();
+        } catch(e){ showNotification('Error confirming.','error'); }
+    };
+
+    window.rejectEnrollForm = async function(docId, userId, userName) {
+        if(!confirm(`Reject enrollment for ${userName}?`)) return;
+        try {
+            await updateDoc(doc(db,'liveEnrollmentForms',docId), { status:'rejected', rejectedAt:new Date().toISOString() });
+            await writeNotification(userId,'❌ Enrollment Form Rejected','Your enrollment form was not accepted. Please re-submit a clearer, complete form.');
+            showNotification(`${userName} rejected.`);
+            loadAdminEnrollFormSubmissions();
+        } catch(e){ showNotification('Error.','error'); }
+    };
+
+    // ---- Superadmin: Attendance + Enrollments ----
+    async function loadAdminLiveAttendance() {
+        const c = document.getElementById('adminLiveAttendanceList'); if(!c) return;
+        try {
+            const filterEl = document.getElementById('adminAttendanceLessonFilter');
+            const filterLesson = filterEl?.value||'';
+            let q;
+            if(filterLesson) q = query(collection(db,'liveAttendance'), where('lessonId','==',filterLesson), orderBy('signedInAt','desc'), limit(50));
+            else q = query(collection(db,'liveAttendance'), orderBy('signedInAt','desc'), limit(100));
+            const snap = await getDocs(q);
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No attendance records yet.</div>'; return; }
+            c.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <tr style="background:#f0f4ff;"><th style="padding:6px;text-align:left;">Student</th><th style="text-align:left;padding:6px;">Lesson</th><th style="text-align:left;padding:6px;">Time</th></tr>
+                ${snap.docs.map(d=>{
+                    const a=d.data();
+                    return `<tr style="border-bottom:1px solid #f0f0f0;">
+                        <td style="padding:6px;"><strong>${escHtml(a.userName||a.userEmail)}</strong><br><small style="color:#888;">${escHtml(a.class||'')}</small></td>
+                        <td style="padding:6px;">${escHtml(a.lessonTitle||a.lessonId)}</td>
+                        <td style="padding:6px;">${a.signedInAt?new Date(a.signedInAt).toLocaleString():''}</td></tr>`;
+                }).join('')}
+            </table>`;
+        } catch(e){ c.innerHTML='<div style="color:#c62828;">Error loading attendance.</div>'; }
+    }
+
+    async function loadAdminLiveEnrollments() {
+        const c = document.getElementById('adminLiveEnrollmentsList'); if(!c) return;
+        try {
+            const snap = await getDocs(query(collection(db,'liveEnrollments'), orderBy('enrolledAt','desc'), limit(50)));
+            if(snap.empty) { c.innerHTML='<div style="color:#999;">No enrollments yet.</div>'; return; }
+            c.innerHTML = snap.docs.map(d=>{
+                const e=d.data();
+                const exp=e.expiresAt?new Date(e.expiresAt):null;
+                const active=e.status==='active'&&(!exp||exp>new Date());
+                const paidPhases=e.phases?e.phases.filter(p=>p.confirmed).length:null;
+                return `<div style="background:#f9f9f9;border-radius:10px;padding:10px;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                    <div>
+                        <strong>${escHtml(e.userName||e.userId)}</strong>
+                        <div style="font-size:11px;color:#888;">${escHtml(e.planType||'')} · ${escHtml(e.class||'No class')} · ${exp?exp.toLocaleDateString():'No expiry'}</div>
+                        ${paidPhases!==null?`<div style="font-size:11px;color:#4B2E9E;">Phases paid: ${paidPhases}/3</div>`:''}
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <span style="background:${active?'#e8f5e9':'#ffebee'};color:${active?'#2E7D32':'#c62828'};padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">${active?'Active':'Expired'}</span>
+                        <button onclick="confirmNextLivePhase('${d.id}')" style="background:#4B2E9E;color:white;border:none;padding:4px 10px;border-radius:10px;font-size:11px;cursor:pointer;">✅ Phase +</button>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch(e){ c.innerHTML='<div style="color:#c62828;">Error.</div>'; }
+    }
+
+    window.confirmNextLivePhase = async function(enrollId) {
+        try {
+            const snap = await getDoc(doc(db,'liveEnrollments',enrollId));
+            if(!snap.exists()) return;
+            const e = snap.data();
+            const phases = e.phases || [];
+            const nextPhase = phases.length + 1;
+            if(nextPhase > 3) { showNotification('All 3 phases already paid.','info'); return; }
+            phases.push({ phase:nextPhase, confirmed:true, confirmedAt:new Date().toISOString(), confirmedBy:currentUser?.uid });
+            await updateDoc(doc(db,'liveEnrollments',enrollId), { phases });
+            if(e.userId) await writeNotification(e.userId,`✅ Phase ${nextPhase} Payment Confirmed`,`Your Phase ${nextPhase} payment for the Termly Live Lesson plan has been confirmed!`);
+            showNotification(`Phase ${nextPhase} confirmed.`);
+            loadAdminLiveEnrollments();
+        } catch(err){ showNotification('Error.','error'); }
+    };
+
+    // Lesson filter for attendance
+    document.getElementById('adminAttendanceLessonFilter')?.addEventListener('change', loadAdminLiveAttendance);
+
+    // Populate the attendance lesson filter
+    async function populateAdminAttendanceLessonFilter() {
+        const sel = document.getElementById('adminAttendanceLessonFilter'); if(!sel) return;
+        try {
+            const snap = await getDocs(query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc'), limit(30)));
+            snap.docs.forEach(d=>{ const opt=document.createElement('option'); opt.value=d.id; opt.textContent=d.data().title||d.id; sel.appendChild(opt); });
+        } catch(e){}
+    }
+
+    async function loadAdminEnrollFormUrl() {
+        const input = document.getElementById('adminEnrollFormUrl'); if(!input) return;
+        try {
+            const snap = await getDoc(doc(db,'settings','liveEnrollForm'));
+            if(snap.exists()) input.value = snap.data().url||'';
+        } catch(e){}
+    }
+
+    function loadLiveAdminSections() {
+        loadAdminEnrollFormSubmissions();
+        loadAdminLiveAttendance();
+        loadAdminLiveEnrollments();
+        populateAdminAttendanceLessonFilter();
+        loadAdminEnrollFormUrl();
+    }
+
+    // =====================================================================
+    // End of Live Lessons feature set
+    // =====================================================================
+
     // ===== ABOUT PAGE (Firestore) =====
     async function loadAboutFromFirestore() {
         try {
@@ -2847,6 +3555,7 @@
         if(pageId==='teacher') loadTeacherDashboard();
         if(pageId==='account') loadMyVideoQuestions();
         if(pageId==='about') loadAboutFromFirestore();
+        if(pageId==='live') renderLivePage();
         if(pageId==='resources') {
             renderResources();
             const searchEl = document.getElementById('resourcesSearch');
@@ -2898,6 +3607,9 @@
         document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
         document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
         document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
+        // Live nav item — visible for students (individual), school, and superadmin
+        const showLiveNav = !isTeacher;
+        document.getElementById('liveNavItem').style.display = showLiveNav ? "flex" : "none";
         // Teacher dashboard nav item
         document.getElementById('teacherNavItem').style.display = isTeacher ? "flex" : "none";
         // Profile pic
@@ -2929,6 +3641,7 @@
         listenToNotifications();
         listenLiveLessons();
         loadAboutFromFirestore();
+        checkExpiryWarnings();
     }
 
     // ===== FIRESTORE LISTENERS =====
@@ -3149,12 +3862,11 @@
     document.addEventListener('click', ()=> document.getElementById('moreDropdown')?.classList.remove('show'));
     document.getElementById('liveLessonMenuItem')?.addEventListener('click', ()=>{
         document.getElementById('moreDropdown').classList.remove('show');
-        navigateTo('home');
-        setTimeout(()=>{ const el=document.getElementById('liveLessonsBanner'); if(el) el.scrollIntoView({behavior:'smooth'}); }, 300);
+        navigateTo('live');
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
@@ -3489,6 +4201,57 @@
     checkPaymentStatus();
 
     console.log("✅ APSHULE fully loaded with all features.");
+</script>
+<script>
+(function () {
+  var es = null;
+  var retryDelay = 3000;
+
+  function showPushToast(msg, type) {
+    if (typeof window.showNotification === "function") {
+      window.showNotification(msg, type);
+    }
+  }
+
+  function showDesktopNotification(title, body) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, { body: body, icon: "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" });
+    }
+  }
+
+  function requestNotifPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+
+  function connect() {
+    if (es) return;
+    es = new EventSource("/api/push-events");
+
+    es.addEventListener("push-success", function (e) {
+      var data = JSON.parse(e.data);
+      showPushToast("✅ " + data.message, "success");
+      showDesktopNotification("APSHULE Push", "✅ " + data.message);
+    });
+
+    es.addEventListener("push-error", function (e) {
+      var data = JSON.parse(e.data);
+      showPushToast("❌ " + data.message, "error");
+      showDesktopNotification("APSHULE Push Failed", "❌ " + data.message);
+    });
+
+    es.onerror = function () {
+      es.close();
+      es = null;
+      setTimeout(connect, retryDelay);
+    };
+  }
+
+  requestNotifPermission();
+  connect();
+})();
 </script>
 </body>
 </html>
