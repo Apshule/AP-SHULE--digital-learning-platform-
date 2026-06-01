@@ -450,9 +450,16 @@
     // Ultimate fallback: catch any uncaught JS error and unblock the form
     window.onerror = function(msg, src, line, col, err){
         window._firebaseReady && window._firebaseReady();
+        // Cross-origin scripts (YouTube, Firebase CDN) fire window.onerror as
+        // msg="Script error." with src="" — that is NOT an app failure; ignore it.
+        if(!src && msg === 'Script error.') return false;
+        if(src && src !== '' && src.indexOf(location.hostname) === -1) return false;
         var el = document.getElementById('loginError');
-        if(el && !el.textContent) el.textContent = '⚠️ A script error occurred. Try reloading.';
-        return false; // don't suppress the error in devtools
+        if(el && !el.textContent){
+            el.style.fontSize = '11px';
+            el.textContent = '⚠️ JS error L' + line + ': ' + (String(msg||'')).substring(0, 90);
+        }
+        return false;
     };
 })();
 </script>
@@ -4728,13 +4735,13 @@
     }, 14000);
 
     // ===== START LISTENERS =====
-    listenToSchools();
-    listenToEvents();
-    listenToPDFs();
-    listenToVideoMappings();
-    listenToSubjects();
-    listenToSubscriptionPlans();
-    listenToTeachers();
+    try { listenToSchools(); } catch(e){ console.warn('listenToSchools',e); }
+    try { listenToEvents(); } catch(e){ console.warn('listenToEvents',e); }
+    try { listenToPDFs(); } catch(e){ console.warn('listenToPDFs',e); }
+    try { listenToVideoMappings(); } catch(e){ console.warn('listenToVideoMappings',e); }
+    try { listenToSubjects(); } catch(e){ console.warn('listenToSubjects',e); }
+    try { listenToSubscriptionPlans(); } catch(e){ console.warn('listenToSubscriptionPlans',e); }
+    try { listenToTeachers(); } catch(e){ console.warn('listenToTeachers',e); }
     // Mark-all-read button
     document.getElementById('markAllReadBtn')?.addEventListener('click', markAllNotifsRead);
 
@@ -4795,10 +4802,10 @@
         setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 5000);
     });
 
-    renderClasses();
-    renderPdfList();
-    renderEventsTicker();
-    checkPaymentStatus();
+    try { renderClasses(); } catch(e){ console.warn('renderClasses',e); }
+    try { renderPdfList(); } catch(e){ console.warn('renderPdfList',e); }
+    try { renderEventsTicker(); } catch(e){ console.warn('renderEventsTicker',e); }
+    try { checkPaymentStatus(); } catch(e){ console.warn('checkPaymentStatus',e); }
 
     console.log("✅ APSHULE fully loaded with all features.");
 </script>
@@ -4920,6 +4927,7 @@
 
   function connect() {
     if (es) return;
+    if (typeof EventSource === 'undefined') return; // Opera Mini / old browsers
     es = new EventSource("/api/push-events");
 
     es.addEventListener("push-success", function (e) {
