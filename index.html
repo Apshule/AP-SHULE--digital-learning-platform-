@@ -3262,11 +3262,12 @@
                 const signedIn = !!myAttendance[d.id];
                 const feeLabel = l.accessFee>0 ? `UGX ${Number(l.accessFee).toLocaleString()}` : 'FREE';
                 const feeColor = l.accessFee>0 ? '#FF8C42' : '#4CAF50';
+                const safeTitle = escHtml(l.title).replace(/'/g,"&#39;");
                 const joinBtnHtml = hasToken
                     ? `<button onclick="useLiveToken('${d.id}')" style="background:#4CAF50;color:white;border:none;padding:10px 0;border-radius:20px;font-weight:700;cursor:pointer;flex:1;font-size:13px;">🔗 Join Now</button>`
-                    : `<button onclick="requestLiveAccess('${d.id}','${escHtml(l.title).replace(/'/g,'\\'')}',${l.accessFee||0})" style="background:#FF8C42;color:white;border:none;padding:10px 0;border-radius:20px;font-weight:700;cursor:pointer;flex:1;font-size:13px;">${l.accessFee>0?'💳 Pay & Join':'🎓 Get Free Access'}</button>`;
+                    : `<button onclick="requestLiveAccess('${d.id}','${safeTitle}',${l.accessFee||0})" style="background:#FF8C42;color:white;border:none;padding:10px 0;border-radius:20px;font-weight:700;cursor:pointer;flex:1;font-size:13px;">${l.accessFee>0?'💳 Pay & Join':'🎓 Get Free Access'}</button>`;
                 const signInHtml = hasToken
-                    ? `<button id="signInBtn_${d.id}" ${signedIn?'disabled':''} onclick="signInToLesson('${d.id}','${escHtml(l.title).replace(/'/g,'\\'')}') " class="live-sign-in-btn" style="flex:1;${signedIn?'background:#aaa;':''}">${signedIn?'<i class=\\'fas fa-check\\'></i> Signed In':'✅ Sign In'}</button>`
+                    ? `<button id="signInBtn_${d.id}" ${signedIn?'disabled':''} onclick="signInToLesson('${d.id}','${safeTitle}')" class="live-sign-in-btn" style="flex:1;${signedIn?'background:#aaa;':''}">${signedIn?'<i class="fas fa-check"></i> Signed In':'✅ Sign In'}</button>`
                     : '';
                 return `<div class="live-page-card">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
