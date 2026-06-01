@@ -278,6 +278,39 @@
         .question-item .q-text { font-weight: 500; }
         .comment-item { background: #f0f0f0; border-radius: 8px; padding: 10px; margin-bottom: 6px; font-size: 13px; }
 
+        /* ===== WEAK AREAS & PERSONALIZATION ===== */
+        .weak-area-modal { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px; }
+        .weak-area-modal.show { display:flex; }
+        .weak-area-box { background:white;border-radius:24px;width:100%;max-width:460px;max-height:92vh;overflow-y:auto;padding:22px; }
+        .weak-area-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0; }
+        .weak-area-chip { display:flex;align-items:center;gap:8px;padding:9px 12px;border:2px solid #e0e0e0;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s; }
+        .weak-area-chip input { accent-color:#4B2E9E; }
+        .weak-area-chip:has(input:checked) { border-color:#4B2E9E;background:#f0ecff; }
+        .weak-badge { display:inline-block;background:#FF8C42;color:white;font-size:9px;font-weight:800;padding:2px 5px;border-radius:6px;vertical-align:top;margin-left:3px;text-transform:uppercase; }
+        .personalized-section { background:linear-gradient(135deg,#4B2E9E11,#FF8C4211);border-radius:16px;padding:14px;margin-bottom:12px;border:1.5px solid #4B2E9E22; }
+        .personalized-section-title { font-weight:700;font-size:14px;color:#4B2E9E;margin-bottom:10px;display:flex;align-items:center;gap:6px; }
+        .personalized-subject-list { display:flex;flex-wrap:wrap;gap:8px; }
+        .personalized-subject-btn { background:white;border:2px solid #4B2E9E;color:#4B2E9E;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s; }
+        .personalized-subject-btn:hover { background:#4B2E9E;color:white; }
+
+        /* ===== GLOBAL SEARCH ===== */
+        .global-search-overlay { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:9990;display:none;flex-direction:column;padding:16px; }
+        .global-search-overlay.show { display:flex; }
+        .global-search-bar { display:flex;align-items:center;gap:10px;background:white;border-radius:16px;padding:10px 16px;margin-bottom:12px; }
+        .global-search-bar input { flex:1;border:none;outline:none;font-size:16px;background:transparent; }
+        .global-search-bar i { color:#aaa;font-size:18px; }
+        .search-close-btn { background:rgba(255,255,255,0.15);border:none;color:white;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0; }
+        .search-results { flex:1;overflow-y:auto; }
+        .search-group-label { font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px; }
+        .search-result-item { background:rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s; }
+        .search-result-item:hover { background:rgba(255,255,255,0.2); }
+        .search-result-icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0; }
+        .search-result-text { flex:1; }
+        .search-result-title { font-weight:700;color:white;font-size:14px; }
+        .search-result-sub { font-size:11px;color:#aaa;margin-top:2px; }
+        .search-icon-btn { background:rgba(255,255,255,0.2);border:none;width:40px;height:40px;border-radius:50%;cursor:pointer; }
+        .search-icon-btn i { font-size:18px;color:white; }
+
         /* ===== LIVE LESSONS PAGE ===== */
         .live-page-card { background:white;border-radius:16px;padding:14px;margin-bottom:10px;border-left:4px solid #FF8C42;box-shadow:0 2px 10px rgba(0,0,0,0.07); }
         .live-enroll-status { border-radius:20px;padding:16px 18px;margin-bottom:12px; }
@@ -418,6 +451,7 @@
             <div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
+            <button class="search-icon-btn" id="openGlobalSearchBtn" title="Search everything"><i class="fas fa-search"></i></button>
             <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
             <div style="position:relative;">
                 <button class="more-menu-btn" id="moreMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
@@ -554,6 +588,40 @@
         </div>
     </div>
 
+    <!-- WEAK AREAS SELECTION MODAL -->
+    <div id="weakAreasModal" class="weak-area-modal">
+        <div class="weak-area-box">
+            <div style="text-align:center;margin-bottom:16px;">
+                <div style="font-size:36px;margin-bottom:6px;">🎯</div>
+                <h3 style="margin:0 0 4px;color:#4B2E9E;">What are your weak areas?</h3>
+                <p style="font-size:13px;color:#888;margin:0;">Tick the subjects you find hardest. We'll personalise your learning experience and alert your teacher.</p>
+            </div>
+            <div id="weakAreaLevelTabs" style="display:flex;gap:8px;margin-bottom:10px;">
+                <button id="weakAreaPrimaryTab" onclick="showWeakAreaTab('primary')" style="flex:1;padding:8px;border:2px solid #4B2E9E;border-radius:20px;background:#4B2E9E;color:white;font-weight:700;cursor:pointer;font-size:13px;">Primary</button>
+                <button id="weakAreaSecondaryTab" onclick="showWeakAreaTab('secondary')" style="flex:1;padding:8px;border:2px solid #4B2E9E;border-radius:20px;background:white;color:#4B2E9E;font-weight:700;cursor:pointer;font-size:13px;">Secondary</button>
+            </div>
+            <div id="weakAreaSubjectsGrid" class="weak-area-grid"></div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+                <button id="skipWeakAreasBtn" style="flex:1;background:#f5f5f5;color:#555;border:none;padding:12px;border-radius:20px;font-weight:600;cursor:pointer;font-size:13px;">Skip for now</button>
+                <button id="saveWeakAreasBtn" style="flex:2;background:#4B2E9E;color:white;border:none;padding:12px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">✅ Save My Weak Areas</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLOBAL SEARCH OVERLAY -->
+    <div id="globalSearchOverlay" class="global-search-overlay">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <div class="global-search-bar" style="flex:1;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="globalSearchInput" placeholder="Search subjects, PDFs, features…" autocomplete="off">
+            </div>
+            <button class="search-close-btn" id="closeGlobalSearchBtn">&times;</button>
+        </div>
+        <div class="search-results" id="globalSearchResults">
+            <div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px;">Start typing to search…</div>
+        </div>
+    </div>
+
     <!-- LIVE PLAN PAYMENT MODAL -->
     <div id="livePlanPayModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9000;align-items:center;justify-content:center;padding:20px;">
         <div style="background:white;border-radius:24px;width:100%;max-width:420px;padding:20px;max-height:90vh;overflow-y:auto;">
@@ -627,6 +695,13 @@
                 <div id="liveLessonsCards"></div>
             </div>
 
+            <!-- PERSONALIZED "FOR YOU" SECTION -->
+            <div id="forYouSection" style="display:none;" class="personalized-section">
+                <div class="personalized-section-title"><span>📌</span> Recommended for You</div>
+                <p style="font-size:12px;color:#666;margin:0 0 8px;">Based on your weak areas — jump straight in:</p>
+                <div id="forYouSubjectList" class="personalized-subject-list"></div>
+            </div>
+
             <div class="welcome-card"><div class="welcome-title">Welcome to APSHULE</div><div class="welcome-subtitle">Let's Learn With Ease From Anywhere at Anytime</div></div>
             <div class="announcements-section">
                 <div class="announcements-header"><i class="fas fa-bullhorn"></i><span>📢 UPCOMING SEMINARS & EVENTS</span><i class="fas fa-volume-up"></i></div>
@@ -674,6 +749,13 @@
                     <div class="admin-section">
                         <h4>🎬 Most Watched Videos</h4>
                         <ul id="globalMostWatchedList" class="most-watched-list"></ul>
+                    </div>
+
+                    <!-- Weak Areas Overview -->
+                    <div class="admin-section" style="border:1.5px solid #4B2E9E22;">
+                        <h4>🎯 Student Weak Areas Overview</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Subjects most flagged as difficult by students — use this to prioritise lesson topics.</p>
+                        <div id="adminWeakAreasOverview"><div style="color:#999;font-size:13px;">Loading…</div></div>
                     </div>
 
                     <!-- User Feedback -->
@@ -1075,6 +1157,13 @@
                 <h4 style="color:#4B2E9E;margin-bottom:12px;">💬 Student Comments/Feedback</h4>
                 <div id="teacherCommentsList"><div style="text-align:center;color:#999;padding:12px;">No feedback yet</div></div>
             </div>
+
+            <!-- Students needing support (weak areas) -->
+            <div class="teacher-card" style="border:2px solid #FF8C4233;">
+                <h4 style="color:#FF8C42;margin-bottom:6px;">🎯 Students Needing Support</h4>
+                <p style="font-size:12px;color:#888;margin:0 0 10px;">Live lesson students who have flagged weak areas — click a subject to see who needs help.</p>
+                <div id="teacherWeakAreasList"><div style="text-align:center;color:#999;padding:12px;font-size:13px;">Loading…</div></div>
+            </div>
         </div>
 
         <!-- ACCOUNT PAGE -->
@@ -1087,6 +1176,14 @@
                 <input type="file" id="profilePicInput" accept="image/*" style="margin-top:10px;">
                 <button id="uploadProfilePicBtn" class="admin-toggle" style="margin-top:10px;">Upload Picture</button>
             </div>
+            <!-- My Weak Areas (students only) -->
+            <div id="myWeakAreasCard" class="account-card" style="margin-top:16px;display:none;">
+                <h4 style="margin:0 0 8px;color:#4B2E9E;">🎯 My Weak Areas</h4>
+                <p style="font-size:13px;color:#888;margin:0 0 10px;">These subjects appear first in your learning feed and help your teacher support you.</p>
+                <div id="myWeakAreasTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+                <button id="editWeakAreasBtn" style="background:#4B2E9E;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">✏️ Edit Weak Areas</button>
+            </div>
+
             <!-- My Questions & Answers -->
             <div class="account-card" style="margin-top:16px;">
                 <h4 style="color:#4B2E9E;margin-bottom:4px;">❓ My Questions & Answers</h4>
@@ -1593,9 +1690,23 @@
     };
 
     function renderSubjects() {
-        let subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
-        let grid = document.getElementById('subjectsGrid'); if(!grid) return;
-        grid.innerHTML = subjects.map((s,idx) => `<div class="subject-card" onclick="openVideoLesson('${s}')"><div class="subject-icon" style="background:${subjectColors[idx%subjectColors.length]}"><i class="fas ${getSubjectIcon(s)}"></i></div><div class="subject-name">${s}</div><div style="font-size:10px;color:#666;margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div></div>`).join('');
+        const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        const grid = document.getElementById('subjectsGrid'); if(!grid) return;
+        const weakAreas = currentUser?.weakAreas || [];
+        const sorted = weakAreas.length
+            ? [...subjects.filter(s=>weakAreas.includes(s)), ...subjects.filter(s=>!weakAreas.includes(s))]
+            : subjects;
+        grid.innerHTML = sorted.map(s => {
+            const origIdx = subjects.indexOf(s);
+            const color = subjectColors[origIdx % subjectColors.length];
+            const isWeak = weakAreas.includes(s);
+            return `<div class="subject-card" onclick="openVideoLesson('${s}')" style="${isWeak?'border:2px solid #FF8C42;position:relative;':''}">
+                ${isWeak?'<span class="weak-badge">Weak</span>':''}
+                <div class="subject-icon" style="background:${color}"><i class="fas ${getSubjectIcon(s)}"></i></div>
+                <div class="subject-name">${s}</div>
+                <div style="font-size:10px;color:#666;margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div>
+            </div>`;
+        }).join('');
     }
 
     window.openVideoLesson = function(subject) {
@@ -1813,6 +1924,7 @@
         loadTeacherComments();
         loadTeacherVideoQuestions();
         loadMyLessonRequests();
+        loadTeacherWeakAreas();
     }
 
     function loadTeacherEarnings() {
@@ -3321,6 +3433,303 @@
     // End of Live Lessons feature set
     // =====================================================================
 
+    // =====================================================================
+    // ===== FEATURES: WEAK AREAS, PERSONALIZATION, GLOBAL SEARCH ==========
+    // =====================================================================
+
+    let _weakAreaTab = 'primary';
+
+    // ---- Open / populate weak areas modal ----
+    window.showWeakAreasModal = function(forceLevel) {
+        const allSubjects = forceLevel === 'secondary' ? secondarySubjects
+                          : forceLevel === 'primary'   ? primarySubjects
+                          : (currentUser?.educationLevel||'').toLowerCase().includes('secondary')
+                            ? secondarySubjects : primarySubjects;
+        _weakAreaTab = forceLevel || ((currentUser?.educationLevel||'').toLowerCase().includes('secondary') ? 'secondary' : 'primary');
+        renderWeakAreaGrid(_weakAreaTab);
+        document.getElementById('weakAreasModal').classList.add('show');
+    };
+
+    window.showWeakAreaTab = function(level) {
+        _weakAreaTab = level;
+        renderWeakAreaGrid(level);
+        document.getElementById('weakAreaPrimaryTab').style.background = level==='primary' ? '#4B2E9E' : 'white';
+        document.getElementById('weakAreaPrimaryTab').style.color     = level==='primary' ? 'white' : '#4B2E9E';
+        document.getElementById('weakAreaSecondaryTab').style.background = level==='secondary' ? '#4B2E9E' : 'white';
+        document.getElementById('weakAreaSecondaryTab').style.color     = level==='secondary' ? 'white' : '#4B2E9E';
+    };
+
+    function renderWeakAreaGrid(level) {
+        const subjects = level === 'secondary' ? secondarySubjects : primarySubjects;
+        const saved = currentUser?.weakAreas || [];
+        const grid = document.getElementById('weakAreaSubjectsGrid');
+        if(!grid) return;
+        grid.innerHTML = subjects.map(s => `
+            <label class="weak-area-chip">
+                <input type="checkbox" value="${escHtml(s)}" ${saved.includes(s)?'checked':''}>
+                <span>${escHtml(s)}</span>
+            </label>`).join('');
+    }
+
+    async function saveWeakAreas() {
+        if(!currentUser) return;
+        const checked = [...document.querySelectorAll('#weakAreaSubjectsGrid input:checked')].map(i=>i.value);
+        try {
+            await updateDoc(doc(db,'users',currentUser.uid), { weakAreas: checked });
+            currentUser.weakAreas = checked;
+            showNotification(checked.length ? `✅ Saved ${checked.length} weak area${checked.length!==1?'s':''}` : '✅ Weak areas cleared');
+            document.getElementById('weakAreasModal').classList.remove('show');
+            renderForYouSection();
+            renderMyWeakAreasTags();
+            if(currentUser.role==='individual') renderSubjects();
+        } catch(e) { showNotification('Error saving. Try again.','error'); }
+    }
+
+    document.getElementById('saveWeakAreasBtn')?.addEventListener('click', saveWeakAreas);
+    document.getElementById('skipWeakAreasBtn')?.addEventListener('click', ()=>{
+        document.getElementById('weakAreasModal').classList.remove('show');
+    });
+    document.getElementById('editWeakAreasBtn')?.addEventListener('click', ()=>showWeakAreasModal());
+
+    // ---- Feature 3: Personalized subjects (render weak areas first with badge) ----
+    // Override renderSubjects to sort weak areas to top
+    const _origRenderSubjects = window.renderSubjects || null;
+    function renderSubjectsWithPersonalization() {
+        const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        const weakAreas = currentUser?.weakAreas || [];
+        const grid = document.getElementById('subjectsGrid');
+        if(!grid) return;
+        // Sort: weak areas first
+        const sorted = [
+            ...subjects.filter(s=>weakAreas.includes(s)),
+            ...subjects.filter(s=>!weakAreas.includes(s))
+        ];
+        grid.innerHTML = sorted.map((s,idx)=>{
+            const isWeak = weakAreas.includes(s);
+            const origIdx = subjects.indexOf(s);
+            const color = subjectColors[origIdx%subjectColors.length];
+            return `<div class="subject-card" onclick="openVideoLesson('${s}')" style="${isWeak?'border:2px solid #FF8C42;position:relative;':''}" >
+                ${isWeak?`<span style="position:absolute;top:6px;right:6px;background:#FF8C42;color:white;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;text-transform:uppercase;">Weak</span>`:''}
+                <div class="subject-icon" style="background:${color}"><i class="fas ${getSubjectIcon(s)}"></i></div>
+                <div class="subject-name">${s}</div>
+                <div style="font-size:10px;color:#666;margin-top:8px;"><i class="fab fa-youtube"></i> YouTube Lesson</div>
+            </div>`;
+        }).join('');
+    }
+    // Hook in: renderSubjects is already defined in JS; we rebind it
+    // (called after subjects load via listenToSubjects)
+
+    // ---- "For You" section on home page ----
+    function renderForYouSection() {
+        const section = document.getElementById('forYouSection');
+        const listEl  = document.getElementById('forYouSubjectList');
+        if(!section||!listEl) return;
+        const weakAreas = currentUser?.weakAreas||[];
+        if(!weakAreas.length || currentUser?.role==='superadmin' || currentUser?.role==='teacher') {
+            section.style.display='none'; return;
+        }
+        section.style.display='block';
+        listEl.innerHTML = weakAreas.map(s=>
+            `<button class="personalized-subject-btn" onclick="jumpToWeakSubject('${escHtml(s)}')">${escHtml(s)}</button>`
+        ).join('');
+    }
+
+    window.jumpToWeakSubject = function(subject) {
+        // Pick the right level tab automatically
+        const isPrimary = primarySubjects.includes(subject);
+        currentLevel = isPrimary ? 'primary' : 'secondary';
+        document.querySelectorAll('.level-btn').forEach(b=>{
+            b.classList.toggle('active', b.getAttribute('data-level')===currentLevel);
+        });
+        document.getElementById('classSelectionSection').style.display='block';
+        document.getElementById('subjectsSection').style.display='none';
+        navigateTo('home');
+        showNotification(`📌 Go to ${isPrimary?'Primary':'Secondary'} → pick your class → find ${subject}`,'info');
+    };
+
+    // ---- Account page weak areas display ----
+    function renderMyWeakAreasTags() {
+        const card = document.getElementById('myWeakAreasCard');
+        const tags = document.getElementById('myWeakAreasTags');
+        if(!card||!tags) return;
+        const isIndividual = currentUser?.role==='individual';
+        card.style.display = isIndividual ? 'block' : 'none';
+        if(!isIndividual) return;
+        const weakAreas = currentUser?.weakAreas||[];
+        tags.innerHTML = weakAreas.length
+            ? weakAreas.map(s=>`<span style="background:#f0ecff;color:#4B2E9E;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;">${escHtml(s)}</span>`).join('')
+            : '<span style="color:#999;font-size:13px;">None selected yet — tap Edit to add some.</span>';
+    }
+
+    // ---- Feature 1 + 2: Check & prompt for weak areas post-signup / first login ----
+    function checkAndPromptWeakAreas() {
+        if(!currentUser || currentUser.role !== 'individual') return;
+        if(!currentUser.weakAreas || currentUser.weakAreas.length === 0) {
+            // Show the modal after a short delay so the app is fully loaded
+            setTimeout(()=>showWeakAreasModal(), 800);
+        }
+    }
+
+    // ---- Feature 2: Teacher dashboard — students needing support ----
+    async function loadTeacherWeakAreas() {
+        const container = document.getElementById('teacherWeakAreasList');
+        if(!container) return;
+        try {
+            // Load live-enrolled students who have weak areas
+            const enrollSnap = await getDocs(query(collection(db,'liveEnrollments'), where('status','==','active'), limit(50)));
+            if(enrollSnap.empty) { container.innerHTML='<div style="color:#999;font-size:13px;">No live lesson students yet.</div>'; return; }
+            const userIds = [...new Set(enrollSnap.docs.map(d=>d.data().userId).filter(Boolean))];
+            // Batch-fetch user profiles (Firestore limit: 10 per 'in' query)
+            const batches = [];
+            for(let i=0;i<userIds.length;i+=10) batches.push(userIds.slice(i,i+10));
+            let students = [];
+            for(const batch of batches) {
+                const snap = await getDocs(query(collection(db,'users'), where('uid','in',batch)));
+                snap.docs.forEach(d=>{ if(d.data().weakAreas?.length) students.push(d.data()); });
+            }
+            if(!students.length) { container.innerHTML='<div style="color:#999;font-size:13px;">No students have flagged weak areas yet.</div>'; return; }
+            // Group by weak area
+            const bySubject = {};
+            students.forEach(u=>{
+                (u.weakAreas||[]).forEach(s=>{
+                    if(!bySubject[s]) bySubject[s]=[];
+                    bySubject[s].push(u.name||u.email);
+                });
+            });
+            container.innerHTML = Object.entries(bySubject).sort((a,b)=>b[1].length-a[1].length).map(([subj,names])=>`
+                <div style="background:#fff8f0;border-radius:10px;padding:10px;margin-bottom:8px;">
+                    <div style="font-weight:700;font-size:13px;color:#FF8C42;margin-bottom:4px;">${escHtml(subj)} <span style="background:#FF8C42;color:white;border-radius:10px;padding:1px 7px;font-size:11px;">${names.length}</span></div>
+                    <div style="font-size:12px;color:#555;">${names.map(n=>escHtml(n)).join(', ')}</div>
+                </div>`).join('');
+        } catch(e) { container.innerHTML='<div style="color:#ccc;font-size:13px;">Could not load.</div>'; }
+    }
+
+    // Superadmin analytics: weak areas overview
+    async function loadSuperAdminWeakAreasOverview() {
+        const el = document.getElementById('adminWeakAreasOverview');
+        if(!el) return;
+        try {
+            const snap = await getDocs(query(collection(db,'users'), where('role','==','individual'), limit(200)));
+            const tally = {};
+            snap.docs.forEach(d=>{
+                (d.data().weakAreas||[]).forEach(s=>{ tally[s]=(tally[s]||0)+1; });
+            });
+            const sorted = Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+            if(!sorted.length) { el.innerHTML='<div style="color:#999;font-size:13px;">No weak areas data yet.</div>'; return; }
+            el.innerHTML = sorted.map(([s,n])=>`
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f9f9f9;border-radius:8px;margin-bottom:4px;font-size:13px;">
+                    <span>${escHtml(s)}</span>
+                    <span style="background:#4B2E9E;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${n} student${n!==1?'s':''}</span>
+                </div>`).join('');
+        } catch(e){}
+    }
+
+    // =====================================================================
+    // ===== FEATURE 4: GLOBAL IN-APP SEARCH ===============================
+    // =====================================================================
+
+    const SEARCH_PAGES = [
+        { title:'Home',          sub:'Main feed, live lessons, plans', icon:'🏠', bg:'#4B2E9E', action:()=>navigateTo('home') },
+        { title:'Live Lessons',  sub:'Join lessons, enroll, plans',    icon:'📡', bg:'#FF8C42', action:()=>navigateTo('live') },
+        { title:'Resources',     sub:'Study PDFs & materials',         icon:'📚', bg:'#2196F3', action:()=>navigateTo('resources') },
+        { title:'Notifications', sub:'Alerts & announcements',         icon:'🔔', bg:'#9C27B0', action:()=>navigateTo('notifications') },
+        { title:'My Account',    sub:'Profile, weak areas, questions', icon:'👤', bg:'#009688', action:()=>navigateTo('account') },
+        { title:'About APSHULE', sub:'Vision, team, contacts',         icon:'ℹ️',  bg:'#607D8B', action:()=>navigateTo('about') },
+    ];
+
+    const SEARCH_FEATURES = [
+        { title:'Admin Panel',        sub:'Manage content & users', icon:'⚙️', bg:'#c62828', action:()=>document.getElementById('adminMenuItem')?.click() },
+        { title:'Teacher Dashboard',  sub:'Earnings, lessons, questions', icon:'🎓', bg:'#4B2E9E', action:()=>navigateTo('teacher') },
+        { title:'Facial Attendance',  sub:'School attendance system', icon:'📸', bg:'#2E7D32', action:()=>document.getElementById('attendanceMenuItem')?.click() },
+        { title:'Subscription Plans', sub:'Video access plans',     icon:'💳', bg:'#FF8C42', action:()=>{ navigateTo('home'); setTimeout(()=>document.querySelector('.payment-plans-section')?.scrollIntoView({behavior:'smooth'}),300); } },
+        { title:'My Weak Areas',      sub:'Edit subjects you struggle with', icon:'🎯', bg:'#9C27B0', action:()=>showWeakAreasModal() },
+        { title:'AI Tutor',           sub:'Ask any question',       icon:'🤖', bg:'#1565C0', action:()=>document.getElementById('openAIDrawerBtn')?.click() },
+        { title:'Logout',             sub:'Sign out of the app',    icon:'🚪', bg:'#555',    action:()=>document.getElementById('logoutBtn')?.click() },
+    ];
+
+    function runGlobalSearch(q) {
+        const resultsEl = document.getElementById('globalSearchResults');
+        if(!resultsEl) return;
+        if(!q || q.length < 1) {
+            resultsEl.innerHTML = '<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px;">Start typing to search…</div>';
+            return;
+        }
+        const ql = q.toLowerCase();
+        const groups = [];
+
+        // Pages
+        const pageMatches = SEARCH_PAGES.filter(p=> p.title.toLowerCase().includes(ql)||p.sub.toLowerCase().includes(ql));
+        if(pageMatches.length) groups.push({ label:'Pages', items: pageMatches.map(p=>({...p, category:'page'})) });
+
+        // Features
+        const featMatches = SEARCH_FEATURES.filter(f=> f.title.toLowerCase().includes(ql)||f.sub.toLowerCase().includes(ql));
+        if(featMatches.length) groups.push({ label:'Features', items: featMatches.map(f=>({...f, category:'feature'})) });
+
+        // Subjects
+        const allSubjs = [...new Set([...primarySubjects,...secondarySubjects])];
+        const subjMatches = allSubjs.filter(s=>s.toLowerCase().includes(ql));
+        if(subjMatches.length) groups.push({ label:'Subjects', items: subjMatches.map(s=>({
+            title:s, sub:'Jump to this subject', icon:'📖', bg:subjectColors[allSubjs.indexOf(s)%subjectColors.length],
+            action:()=>jumpToWeakSubject(s), category:'subject'
+        })) });
+
+        // PDFs
+        const pdfMatches = pdfMaterials.filter(p=>(p.title||'').toLowerCase().includes(ql)||(p.category||'').toLowerCase().includes(ql)).slice(0,6);
+        if(pdfMatches.length) groups.push({ label:'PDFs', items: pdfMatches.map(p=>({
+            title:p.title||'PDF', sub:p.category||'Document', icon:'📄', bg:'#E64A19',
+            action:()=>{ document.getElementById('globalSearchOverlay').classList.remove('show'); openPdfInline(p.url,p.title,p.id); }, category:'pdf'
+        })) });
+
+        if(!groups.length) {
+            resultsEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px;">No results for "<strong style="color:white;">${escHtml(q)}</strong>"</div>`;
+            return;
+        }
+
+        resultsEl.innerHTML = groups.map(g=>`
+            <div class="search-group-label">${g.label}</div>
+            ${g.items.map((item,i)=>`
+                <div class="search-result-item" data-group="${g.label}" data-idx="${i}">
+                    <div class="search-result-icon" style="background:${item.bg}22;">${item.icon}</div>
+                    <div class="search-result-text">
+                        <div class="search-result-title">${escHtml(item.title)}</div>
+                        <div class="search-result-sub">${escHtml(item.sub)}</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#555;font-size:12px;"></i>
+                </div>`).join('')}
+        `).join('');
+
+        // Wire up click handlers
+        resultsEl.querySelectorAll('.search-result-item').forEach(el=>{
+            el.addEventListener('click', ()=>{
+                const grpLabel = el.dataset.group;
+                const idx = parseInt(el.dataset.idx);
+                const grp = groups.find(g=>g.label===grpLabel);
+                if(grp && grp.items[idx]) {
+                    document.getElementById('globalSearchOverlay').classList.remove('show');
+                    document.getElementById('globalSearchInput').value='';
+                    grp.items[idx].action?.();
+                }
+            });
+        });
+    }
+
+    document.getElementById('openGlobalSearchBtn')?.addEventListener('click', ()=>{
+        document.getElementById('globalSearchOverlay').classList.add('show');
+        setTimeout(()=>document.getElementById('globalSearchInput')?.focus(), 50);
+    });
+    document.getElementById('closeGlobalSearchBtn')?.addEventListener('click', ()=>{
+        document.getElementById('globalSearchOverlay').classList.remove('show');
+        document.getElementById('globalSearchInput').value='';
+        document.getElementById('globalSearchResults').innerHTML='<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px;">Start typing to search…</div>';
+    });
+    document.getElementById('globalSearchInput')?.addEventListener('input', e=>runGlobalSearch(e.target.value.trim()));
+    // Close on Escape
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.getElementById('globalSearchOverlay')?.classList.remove('show'); });
+
+    // =====================================================================
+    // End of Weak Areas, Personalization & Global Search
+    // =====================================================================
+
     // ===== ABOUT PAGE (Firestore) =====
     async function loadAboutFromFirestore() {
         try {
@@ -3627,6 +4036,7 @@
             renderGlobalMostWatched();
             renderQuestionsAdmin();
             loadAdminVideoQuestions();
+            loadSuperAdminWeakAreasOverview();
         }
         renderClasses();
         renderRecentAttendance();
@@ -3642,6 +4052,10 @@
         listenLiveLessons();
         loadAboutFromFirestore();
         checkExpiryWarnings();
+        // Personalised experience
+        renderForYouSection();
+        renderMyWeakAreasTags();
+        checkAndPromptWeakAreas();
     }
 
     // ===== FIRESTORE LISTENERS =====
