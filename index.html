@@ -409,24 +409,49 @@
 </head>
 <body>
 
-<!-- STANDALONE SPLASH SAFETY — runs even if Firebase CDN never loads -->
+<!-- INSTANT LOGIN — show form immediately; buttons enabled once Firebase loads -->
 <script>
 (function(){
-    // Show the login screen after 12 s no matter what — Firebase timeout
-    // cannot do this because it lives inside <script type="module"> which
-    // never executes when the CDN is slow/blocked.
-    var _splashTimer = setTimeout(function(){
-        var s = document.getElementById('splashScreen');
-        var l = document.getElementById('loginScreen');
-        if(s && s.style.display !== 'none') {
-            s.style.display = 'none';
-            if(l) l.classList.remove('hidden');
+    // Show login right away — no waiting for Firebase CDN
+    document.addEventListener('DOMContentLoaded', function(){
+        var splash = document.getElementById('splashScreen');
+        var login  = document.getElementById('loginScreen');
+        if(splash) splash.style.display = 'none';
+        if(login)  login.classList.remove('hidden');
+        // Disable action buttons until Firebase is ready
+        ['loginBtn','signupBtn','sendResetEmailBtn'].forEach(function(id){
+            var btn = document.getElementById(id);
+            if(!btn) return;
+            btn._origText = btn.textContent;
+            btn.disabled = true;
+            btn.style.opacity = '0.55';
+            if(id === 'loginBtn')  btn.textContent = 'Loading…';
+            if(id === 'signupBtn') btn.textContent = 'Loading…';
+        });
+    });
+    // Firebase calls this once it's ready
+    window._firebaseReady = function(){
+        ['loginBtn','signupBtn','sendResetEmailBtn'].forEach(function(id){
+            var btn = document.getElementById(id);
+            if(!btn) return;
+            btn.disabled = false;
+            btn.style.opacity = '';
+            if(btn._origText) btn.textContent = btn._origText;
+        });
+        var err = document.getElementById('loginError');
+        if(err && err.textContent.includes('Loading')) err.textContent = '';
+    };
+    // Hard deadline: if Firebase never loads in 20 s, re-enable buttons
+    // so user can at least retry or see an error when they tap
+    window._clearSplashTimer = function(){}; // kept for compat
+    setTimeout(function(){
+        var btn = document.getElementById('loginBtn');
+        if(btn && btn.disabled){
+            window._firebaseReady();
             var err = document.getElementById('loginError');
-            if(err) err.textContent = '⚠️ Could not connect. Check your internet and reload.';
+            if(err) err.textContent = '⚠️ Slow connection — login may not work. Try reloading on Wi-Fi.';
         }
-    }, 12000);
-    // Let Firebase clear it early if it loads in time
-    window._clearSplashTimer = function(){ clearTimeout(_splashTimer); };
+    }, 20000);
 })();
 </script>
 
@@ -984,6 +1009,13 @@
                             <button id="uploadLogoBtn" class="admin-toggle">Upload Logo</button>
                             <div id="logoUploadStatus" style="margin-top:8px;font-size:12px;"></div>
                         </div>
+                    </div>
+
+                    <!-- ===== PUSH HISTORY ===== -->
+                    <div class="admin-section" style="background:#f5f5ff;border:1.5px solid #c5b8f0;border-radius:16px;padding:16px;">
+                        <h4 style="margin-top:0;color:#4B2E9E;">📋 Auto-Push History</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Last 50 pushes from the watcher. Updates live.</p>
+                        <div id="pushHistoryList" style="max-height:220px;overflow-y:auto;font-size:12px;font-family:monospace;"></div>
                     </div>
 
                     <!-- Video Mapping -->
@@ -4047,6 +4079,7 @@
         document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
         document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
+        if (isSuper) loadPushHistory();
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
         document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
@@ -4572,8 +4605,9 @@
             document.getElementById('appScreen').classList.add('hidden');
             await loadBrandLogo();
         }
-        // Hide splash screen once auth state is known (covers refresh case)
-        window._clearSplashTimer?.(); // cancel standalone safety timer
+        // Firebase is now ready — enable login buttons and hide splash
+        window._firebaseReady?.();
+        window._clearSplashTimer?.();
         const splash = document.getElementById('splashScreen');
         if(splash) splash.style.display = 'none';
     });
@@ -4740,6 +4774,46 @@
     }
   }
 
+  function pushHistoryPrepend(type, message, timestamp) {
+    var list = document.getElementById("pushHistoryList");
+    if (!list) return;
+    var icon = type === "success" ? "✅" : "❌";
+    var color = type === "success" ? "#2E7D32" : "#C62828";
+    var ts = new Date(timestamp);
+    var timeStr = ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) +
+      " " + ts.toLocaleDateString([], { month: "short", day: "numeric" });
+    var row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #e8e4fa;";
+    row.innerHTML = '<span style="color:' + color + ';flex-shrink:0;">' + icon + '</span>' +
+      '<span style="color:#888;flex-shrink:0;">' + timeStr + '</span>' +
+      '<span style="color:#333;word-break:break-all;">' + message.replace(/</g, "&lt;") + '</span>';
+    list.insertBefore(row, list.firstChild);
+    while (list.children.length > 50) list.removeChild(list.lastChild);
+  }
+
+  function loadPushHistory() {
+    var list = document.getElementById("pushHistoryList");
+    if (!list) return;
+    fetch("/api/push-events/history")
+      .then(function (r) { return r.json(); })
+      .then(function (events) {
+        list.innerHTML = "";
+        if (!events.length) {
+          list.innerHTML = '<div style="color:#aaa;padding:6px 0;">No pushes recorded yet.</div>';
+          return;
+        }
+        events.forEach(function (ev) {
+          pushHistoryPrepend(ev.type, ev.message, ev.timestamp);
+        });
+        // Re-sort: insertBefore prepends each, reversing order, so restore correct newest-first order
+        var rows = Array.from(list.children);
+        rows.reverse().forEach(function (r) { list.appendChild(r); });
+      })
+      .catch(function () {
+        list.innerHTML = '<div style="color:#aaa;padding:6px 0;">Could not load history.</div>';
+      });
+  }
+
   function connect() {
     if (es) return;
     es = new EventSource("/api/push-events");
@@ -4748,12 +4822,14 @@
       var data = JSON.parse(e.data);
       showPushToast("✅ " + data.message, "success");
       showDesktopNotification("APSHULE Push", "✅ " + data.message);
+      pushHistoryPrepend("success", data.message, new Date().toISOString());
     });
 
     es.addEventListener("push-error", function (e) {
       var data = JSON.parse(e.data);
       showPushToast("❌ " + data.message, "error");
       showDesktopNotification("APSHULE Push Failed", "❌ " + data.message);
+      pushHistoryPrepend("error", data.message, new Date().toISOString());
     });
 
     es.onerror = function () {
