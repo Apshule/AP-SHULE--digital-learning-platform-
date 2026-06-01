@@ -138,6 +138,76 @@
             content:''; position:absolute; bottom:0; left:0; right:0; height:44px;
             background:rgba(255,255,255,0.01); pointer-events:auto; z-index:2;
         }
+        /* ===== ADMISSION FORM ===== */
+        .adm-page { padding-bottom:100px; }
+        .adm-hero { background:linear-gradient(135deg,#4B2E9E,#7B5FCF); color:white; border-radius:16px; padding:20px; margin-bottom:20px; text-align:center; }
+        .adm-hero h2 { margin:0 0 4px; font-size:20px; }
+        .adm-hero p { margin:0; font-size:13px; opacity:0.85; }
+        .adm-steps { display:flex; gap:4px; margin-bottom:20px; overflow-x:auto; padding-bottom:4px; }
+        .adm-step { flex:1; min-width:44px; text-align:center; padding:8px 4px; border-radius:10px; font-size:11px; font-weight:700; background:#f0f0f0; color:#999; cursor:pointer; transition:all .2s; }
+        .adm-step.active { background:#4B2E9E; color:white; }
+        .adm-step.done { background:#4CAF50; color:white; }
+        .adm-section { display:none; }
+        .adm-section.active { display:block; }
+        .adm-card { background:white; border-radius:16px; padding:18px; margin-bottom:14px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
+        .adm-card h3 { margin:0 0 14px; font-size:15px; color:#4B2E9E; display:flex; align-items:center; gap:8px; }
+        .adm-field { margin-bottom:14px; }
+        .adm-field label { display:block; font-size:12px; font-weight:700; color:#555; margin-bottom:4px; }
+        .adm-field input, .adm-field select, .adm-field textarea { width:100%; padding:10px 12px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:13px; font-family:inherit; background:#fafafa; box-sizing:border-box; transition:border-color .2s; }
+        .adm-field input:focus, .adm-field select:focus, .adm-field textarea:focus { outline:none; border-color:#4B2E9E; background:white; }
+        .adm-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .adm-photo-upload { border:2px dashed #4B2E9E; border-radius:12px; padding:16px; text-align:center; cursor:pointer; margin-bottom:14px; }
+        .adm-photo-upload img { width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:8px; border:3px solid #4B2E9E; }
+        .adm-photo-upload p { font-size:12px; color:#888; margin:0; }
+        .adm-weak-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+        .adm-chip { padding:6px 14px; border-radius:20px; border:1.5px solid #e0e0e0; font-size:12px; cursor:pointer; transition:all .2s; background:white; }
+        .adm-chip.selected { background:#4B2E9E; color:white; border-color:#4B2E9E; }
+        .adm-nav { display:flex; gap:10px; margin-top:20px; }
+        .adm-btn-back { flex:1; padding:13px; border:2px solid #4B2E9E; background:white; color:#4B2E9E; border-radius:24px; font-weight:700; font-size:14px; cursor:pointer; }
+        .adm-btn-next { flex:2; padding:13px; background:linear-gradient(135deg,#4B2E9E,#7B5FCF); color:white; border:none; border-radius:24px; font-weight:700; font-size:14px; cursor:pointer; }
+        .adm-btn-submit { width:100%; padding:15px; background:linear-gradient(135deg,#4CAF50,#388E3C); color:white; border:none; border-radius:24px; font-weight:800; font-size:15px; cursor:pointer; margin-top:12px; }
+        .adm-declare { display:flex; align-items:flex-start; gap:10px; background:#f8f4ff; border-radius:12px; padding:14px; margin-bottom:16px; }
+        .adm-declare input[type=checkbox] { width:18px; height:18px; flex-shrink:0; margin-top:2px; accent-color:#4B2E9E; }
+        .adm-declare label { font-size:13px; color:#333; line-height:1.5; }
+        .adm-submitted { text-align:center; padding:40px 20px; }
+        .adm-submitted .adm-tick { font-size:60px; margin-bottom:12px; }
+        .adm-submitted h3 { color:#4CAF50; margin:0 0 8px; }
+        .adm-submitted p { color:#666; font-size:13px; }
+        /* Admin table for forms */
+        .adm-admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f0f0f0; }
+        .adm-admin-row:last-child { border-bottom:none; }
+        .adm-admin-name { font-weight:700; font-size:13px; color:#333; }
+        .adm-admin-meta { font-size:11px; color:#888; }
+        .adm-dl-btn { padding:6px 14px; background:#4B2E9E; color:white; border:none; border-radius:16px; font-size:12px; font-weight:700; cursor:pointer; }
+        /* ===== PDF PRINT TEMPLATE ===== */
+        #admissionPrintTemplate { display:none; font-family:'Arial',sans-serif; width:794px; padding:0; background:white; color:#000; font-size:11pt; }
+        .apt-paper { width:794px; min-height:1123px; padding:0; box-sizing:border-box; position:relative; }
+        .apt-header { background:#4B2E9E; color:white; padding:14px 24px; display:flex; align-items:center; gap:16px; }
+        .apt-header-logo { width:56px; height:56px; border-radius:50%; background:white; object-fit:cover; flex-shrink:0; }
+        .apt-header-text { flex:1; }
+        .apt-header-text .apt-school-name { font-size:16pt; font-weight:800; letter-spacing:0.5px; }
+        .apt-header-text .apt-tagline { font-size:9pt; opacity:0.9; margin-top:2px; }
+        .apt-header-text .apt-contacts { font-size:8pt; margin-top:4px; opacity:0.85; }
+        .apt-header-formno { text-align:right; min-width:150px; }
+        .apt-header-formno .apt-fno { font-size:8pt; opacity:0.8; }
+        .apt-header-formno .apt-fno-val { font-size:10pt; font-weight:800; letter-spacing:0.5px; }
+        .apt-title-bar { background:#FF8C42; color:white; text-align:center; padding:8px; font-size:13pt; font-weight:800; letter-spacing:1px; }
+        .apt-body { padding:18px 24px; }
+        .apt-photo-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+        .apt-photo-box { width:90px; height:110px; border:2px solid #4B2E9E; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .apt-photo-box img { width:100%; height:100%; object-fit:cover; }
+        .apt-photo-box .apt-photo-label { font-size:8pt; color:#4B2E9E; text-align:center; padding:4px; }
+        .apt-section-head { background:#4B2E9E; color:white; padding:5px 10px; font-size:10pt; font-weight:700; margin:12px 0 6px; }
+        .apt-table { width:100%; border-collapse:collapse; margin-bottom:4px; }
+        .apt-table td { border:1px solid #ccc; padding:5px 8px; font-size:9.5pt; vertical-align:top; }
+        .apt-table .apt-lbl { background:#f5f2ff; font-weight:700; width:35%; color:#333; }
+        .apt-table .apt-val { color:#000; }
+        .apt-sig-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; }
+        .apt-sig-box { border-top:1.5px solid #000; padding-top:6px; text-align:center; font-size:9pt; }
+        .apt-declare-line { font-size:9.5pt; margin:12px 0 8px; display:flex; align-items:center; gap:8px; }
+        .apt-checkbox-sq { display:inline-block; width:12px; height:12px; border:1.5px solid #000; margin-right:4px; background:#4CAF50; }
+        .apt-footer { background:#f5f2ff; border-top:2px solid #4B2E9E; padding:8px 24px; margin-top:auto; }
+        .apt-footer-text { font-size:8pt; color:#4B2E9E; text-align:center; }
         .notification { position: fixed; top: 20px; right: 20px; background: #4B2E9E; color: white; padding: 15px 20px; border-radius: 10px; display: none; z-index: 4000; animation: slideIn 0.3s ease; max-width: 300px; }
         .notification.success { background: #2E7D32; }
         .notification.info { background: #FF8C42; }
@@ -1124,6 +1194,13 @@
                     </div>
                     <div id="pdfAdminList"></div>
                 </div>
+
+                <!-- ADMISSION FORMS ADMIN -->
+                <div class="admin-section" id="admissionFormsAdminSection" style="display:none;">
+                    <h4>📋 Admission Form Submissions</h4>
+                    <p style="font-size:12px;color:#888;margin:0 0 10px;">All student admission forms submitted online. Download any form as a PDF.</p>
+                    <div id="admissionFormsAdminList"><div style="color:#999;font-size:13px;">Loading…</div></div>
+                </div>
             </div>
         </div>
 
@@ -1298,6 +1375,204 @@
                 <p style="font-size:12px;color:#999;margin-bottom:12px;">Questions you asked during lessons. You'll get a notification when your teacher replies.</p>
                 <div id="myVideoQList"><div style="text-align:center;color:#999;padding:16px;">No questions yet — ask one during a lesson!</div></div>
             </div>
+            <!-- Admission Form shortcut (students only) -->
+            <div id="admissionShortcut" class="account-card" style="margin-top:16px;display:none;">
+                <h4 style="color:#4B2E9E;margin-bottom:4px;">📋 Admission Form</h4>
+                <p style="font-size:12px;color:#666;margin-bottom:12px;">Fill in the official ApShule admission form online and download your personalised PDF on our headed paper.</p>
+                <div id="myAdmissionStatus"></div>
+                <button onclick="navigateTo('admission')" style="background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:white;border:none;padding:12px 24px;border-radius:24px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">📋 Open Admission Form</button>
+            </div>
+        </div>
+
+        <!-- ADMISSION FORM PAGE -->
+        <div id="admissionPage" class="page adm-page">
+            <div id="admFormContent">
+                <div class="adm-hero">
+                    <h2>📋 Student Admission Form</h2>
+                    <p>Fill all sections online — we generate your official PDF instantly</p>
+                </div>
+                <!-- Step indicator -->
+                <div class="adm-steps">
+                    <div class="adm-step active" id="admStep0" onclick="admGoTo(0)">A<br>Personal</div>
+                    <div class="adm-step" id="admStep1" onclick="admGoTo(1)">B<br>Class</div>
+                    <div class="adm-step" id="admStep2" onclick="admGoTo(2)">C<br>School</div>
+                    <div class="adm-step" id="admStep3" onclick="admGoTo(3)">D<br>Parents</div>
+                    <div class="adm-step" id="admStep4" onclick="admGoTo(4)">E<br>Health</div>
+                    <div class="adm-step" id="admStep5" onclick="admGoTo(5)">F<br>Submit</div>
+                </div>
+
+                <!-- SECTION A: Personal Information -->
+                <div class="adm-section active" id="admSec0">
+                    <div class="adm-card">
+                        <h3>📸 Passport Photo</h3>
+                        <div class="adm-photo-upload" onclick="document.getElementById('admPhotoInput').click()">
+                            <img id="admPhotoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Photo">
+                            <p>Tap to upload passport-size photo</p>
+                        </div>
+                        <input type="file" id="admPhotoInput" accept="image/*" style="display:none">
+                    </div>
+                    <div class="adm-card">
+                        <h3>👤 A. Personal Information</h3>
+                        <div class="adm-field"><label>Full Name (Surname first) *</label><input type="text" id="admFullName" placeholder="e.g. MUKASA John Peter"></div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Date of Birth *</label><input type="date" id="admDob"></div>
+                            <div class="adm-field"><label>Gender *</label>
+                                <select id="admGender"><option value="">Select</option><option>Male</option><option>Female</option></select>
+                            </div>
+                        </div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Nationality *</label><input type="text" id="admNationality" placeholder="e.g. Ugandan"></div>
+                            <div class="adm-field"><label>Religion</label>
+                                <select id="admReligion"><option value="">Select</option><option>Christian</option><option>Muslim</option><option>Other</option></select>
+                            </div>
+                        </div>
+                        <div class="adm-field"><label>District of Origin</label><input type="text" id="admDistrict" placeholder="e.g. Kampala"></div>
+                        <div class="adm-field"><label>Home Address</label><input type="text" id="admAddress" placeholder="Village / Parish / Town"></div>
+                    </div>
+                    <div class="adm-nav">
+                        <button class="adm-btn-next" onclick="admNext(0)">Next — Class Info →</button>
+                    </div>
+                </div>
+
+                <!-- SECTION B: Proposed Class -->
+                <div class="adm-section" id="admSec1">
+                    <div class="adm-card">
+                        <h3>🏫 B. Proposed Class & Course</h3>
+                        <div class="adm-field"><label>Class Applying For *</label>
+                            <select id="admClass" onchange="admUpdateStreams()">
+                                <option value="">Select class</option>
+                                <optgroup label="Primary">
+                                    <option>P.3</option><option>P.4</option><option>P.5</option><option>P.6</option><option>P.7</option>
+                                </optgroup>
+                                <optgroup label="Secondary">
+                                    <option>S.1</option><option>S.2</option><option>S.3</option><option>S.4</option><option>S.5</option><option>S.6</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="adm-field" id="admStreamField" style="display:none"><label>Stream / Combination</label>
+                            <select id="admStream">
+                                <option value="">Select stream/combination</option>
+                                <option>Sciences (PCB / PCM)</option>
+                                <option>Arts (HEG / HGL)</option>
+                                <option>Business (BCG / BEG)</option>
+                                <option>General (Mixed)</option>
+                            </select>
+                        </div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Boarding / Day *</label>
+                                <select id="admBoarding"><option value="">Select</option><option>Day Scholar</option><option>Boarding</option></select>
+                            </div>
+                            <div class="adm-field"><label>Term of Entry *</label>
+                                <select id="admTerm"><option value="">Select</option><option>Term 1 (February)</option><option>Term 2 (June)</option><option>Term 3 (September)</option></select>
+                            </div>
+                        </div>
+                        <div class="adm-field"><label>Year of Entry *</label>
+                            <input type="number" id="admYear" value="2026" min="2024" max="2030">
+                        </div>
+                    </div>
+                    <div class="adm-nav">
+                        <button class="adm-btn-back" onclick="admGoTo(0)">← Back</button>
+                        <button class="adm-btn-next" onclick="admNext(1)">Next — Previous School →</button>
+                    </div>
+                </div>
+
+                <!-- SECTION C: Previous School -->
+                <div class="adm-section" id="admSec2">
+                    <div class="adm-card">
+                        <h3>📚 C. Previous Academic Record</h3>
+                        <div class="adm-field"><label>Name of Previous School</label><input type="text" id="admPrevSchool" placeholder="e.g. Kampala Parents School"></div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Last Class Attended</label><input type="text" id="admPrevClass" placeholder="e.g. P.6"></div>
+                            <div class="adm-field"><label>Year Left</label><input type="number" id="admPrevYear" placeholder="e.g. 2025" min="2000" max="2030"></div>
+                        </div>
+                        <div class="adm-field"><label>Reason for Leaving</label>
+                            <textarea id="admLeaveReason" rows="2" placeholder="e.g. Family relocated, graduated, other..."></textarea>
+                        </div>
+                        <div class="adm-field"><label>Academic Performance (aggregate / grade)</label><input type="text" id="admPerformance" placeholder="e.g. Aggregate 12, Grade A in Mathematics"></div>
+                    </div>
+                    <div class="adm-nav">
+                        <button class="adm-btn-back" onclick="admGoTo(1)">← Back</button>
+                        <button class="adm-btn-next" onclick="admNext(2)">Next — Parent/Guardian →</button>
+                    </div>
+                </div>
+
+                <!-- SECTION D: Parent/Guardian -->
+                <div class="adm-section" id="admSec3">
+                    <div class="adm-card">
+                        <h3>👨‍👩‍👧 D. Parent / Guardian Information</h3>
+                        <p style="font-size:12px;color:#888;margin:0 0 12px;">Fill at least one parent or guardian</p>
+                        <div style="font-weight:700;font-size:13px;color:#4B2E9E;margin-bottom:8px;">Father's Details</div>
+                        <div class="adm-field"><label>Full Name</label><input type="text" id="admFatherName" placeholder="Father's full name"></div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Phone</label><input type="tel" id="admFatherPhone" placeholder="+256..."></div>
+                            <div class="adm-field"><label>Occupation</label><input type="text" id="admFatherJob" placeholder="e.g. Teacher"></div>
+                        </div>
+                        <div style="font-weight:700;font-size:13px;color:#4B2E9E;margin:12px 0 8px;">Mother's Details</div>
+                        <div class="adm-field"><label>Full Name</label><input type="text" id="admMotherName" placeholder="Mother's full name"></div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Phone</label><input type="tel" id="admMotherPhone" placeholder="+256..."></div>
+                            <div class="adm-field"><label>Occupation</label><input type="text" id="admMotherJob" placeholder="e.g. Nurse"></div>
+                        </div>
+                        <div style="font-weight:700;font-size:13px;color:#4B2E9E;margin:12px 0 8px;">Guardian (if different from above)</div>
+                        <div class="adm-field"><label>Guardian Name</label><input type="text" id="admGuardianName" placeholder="Guardian full name (optional)"></div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Phone</label><input type="tel" id="admGuardianPhone" placeholder="+256..."></div>
+                            <div class="adm-field"><label>Relationship</label><input type="text" id="admGuardianRel" placeholder="e.g. Uncle"></div>
+                        </div>
+                    </div>
+                    <div class="adm-nav">
+                        <button class="adm-btn-back" onclick="admGoTo(2)">← Back</button>
+                        <button class="adm-btn-next" onclick="admNext(3)">Next — Health & Submit →</button>
+                    </div>
+                </div>
+
+                <!-- SECTION E: Health + F: Weak Subjects + Declaration + Submit -->
+                <div class="adm-section" id="admSec4">
+                    <div class="adm-card">
+                        <h3>🏥 E. Health & Medical Information</h3>
+                        <div class="adm-field"><label>Any known medical conditions?</label>
+                            <textarea id="admMedical" rows="2" placeholder="e.g. Asthma, Epilepsy, Diabetes, None"></textarea>
+                        </div>
+                        <div class="adm-field"><label>Allergies</label><input type="text" id="admAllergies" placeholder="e.g. Penicillin, Peanuts, None"></div>
+                        <div class="adm-field"><label>Any disability?</label>
+                            <select id="admDisability"><option value="">Select</option><option>None</option><option>Visual impairment</option><option>Hearing impairment</option><option>Physical disability</option><option>Other</option></select>
+                        </div>
+                    </div>
+                    <div class="adm-card">
+                        <h3>🎯 F. Weak Subjects (optional)</h3>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Select any subjects the student finds challenging — our teachers will provide extra support.</p>
+                        <div class="adm-weak-chips" id="admWeakChips"></div>
+                    </div>
+                    <div class="adm-card">
+                        <h3>✍️ Declaration & Signature</h3>
+                        <div class="adm-declare">
+                            <input type="checkbox" id="admDeclareCheck">
+                            <label for="admDeclareCheck">I declare that all information provided above is true and correct, and I agree to abide by the Terms and Conditions of ApShule Digital Learning Platform.</label>
+                        </div>
+                        <div class="adm-row">
+                            <div class="adm-field"><label>Student's Name (as signature)</label><input type="text" id="admStudentSig" placeholder="Type full name to sign"></div>
+                            <div class="adm-field"><label>Parent/Guardian Name (as signature)</label><input type="text" id="admParentSig" placeholder="Type full name to sign"></div>
+                        </div>
+                        <div class="adm-field"><label>Date</label><input type="date" id="admSignDate"></div>
+                    </div>
+                    <div class="adm-nav">
+                        <button class="adm-btn-back" onclick="admGoTo(3)">← Back</button>
+                        <button class="adm-btn-next" onclick="submitAdmissionForm()" id="admSubmitBtn">📋 Submit &amp; Generate PDF</button>
+                    </div>
+                </div>
+
+                <!-- SUCCESS STATE -->
+                <div class="adm-section" id="admSec5">
+                    <div class="adm-submitted">
+                        <div class="adm-tick">✅</div>
+                        <h3>Form Submitted!</h3>
+                        <p id="admSuccessFormNo" style="font-weight:700;color:#4B2E9E;font-size:15px;margin:8px 0;"></p>
+                        <p>Your admission form has been saved. Download your official PDF below — it uses the ApShule headed paper.</p>
+                        <button id="admDownloadPdfBtn" class="adm-btn-next" style="width:100%;margin-top:16px;">📥 Download PDF</button>
+                        <button onclick="navigateTo('account')" style="width:100%;margin-top:10px;padding:12px;background:none;border:2px solid #4B2E9E;color:#4B2E9E;border-radius:24px;font-weight:700;font-size:14px;cursor:pointer;">Go to My Account</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- ABOUT PAGE -->
@@ -1325,6 +1600,105 @@
                 <div class="contact-info"><i class="fas fa-envelope"></i><div><strong>Email:</strong> apshule@gmail.com</div></div>
                 <div class="contact-info"><i class="fas fa-map-marker-alt"></i><div><strong>Address:</strong> Kampala, Uganda</div></div>
                 <a href="https://wa.me/256705732540" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp Us: +256705732540</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN PDF PRINT TEMPLATE for Admission Form -->
+    <div id="admissionPrintTemplate">
+        <div class="apt-paper">
+            <div class="apt-header">
+                <img class="apt-header-logo" id="aptLogoImg" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="ApShule Logo">
+                <div class="apt-header-text">
+                    <div class="apt-school-name">AP SHULE</div>
+                    <div style="font-size:9pt;font-weight:600;">Digital Learning Platform</div>
+                    <div class="apt-tagline">"Let's Learn With Ease From Anywhere At Anytime"</div>
+                    <div class="apt-contacts">📞 +256 705 732 540 | +256 742 316 038 | +256 701 486 574 &nbsp;|&nbsp; Twin Tower Bombo Rd, P.O. Box 116485, Wakiso</div>
+                </div>
+                <div class="apt-header-formno">
+                    <div class="apt-fno">Form No.</div>
+                    <div class="apt-fno-val" id="aptFormNo">APSH-2026-000001</div>
+                    <div class="apt-fno" style="margin-top:6px;">Date</div>
+                    <div style="font-size:9pt;font-weight:700;" id="aptFormDate">01/06/2026</div>
+                </div>
+            </div>
+            <div class="apt-title-bar">STUDENT ADMISSION FORM &mdash; <span id="aptFormYear">2026</span></div>
+            <div class="apt-body">
+                <!-- Photo + intro row -->
+                <div class="apt-photo-row">
+                    <div style="flex:1;">
+                        <div class="apt-section-head" style="margin-top:0;">SECTION A &mdash; PERSONAL INFORMATION</div>
+                        <table class="apt-table">
+                            <tr><td class="apt-lbl">Full Name</td><td class="apt-val" id="aptFullName"></td></tr>
+                            <tr><td class="apt-lbl">Date of Birth</td><td class="apt-val" id="aptDob"></td></tr>
+                            <tr><td class="apt-lbl">Gender</td><td class="apt-val" id="aptGender"></td></tr>
+                            <tr><td class="apt-lbl">Nationality</td><td class="apt-val" id="aptNationality"></td></tr>
+                            <tr><td class="apt-lbl">Religion</td><td class="apt-val" id="aptReligion"></td></tr>
+                            <tr><td class="apt-lbl">District</td><td class="apt-val" id="aptDistrict"></td></tr>
+                            <tr><td class="apt-lbl">Home Address</td><td class="apt-val" id="aptAddress"></td></tr>
+                        </table>
+                    </div>
+                    <div class="apt-photo-box" style="margin-left:16px;flex-shrink:0;">
+                        <img id="aptStudentPhoto" src="" alt="" style="width:90px;height:110px;object-fit:cover;display:none;">
+                        <div id="aptPhotoPlaceholder" class="apt-photo-label">Passport<br>Photo</div>
+                    </div>
+                </div>
+
+                <div class="apt-section-head">SECTION B &mdash; PROPOSED CLASS &amp; COURSE</div>
+                <table class="apt-table">
+                    <tr><td class="apt-lbl">Class Applying For</td><td class="apt-val" id="aptClass"></td><td class="apt-lbl">Stream / Combination</td><td class="apt-val" id="aptStream"></td></tr>
+                    <tr><td class="apt-lbl">Boarding / Day</td><td class="apt-val" id="aptBoarding"></td><td class="apt-lbl">Term of Entry</td><td class="apt-val" id="aptTerm"></td></tr>
+                    <tr><td class="apt-lbl">Year of Entry</td><td class="apt-val" id="aptYear"></td><td class="apt-lbl" colspan="2"></td></tr>
+                </table>
+
+                <div class="apt-section-head">SECTION C &mdash; PREVIOUS ACADEMIC RECORD</div>
+                <table class="apt-table">
+                    <tr><td class="apt-lbl">Previous School</td><td class="apt-val" id="aptPrevSchool" colspan="3"></td></tr>
+                    <tr><td class="apt-lbl">Last Class</td><td class="apt-val" id="aptPrevClass"></td><td class="apt-lbl">Year Left</td><td class="apt-val" id="aptPrevYear"></td></tr>
+                    <tr><td class="apt-lbl">Performance</td><td class="apt-val" id="aptPerformance"></td><td class="apt-lbl">Reason for Leaving</td><td class="apt-val" id="aptLeaveReason"></td></tr>
+                </table>
+
+                <div class="apt-section-head">SECTION D &mdash; PARENT / GUARDIAN INFORMATION</div>
+                <table class="apt-table">
+                    <tr><td class="apt-lbl">Father's Name</td><td class="apt-val" id="aptFatherName"></td><td class="apt-lbl">Phone</td><td class="apt-val" id="aptFatherPhone"></td></tr>
+                    <tr><td class="apt-lbl">Father's Occupation</td><td class="apt-val" id="aptFatherJob" colspan="3"></td></tr>
+                    <tr><td class="apt-lbl">Mother's Name</td><td class="apt-val" id="aptMotherName"></td><td class="apt-lbl">Phone</td><td class="apt-val" id="aptMotherPhone"></td></tr>
+                    <tr><td class="apt-lbl">Mother's Occupation</td><td class="apt-val" id="aptMotherJob" colspan="3"></td></tr>
+                    <tr><td class="apt-lbl">Guardian (if any)</td><td class="apt-val" id="aptGuardianName"></td><td class="apt-lbl">Relationship</td><td class="apt-val" id="aptGuardianRel"></td></tr>
+                    <tr><td class="apt-lbl">Guardian Phone</td><td class="apt-val" id="aptGuardianPhone" colspan="3"></td></tr>
+                </table>
+
+                <div class="apt-section-head">SECTION E &mdash; HEALTH &amp; MEDICAL</div>
+                <table class="apt-table">
+                    <tr><td class="apt-lbl">Medical Conditions</td><td class="apt-val" id="aptMedical"></td><td class="apt-lbl">Allergies</td><td class="apt-val" id="aptAllergies"></td></tr>
+                    <tr><td class="apt-lbl">Disability</td><td class="apt-val" id="aptDisability" colspan="3"></td></tr>
+                </table>
+
+                <div class="apt-section-head">SECTION F &mdash; WEAK SUBJECTS (for teacher assignment)</div>
+                <table class="apt-table">
+                    <tr><td class="apt-val" id="aptWeakSubjects" colspan="4" style="color:#333;font-style:italic;"></td></tr>
+                </table>
+
+                <!-- Declaration -->
+                <div class="apt-declare-line">
+                    <span class="apt-checkbox-sq">✓</span>
+                    <span>I declare that I have read and agree to ApShule's Terms and Conditions, and that all information provided is true and correct.</span>
+                </div>
+
+                <!-- Signatures -->
+                <div class="apt-sig-row">
+                    <div class="apt-sig-box">
+                        <div style="font-style:italic;margin-bottom:8px;" id="aptStudentSig"></div>
+                        Student Signature &nbsp;&nbsp; Date: <span id="aptSigDate"></span>
+                    </div>
+                    <div class="apt-sig-box">
+                        <div style="font-style:italic;margin-bottom:8px;" id="aptParentSig"></div>
+                        Parent/Guardian Signature &nbsp;&nbsp; Date: <span id="aptSigDate2"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="apt-footer">
+                <div class="apt-footer-text">ApShule Digital Learning Platform &nbsp;|&nbsp; apshule@gmail.com &nbsp;|&nbsp; +256 705 732 540 &nbsp;|&nbsp; www.appshule.com</div>
             </div>
         </div>
     </div>
@@ -1438,6 +1812,7 @@
     function addDoc(ref,data)      { return ref ? ref.add(data) : Promise.resolve({id:''}); }
     function updateDoc(ref,data)   { return ref ? ref.update(data) : Promise.resolve(); }
     function deleteDoc(ref)        { return ref ? ref.delete() : Promise.resolve(); }
+    function runTransaction(db,fn) { return db.runTransaction(fn); }
     function onSnapshot(ref) {
         if(!ref || typeof ref.onSnapshot !== 'function') return function(){};
         var args = Array.prototype.slice.call(arguments, 1);
@@ -2109,6 +2484,264 @@
             const tp = document.getElementById('editTermlyPrice');  if(tp && d.termlyPrice)  tp.value = d.termlyPrice;
         });
     }
+
+    // ===== ADMISSION FORM =====
+    let _admCurrentStep = 0;
+    let _admPhotoDataUrl = '';
+    let _admLastFormData = null;
+    let _admLastFormNo = '';
+
+    function admInitWeakChips() {
+        const all = [...new Set([...primarySubjects,...secondarySubjects])];
+        const fallback = ['Mathematics','English','Science','Social Studies','Physics','Chemistry','Biology','History','Geography','Economics','Commerce','Agriculture','Technical Drawing','Religious Education','Computer Studies'];
+        const list = all.length ? all : fallback;
+        const wrap = document.getElementById('admWeakChips');
+        if(!wrap) return;
+        wrap.innerHTML = list.map(s=>`<div class="adm-chip" data-subj="${escHtml(s)}" onclick="this.classList.toggle('selected')">${escHtml(s)}</div>`).join('');
+    }
+
+    function admUpdateStreams() {
+        const cls = document.getElementById('admClass')?.value || '';
+        const sf = document.getElementById('admStreamField');
+        if(sf) sf.style.display = (cls.startsWith('S.5')||cls.startsWith('S.6')) ? 'block' : 'none';
+    }
+
+    function admGoTo(step) {
+        _admCurrentStep = step;
+        document.querySelectorAll('.adm-section').forEach((s,i)=>{ s.classList.toggle('active', i===step); });
+        document.querySelectorAll('.adm-step').forEach((s,i)=>{ s.classList.remove('active','done'); if(i<step) s.classList.add('done'); else if(i===step) s.classList.add('active'); });
+        document.getElementById('admissionPage')?.scrollTo?.(0,0);
+        window.scrollTo(0,0);
+    }
+
+    function admNext(currentIdx) {
+        // Basic validation per step
+        if(currentIdx===0) {
+            const n=document.getElementById('admFullName')?.value?.trim();
+            const d=document.getElementById('admDob')?.value;
+            const g=document.getElementById('admGender')?.value;
+            const nat=document.getElementById('admNationality')?.value?.trim();
+            if(!n||!d||!g||!nat){ showNotification('Please fill Full Name, Date of Birth, Gender, and Nationality','error'); return; }
+        }
+        if(currentIdx===1) {
+            const c=document.getElementById('admClass')?.value;
+            const b=document.getElementById('admBoarding')?.value;
+            const t=document.getElementById('admTerm')?.value;
+            if(!c||!b||!t){ showNotification('Please select Class, Boarding/Day, and Term','error'); return; }
+        }
+        if(currentIdx===3) {
+            const f=document.getElementById('admFatherName')?.value?.trim();
+            const m=document.getElementById('admMotherName')?.value?.trim();
+            const g=document.getElementById('admGuardianName')?.value?.trim();
+            if(!f&&!m&&!g){ showNotification('Please fill at least one parent or guardian','error'); return; }
+        }
+        admGoTo(currentIdx+1);
+        if(currentIdx+1===4) admInitWeakChips();
+    }
+
+    // Photo upload preview
+    document.getElementById('admPhotoInput')?.addEventListener('change', function(){
+        const file=this.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=e=>{ _admPhotoDataUrl=e.target.result; const img=document.getElementById('admPhotoPreview'); if(img) img.src=_admPhotoDataUrl; };
+        reader.readAsDataURL(file);
+    });
+
+    async function generateFormNumber() {
+        const ref = doc(db,'settings','formCounter');
+        return await runTransaction(db, async tx=>{
+            const snap=await tx.get(ref);
+            // .exists is a boolean property in Firestore compat SDK (v8 style)
+            const prev = snap.exists ? (snap.data()?.count||0) : 0;
+            const next = prev + 1;
+            tx.set(ref,{count:next});
+            const year=new Date().getFullYear();
+            return `APSH-${year}-${String(next).padStart(6,'0')}`;
+        });
+    }
+
+    function admCollectData() {
+        const weakChips = [...document.querySelectorAll('.adm-chip.selected')].map(c=>c.dataset.subj);
+        return {
+            fullName:    document.getElementById('admFullName')?.value?.trim()||'',
+            dob:         document.getElementById('admDob')?.value||'',
+            gender:      document.getElementById('admGender')?.value||'',
+            nationality: document.getElementById('admNationality')?.value?.trim()||'',
+            religion:    document.getElementById('admReligion')?.value||'',
+            district:    document.getElementById('admDistrict')?.value?.trim()||'',
+            address:     document.getElementById('admAddress')?.value?.trim()||'',
+            class:       document.getElementById('admClass')?.value||'',
+            stream:      document.getElementById('admStream')?.value||'',
+            boarding:    document.getElementById('admBoarding')?.value||'',
+            term:        document.getElementById('admTerm')?.value||'',
+            year:        document.getElementById('admYear')?.value||new Date().getFullYear(),
+            prevSchool:  document.getElementById('admPrevSchool')?.value?.trim()||'',
+            prevClass:   document.getElementById('admPrevClass')?.value?.trim()||'',
+            prevYear:    document.getElementById('admPrevYear')?.value||'',
+            leaveReason: document.getElementById('admLeaveReason')?.value?.trim()||'',
+            performance: document.getElementById('admPerformance')?.value?.trim()||'',
+            fatherName:  document.getElementById('admFatherName')?.value?.trim()||'',
+            fatherPhone: document.getElementById('admFatherPhone')?.value?.trim()||'',
+            fatherJob:   document.getElementById('admFatherJob')?.value?.trim()||'',
+            motherName:  document.getElementById('admMotherName')?.value?.trim()||'',
+            motherPhone: document.getElementById('admMotherPhone')?.value?.trim()||'',
+            motherJob:   document.getElementById('admMotherJob')?.value?.trim()||'',
+            guardianName:document.getElementById('admGuardianName')?.value?.trim()||'',
+            guardianPhone:document.getElementById('admGuardianPhone')?.value?.trim()||'',
+            guardianRel: document.getElementById('admGuardianRel')?.value?.trim()||'',
+            medical:     document.getElementById('admMedical')?.value?.trim()||'',
+            allergies:   document.getElementById('admAllergies')?.value?.trim()||'',
+            disability:  document.getElementById('admDisability')?.value||'',
+            weakSubjects:weakChips,
+            studentSig:  document.getElementById('admStudentSig')?.value?.trim()||'',
+            parentSig:   document.getElementById('admParentSig')?.value?.trim()||'',
+            signDate:    document.getElementById('admSignDate')?.value||new Date().toISOString().slice(0,10),
+            photoDataUrl:_admPhotoDataUrl,
+        };
+    }
+
+    async function submitAdmissionForm() {
+        if(!document.getElementById('admDeclareCheck')?.checked){
+            showNotification('Please tick the declaration checkbox first','error'); return;
+        }
+        const sig=document.getElementById('admStudentSig')?.value?.trim();
+        if(!sig){ showNotification('Please enter student name as signature','error'); return; }
+
+        const btn=document.getElementById('admSubmitBtn');
+        btn.disabled=true; btn.textContent='Submitting…';
+        try {
+            const data=admCollectData();
+            const formNo=await generateFormNumber();
+            _admLastFormNo=formNo;
+            _admLastFormData=data;
+            data.formNo=formNo;
+            data.submittedAt=new Date().toISOString();
+            data.studentUid=currentUser?.uid||'';
+            data.studentEmail=currentUser?.email||'';
+            // Save to Firestore (without photo — too large for Firestore; photo stays in DataURL for PDF only)
+            const saveData={...data}; delete saveData.photoDataUrl;
+            if(_admPhotoDataUrl) saveData.hasPhoto=true;
+            await addDoc(collection(db,'admissionForms'), saveData);
+            // Notify superadmin
+            try { await addDoc(collection(db,'notifications'),{ userId:'superadmin', title:'📋 New Admission Form', body:`New form from ${data.fullName} (${data.class}) — ${formNo}`, read:false, createdAt:new Date().toISOString() }); } catch(_){}
+
+            // Show success state
+            const fnoEl=document.getElementById('admSuccessFormNo');
+            if(fnoEl) fnoEl.textContent=`Form No: ${formNo}`;
+            admGoTo(5);
+            document.getElementById('admDownloadPdfBtn').onclick=()=>generateAdmissionPDF(_admLastFormData,_admLastFormNo);
+            showNotification(`Form submitted! ${formNo}`,'success');
+            loadMyAdmissionStatus();
+        } catch(e){
+            showNotification('Submit failed: '+e.message,'error');
+        }
+        btn.disabled=false; btn.textContent='📋 Submit & Generate PDF';
+    }
+
+    function admFillTemplate(data, formNo) {
+        const now=new Date();
+        const dateStr=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+        const setT=(id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val||'—'; };
+        document.getElementById('aptFormNo').textContent=formNo;
+        document.getElementById('aptFormDate').textContent=dateStr;
+        document.getElementById('aptFormYear').textContent=data.year||now.getFullYear();
+        setT('aptFullName',data.fullName); setT('aptDob',data.dob); setT('aptGender',data.gender);
+        setT('aptNationality',data.nationality); setT('aptReligion',data.religion);
+        setT('aptDistrict',data.district); setT('aptAddress',data.address);
+        setT('aptClass',data.class); setT('aptStream',data.stream||'N/A');
+        setT('aptBoarding',data.boarding); setT('aptTerm',data.term); setT('aptYear',data.year);
+        setT('aptPrevSchool',data.prevSchool||'N/A'); setT('aptPrevClass',data.prevClass||'N/A');
+        setT('aptPrevYear',data.prevYear||'N/A'); setT('aptPerformance',data.performance||'N/A');
+        setT('aptLeaveReason',data.leaveReason||'N/A');
+        setT('aptFatherName',data.fatherName||'N/A'); setT('aptFatherPhone',data.fatherPhone||'N/A');
+        setT('aptFatherJob',data.fatherJob||'N/A'); setT('aptMotherName',data.motherName||'N/A');
+        setT('aptMotherPhone',data.motherPhone||'N/A'); setT('aptMotherJob',data.motherJob||'N/A');
+        setT('aptGuardianName',data.guardianName||'N/A'); setT('aptGuardianRel',data.guardianRel||'N/A');
+        setT('aptGuardianPhone',data.guardianPhone||'N/A');
+        setT('aptMedical',data.medical||'None'); setT('aptAllergies',data.allergies||'None');
+        setT('aptDisability',data.disability||'None');
+        setT('aptWeakSubjects',(data.weakSubjects&&data.weakSubjects.length)?data.weakSubjects.join(', '):'None selected');
+        setT('aptStudentSig',data.studentSig||''); setT('aptParentSig',data.parentSig||'');
+        const sdEl1=document.getElementById('aptSigDate'); const sdEl2=document.getElementById('aptSigDate2');
+        const sd=data.signDate?data.signDate.split('-').reverse().join('/'):dateStr;
+        if(sdEl1) sdEl1.textContent=sd; if(sdEl2) sdEl2.textContent=sd;
+        // Photo
+        const photoImg=document.getElementById('aptStudentPhoto');
+        const photoPlaceholder=document.getElementById('aptPhotoPlaceholder');
+        if(data.photoDataUrl && photoImg){ photoImg.src=data.photoDataUrl; photoImg.style.display='block'; if(photoPlaceholder) photoPlaceholder.style.display='none'; }
+        else { if(photoImg) photoImg.style.display='none'; if(photoPlaceholder) photoPlaceholder.style.display='flex'; }
+    }
+
+    function generateAdmissionPDF(data, formNo) {
+        admFillTemplate(data, formNo);
+        const template=document.getElementById('admissionPrintTemplate');
+        template.style.display='block';
+        const loadHtml2pdf=()=>new Promise((res,rej)=>{
+            if(window.html2pdf){ res(); return; }
+            const s=document.createElement('script');
+            s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            s.onload=res; s.onerror=rej; document.head.appendChild(s);
+        });
+        loadHtml2pdf().then(()=>{
+            const opt={ margin:[0,0,0,0], filename:`ApShule_Admission_${formNo}.pdf`, image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2,useCORS:true,logging:false}, jsPDF:{unit:'px',format:[794,1123],orientation:'portrait'} };
+            html2pdf().from(template.querySelector('.apt-paper')).set(opt).save().then(()=>{ template.style.display='none'; showNotification('PDF downloaded ✅'); });
+        }).catch(()=>{ template.style.display='none'; showNotification('PDF library failed to load. Check internet connection.','error'); });
+    }
+
+    async function loadMyAdmissionStatus() {
+        const el=document.getElementById('myAdmissionStatus'); if(!el||!currentUser) return;
+        try {
+            const snap=await getDocs(query(collection(db,'admissionForms'),where('studentUid','==',currentUser.uid)));
+            if(snap.empty){ el.innerHTML='<p style="font-size:12px;color:#888;margin:0 0 10px;">No form submitted yet.</p>'; return; }
+            const f={id:snap.docs[0].id,...snap.docs[0].data()};
+            el.innerHTML=`<div style="background:#f0f9f0;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;"><strong>✅ Form submitted</strong><br><span style="color:#888;">${f.formNo||''} — ${f.fullName||''} — ${f.class||''}</span><br><button onclick="reDownloadAdmissionPDF('${f.id}')" style="margin-top:8px;background:#4B2E9E;color:white;border:none;padding:6px 16px;border-radius:16px;font-size:12px;font-weight:700;cursor:pointer;">📥 Download PDF again</button></div>`;
+        } catch(e){ el.innerHTML=''; }
+    }
+
+    async function reDownloadAdmissionPDF(formId) {
+        showNotification('Loading…');
+        try {
+            const snap=await getDoc(doc(db,'admissionForms',formId));
+            if(!snap.exists()){ showNotification('Form not found','error'); return; }
+            const data={...snap.data()};
+            generateAdmissionPDF(data, data.formNo||'APSH-????-??????');
+        } catch(e){ showNotification('Error: '+e.message,'error'); }
+    }
+    window.reDownloadAdmissionPDF=reDownloadAdmissionPDF;
+
+    async function loadAdmissionFormsAdmin() {
+        const c=document.getElementById('admissionFormsAdminList'); if(!c) return;
+        c.innerHTML='<div style="color:#999;font-size:13px;">Loading…</div>';
+        try {
+            const snap=await getDocs(query(collection(db,'admissionForms')));
+            if(snap.empty){ c.innerHTML='<div style="color:#999;font-size:13px;">No submissions yet.</div>'; return; }
+            const forms=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.submittedAt||'').localeCompare(a.submittedAt||''));
+            c.innerHTML=forms.map(f=>`
+                <div class="adm-admin-row">
+                    <div>
+                        <div class="adm-admin-name">${escHtml(f.fullName||'Unknown')}</div>
+                        <div class="adm-admin-meta">${escHtml(f.formNo||'')} &bull; ${escHtml(f.class||'')} &bull; ${escHtml((f.submittedAt||'').slice(0,10))}</div>
+                        <div class="adm-admin-meta">📧 ${escHtml(f.studentEmail||'')} | Weak: ${escHtml((f.weakSubjects||[]).join(', ')||'None')}</div>
+                    </div>
+                    <button class="adm-dl-btn" onclick="adminDownloadAdmissionPDF('${f.id}')">📥 PDF</button>
+                </div>`).join('');
+        } catch(e){ c.innerHTML=`<div style="color:#c00;font-size:13px;">Error: ${escHtml(e.message)}</div>`; }
+    }
+
+    async function adminDownloadAdmissionPDF(formId) {
+        showNotification('Generating PDF…');
+        try {
+            const snap=await getDoc(doc(db,'admissionForms',formId));
+            if(!snap.exists()){ showNotification('Not found','error'); return; }
+            const data={...snap.data()};
+            generateAdmissionPDF(data, data.formNo||'APSH-????-??????');
+        } catch(e){ showNotification('Error: '+e.message,'error'); }
+    }
+    window.adminDownloadAdmissionPDF=adminDownloadAdmissionPDF;
+    window.admGoTo=admGoTo;
+    window.admNext=admNext;
+    window.admUpdateStreams=admUpdateStreams;
+    window.submitAdmissionForm=submitAdmissionForm;
 
     function renderTeachersAdmin() {
         const c = document.getElementById('teachersAdminList'); if(!c) return;
@@ -4267,6 +4900,11 @@
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
         document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
         document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
+        document.getElementById('admissionFormsAdminSection').style.display = isSuper ? "block" : "none";
+        // Admission shortcut — show for students only
+        const admShortcut = document.getElementById('admissionShortcut');
+        if(admShortcut) admShortcut.style.display = (!isSuper&&!isSchool&&!isTeacher) ? "block" : "none";
+        if(!isSuper&&!isSchool&&!isTeacher) loadMyAdmissionStatus();
         document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
         // Live nav item — visible for students (individual), school, and superadmin
         const showLiveNav = !isTeacher;
@@ -4533,7 +5171,7 @@
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
