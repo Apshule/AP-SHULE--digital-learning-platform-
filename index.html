@@ -900,6 +900,28 @@
             <div id="adminPanel" class="admin-panel">
                 <h3><i class="fas fa-lock"></i> Admin Panel</h3>
 
+                <!-- ===== PDF / LEARNING MATERIALS UPLOAD — TOP OF PANEL ===== -->
+                <div class="admin-section" id="pdfManagementSection" style="display:none;background:#f5f2ff;border:2px solid #4B2E9E;border-radius:16px;padding:16px;">
+                    <h4 style="color:#4B2E9E;margin-top:0;">📤 Upload Learning Materials (PDFs)</h4>
+                    <div class="add-pdf-form">
+                        <input type="text" id="pdfTitle" placeholder="PDF Title">
+                        <input type="text" id="pdfCategory" placeholder="Subject / Category (e.g. Mathematics, Physics)" style="margin-top:4px;">
+                        <div style="font-size:12px;color:#888;margin:4px 0 2px;">Upload a file <em>or</em> paste a URL:</div>
+                        <input type="file" id="pdfFileInput" accept="application/pdf" style="font-size:13px;">
+                        <input type="text" id="pdfUrl" placeholder="— or paste PDF URL here —" style="margin-top:4px;">
+                        <div id="pdfUploadStatus" style="font-size:12px;color:#555;margin-top:4px;"></div>
+                        <button id="addPdfBtn" class="admin-toggle" style="margin-top:6px;">➕ Add PDF</button>
+                    </div>
+                    <div id="pdfAdminList"></div>
+                </div>
+
+                <!-- ===== ADMISSION FORMS ADMIN — TOP OF PANEL ===== -->
+                <div class="admin-section" id="admissionFormsAdminSection" style="display:none;background:#f0fff4;border:2px solid #4CAF50;border-radius:16px;padding:16px;">
+                    <h4 style="color:#2E7D32;margin-top:0;">📋 Admission Form Submissions</h4>
+                    <p style="font-size:12px;color:#888;margin:0 0 10px;">Approve or decline each student's admission. Student gets a notification immediately.</p>
+                    <div id="admissionFormsAdminList"><div style="color:#999;font-size:13px;">Loading…</div></div>
+                </div>
+
                 <!-- SUPER ADMIN SECTION -->
                 <div id="superAdminSection" class="admin-section" style="display:none;">
 
@@ -1113,8 +1135,16 @@
 
                     <!-- ===== PUSH HISTORY ===== -->
                     <div class="admin-section" style="background:#f5f5ff;border:1.5px solid #c5b8f0;border-radius:16px;padding:16px;">
-                        <h4 style="margin-top:0;color:#4B2E9E;">📋 Auto-Push History</h4>
-                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Last 50 pushes from the watcher. Updates live.</p>
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+                            <h4 style="margin:0;color:#4B2E9E;">📋 Auto-Push History</h4>
+                            <button id="clearPushHistoryBtn" style="font-size:11px;padding:4px 10px;border:1px solid #c5b8f0;border-radius:8px;background:#fff;color:#C62828;cursor:pointer;">🗑 Clear history</button>
+                        </div>
+                        <p style="font-size:12px;color:#888;margin:0 0 8px;">Last 50 pushes from the watcher. Updates live.</p>
+                        <div style="display:flex;gap:6px;margin-bottom:8px;">
+                            <button class="push-filter-btn" data-filter="all" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid #c5b8f0;background:#4B2E9E;color:#fff;cursor:pointer;">All</button>
+                            <button class="push-filter-btn" data-filter="success" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid #c5b8f0;background:#fff;color:#2E7D32;cursor:pointer;">✅ Success</button>
+                            <button class="push-filter-btn" data-filter="error" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid #c5b8f0;background:#fff;color:#C62828;cursor:pointer;">❌ Error</button>
+                        </div>
                         <div id="pushHistoryList" style="max-height:220px;overflow-y:auto;font-size:12px;font-family:monospace;"></div>
                     </div>
 
@@ -1182,27 +1212,6 @@
                     </div>
                 </div>
 
-                <!-- PDF MANAGEMENT SECTION -->
-                <div class="admin-section" id="pdfManagementSection" style="display:none;">
-                    <h4>📄 Manage PDFs</h4>
-                    <div class="add-pdf-form">
-                        <input type="text" id="pdfTitle" placeholder="PDF Title">
-                        <input type="text" id="pdfCategory" placeholder="Subject / Category (e.g. Mathematics, Physics)" style="margin-top:4px;">
-                        <div style="font-size:12px;color:#888;margin:4px 0 2px;">Upload a file <em>or</em> paste a URL:</div>
-                        <input type="file" id="pdfFileInput" accept="application/pdf" style="font-size:13px;">
-                        <input type="text" id="pdfUrl" placeholder="— or paste PDF URL here —" style="margin-top:4px;">
-                        <div id="pdfUploadStatus" style="font-size:12px;color:#555;margin-top:4px;"></div>
-                        <button id="addPdfBtn" class="admin-toggle" style="margin-top:6px;">➕ Add PDF</button>
-                    </div>
-                    <div id="pdfAdminList"></div>
-                </div>
-
-                <!-- ADMISSION FORMS ADMIN -->
-                <div class="admin-section" id="admissionFormsAdminSection" style="display:none;">
-                    <h4>📋 Admission Form Submissions</h4>
-                    <p style="font-size:12px;color:#888;margin:0 0 10px;">All student admission forms submitted online. Download any form as a PDF.</p>
-                    <div id="admissionFormsAdminList"><div style="color:#999;font-size:13px;">Loading…</div></div>
-                </div>
             </div>
         </div>
 
@@ -1595,7 +1604,7 @@
         <div class="apt-paper">
             <!-- HEADER — matches actual ApShule letterhead -->
             <div class="apt-header">
-                <img class="apt-header-logo" id="aptLogoImg" src="https://appshule.com/apshule-letterhead.png" alt="ApShule Logo" onerror="this.src='https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg'">
+                <img class="apt-header-logo" id="aptLogoImg" src="https://appshule.com/apshule-logo.jpg" alt="ApShule Logo" onerror="this.src='https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg'">
                 <div class="apt-header-center">
                     <div class="apt-school-name">AP SHULE<span class="apt-dot">.</span></div>
                     <div class="apt-dlp">Digital Learning Platform</div>
@@ -1615,7 +1624,7 @@
             <div class="apt-title-bar">STUDENT ADMISSION FORM &mdash; <span id="aptFormYear">2026</span></div>
             <div class="apt-body">
                 <!-- Faded watermark -->
-                <div class="apt-watermark" aria-hidden="true"><img src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt=""></div>
+                <div class="apt-watermark" aria-hidden="true"><img src="https://appshule.com/apshule-logo.jpg" alt="" onerror="this.src='https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg'"></div>
                 <!-- Photo + intro row -->
                 <div class="apt-photo-row">
                     <div style="flex:1;">
@@ -2661,9 +2670,19 @@
             data.submittedAt=new Date().toISOString();
             data.studentUid=currentUser?.uid||'';
             data.studentEmail=currentUser?.email||'';
-            // Save to Firestore (without photo — too large for Firestore; photo stays in DataURL for PDF only)
-            const saveData={...data}; delete saveData.photoDataUrl;
-            if(_admPhotoDataUrl) saveData.hasPhoto=true;
+            // Save to Firestore — compress photo so it fits within the 1 MB doc limit
+            const saveData={...data};
+            if(_admPhotoDataUrl) {
+                saveData.photoDataUrl = await (()=>new Promise(res=>{
+                    const img=new Image(); img.onload=()=>{
+                        const scale=Math.min(1,160/img.width);
+                        const cv=document.createElement('canvas');
+                        cv.width=Math.round(img.width*scale); cv.height=Math.round(img.height*scale);
+                        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+                        res(cv.toDataURL('image/jpeg',0.65));
+                    }; img.onerror=()=>res(''); img.src=_admPhotoDataUrl;
+                }))();
+            } else { delete saveData.photoDataUrl; }
             await addDoc(collection(db,'admissionForms'), saveData);
             // Notify superadmin
             try { await addDoc(collection(db,'notifications'),{ userId:'superadmin', title:'📋 New Admission Form', body:`New form from ${data.fullName} (${data.class}) — ${formNo}`, read:false, createdAt:new Date().toISOString() }); } catch(_){}
@@ -2772,17 +2791,54 @@
             const snap=await getDocs(query(collection(db,'admissionForms')));
             if(snap.empty){ c.innerHTML='<div style="color:#999;font-size:13px;">No submissions yet.</div>'; return; }
             const forms=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.submittedAt||'').localeCompare(a.submittedAt||''));
-            c.innerHTML=forms.map(f=>`
-                <div class="adm-admin-row">
-                    <div>
-                        <div class="adm-admin-name">${escHtml(f.fullName||'Unknown')}</div>
-                        <div class="adm-admin-meta">${escHtml(f.formNo||'')} &bull; ${escHtml(f.class||'')} &bull; ${escHtml((f.submittedAt||'').slice(0,10))}</div>
-                        <div class="adm-admin-meta">📧 ${escHtml(f.studentEmail||'')} | Weak: ${escHtml((f.weakSubjects||[]).join(', ')||'None')}</div>
+            c.innerHTML=forms.map(f=>{
+                const st=f.admissionStatus||'pending';
+                const badge=st==='approved'
+                    ?'<span style="background:#4CAF50;color:white;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">✅ Approved</span>'
+                    :st==='declined'
+                    ?'<span style="background:#c62828;color:white;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">❌ Declined</span>'
+                    :'<span style="background:#FF8C42;color:white;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;">⏳ Pending</span>';
+                const actions=st==='pending'
+                    ?`<button onclick="adminApproveAdmission('${f.id}','${escHtml(f.studentUid||'')}','${escHtml(f.fullName||'')}')" style="background:#4CAF50;color:white;border:none;padding:6px 14px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">✅ Approve</button><button onclick="adminDeclineAdmission('${f.id}','${escHtml(f.studentUid||'')}')" style="background:#c62828;color:white;border:none;padding:6px 14px;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer;">❌ Decline</button>`
+                    :st==='declined'&&f.declineReason?`<span style="font-size:11px;color:#c62828;">Reason: ${escHtml(f.declineReason)}</span>`:'';
+                return `<div class="adm-admin-row" style="flex-direction:column;align-items:stretch;gap:8px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                        <div style="flex:1;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                                <div class="adm-admin-name">${escHtml(f.fullName||'Unknown')}</div>${badge}
+                            </div>
+                            <div class="adm-admin-meta">${escHtml(f.formNo||'')} &bull; ${escHtml(f.class||'')} &bull; ${escHtml((f.submittedAt||'').slice(0,10))}</div>
+                            <div class="adm-admin-meta">📧 ${escHtml(f.studentEmail||'')} | Weak: ${escHtml((f.weakSubjects||[]).join(', ')||'None')}</div>
+                        </div>
+                        <button class="adm-dl-btn" onclick="adminDownloadAdmissionPDF('${f.id}')">📥 PDF</button>
                     </div>
-                    <button class="adm-dl-btn" onclick="adminDownloadAdmissionPDF('${f.id}')">📥 PDF</button>
-                </div>`).join('');
+                    ${actions?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${actions}</div>`:''}
+                </div>`;
+            }).join('');
         } catch(e){ c.innerHTML=`<div style="color:#c00;font-size:13px;">Error: ${escHtml(e.message)}</div>`; }
     }
+
+    async function adminApproveAdmission(formId, studentUid, studentName) {
+        if(!confirm(`Approve admission for ${studentName}?\nStudent will be notified immediately.`)) return;
+        try {
+            await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'approved', approvedAt:new Date().toISOString(), approvedBy:currentUser?.uid });
+            if(studentUid) await addDoc(collection(db,'notifications'),{ userId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your ApShule admission has been approved. You are now free to study. Welcome to the family! 🎓`, read:false, createdAt:new Date().toISOString() });
+            showNotification(`${studentName} approved ✅`);
+            loadAdmissionFormsAdmin();
+        } catch(e){ showNotification('Error: '+e.message,'error'); }
+    }
+    window.adminApproveAdmission=adminApproveAdmission;
+
+    async function adminDeclineAdmission(formId, studentUid) {
+        const reason=prompt('Reason for declining (leave blank to skip):')||'';
+        try {
+            await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'declined', declineReason:reason, declinedAt:new Date().toISOString(), declinedBy:currentUser?.uid });
+            if(studentUid) await addDoc(collection(db,'notifications'),{ userId:studentUid, title:'❌ Admission Not Approved', body:`Your ApShule admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, read:false, createdAt:new Date().toISOString() });
+            showNotification('Declined — student notified');
+            loadAdmissionFormsAdmin();
+        } catch(e){ showNotification('Error: '+e.message,'error'); }
+    }
+    window.adminDeclineAdmission=adminDeclineAdmission;
 
     async function adminDownloadAdmissionPDF(formId) {
         showNotification('Generating PDF…');
@@ -4860,16 +4916,25 @@
 
     // ===== AI CHAT =====
     async function askAI(q) {
-        try {
-            const systemPrompt = 'You are APSHULE AI Tutor, a helpful and friendly educational assistant for Ugandan students (Primary and Secondary school). Give concise, clear, curriculum-relevant answers. ';
-            const fullPrompt = systemPrompt + 'Student asks: ' + q;
-            const resp = await fetch('https://text.pollinations.ai/' + encodeURIComponent(fullPrompt), { signal: AbortSignal.timeout(15000) });
-            if(!resp.ok) throw new Error('bad response');
-            const text = await resp.text();
-            return text.trim() || "📚 I couldn't get a response. Please try again!";
-        } catch(e) {
-            return "📚 AI is temporarily offline. Try again in a moment!";
+        const systemPrompt = 'You are APSHULE AI Tutor — a helpful, friendly, and knowledgeable educational assistant for Ugandan students from Primary 1 to Senior 6. '
+            + 'You follow the Uganda National Curriculum (UNEB syllabus). '
+            + 'Always give a clear, complete, and accurate answer. Never say you cannot answer — do your best every time. '
+            + 'For maths: show the working step by step. For science: explain the concept simply with local examples. '
+            + 'For English: correct grammar and give examples. For History/SST: give factual, curriculum-relevant answers. '
+            + 'Keep answers concise but complete. Use bullet points or numbered steps where helpful. ';
+        // Try primary endpoint, then fallback
+        const endpoints = [
+            () => fetch('https://text.pollinations.ai/' + encodeURIComponent(systemPrompt + '\n\nStudent asks: ' + q), { signal: AbortSignal.timeout(20000) }).then(r=>{ if(!r.ok) throw new Error('bad'); return r.text(); }),
+            () => fetch('https://api.pollinations.ai/v1/chat/completions', {
+                method:'POST', signal: AbortSignal.timeout(20000),
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ model:'openai', messages:[{role:'system',content:systemPrompt},{role:'user',content:q}], max_tokens:600 })
+            }).then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); }).then(j=>j?.choices?.[0]?.message?.content||'')
+        ];
+        for(const fn of endpoints) {
+            try { const txt = await fn(); if(txt && txt.trim().length>5) return txt.trim(); } catch(_){}
         }
+        return "📚 The AI tutor is having trouble connecting right now. Please check your internet and try again — or ask your teacher!";
     }
     function addMsg(t,s) { let c=document.getElementById('chatMessages'); let d=document.createElement('div'); d.className=`message ${s}`; d.innerHTML=`<div class="message-avatar"><i class="fas ${s==='user'?'fa-user':'fa-robot'}"></i></div><div class="message-bubble">${t}</div>`; c.appendChild(d); c.scrollTop=c.scrollHeight; }
     async function sendChat() {
@@ -4951,7 +5016,7 @@
         document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
-        if (isSuper) loadPushHistory();
+        if (isSuper) { loadPushHistory(); initPushHistoryControls(); }
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
         document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
@@ -5513,7 +5578,7 @@
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
             // Show device banner for 5 min after login then auto-hide
             const _banner = document.getElementById('responsiveDemoNotice');
-            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 300000); }
+            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 180000); }
         } else {
             clearSessionData();
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -5685,6 +5750,20 @@
     }
   }
 
+  var pushHistoryFilter = "all";
+
+  function pushHistoryApplyFilter() {
+    var list = document.getElementById("pushHistoryList");
+    if (!list) return;
+    Array.from(list.children).forEach(function (row) {
+      if (pushHistoryFilter === "all") {
+        row.style.display = "";
+      } else {
+        row.style.display = row.getAttribute("data-type") === pushHistoryFilter ? "" : "none";
+      }
+    });
+  }
+
   function pushHistoryPrepend(type, message, timestamp) {
     var list = document.getElementById("pushHistoryList");
     if (!list) return;
@@ -5694,11 +5773,13 @@
     var timeStr = ts.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) +
       " " + ts.toLocaleDateString([], { month: "short", day: "numeric" });
     var row = document.createElement("div");
+    row.setAttribute("data-type", type);
     row.style.cssText = "display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid #e8e4fa;";
     row.innerHTML = '<span style="color:' + color + ';flex-shrink:0;">' + icon + '</span>' +
       '<span style="color:#888;flex-shrink:0;">' + timeStr + '</span>' +
       '<span style="color:#333;word-break:break-all;">' + message.replace(/</g, "&lt;") + '</span>';
     list.insertBefore(row, list.firstChild);
+    if (pushHistoryFilter !== "all" && type !== pushHistoryFilter) row.style.display = "none";
     while (list.children.length > 50) list.removeChild(list.lastChild);
   }
 
@@ -5719,10 +5800,54 @@
         // Re-sort: insertBefore prepends each, reversing order, so restore correct newest-first order
         var rows = Array.from(list.children);
         rows.reverse().forEach(function (r) { list.appendChild(r); });
+        pushHistoryApplyFilter();
       })
       .catch(function () {
         list.innerHTML = '<div style="color:#aaa;padding:6px 0;">Could not load history.</div>';
       });
+  }
+
+  function initPushHistoryControls() {
+    var clearBtn = document.getElementById("clearPushHistoryBtn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", async function () {
+        if (!confirm("Clear all push history? This cannot be undone.")) return;
+        var firebaseUser = window.auth && window.auth.currentUser;
+        var idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
+        if (!idToken) { alert("Not signed in — please reload and try again."); return; }
+        fetch("/api/push-events/history", {
+          method: "DELETE",
+          headers: { "Authorization": "Bearer " + idToken }
+        })
+          .then(function (r) {
+            if (r.status === 401) throw new Error("Not authenticated. Please reload and sign in again.");
+            if (r.status === 403) throw new Error("Only superadmins can clear push history.");
+            if (!r.ok) throw new Error("Server error (" + r.status + "). Please try again.");
+            return r.json();
+          })
+          .then(function (data) {
+            if (data.ok) {
+              var list = document.getElementById("pushHistoryList");
+              if (list) list.innerHTML = '<div style="color:#aaa;padding:6px 0;">No pushes recorded yet.</div>';
+            }
+          })
+          .catch(function (err) {
+            alert(err.message || "Failed to clear history.");
+          });
+      });
+    }
+
+    document.querySelectorAll(".push-filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        pushHistoryFilter = btn.getAttribute("data-filter");
+        document.querySelectorAll(".push-filter-btn").forEach(function (b) {
+          var isActive = b.getAttribute("data-filter") === pushHistoryFilter;
+          b.style.background = isActive ? "#4B2E9E" : "#fff";
+          b.style.color = isActive ? "#fff" : (b.getAttribute("data-filter") === "success" ? "#2E7D32" : (b.getAttribute("data-filter") === "error" ? "#C62828" : "#4B2E9E"));
+        });
+        pushHistoryApplyFilter();
+      });
+    });
   }
 
   function connect() {
