@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://i.ibb.co" crossorigin>
     <link rel="dns-prefetch" href="https://www.youtube.com">
     <link rel="dns-prefetch" href="https://www.googleapis.com">
-    <!-- Preload Firebase modules so they download in parallel before the module script runs -->
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js">
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js">
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js">
-    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js">
+    <!-- Preload self-hosted Firebase SDK (served from GitHub Pages CDN — no Google CDN dependency) -->
+    <link rel="modulepreload" href="/firebase-app.js" crossorigin>
+    <link rel="modulepreload" href="/firebase-auth.js" crossorigin>
+    <link rel="modulepreload" href="/firebase-firestore.js" crossorigin>
+    <link rel="modulepreload" href="/firebase-storage.js" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -441,15 +441,14 @@
         var err = document.getElementById('loginError');
         if(err && err.textContent.includes('Loading')) err.textContent = '';
     };
-    // Hard deadline: if Firebase never loads in 20 s, re-enable buttons
-    // so user can at least retry or see an error when they tap
+    // Hard deadline: re-enable buttons after 20 s no matter what
     window._clearSplashTimer = function(){}; // kept for compat
     setTimeout(function(){
         var btn = document.getElementById('loginBtn');
         if(btn && btn.disabled){
             window._firebaseReady();
             var err = document.getElementById('loginError');
-            if(err) err.textContent = '⚠️ Slow connection — login may not work. Try reloading on Wi-Fi.';
+            if(err) err.textContent = '⚠️ Taking longer than usual — tap Login to try anyway.';
         }
     }, 20000);
 })();
@@ -1308,10 +1307,10 @@
 <script type="importmap">
 {
     "imports": {
-        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-        "firebase/storage": "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js"
+        "firebase/app":       "/firebase-app.js",
+        "firebase/auth":      "/firebase-auth.js",
+        "firebase/firestore": "/firebase-firestore.js",
+        "firebase/storage":   "/firebase-storage.js"
     }
 }
 </script>
