@@ -1360,6 +1360,20 @@
                 <input type="file" id="profilePicInput" accept="image/*" style="margin-top:10px;">
                 <button id="uploadProfilePicBtn" class="admin-toggle" style="margin-top:10px;">Upload Picture</button>
             </div>
+
+            <!-- Superadmin only: PDF upload shortcut in Account page -->
+            <div id="superAdminPdfAccountSection" style="display:none;background:white;border-radius:20px;padding:20px;margin-top:16px;">
+                <h4 style="color:#4B2E9E;margin:0 0 4px;">📤 Upload Learning Materials</h4>
+                <p style="font-size:12px;color:#888;margin:0 0 14px;">Add PDFs that all students can access in the Resources section.</p>
+                <input type="text" id="accPdfTitle" placeholder="PDF Title *" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
+                <input type="text" id="accPdfCategory" placeholder="Subject / Category (e.g. Mathematics)" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
+                <div style="font-size:12px;color:#888;margin-bottom:4px;">Upload a file <em>or</em> paste a URL:</div>
+                <input type="file" id="accPdfFile" accept="application/pdf" style="font-size:13px;margin-bottom:6px;">
+                <input type="text" id="accPdfUrl" placeholder="— or paste PDF URL here —" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
+                <div id="accPdfStatus" style="font-size:12px;color:#555;min-height:18px;margin-bottom:6px;"></div>
+                <button id="accAddPdfBtn" style="background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:white;border:none;padding:13px;border-radius:25px;font-weight:700;font-size:15px;cursor:pointer;width:100%;">➕ Upload PDF</button>
+                <div id="accPdfList" style="margin-top:14px;"></div>
+            </div>
             <!-- My Weak Areas (students only) -->
             <div id="myWeakAreasCard" class="account-card" style="margin-top:16px;display:none;">
                 <h4 style="margin:0 0 8px;color:#4B2E9E;">🎯 My Weak Areas</h4>
@@ -5051,10 +5065,13 @@
         document.getElementById('liveNavItem').style.display = showLiveNav ? "flex" : "none";
         // Teacher dashboard nav item
         document.getElementById('teacherNavItem').style.display = isTeacher ? "flex" : "none";
-        // Profile pic
+        // Profile pic — hidden for superadmin and school
         const profilePicSection = document.getElementById('profilePicUploadSection');
-        // Superadmin and School have no personal profile pic; Teachers and Students do
         if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper) ? "none" : "block";
+        // Superadmin gets a PDF upload card in their account page instead
+        const superPdfAcc = document.getElementById('superAdminPdfAccountSection');
+        if(superPdfAcc) superPdfAcc.style.display = isSuper ? "block" : "none";
+        if(isSuper) renderAccPdfList();
         // School logo
         if(isSchool) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
@@ -5465,6 +5482,81 @@
             document.getElementById('pdfTitle').value = '';
             document.getElementById('pdfUrl').value = '';
             const catEl2 = document.getElementById('pdfCategory'); if(catEl2) catEl2.value = '';
+        }
+    });
+
+    // ===== ACCOUNT PAGE: SUPERADMIN PDF UPLOAD =====
+    async function renderAccPdfList() {
+        const listEl = document.getElementById('accPdfList'); if(!listEl) return;
+        try {
+            const snap = await getDocs(query(collection(db,'pdfs'),orderBy('uploadedAt','desc')));
+            if(snap.empty){ listEl.innerHTML='<div style="color:#999;font-size:13px;text-align:center;padding:10px;">No PDFs uploaded yet.</div>'; return; }
+            listEl.innerHTML = snap.docs.slice(0,8).map(d=>{
+                const f=d.data();
+                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${escHtml(f.title||'Untitled')}</div>
+                        <div style="font-size:11px;color:#999;">${escHtml(f.category||'General')} &bull; ${escHtml((f.uploadedAt||'').slice(0,10))}</div>
+                    </div>
+                    <button onclick="deleteAccPdf('${d.id}','${escHtml(f.storagePath||'')}')" style="background:none;border:none;color:#c62828;font-size:18px;cursor:pointer;flex-shrink:0;padding:4px 6px;">🗑</button>
+                </div>`;
+            }).join('') + (snap.docs.length>8?`<div style="font-size:11px;color:#999;text-align:center;padding:8px 0;">+${snap.docs.length-8} more in Admin Panel</div>`:'');
+        } catch(_){ listEl.innerHTML=''; }
+    }
+    async function deleteAccPdf(docId, storagePath) {
+        if(!confirm('Delete this PDF?')) return;
+        try {
+            await deleteDoc(doc(db,'pdfs',docId));
+            if(storagePath) { try { await deleteObject(storageRef(storage,storagePath)); } catch(_){} }
+            showNotification('PDF deleted');
+            renderAccPdfList();
+        } catch(e){ showNotification('Error: '+e.message,'error'); }
+    }
+    window.deleteAccPdf = deleteAccPdf;
+
+    document.getElementById('accAddPdfBtn')?.addEventListener('click', async () => {
+        const title = document.getElementById('accPdfTitle').value.trim();
+        const urlInput = document.getElementById('accPdfUrl').value.trim();
+        const fileInput = document.getElementById('accPdfFile');
+        const file = fileInput?.files[0];
+        const statusEl = document.getElementById('accPdfStatus');
+        const btn = document.getElementById('accAddPdfBtn');
+        if(!title){ showNotification('Enter a PDF title','error'); return; }
+        if(!file && !urlInput){ showNotification('Upload a file or paste a URL','error'); return; }
+        const category = (document.getElementById('accPdfCategory')?.value.trim())||'General';
+
+        if(file) {
+            if(file.type!=='application/pdf'){ showNotification('Please select a PDF file','error'); return; }
+            btn.disabled=true;
+            statusEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:5px;background:#e0e0e0;border-radius:3px;overflow:hidden;"><div id="accPdfBar" style="height:100%;background:#4B2E9E;width:0%;transition:width 0.2s;"></div></div><span id="accPdfPct">0%</span></div>`;
+            const path=`adminPdfs/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+            const fRef=storageRef(storage,path);
+            const task=uploadBytesResumable(fRef,file);
+            task.on('state_changed',
+                snap=>{ const pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100); const b=document.getElementById('accPdfBar'); const p=document.getElementById('accPdfPct'); if(b)b.style.width=pct+'%'; if(p)p.textContent=pct+'%'; },
+                err=>{ statusEl.textContent='❌ '+err.message; btn.disabled=false; },
+                async ()=>{
+                    const url=await getDownloadURL(task.snapshot.ref);
+                    await addDoc(collection(db,'pdfs'),{ title, url, storagePath:path, category, views:0, fileSize:file.size, uploadedAt:new Date().toISOString() });
+                    statusEl.textContent='✅ Uploaded!';
+                    document.getElementById('accPdfTitle').value='';
+                    document.getElementById('accPdfCategory').value='';
+                    fileInput.value='';
+                    btn.disabled=false;
+                    showNotification('PDF uploaded!');
+                    writeNotification('pdf','New PDF Available',`"${title}" has been added to Resources`);
+                    renderAccPdfList();
+                }
+            );
+        } else {
+            await addDoc(collection(db,'pdfs'),{ title, url:urlInput, category, views:0, uploadedAt:new Date().toISOString() });
+            showNotification('PDF added');
+            writeNotification('pdf','New PDF Available',`"${title}" has been added to Resources`);
+            document.getElementById('accPdfTitle').value='';
+            document.getElementById('accPdfUrl').value='';
+            document.getElementById('accPdfCategory').value='';
+            statusEl.textContent='';
+            renderAccPdfList();
         }
     });
 
