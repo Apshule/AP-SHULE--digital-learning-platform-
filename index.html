@@ -1354,7 +1354,7 @@
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
-            <div id="profilePicUploadSection" class="profile-pic-upload">
+            <div id="profilePicUploadSection" class="profile-pic-upload" style="display:none;">
                 <h4>Profile Picture</h4>
                 <img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile preview">
                 <input type="file" id="profilePicInput" accept="image/*" style="margin-top:10px;">
@@ -2702,8 +2702,20 @@
                 }))();
             } else { delete saveData.photoDataUrl; }
             await addDoc(collection(db,'admissionForms'), saveData);
-            // Notify superadmin
-            try { await addDoc(collection(db,'notifications'),{ userId:'superadmin', title:'📋 New Admission Form', body:`New form from ${data.fullName} (${data.class}) — ${formNo}`, read:false, createdAt:new Date().toISOString() }); } catch(_){}
+            // Notify superadmin — look up their real Firebase UID from appConfig
+            try {
+                const adminCfg = await getDoc(doc(db,'appConfig','superadmin'));
+                const adminUid = adminCfg.exists() ? adminCfg.data().uid : null;
+                if(adminUid) {
+                    await addDoc(collection(db,'notifications'),{
+                        targetUserId: adminUid,
+                        title: '📋 New Admission Form',
+                        body: `New form from ${data.fullName} (${data.class}) — ${formNo}. Open Admin Panel → Admissions to review.`,
+                        timestamp: new Date().toISOString(),
+                        author: data.fullName || 'Student'
+                    });
+                }
+            } catch(_){}
 
             // Show success state
             const fnoEl=document.getElementById('admSuccessFormNo');
@@ -2802,11 +2814,12 @@
     }
     window.reDownloadAdmissionPDF=reDownloadAdmissionPDF;
 
-    async function loadAdmissionFormsAdmin() {
+    let _admFormsUnsub = null;
+    function loadAdmissionFormsAdmin() {
         const c=document.getElementById('admissionFormsAdminList'); if(!c) return;
         c.innerHTML='<div style="color:#999;font-size:13px;">Loading…</div>';
-        try {
-            const snap=await getDocs(query(collection(db,'admissionForms')));
+        if(_admFormsUnsub){ _admFormsUnsub(); _admFormsUnsub=null; }
+        function renderForms(snap) {
             if(snap.empty){ c.innerHTML='<div style="color:#999;font-size:13px;">No submissions yet.</div>'; return; }
             const forms=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.submittedAt||'').localeCompare(a.submittedAt||''));
             c.innerHTML=forms.map(f=>{
@@ -2833,7 +2846,12 @@
                     ${actions?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${actions}</div>`:''}
                 </div>`;
             }).join('');
-        } catch(e){ c.innerHTML=`<div style="color:#c00;font-size:13px;">Error: ${escHtml(e.message)}</div>`; }
+        }
+        _admFormsUnsub = onSnapshot(
+            collection(db,'admissionForms'),
+            snap => renderForms(snap),
+            e => { c.innerHTML=`<div style="color:#c00;font-size:13px;">Error: ${escHtml(e.message)}</div>`; }
+        );
     }
 
     async function adminApproveAdmission(formId, studentUid, studentName) {
@@ -3497,15 +3515,21 @@
                 accessFee: 0,
                 createdAt: new Date().toISOString()
             });
-            // Notify superadmin via Firestore
-            await addDoc(collection(db, 'notifications'), {
-                type: 'admin',
-                title: '📡 New Live Lesson Request',
-                body: `${currentUser.name} requests a live lesson: "${title}". Please review in Admin Panel.`,
-                timestamp: new Date().toISOString(),
-                author: currentUser.name,
-                targetUserId: 'superadmin_only'
-            });
+            // Notify superadmin — look up their real Firebase UID from appConfig
+            try {
+                const adminCfg = await getDoc(doc(db,'appConfig','superadmin'));
+                const adminUid = adminCfg.exists() ? adminCfg.data().uid : null;
+                if(adminUid) {
+                    await addDoc(collection(db,'notifications'), {
+                        type: 'admin',
+                        title: '📡 New Live Lesson Request',
+                        body: `${currentUser.name} requests a live lesson: "${title}". Open Admin Panel → Live Lessons to review.`,
+                        timestamp: new Date().toISOString(),
+                        author: currentUser.name,
+                        targetUserId: adminUid
+                    });
+                }
+            } catch(_){}
             status.style.color = '#4CAF50';
             status.textContent = '✅ Request submitted! Awaiting superadmin approval.';
             document.getElementById('liveLessonTitle').value = '';
@@ -5065,6 +5089,10 @@
         const isSuper = currentUser.role === 'superadmin';
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';
+        // Store superadmin UID so students/teachers can send targeted notifications
+        if(isSuper) {
+            setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});
+        }
         document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
         document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
