@@ -1067,7 +1067,7 @@
                             <div>
                                 <label style="font-size:12px;font-weight:600;color:#4B2E9E;">Frequency</label>
                                 <select id="notifFrequency" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:10px;margin-top:3px;font-size:13px;">
-                                    <option value="once">Send Once (Now)</option>
+                                    <option value="once">Send Once</option>
                                     <option value="daily">Daily</option>
                                     <option value="weekly">Weekly</option>
                                     <option value="monthly">Monthly</option>
@@ -1082,7 +1082,20 @@
                                 </select>
                             </div>
                         </div>
-                        <button id="sendAnnouncementBtn" class="admin-toggle" style="margin-top:8px;width:100%;background:#4B2E9E;color:white;font-weight:700;">📢 Send to All Students</button>
+                        <!-- Scheduled delivery row — visible for "Send Once" only -->
+                        <div id="notifScheduleWrap" style="margin-top:8px;padding:10px;background:#f3eeff;border-radius:12px;border:1.5px solid #ede0ff;">
+                            <label style="font-size:12px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:6px;">🕐 When to send</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                                <button type="button" class="sched-preset" data-offset="0" style="padding:5px 10px;border:1.5px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:12px;font-weight:600;cursor:pointer;">Now</button>
+                                <button type="button" class="sched-preset" data-offset="3600000" style="padding:5px 10px;border:1.5px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:12px;font-weight:600;cursor:pointer;">In 1 hour</button>
+                                <button type="button" class="sched-preset" data-offset="10800000" style="padding:5px 10px;border:1.5px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:12px;font-weight:600;cursor:pointer;">In 3 hours</button>
+                                <button type="button" class="sched-preset" data-preset="tonight" style="padding:5px 10px;border:1.5px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:12px;font-weight:600;cursor:pointer;">Tonight 8 pm</button>
+                                <button type="button" class="sched-preset" data-preset="tomorrow" style="padding:5px 10px;border:1.5px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:12px;font-weight:600;cursor:pointer;">Tomorrow 9 am</button>
+                            </div>
+                            <input type="datetime-local" id="notifScheduleAt" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                            <div id="notifSchedulePreview" style="font-size:11px;color:#888;margin-top:4px;min-height:14px;"></div>
+                        </div>
+                        <button id="sendAnnouncementBtn" class="admin-toggle" style="margin-top:8px;width:100%;background:#4B2E9E;color:white;font-weight:700;">📢 Send Now to All Students</button>
                         <div id="scheduledNotifsList" style="margin-top:10px;"></div>
                         <div id="announcementStatus" style="font-size:12px;color:#4B2E9E;margin-top:6px;text-align:center;min-height:16px;"></div>
                     </div>
@@ -5692,21 +5705,141 @@
 
     function loadScheduledNotifs() {
         const container = document.getElementById('scheduledNotifsList'); if(!container) return;
-        onSnapshot(query(collection(db,'scheduledNotifications'), orderBy('createdAt','desc'), limit(10)), snap => {
+        onSnapshot(query(collection(db,'scheduledNotifications'), orderBy('createdAt','desc'), limit(20)), snap => {
             if(snap.empty) { container.innerHTML=''; return; }
-            container.innerHTML = '<div style="font-size:12px;font-weight:600;color:#4B2E9E;margin-bottom:6px;">📅 Scheduled</div>' + snap.docs.map(d=>{
+            const now = new Date();
+            // Fire any pending one-time notifications whose time has come
+            snap.docs.forEach(async d => {
+                const s = d.data();
+                if(s.frequency === 'once' && s.sent === false && s.nextSendAt) {
+                    const fireAt = new Date(s.nextSendAt);
+                    if(fireAt <= now) {
+                        // Send and mark as sent atomically
+                        try {
+                            await writeNotification(null, s.title, s.body || '');
+                            await updateDoc(doc(db,'scheduledNotifications',d.id), { sent: true, sentAt: now.toISOString() });
+                        } catch(e) { console.warn('[sched] fire error', e); }
+                    }
+                }
+            });
+            // Render list — hide already-sent one-time items
+            const pending = snap.docs.filter(d => {
+                const s = d.data();
+                return !(s.frequency === 'once' && s.sent === true);
+            });
+            if(pending.length === 0) { container.innerHTML=''; return; }
+            container.innerHTML = '<div style="font-size:12px;font-weight:600;color:#4B2E9E;margin-bottom:6px;">📅 Scheduled</div>' + pending.map(d=>{
                 const s=d.data();
+                const fireAt = s.nextSendAt ? new Date(s.nextSendAt) : null;
+                const timeLabel = fireAt ? fireAt.toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'soon';
+                const freqLabel = s.frequency === 'once' ? '🕐 one-time' : `🔁 ${s.frequency} · ${s.timesPerDay||1}×/day`;
                 return `<div style="display:flex;justify-content:space-between;align-items:center;background:#f0eeff;border-radius:8px;padding:6px 10px;margin-bottom:4px;font-size:12px;">
-                    <div><strong>${escHtml(s.title)}</strong><br><span style="color:#888;">${s.frequency} · ${s.timesPerDay}×/day · next: ${s.nextSendAt?new Date(s.nextSendAt).toLocaleDateString():'soon'}</span></div>
+                    <div><strong>${escHtml(s.title)}</strong><br><span style="color:#888;">${freqLabel} · ${timeLabel}</span></div>
                     <button onclick="cancelScheduledNotif('${d.id}')" style="background:#ffebee;border:none;color:#c62828;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;">✕</button>
                 </div>`;
             }).join('');
         });
+        // Poll every minute so one-time scheduled items fire promptly
+        if(!window._schedNotifPollTimer) {
+            window._schedNotifPollTimer = setInterval(() => {
+                // Re-trigger by reading and checking — the onSnapshot above handles firing
+                // This just ensures we re-evaluate at least once per minute
+                getDocs(query(collection(db,'scheduledNotifications'),
+                    where('frequency','==','once'), where('sent','==',false)
+                )).then(snap => {
+                    const now = new Date();
+                    snap.docs.forEach(async d => {
+                        const s = d.data();
+                        if(s.nextSendAt && new Date(s.nextSendAt) <= now) {
+                            try {
+                                await writeNotification(null, s.title, s.body || '');
+                                await updateDoc(doc(db,'scheduledNotifications',d.id), { sent: true, sentAt: now.toISOString() });
+                            } catch(e) { console.warn('[sched poll] fire error', e); }
+                        }
+                    });
+                }).catch(()=>{});
+            }, 60000);
+        }
     }
     window.cancelScheduledNotif = async function(id) {
         await deleteDoc(doc(db,'scheduledNotifications',id));
         showNotification('Scheduled notification cancelled');
     };
+
+    // ── Announcement scheduling UI logic ─────────────────────────────────────
+    (function() {
+        var freqEl = document.getElementById('notifFrequency');
+        var schedWrap = document.getElementById('notifScheduleWrap');
+        var schedAt = document.getElementById('notifScheduleAt');
+        var schedPreview = document.getElementById('notifSchedulePreview');
+        var sendBtn = document.getElementById('sendAnnouncementBtn');
+
+        // Format a Date as "YYYY-MM-DDTHH:MM" for datetime-local input
+        function toLocalInput(d) {
+            var y = d.getFullYear(), mo = String(d.getMonth()+1).padStart(2,'0'),
+                dd = String(d.getDate()).padStart(2,'0'),
+                h = String(d.getHours()).padStart(2,'0'), m = String(d.getMinutes()).padStart(2,'0');
+            return y+'-'+mo+'-'+dd+'T'+h+':'+m;
+        }
+
+        function updatePreview() {
+            if(!schedAt || !schedPreview) return;
+            var val = schedAt.value;
+            if(!val) { schedPreview.textContent = ''; return; }
+            var d = new Date(val);
+            var now = new Date();
+            var diff = d - now;
+            if(diff <= 30000) { schedPreview.textContent = 'Will send immediately'; return; }
+            var mins = Math.round(diff/60000);
+            if(mins < 60) { schedPreview.textContent = 'Sends in ~'+mins+' min'; return; }
+            var hrs = Math.floor(mins/60), remMin = mins%60;
+            var label = 'Sends in ~'+hrs+'h';
+            if(remMin) label += ' '+remMin+'m';
+            schedPreview.textContent = label;
+            // Update button label
+            if(sendBtn && freqEl && freqEl.value === 'once') {
+                sendBtn.textContent = diff <= 30000 ? '📢 Send Now to All Students' : '🕐 Schedule for '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+            }
+        }
+
+        // Preset buttons
+        document.querySelectorAll('.sched-preset').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var now = new Date();
+                var offset = btn.dataset.offset;
+                var preset = btn.dataset.preset;
+                var target;
+                if(preset === 'tonight') {
+                    target = new Date(now); target.setHours(20,0,0,0);
+                    if(target <= now) target.setDate(target.getDate()+1);
+                } else if(preset === 'tomorrow') {
+                    target = new Date(now); target.setDate(target.getDate()+1); target.setHours(9,0,0,0);
+                } else {
+                    target = new Date(now.getTime() + parseInt(offset,10));
+                }
+                if(schedAt) { schedAt.value = toLocalInput(target); updatePreview(); }
+                // Highlight active preset
+                document.querySelectorAll('.sched-preset').forEach(function(b){ b.style.background='white'; b.style.color='#4B2E9E'; });
+                btn.style.background = '#4B2E9E'; btn.style.color = 'white';
+            });
+        });
+        if(schedAt) schedAt.addEventListener('change', function() {
+            document.querySelectorAll('.sched-preset').forEach(function(b){ b.style.background='white'; b.style.color='#4B2E9E'; });
+            updatePreview();
+        });
+
+        // Show/hide schedule row based on frequency; default to "Now"
+        function syncFreqUI() {
+            var freq = freqEl ? freqEl.value : 'once';
+            if(schedWrap) schedWrap.style.display = freq === 'once' ? '' : 'none';
+            if(sendBtn) sendBtn.textContent = freq === 'once' ? '📢 Send Now to All Students' : '📢 Send + Schedule '+freq.charAt(0).toUpperCase()+freq.slice(1);
+        }
+        if(freqEl) freqEl.addEventListener('change', syncFreqUI);
+
+        // Set default to "Now"
+        if(schedAt) { schedAt.value = toLocalInput(new Date()); updatePreview(); }
+        syncFreqUI();
+    })();
 
     document.getElementById('sendAnnouncementBtn')?.addEventListener('click', async () => {
         const title = document.getElementById('announcementTitle').value.trim();
@@ -5716,12 +5849,40 @@
         const statusEl = document.getElementById('announcementStatus');
         const btn = document.getElementById('sendAnnouncementBtn');
         if(!title) { showNotification("Enter an announcement title","error"); return; }
-        btn.disabled = true; statusEl.textContent = freq === 'once' ? 'Sending…' : 'Scheduling…';
-        // Always send immediately once
-        await writeNotification(null, title, body);
-        if(freq !== 'once') {
-            // Also save as scheduled for recurring sends
-            const now = new Date();
+
+        const now = new Date();
+
+        if(freq === 'once') {
+            // Determine scheduled time
+            const schedVal = document.getElementById('notifScheduleAt')?.value;
+            const sendAt = schedVal ? new Date(schedVal) : now;
+            const delayMs = sendAt - now;
+            const isScheduled = delayMs > 30000; // >30s in the future = schedule it
+
+            btn.disabled = true;
+            statusEl.textContent = isScheduled ? 'Scheduling…' : 'Sending…';
+
+            if(isScheduled) {
+                // Save to Firestore as a pending scheduled notification
+                await addDoc(collection(db,'scheduledNotifications'), {
+                    title, body, frequency: 'once', timesPerDay: 1,
+                    nextSendAt: sendAt.toISOString(),
+                    createdAt: now.toISOString(), createdBy: currentUser.uid,
+                    sent: false
+                });
+                const timeLabel = sendAt.toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'});
+                statusEl.textContent = '✅ Scheduled for '+timeLabel+'!';
+                showNotification('Announcement scheduled for '+timeLabel);
+            } else {
+                // Send immediately
+                await writeNotification(null, title, body);
+                statusEl.textContent = '✅ Announcement sent to all students!';
+                showNotification("Announcement broadcast!");
+            }
+        } else {
+            // Recurring — send once now and store schedule
+            btn.disabled = true; statusEl.textContent = 'Sending + Scheduling…';
+            await writeNotification(null, title, body);
             let nextSendAt;
             if(freq === 'daily') { nextSendAt = new Date(now.getTime() + 24*60*60*1000/timesPerDay); }
             else if(freq === 'weekly') { nextSendAt = new Date(now.getTime() + 7*24*60*60*1000); }
@@ -5731,14 +5892,21 @@
                 nextSendAt: nextSendAt.toISOString(),
                 createdAt: now.toISOString(), createdBy: currentUser.uid
             });
-            statusEl.textContent = `✅ Sent now + scheduled ${freq}!`;
-        } else {
-            statusEl.textContent = '✅ Announcement sent to all students!';
+            statusEl.textContent = '✅ Sent now + scheduled '+freq+'!';
+            showNotification('Sent + scheduled '+freq+'!');
         }
+
         document.getElementById('announcementTitle').value = '';
         document.getElementById('announcementBody').value = '';
+        // Reset schedule picker to "Now"
+        var schedAt = document.getElementById('notifScheduleAt');
+        if(schedAt) {
+            var n = new Date(); var y=n.getFullYear(),mo=String(n.getMonth()+1).padStart(2,'0'),dd=String(n.getDate()).padStart(2,'0'),h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0');
+            schedAt.value = y+'-'+mo+'-'+dd+'T'+h+':'+m;
+        }
+        document.querySelectorAll('.sched-preset').forEach(function(b){ b.style.background='white'; b.style.color='#4B2E9E'; });
         btn.disabled = false;
-        showNotification(freq !== 'once' ? `Sent + scheduled ${freq}!` : "Announcement broadcast!");
+        if(document.getElementById('sendAnnouncementBtn')) document.getElementById('sendAnnouncementBtn').textContent = '📢 Send Now to All Students';
         setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 5000);
     });
 
