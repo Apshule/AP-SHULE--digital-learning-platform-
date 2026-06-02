@@ -507,7 +507,6 @@
         .my-q-answer strong { display: block; font-size: 11px; color: #4CAF50; margin-bottom: 4px; }
         .my-q-pending { font-size: 12px; color: #FF8C42; font-style: italic; }
     </style>
-    <script src="https://checkout.flutterwave.com/v3.js"></script>
 </head>
 <body>
 
@@ -2241,100 +2240,9 @@
         }
     });
 
-    // ===== FLUTTERWAVE PAY =====
-    let _flwKey = null;
-
-    function showPaymentLoading(show, msg) {
-        let existing = document.getElementById('paymentLoadingOverlay');
-        if(show) {
-            const text = msg || 'Processing payment\u2026';
-            if(!existing) {
-                let div = document.createElement('div');
-                div.id = 'paymentLoadingOverlay';
-                div.className = 'payment-loading';
-                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>' + text + '</span>';
-                document.body.appendChild(div);
-            } else {
-                existing.style.display = 'flex';
-                const span = existing.querySelector('span');
-                if(span) span.textContent = text;
-            }
-        } else { if(existing) existing.style.display = 'none'; }
-    }
-
-    async function _loadFlwKey() {
-        if(_flwKey) return _flwKey;
-        const res = await fetch('/api/payment/flw/public-key');
-        const d = await res.json();
-        if(!d.publicKey) throw new Error(d.error || 'Payment not configured');
-        _flwKey = d.publicKey;
-        return _flwKey;
-    }
-
-    async function _flwOnSuccess(txId, ctx) {
-        showPaymentLoading(true, 'Verifying payment\u2026');
-        try {
-            const res = await fetch('/api/payment/flw/verify', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ transactionId: txId })
-            });
-            const data = await res.json();
-            if(data.ok && data.status === 'successful') {
-                if(ctx.type === 'live_access' && ctx.lessonId && currentUser) {
-                    const lsnap = await getDoc(doc(db, 'liveLessons', ctx.lessonId));
-                    const lesson = lsnap.data() || {};
-                    const token = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2)));
-                    await addDoc(collection(db, 'liveAccess'), {
-                        lessonId: ctx.lessonId, lessonTitle: ctx.lessonTitle || lesson.title || '',
-                        meetingLink: lesson.link || '', userId: currentUser.uid,
-                        userEmail: currentUser.email, userName: currentUser.name,
-                        token, deviceId: null, used: false,
-                        createdBy: 'flw_payment', transactionId: String(txId), createdAt: new Date().toISOString()
-                    });
-                    showNotification('\u2705 Payment confirmed! Access granted \u2014 tap "Join Live Lesson".', 'success');
-                    listenLiveLessons();
-                } else if(ctx.type === 'live_plan' && currentUser) {
-                    await addDoc(collection(db, 'livePaymentRequests'), {
-                        planType: ctx.planType, fee: ctx.price || 0,
-                        userId: currentUser.uid, userEmail: currentUser.email, userName: currentUser.name,
-                        transactionRef: String(txId), paymentMethod: 'Flutterwave',
-                        approved: false, createdAt: new Date().toISOString()
-                    });
-                    await writeNotification(currentUser.uid, '\ud83d\udce1 Live Plan Payment Received',
-                        'Your ' + ctx.planType + ' live plan payment has been received. We\u2019ll activate it shortly.');
-                    showNotification('\u2705 Payment received! Admin will activate your live plan shortly.', 'success');
-                } else {
-                    if(currentUser) await updateDoc(doc(db, 'users', currentUser.uid),
-                        { subscriptionActive: true, subscription: String(txId), subscriptionDate: new Date().toISOString() });
-                    showNotification('\u2705 Payment successful! Subscription active.', 'success');
-                }
-            } else { showNotification('Payment verification failed: ' + (data.error || 'Please contact support'), 'error'); }
-        } catch(err) { showNotification('Failed to verify payment', 'error'); }
-        finally { showPaymentLoading(false); }
-    }
-
-    async function initiateFlutterwavePayment(plan, amount, email, phone, name, ctx) {
-        showPaymentLoading(true, 'Preparing payment\u2026');
-        try {
-            const publicKey = await _loadFlwKey();
-            showPaymentLoading(false);
-            const _ctx = ctx || {};
-            FlutterwaveCheckout({
-                public_key: publicKey,
-                tx_ref: (_ctx.type||'PAY').toUpperCase() + '_' + Date.now() + '_' + currentUser.uid,
-                amount,
-                currency: 'UGX',
-                payment_options: 'mobilemoneyuganda, card',
-                customer: { email: email||'', phone_number: phone||'', name: name||'' },
-                customizations: { title: 'APSHULE', description: plan },
-                callback: function(data) {
-                    if(data.status === 'successful') {
-                        _flwOnSuccess(data.transaction_id, _ctx);
-                    } else { showNotification('Payment was not completed', 'error'); }
-                },
-                onclose: function() { showPaymentLoading(false); }
-            });
-        } catch(err) { showNotification('Payment error: ' + err.message, 'error'); showPaymentLoading(false); }
+    // ===== PAYMENT =====
+    function initiateFlutterwavePayment() {
+        showNotification('Online payment is coming soon. Please contact us to arrange payment.', 'info');
     }
 
     // ===== FEEDBACK / QUESTIONS =====
