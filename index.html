@@ -2816,7 +2816,7 @@
         if(!confirm(`Approve admission for ${studentName}?\nStudent will be notified immediately.`)) return;
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'approved', approvedAt:new Date().toISOString(), approvedBy:currentUser?.uid });
-            if(studentUid) await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your ApShule admission has been approved. You are now free to study. Welcome to the family! 🎓`, timestamp:new Date().toISOString(), author:'APSHULE Admin' });
+            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your ApShule admission has been approved. You are now free to study. Welcome to the family! 🎓`, timestamp:new Date().toISOString(), author:'APSHULE Admin' }); sendFcmPush(studentUid,'🎉 Admission Approved!',`Congratulations ${studentName}! Your admission has been approved.`); }
             showNotification(`${studentName} approved ✅`);
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -2827,7 +2827,7 @@
         const reason=prompt('Reason for declining (leave blank to skip):')||'';
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'declined', declineReason:reason, declinedAt:new Date().toISOString(), declinedBy:currentUser?.uid });
-            if(studentUid) await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'❌ Admission Not Approved', body:`Your ApShule admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, timestamp:new Date().toISOString(), author:'APSHULE Admin' });
+            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'❌ Admission Not Approved', body:`Your ApShule admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, timestamp:new Date().toISOString(), author:'APSHULE Admin' }); sendFcmPush(studentUid,'❌ Admission Not Approved','Your admission form was not approved. Please contact the school.'); }
             showNotification('Declined — student notified');
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -3245,6 +3245,7 @@
                 author: responderName,
                 targetUserId: qdata.studentId
             });
+            if(qdata.studentId) sendFcmPush(qdata.studentId,'✅ Your question was answered!',`Answer: ${answer.substring(0,80)}`);
             showNotification("Answer sent! Student has been notified. ✅", "success");
             if(btn) btn.disabled = false;
         } catch(e) {
@@ -3620,6 +3621,7 @@
                 body:`Great news! Your lesson "${l.title}" has been approved by the admin and is now visible to all students. ${link?'Join link: '+link:''}`,
                 targetUserId:l.teacherId, timestamp:now, author:'APSHULE Admin'
             });
+            sendFcmPush(l.teacherId,'✅ Your Live Lesson Was Approved!',`"${l.title}" is now visible to all students.`);
         }
         showNotification('Lesson approved — teacher & students notified ✅');
     };
@@ -3671,6 +3673,7 @@
                 timestamp:new Date().toISOString(), author:'APSHULE Admin',
                 targetUserId: student.uid, liveToken: token, lessonId
             });
+            sendFcmPush(student.uid,'🔑 Your Live Lesson Access is Ready!',`You have been granted access to "${lesson.title}". Open Alerts to join.`);
             status.style.color='#4CAF50';
             status.textContent=`✅ Token sent to ${student.name || email}!`;
             document.getElementById('tokenStudentEmail').value='';
@@ -3744,6 +3747,7 @@
             timestamp:new Date().toISOString(), author:'APSHULE Admin',
             targetUserId:r.userId, liveToken:token, lessonId:r.lessonId
         });
+        sendFcmPush(r.userId,'🔑 Your Live Lesson Access is Ready!',`Your access link for "${lesson.title}" is ready. Open the app to join.`);
         showNotification(`✅ Token generated and sent to ${r.userName}`);
     };
 
@@ -5088,12 +5092,14 @@
         if(!targetUserId) return;
         try {
             const snap = await getDoc(doc(db,'users', targetUserId));
-            const token = snap.exists() ? snap.data().fcmToken : null;
-            if(!token) return;
+            const fcmToken = snap.exists() ? snap.data().fcmToken : null;
+            if(!fcmToken) return;
+            const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+            if(!idToken) return;
             fetch('/api/notifications/send', {
                 method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ token, title, body })
+                headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+idToken},
+                body: JSON.stringify({ token: fcmToken, title, body })
             }).catch(()=>{});
         } catch(_) {}
     }
@@ -5823,7 +5829,7 @@
     }
   }
 
-  async function setupFcmMessaging(uid) {
+  window.setupFcmMessaging = async function setupFcmMessaging(uid) {
     var m = window._fcmMessaging;
     if (!m) return;
     try {
@@ -5846,7 +5852,7 @@
     } catch(e) {
       console.warn('[APSHULE] FCM setup:', e.message);
     }
-  }
+  };
 
   var pushHistoryFilter = "all";
 
