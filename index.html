@@ -1753,6 +1753,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js" onerror="void 0"></script>
 
 <script>
     // Initialise Firebase (wrapped in try-catch so any error unblocks the login form)
@@ -1771,6 +1772,7 @@
         db      = firebase.firestore();
         storage = firebase.storage();
         window.db = db; window.auth = auth; window.storage = storage;
+        try { window._fcmMessaging = firebase.messaging(); } catch(_) {}
     } catch(e) {
         // Firebase SDK failed — unblock the UI immediately and show a useful message
         window._firebaseReady && window._firebaseReady();
@@ -3173,7 +3175,7 @@
                 document.getElementById('teacherPdfFile').value = '';
                 uploadBtn.disabled = false;
                 showNotification("PDF uploaded to Firebase Storage! 📄");
-                writeNotification('pdf', 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`);
+                writeNotification(null, 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`, 'pdf');
             }
         );
     });
@@ -3411,7 +3413,7 @@
         let key = `${classVal}_${subject}`;
         await setDoc(doc(db,"videoMappings",key), { subject, classKey:classVal, youtubeId, teacherId });
         showNotification(`Video saved for ${subject} in class ${classVal}`);
-        writeNotification('video', 'New Video Added', `${subject} lesson added for ${classVal}`);
+        writeNotification(null, 'New Video Added', `${subject} lesson added for ${classVal}`, 'video');
         document.getElementById('videoYoutubeId').value = '';
     }
 
@@ -3540,7 +3542,7 @@
                 createdAt: new Date().toISOString()
             });
             // Notify all users
-            await writeNotification('general', '📡 New Live Lesson Scheduled', `"${title}" ${date?'on '+date:''} — check Live Lessons tab for access.`);
+            await writeNotification(null, '📡 New Live Lesson Scheduled', `"${title}" ${date?'on '+date:''} — check Live Lessons tab for access.`);
             statusEl.style.color='#4CAF50'; statusEl.textContent='✅ Lesson scheduled and visible to students!';
             document.getElementById('adminLiveTitle').value='';
             document.getElementById('adminLiveLink').value='';
@@ -5036,6 +5038,8 @@
         if(Notification && Notification.permission === 'default') {
             Notification.requestPermission().catch(()=>{});
         }
+        // Set up FCM: register token + foreground message handler
+        setupFcmMessaging(user.uid).catch(()=>{});
         // Start notification listener for this user
         listenToNotifications();
         listenLiveLessons();
@@ -5080,14 +5084,29 @@
     let _notifUnsub = null; let _notifUnsub2 = null;
     let _allNotifs = [];
 
-    async function writeNotification(type, title, body) {
+    async function sendFcmPush(targetUserId, title, body) {
+        if(!targetUserId) return;
+        try {
+            const snap = await getDoc(doc(db,'users', targetUserId));
+            const token = snap.exists() ? snap.data().fcmToken : null;
+            if(!token) return;
+            fetch('/api/notifications/send', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ token, title, body })
+            }).catch(()=>{});
+        } catch(_) {}
+    }
+
+    async function writeNotification(targetUserId, title, body, type) {
         try {
             await addDoc(collection(db,"notifications"), {
-                type, title, body,
-                targetUserId: null,
+                type: type || 'general', title, body,
+                targetUserId: targetUserId || null,
                 timestamp: new Date().toISOString(),
                 author: currentUser?.name || 'Admin'
             });
+            if(targetUserId) sendFcmPush(targetUserId, title, body);
         } catch(e) {}
     }
 
@@ -5408,7 +5427,7 @@
                     if(fileInput) fileInput.value = '';
                     addBtn.disabled = false;
                     showNotification("PDF uploaded to Firebase Storage!");
-                    writeNotification('pdf', 'New PDF Available', `"${title}" has been added to Resources`);
+                    writeNotification(null, 'New PDF Available', `"${title}" has been added to Resources`, 'pdf');
                 }
             );
 
@@ -5419,7 +5438,7 @@
                 uploadedAt: new Date().toISOString()
             });
             showNotification("PDF added");
-            writeNotification('pdf', 'New PDF Available', `"${title}" has been added to Resources`);
+            writeNotification(null, 'New PDF Available', `"${title}" has been added to Resources`, 'pdf');
             if(statusEl) statusEl.textContent = '';
             document.getElementById('pdfTitle').value = '';
             document.getElementById('pdfUrl').value = '';
@@ -5486,14 +5505,14 @@
                     fileInput.value='';
                     btn.disabled=false;
                     showNotification('PDF uploaded!');
-                    writeNotification('pdf','New PDF Available',`"${title}" has been added to Resources`);
+                    writeNotification(null,'New PDF Available',`"${title}" has been added to Resources`,'pdf');
                     renderAccPdfList();
                 }
             );
         } else {
             await addDoc(collection(db,'pdfs'),{ title, url:urlInput, category, views:0, uploadedAt:new Date().toISOString() });
             showNotification('PDF added');
-            writeNotification('pdf','New PDF Available',`"${title}" has been added to Resources`);
+            writeNotification(null,'New PDF Available',`"${title}" has been added to Resources`,'pdf');
             document.getElementById('accPdfTitle').value='';
             document.getElementById('accPdfUrl').value='';
             document.getElementById('accPdfCategory').value='';
@@ -5696,7 +5715,7 @@
         if(!title) { showNotification("Enter an announcement title","error"); return; }
         btn.disabled = true; statusEl.textContent = freq === 'once' ? 'Sending…' : 'Scheduling…';
         // Always send immediately once
-        await writeNotification('general', title, body);
+        await writeNotification(null, title, body);
         if(freq !== 'once') {
             // Also save as scheduled for recurring sends
             const now = new Date();
@@ -5797,9 +5816,35 @@
 
       var registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
       await navigator.serviceWorker.ready;
+      window._swRegistration = registration;
       await registerWebPush(registration);
     } catch (err) {
       console.warn("[APSHULE] Service worker setup failed:", err);
+    }
+  }
+
+  async function setupFcmMessaging(uid) {
+    var m = window._fcmMessaging;
+    if (!m) return;
+    try {
+      var reg = window._swRegistration ||
+        (("serviceWorker" in navigator) ? await navigator.serviceWorker.ready : null);
+      if (!reg) return;
+      var token = await m.getToken({ serviceWorkerRegistration: reg });
+      if (!token) return;
+      // Save/refresh FCM token in user's Firestore doc
+      var userRef = window.db && firebase.firestore && window.db.collection('users').doc(uid);
+      if (userRef) userRef.set({ fcmToken: token }, { merge: true }).catch(()=>{});
+      // Show foreground push as in-app notification
+      m.onMessage(function(payload) {
+        var n = payload.notification || payload.data || {};
+        if (n.title) {
+          if (typeof showNotification === 'function') showNotification('🔔 ' + n.title + (n.body ? ': ' + n.body : ''), 'info');
+          if (typeof updateNotifBadge === 'function') updateNotifBadge();
+        }
+      });
+    } catch(e) {
+      console.warn('[APSHULE] FCM setup:', e.message);
     }
   }
 
