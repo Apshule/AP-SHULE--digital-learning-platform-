@@ -1880,8 +1880,6 @@
     function getDownloadURL(ref)            { return ref.getDownloadURL(); }
     function deleteObject(ref)              { return ref.delete(); }
 
-    var PESAPAL_BACKEND_URL = "https://pesapal-backend-73lm.onrender.com";
-
     // ===== GLOBAL STATE =====
     let currentUser = null;
     let schools = [];
@@ -2242,51 +2240,63 @@
         }
     });
 
-    // ===== PESAPAL =====
-    function showPaymentLoading(show) {
+    // ===== DPO PAY =====
+    function showPaymentLoading(show, msg) {
         let existing = document.getElementById('paymentLoadingOverlay');
         if(show) {
+            const text = msg || 'Redirecting to DPO Pay\u2026';
             if(!existing) {
                 let div = document.createElement('div');
                 div.id = 'paymentLoadingOverlay';
                 div.className = 'payment-loading';
-                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>Redirecting to Pesapal...</span>';
+                div.innerHTML = '<i class="fas fa-spinner fa-pulse fa-3x"></i><span>' + text + '</span>';
                 document.body.appendChild(div);
-            } else { existing.style.display = 'flex'; }
+            } else {
+                existing.style.display = 'flex';
+                const span = existing.querySelector('span');
+                if(span) span.textContent = text;
+            }
         } else { if(existing) existing.style.display = 'none'; }
     }
 
-    async function initiatePesapalPayment(plan, amount, email, phone, name) {
-        showPaymentLoading(true);
+    async function initiateDpoPayment(plan, amount, email, phone, name) {
+        showPaymentLoading(true, 'Redirecting to DPO Pay\u2026');
         try {
-            const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/initiate`, {
+            const res = await fetch('/api/payment/dpo/create', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, currency: "UGX", description: `${plan} Subscription - APSHULE`, email, phone, name, reference: `SUB_${Date.now()}_${currentUser.uid}` })
+                body: JSON.stringify({
+                    amount, currency: 'UGX',
+                    description: plan + ' Subscription - APSHULE',
+                    email, companyRef: 'SUB_' + Date.now() + '_' + currentUser.uid
+                })
             });
-            const data = await response.json();
-            if(data.redirect_url) {
-                sessionStorage.setItem('pesapal_order_tracking_id', data.order_tracking_id);
-                window.location.href = data.redirect_url;
-            } else { throw new Error(data.error || "Failed to initiate payment"); }
-        } catch(err) { showNotification("Payment error: " + err.message, "error"); showPaymentLoading(false); }
+            const data = await res.json();
+            if(data.payUrl) {
+                sessionStorage.setItem('dpo_trans_token', data.transToken);
+                window.location.href = data.payUrl;
+            } else { throw new Error(data.error || 'Failed to initiate payment'); }
+        } catch(err) { showNotification('Payment error: ' + err.message, 'error'); showPaymentLoading(false); }
     }
 
-    async function checkPaymentStatus() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderTrackingId = urlParams.get('OrderTrackingId');
-        const merchantReference = urlParams.get('OrderMerchantReference');
-        if(orderTrackingId && merchantReference) {
-            showPaymentLoading(true);
-            try {
-                const response = await fetch(`${PESAPAL_BACKEND_URL}/api/pesapal/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_tracking_id: orderTrackingId }) });
-                const data = await response.json();
-                if(data.status === "COMPLETED") {
-                    showNotification("✅ Payment successful! Subscription active.", "success");
-                    if(currentUser) await updateDoc(doc(db,"users",currentUser.uid), { subscription: merchantReference, subscriptionActive: true, subscriptionDate: new Date().toISOString() });
-                } else { showNotification("Payment not completed. Status: " + data.status, "error"); }
-            } catch(err) { showNotification("Failed to verify payment", "error"); }
-            finally { showPaymentLoading(false); window.history.replaceState({}, document.title, window.location.pathname); }
-        }
+    async function checkDpoPaymentStatus() {
+        const params = new URLSearchParams(window.location.search);
+        const transToken = params.get('TransactionToken') || sessionStorage.getItem('dpo_trans_token');
+        if(!transToken) return;
+        showPaymentLoading(true, 'Verifying payment\u2026');
+        try {
+            const res = await fetch('/api/payment/dpo/verify', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transToken })
+            });
+            const data = await res.json();
+            if(data.result === '000') {
+                showNotification('\u2705 Payment successful! Subscription active.', 'success');
+                if(currentUser) await updateDoc(doc(db, 'users', currentUser.uid),
+                    { subscriptionActive: true, subscription: transToken, subscriptionDate: new Date().toISOString() });
+                sessionStorage.removeItem('dpo_trans_token');
+            } else { showNotification('Payment not completed: ' + (data.explanation || data.result), 'error'); }
+        } catch(err) { showNotification('Failed to verify payment', 'error'); }
+        finally { showPaymentLoading(false); window.history.replaceState({}, document.title, window.location.pathname); }
     }
 
     // ===== FEEDBACK / QUESTIONS =====
@@ -2481,7 +2491,7 @@
         if(!currentUser) { alert('Please login first'); return; }
         const plan = btn.getAttribute('data-plan');
         const amount = parseInt(btn.getAttribute('data-price'));
-        initiatePesapalPayment(plan, amount, currentUser.email, currentUser.phone||"N/A", currentUser.name);
+        initiateDpoPayment(plan, amount, currentUser.email, currentUser.phone||"N/A", currentUser.name);
     };
 
     function renderSubscriptionPlansAdmin() {
@@ -5830,7 +5840,7 @@
     try { renderClasses(); } catch(e){ console.warn('renderClasses',e); }
     try { renderPdfList(); } catch(e){ console.warn('renderPdfList',e); }
     try { renderEventsTicker(); } catch(e){ console.warn('renderEventsTicker',e); }
-    try { checkPaymentStatus(); } catch(e){ console.warn('checkPaymentStatus',e); }
+    try { checkDpoPaymentStatus(); } catch(e){ console.warn('checkDpoPaymentStatus',e); }
 
     console.log("✅ APSHULE fully loaded with all features.");
 </script>
