@@ -2259,15 +2259,16 @@
         } else { if(existing) existing.style.display = 'none'; }
     }
 
-    async function initiateDpoPayment(plan, amount, email, phone, name) {
+    async function initiateDpoPayment(plan, amount, email, phone, name, ctx) {
         showPaymentLoading(true, 'Redirecting to DPO Pay\u2026');
+        if(ctx) sessionStorage.setItem('dpo_context', JSON.stringify(ctx));
         try {
             const res = await fetch('/api/payment/dpo/create', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     amount, currency: 'UGX',
-                    description: plan + ' Subscription - APSHULE',
-                    email, companyRef: 'SUB_' + Date.now() + '_' + currentUser.uid
+                    description: plan + ' - APSHULE',
+                    email, companyRef: (ctx&&ctx.type?ctx.type.toUpperCase():'PAY') + '_' + Date.now() + '_' + currentUser.uid
                 })
             });
             const data = await res.json();
@@ -2281,20 +2282,51 @@
     async function checkDpoPaymentStatus() {
         const params = new URLSearchParams(window.location.search);
         const transToken = params.get('TransactionToken') || sessionStorage.getItem('dpo_trans_token');
-        if(!transToken) return;
+        const pnrId = params.get('PnrID') || params.get('CCDapproval');
+        const payRef = transToken || pnrId;
+        if(!payRef) return;
         showPaymentLoading(true, 'Verifying payment\u2026');
         try {
             const res = await fetch('/api/payment/dpo/verify', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transToken })
+                body: JSON.stringify({ transToken: payRef })
             });
             const data = await res.json();
             if(data.result === '000') {
-                showNotification('\u2705 Payment successful! Subscription active.', 'success');
-                if(currentUser) await updateDoc(doc(db, 'users', currentUser.uid),
-                    { subscriptionActive: true, subscription: transToken, subscriptionDate: new Date().toISOString() });
+                let ctx = {};
+                try { ctx = JSON.parse(sessionStorage.getItem('dpo_context') || '{}'); } catch(_e){}
+
+                if(ctx.type === 'live_access' && ctx.lessonId && currentUser) {
+                    const lsnap = await getDoc(doc(db, 'liveLessons', ctx.lessonId));
+                    const lesson = lsnap.data() || {};
+                    const token = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36)+Math.random().toString(36).slice(2)));
+                    await addDoc(collection(db, 'liveAccess'), {
+                        lessonId: ctx.lessonId, lessonTitle: ctx.lessonTitle || lesson.title || '',
+                        meetingLink: lesson.link || '', userId: currentUser.uid,
+                        userEmail: currentUser.email, userName: currentUser.name,
+                        token, deviceId: null, used: false,
+                        createdBy: 'dpo_payment', transToken: payRef, createdAt: new Date().toISOString()
+                    });
+                    showNotification('\u2705 Payment confirmed! Access granted \u2014 tap "Join Live Lesson".', 'success');
+                    listenLiveLessons();
+                } else if(ctx.type === 'live_plan' && currentUser) {
+                    await addDoc(collection(db, 'livePaymentRequests'), {
+                        planType: ctx.planType, fee: ctx.price || 0,
+                        userId: currentUser.uid, userEmail: currentUser.email, userName: currentUser.name,
+                        transactionRef: payRef, paymentMethod: 'DPO Pay',
+                        approved: false, createdAt: new Date().toISOString()
+                    });
+                    await writeNotification(currentUser.uid, '\ud83d\udce1 Live Plan Payment Received',
+                        'Your ' + ctx.planType + ' live plan payment via DPO Pay has been received. We\u2019ll activate it shortly.');
+                    showNotification('\u2705 Payment received! Admin will activate your live plan shortly.', 'success');
+                } else {
+                    if(currentUser) await updateDoc(doc(db, 'users', currentUser.uid),
+                        { subscriptionActive: true, subscription: payRef, subscriptionDate: new Date().toISOString() });
+                    showNotification('\u2705 Payment successful! Subscription active.', 'success');
+                }
                 sessionStorage.removeItem('dpo_trans_token');
-            } else { showNotification('Payment not completed: ' + (data.explanation || data.result), 'error'); }
+                sessionStorage.removeItem('dpo_context');
+            } else { showNotification('Payment not completed: ' + (data.explanation || data.result || 'Unknown'), 'error'); }
         } catch(err) { showNotification('Failed to verify payment', 'error'); }
         finally { showPaymentLoading(false); window.history.replaceState({}, document.title, window.location.pathname); }
     }
@@ -2491,7 +2523,7 @@
         if(!currentUser) { alert('Please login first'); return; }
         const plan = btn.getAttribute('data-plan');
         const amount = parseInt(btn.getAttribute('data-price'));
-        initiateDpoPayment(plan, amount, currentUser.email, currentUser.phone||"N/A", currentUser.name);
+        initiateDpoPayment(plan, amount, currentUser.email, currentUser.phone||"N/A", currentUser.name, {type:'subscription'});
     };
 
     function renderSubscriptionPlansAdmin() {
@@ -3885,42 +3917,11 @@
             })();
             return;
         }
-        // Show payment modal
-        document.getElementById('livePayLessonId').value   = lessonId;
-        document.getElementById('livePayLessonTitle').textContent = lessonTitle;
-        document.getElementById('livePayFeeLabel').textContent = `UGX ${Number(fee).toLocaleString()}`;
-        document.getElementById('livePayTransRef').value   = '';
-        document.getElementById('livePayMethod').value     = 'MTN MoMo';
-        document.getElementById('livePayStatus').textContent = '';
-        document.getElementById('livePayModal').style.display='flex';
+        // Paid lesson — redirect to DPO Pay
+        initiateDpoPayment('Live Lesson Access', fee, currentUser.email, currentUser.phone||'N/A', currentUser.name,
+            {type:'live_access', lessonId, lessonTitle, fee});
     };
 
-    document.getElementById('livePaySubmitBtn')?.addEventListener('click', async () => {
-        const lessonId = document.getElementById('livePayLessonId').value;
-        const ref      = document.getElementById('livePayTransRef').value.trim();
-        const method   = document.getElementById('livePayMethod').value;
-        const status   = document.getElementById('livePayStatus');
-        if(!ref) { status.style.color='red'; status.textContent='Enter your transaction reference.'; return; }
-        if(!currentUser || !lessonId) return;
-        try {
-            document.getElementById('livePaySubmitBtn').disabled=true;
-            const lsnap = await getDoc(doc(db,'liveLessons',lessonId));
-            const lesson = lsnap.data();
-            await addDoc(collection(db,'livePaymentRequests'), {
-                lessonId, lessonTitle:lesson.title, fee:lesson.accessFee||0,
-                userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.name,
-                transactionRef:ref, paymentMethod:method,
-                approved:false, createdAt:new Date().toISOString()
-            });
-            status.style.color='#4CAF50';
-            status.textContent='✅ Payment request submitted! Admin will verify and send your access link shortly.';
-            document.getElementById('livePaySubmitBtn').disabled=false;
-            setTimeout(()=>document.getElementById('livePayModal').style.display='none',3000);
-        } catch(e) {
-            status.style.color='red'; status.textContent='Error. Try again.';
-            document.getElementById('livePaySubmitBtn').disabled=false;
-        }
-    });
     document.getElementById('livePayCancelBtn')?.addEventListener('click',()=>document.getElementById('livePayModal').style.display='none');
 
     // =====================================================================
@@ -4219,46 +4220,14 @@
     document.getElementById('livePlanPayClose')?.addEventListener('click',()=>document.getElementById('livePlanPayModal').style.display='none');
     document.getElementById('livePlanPayCancelBtn')?.addEventListener('click',()=>document.getElementById('livePlanPayModal').style.display='none');
 
-    document.getElementById('livePlanPaySubmitBtn')?.addEventListener('click', async () => {
+    document.getElementById('livePlanPaySubmitBtn')?.addEventListener('click', () => {
+        if(!currentUser) { showNotification('Please log in first','error'); return; }
         const planType = document.getElementById('livePlanPayType').value;
-        const ref = document.getElementById('livePlanPayRef').value.trim();
-        const method = document.getElementById('livePlanPayMethod').value;
-        const statusEl = document.getElementById('livePlanPayStatus');
-        const submitBtn = document.getElementById('livePlanPaySubmitBtn');
-        if(!ref) { statusEl.style.color='red'; statusEl.textContent='Enter your transaction reference.'; return; }
-        if(!currentUser) return;
-        submitBtn.disabled = true;
-        statusEl.style.color='#4B2E9E'; statusEl.textContent='Submitting…';
-        try {
-            const isPhase = planType === 'Termly_Phase';
-            const enrollId = submitBtn.dataset.enrollId;
-            const phase = parseInt(submitBtn.dataset.phase)||0;
-            const isPart = document.getElementById('livePlanPayPart')?.checked && planType==='Termly';
-            const paymentPhase = isPart ? 1 : (isPhase ? phase : null);
-            const totalPhases = (isPart||isPhase) ? 3 : null;
-            const durationDays = { Weekly:7, Monthly:30, Termly:90, Termly_Phase:90 };
-            const expiresAt = (() => {
-                const d = new Date(); d.setDate(d.getDate()+(durationDays[planType]||30)); return d.toISOString();
-            })();
-            await addDoc(collection(db,'livePaymentRequests'), {
-                planType: isPhase ? 'Termly' : planType,
-                fee: parseInt(document.getElementById('livePlanPayPrice').value)||0,
-                userId:currentUser.uid, userEmail:currentUser.email, userName:currentUser.name,
-                transactionRef:ref, paymentMethod:method,
-                approved:false,
-                ...(paymentPhase?{ partPayment:true, phase:paymentPhase, totalPhases }:{}),
-                ...(isPhase?{ existingEnrollId:enrollId }:{}),
-                createdAt:new Date().toISOString()
-            });
-            statusEl.style.color='#4CAF50';
-            statusEl.textContent='✅ Request submitted! Admin will verify and activate your plan.';
-            submitBtn.disabled=false;
-            setTimeout(()=>document.getElementById('livePlanPayModal').style.display='none',3000);
-            await writeNotification(currentUser.uid,'📡 Live Plan Request Received',`Your ${planType} live lesson plan payment has been submitted. We'll activate it after verification.`);
-        } catch(e) {
-            statusEl.style.color='red'; statusEl.textContent='Error. Try again.';
-            submitBtn.disabled=false;
-        }
+        const price    = parseInt(document.getElementById('livePlanPayPrice').value) || 0;
+        document.getElementById('livePlanPayModal').style.display = 'none';
+        initiateDpoPayment(planType + ' Live Plan', price,
+            currentUser.email, currentUser.phone||'N/A', currentUser.name,
+            {type:'live_plan', planType, price});
     });
 
     // ---- Feature 7: Enrollment form logic ----
