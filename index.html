@@ -2840,7 +2840,7 @@
         if(!confirm(`Approve admission for ${studentName}?\nStudent will be notified immediately.`)) return;
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'approved', approvedAt:new Date().toISOString(), approvedBy:currentUser?.uid });
-            if(studentUid) await addDoc(collection(db,'notifications'),{ userId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your ApShule admission has been approved. You are now free to study. Welcome to the family! 🎓`, read:false, createdAt:new Date().toISOString() });
+            if(studentUid) await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your ApShule admission has been approved. You are now free to study. Welcome to the family! 🎓`, timestamp:new Date().toISOString(), author:'APSHULE Admin' });
             showNotification(`${studentName} approved ✅`);
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -2851,7 +2851,7 @@
         const reason=prompt('Reason for declining (leave blank to skip):')||'';
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'declined', declineReason:reason, declinedAt:new Date().toISOString(), declinedBy:currentUser?.uid });
-            if(studentUid) await addDoc(collection(db,'notifications'),{ userId:studentUid, title:'❌ Admission Not Approved', body:`Your ApShule admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, read:false, createdAt:new Date().toISOString() });
+            if(studentUid) await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'❌ Admission Not Approved', body:`Your ApShule admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, timestamp:new Date().toISOString(), author:'APSHULE Admin' });
             showNotification('Declined — student notified');
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -3622,15 +3622,24 @@
             status:'approved', accessFee:fee, link,
             approvedBy:currentUser.uid, approvedAt: new Date().toISOString()
         });
-        // Notify all students
         const snap = await getDoc(doc(db,'liveLessons',docId));
         const l = snap.data();
+        const now = new Date().toISOString();
+        // Broadcast to all users (students, schools, everyone)
         await addDoc(collection(db,'notifications'), {
             type:'live', title:'📡 Live Lesson Available!',
-            body:`"${l.title}" by ${l.teacherName} is now open for enrolment. Fee: UGX ${Number(fee).toLocaleString()}. Open the Home tab to join!`,
-            timestamp:new Date().toISOString(), author:'APSHULE Admin', targetUserId:null
+            body:`"${l.title}" by ${l.teacherName} is now scheduled. Fee: UGX ${Number(fee).toLocaleString()||'FREE'}. Open the Live tab to join!`,
+            targetUserId:null, timestamp:now, author:'APSHULE Admin'
         });
-        showNotification('Lesson approved & students notified ✅');
+        // Notify the teacher who submitted the request
+        if(l.teacherId) {
+            await addDoc(collection(db,'notifications'), {
+                type:'live', title:'✅ Your Live Lesson Was Approved!',
+                body:`Great news! Your lesson "${l.title}" has been approved by the admin and is now visible to all students. ${link?'Join link: '+link:''}`,
+                targetUserId:l.teacherId, timestamp:now, author:'APSHULE Admin'
+            });
+        }
+        showNotification('Lesson approved — teacher & students notified ✅');
     };
 
     window.rejectLiveLesson = async function(docId) {
@@ -4052,13 +4061,14 @@
     };
 
     // ---- Features 2 + 4: Render live page lessons list ----
+    let _livePageUnsub = null;
     async function renderLivePageLessons() {
         const container = document.getElementById('livePageLessonsContainer');
         if(!container) return;
         container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Loading…</div>';
-        try {
-            const snap = await getDocs(query(collection(db,'liveLessons'),
-                where('status','==','approved'), orderBy('createdAt','desc')));
+
+        // Helper: render cards from a snapshot
+        async function renderCards(snap) {
             if(snap.empty) {
                 container.innerHTML = '<div style="text-align:center;color:#999;padding:24px;font-size:14px;">No live lessons scheduled right now.<br><small>Check back soon!</small></div>';
                 return;
@@ -4106,6 +4116,16 @@
                     <div style="display:flex;gap:8px;margin-top:8px;">${joinBtnHtml}${signInHtml}</div>
                 </div>`;
             }).join('');
+        }
+
+        // Cancel any previous listener then start a live one
+        if(_livePageUnsub) { _livePageUnsub(); _livePageUnsub = null; }
+        try {
+            _livePageUnsub = onSnapshot(
+                query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
+                snap => renderCards(snap),
+                () => { container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>'; }
+            );
         } catch(e) {
             container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
         }
@@ -5143,6 +5163,7 @@
         try {
             await addDoc(collection(db,"notifications"), {
                 type, title, body,
+                targetUserId: null,
                 timestamp: new Date().toISOString(),
                 author: currentUser?.name || 'Admin'
             });
