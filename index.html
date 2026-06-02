@@ -585,6 +585,7 @@
              alt="APSHULE Logo" id="loginLogoImg">
         <div class="login-title">APSHULE</div>
         <div class="login-subtitle">Let's Learn With Ease From Anywhere at Anytime</div>
+        <!-- multi-tenant v2 -->
         <div class="login-tabs">
             <div class="login-tab active" data-tab="login">Login</div>
             <div class="login-tab" data-tab="signup">Sign Up</div>
@@ -623,6 +624,7 @@
     <div class="header">
         <div class="header-left">
             <img id="headerLogoImg" class="header-logo-img logo--responsive" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="Logo">
+            <img id="headerSchoolLogoImg" src="" alt="School Logo" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);margin-left:6px;flex-shrink:0;">
             <div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
@@ -1136,6 +1138,9 @@
                         <input type="text" id="schoolLogoUrl" placeholder="Logo URL">
                         <input type="email" id="schoolLoginEmail" placeholder="School Login Email">
                         <input type="password" id="schoolLoginPassword" placeholder="School Login Password">
+                        <select id="schoolAssignedPlan" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:white;">
+                            <option value="">Assign Subscription Plan (optional)</option>
+                        </select>
                         <button id="addSchoolBtn" class="admin-toggle">➕ Add School Account</button>
                     </div>
                     <div id="schoolsAdminList"></div>
@@ -1192,6 +1197,25 @@
                     </div>
                     <button id="saveLivePlansBtn" class="admin-toggle">💾 Save Plan Prices</button>
                     <div id="livePlanSaveStatus" style="font-size:12px;color:#4CAF50;margin-top:4px;min-height:14px;"></div>
+                </div>
+
+                <!-- SCHOOL STUDENTS SECTION -->
+                <div class="admin-section" id="schoolStudentsSection" style="display:none;background:#f0f4ff;border:1.5px solid #4B2E9E;border-radius:16px;padding:16px;">
+                    <h4 style="color:#4B2E9E;margin-top:0;">👥 My Students</h4>
+                    <div style="margin-bottom:12px;">
+                        <button id="copyInviteLinkBtn" style="padding:8px 18px;border:none;border-radius:20px;background:#4B2E9E;color:white;font-size:13px;font-weight:600;cursor:pointer;">🔗 Copy Invite Link</button>
+                        <div id="inviteLinkDisplay" style="font-size:11px;color:#888;margin-top:6px;word-break:break-all;"></div>
+                    </div>
+                    <div style="border:1.5px solid #ede0ff;border-radius:12px;padding:12px;margin-bottom:12px;background:white;">
+                        <div style="font-size:13px;font-weight:600;color:#4B2E9E;margin-bottom:8px;">➕ Create Student Account</div>
+                        <input type="text" id="newStudentName" placeholder="Full Name" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+                        <input type="email" id="newStudentEmail" placeholder="Email" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;margin-bottom:6px;font-size:13px;">
+                        <input type="password" id="newStudentPassword" placeholder="Temporary Password (min 6 chars)" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;margin-bottom:8px;font-size:13px;">
+                        <button id="createStudentBtn" style="width:100%;padding:10px;border:none;border-radius:20px;background:#4B2E9E;color:white;font-size:13px;font-weight:600;cursor:pointer;">➕ Create Student</button>
+                        <div id="createStudentStatus" style="font-size:12px;margin-top:6px;text-align:center;min-height:14px;"></div>
+                    </div>
+                    <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">Enrolled Students (<span id="studentCountBadge">0</span>)</div>
+                    <div id="myStudentsList"></div>
                 </div>
 
                 <!-- SCHOOL EVENTS SECTION -->
@@ -2436,10 +2460,23 @@
         const grid = document.getElementById('paymentPlansGrid');
         if(!grid) return;
         if(!subscriptionPlans.length) return; // Keep defaults if no Firestore plans yet
+        // Get the school's assigned plan for this user (school admin or school student)
+        let schoolAssignedPlanId = null;
+        if(currentUser) {
+            const sid = currentUser.schoolId || (currentUser.role === 'school' ? currentUser.schoolId : null);
+            if(sid) {
+                const sch = schools.find(s => s.id === sid);
+                if(sch?.assignedPlanId) schoolAssignedPlanId = sch.assignedPlanId;
+            }
+        }
         grid.innerHTML = subscriptionPlans.map((p, idx) => {
             const colorClass = planColorClasses[idx % planColorClasses.length];
             const bgStyle = p.color ? `background:linear-gradient(135deg,${p.color});` : '';
-            return `<div class="payment-card ${colorClass}" style="${bgStyle}">
+            const isAssigned = schoolAssignedPlanId && p.id === schoolAssignedPlanId;
+            const highlightBorder = isAssigned ? 'box-shadow:0 0 0 3px #FFD700,0 4px 16px rgba(255,215,0,0.4);position:relative;' : '';
+            const badge = isAssigned ? `<div style="position:absolute;top:-8px;right:8px;background:#FFD700;color:#333;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;">⭐ Your School Plan</div>` : '';
+            return `<div class="payment-card ${colorClass}" style="${bgStyle}${highlightBorder}position:relative;">
+                ${badge}
                 <div>${escHtml(p.name)}</div>
                 <div class="payment-plan-price">UGX ${Number(p.price).toLocaleString()}</div>
                 <div style="font-size:10px;opacity:0.8;">${escHtml(p.duration||'')}</div>
@@ -3370,19 +3407,85 @@
 
     function renderSchoolsAdmin() {
         let c = document.getElementById('schoolsAdminList'); if(!c) return;
-        if(!schools.length) { c.innerHTML = '<div>No schools</div>'; return; }
-        c.innerHTML = schools.map(s => `<div class="school-item"><img class="school-logo" src="${s.logo||'https://via.placeholder.com/50'}" onerror="this.src='https://via.placeholder.com/50'"><div><strong>${escHtml(s.name)}</strong><br>${escHtml(s.loginEmail)}</div><div><button class="edit-school" data-id="${s.id}">Edit</button><button class="delete-school" data-id="${s.id}">Delete</button></div></div>`).join('');
-        document.querySelectorAll('.edit-school').forEach(btn => btn.addEventListener('click', async () => {
-            let id = btn.getAttribute('data-id'), s = schools.find(ss=>ss.id==id); if(!s) return;
-            let newName=prompt("Name:",s.name); if(newName) s.name=newName;
-            let newContact=prompt("Contact:",s.contact); if(newContact) s.contact=newContact;
-            let newLoc=prompt("Location:",s.location); if(newLoc) s.location=newLoc;
-            let newLogo=prompt("Logo URL:",s.logo); if(newLogo) s.logo=newLogo;
-            let newEmail=prompt("Login email:",s.loginEmail); if(newEmail) s.loginEmail=newEmail;
-            await updateDoc(doc(db,"schools",id), { name:s.name, contact:s.contact, location:s.location, logo:s.logo, loginEmail:s.loginEmail });
-        }));
-        document.querySelectorAll('.delete-school').forEach(btn => btn.addEventListener('click', async () => { if(confirm("Delete school?")) await deleteDoc(doc(db,"schools",btn.getAttribute('data-id'))); }));
+        if(currentUser?.role !== 'superadmin') { c.innerHTML = ''; return; }
+
+        // Populate the "assign plan" select in the add-school form
+        const planSel = document.getElementById('schoolAssignedPlan');
+        if(planSel && subscriptionPlans.length) {
+            const cur = planSel.value;
+            planSel.innerHTML = '<option value="">Assign Subscription Plan (optional)</option>' +
+                subscriptionPlans.map(p=>`<option value="${p.id}"${cur===p.id?' selected':''}>${escHtml(p.name)} – UGX ${Number(p.price).toLocaleString()}</option>`).join('');
+        }
+
+        if(!schools.length) { c.innerHTML = '<div style="color:#999;font-size:13px;">No schools yet.</div>'; return; }
+        c.innerHTML = schools.map(s => {
+            const planName = s.assignedPlanId ? (subscriptionPlans.find(p=>p.id===s.assignedPlanId)?.name||'Unknown') : 'None';
+            const inviteUrl = s.inviteCode ? `${location.origin}?schoolInvite=${s.inviteCode}` : null;
+            const planOpts = subscriptionPlans.map(p=>`<option value="${p.id}"${s.assignedPlanId===p.id?' selected':''}>${escHtml(p.name)} – UGX ${Number(p.price).toLocaleString()}</option>`).join('');
+            return `
+            <div class="school-item" style="flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;border-radius:12px;border:1.5px solid #e0e0ff;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px;">
+                    <img class="school-logo" src="${s.logo||'https://via.placeholder.com/50'}" onerror="this.src='https://via.placeholder.com/50'" style="flex-shrink:0;">
+                    <div style="flex:1;min-width:0;">
+                        <strong style="font-size:14px;">${escHtml(s.name)}</strong>
+                        <div style="font-size:11px;color:#666;">${escHtml(s.loginEmail)}</div>
+                        <div style="font-size:11px;color:#888;">Plan: <em>${escHtml(planName)}</em></div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-shrink:0;">
+                        <button onclick="toggleSchoolEditor('${s.id}')" style="padding:6px 12px;border:1.5px solid #4B2E9E;border-radius:20px;background:white;color:#4B2E9E;font-size:12px;cursor:pointer;">✏️ Edit</button>
+                        <button onclick="deleteSchoolAccount('${s.id}')" style="padding:6px 12px;border:none;border-radius:20px;background:#dc3545;color:white;font-size:12px;cursor:pointer;">🗑</button>
+                    </div>
+                </div>
+                <div id="schoolEditor_${s.id}" style="display:none;padding:12px;border-top:1px solid #eee;background:#fafafa;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                        <input id="se_name_${s.id}" value="${escHtml(s.name||'')}" placeholder="School Name" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                        <input id="se_contact_${s.id}" value="${escHtml(s.contact||'')}" placeholder="Contact" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                        <input id="se_location_${s.id}" value="${escHtml(s.location||'')}" placeholder="Location" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                        <input id="se_logo_${s.id}" value="${escHtml(s.logo||'')}" placeholder="Logo URL" style="padding:7px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                    </div>
+                    <select id="se_plan_${s.id}" style="width:100%;padding:7px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:white;margin-bottom:8px;">
+                        <option value="">No assigned plan</option>
+                        ${planOpts}
+                    </select>
+                    <div style="font-size:11px;color:#888;margin-bottom:8px;word-break:break-all;">
+                        🔗 Invite link: ${inviteUrl
+                            ? `<code style="font-size:10px;background:#f0f0f0;padding:1px 4px;border-radius:4px;">${inviteUrl}</code>
+                               <button onclick="navigator.clipboard.writeText('${inviteUrl}').then(()=>showNotification('Copied!'))" style="margin-left:6px;padding:2px 8px;border:1px solid #4B2E9E;border-radius:8px;background:white;color:#4B2E9E;font-size:11px;cursor:pointer;">Copy</button>`
+                            : '<em style="color:#aaa;">Saved once to generate</em>'}
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button onclick="saveSchoolEdits('${s.id}')" style="flex:1;padding:9px;border:none;border-radius:20px;background:#4B2E9E;color:white;font-size:13px;font-weight:600;cursor:pointer;">💾 Save</button>
+                        <button onclick="toggleSchoolEditor('${s.id}')" style="padding:9px 16px;border:1.5px solid #ddd;border-radius:20px;background:white;color:#666;font-size:13px;cursor:pointer;">Cancel</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
     }
+
+    window.toggleSchoolEditor = function(id) {
+        const ed = document.getElementById('schoolEditor_'+id);
+        if(ed) ed.style.display = ed.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.saveSchoolEdits = async function(id) {
+        const name = document.getElementById('se_name_'+id)?.value.trim();
+        const contact = document.getElementById('se_contact_'+id)?.value.trim() || '';
+        const location = document.getElementById('se_location_'+id)?.value.trim() || '';
+        const logo = document.getElementById('se_logo_'+id)?.value.trim() || '';
+        const assignedPlanId = document.getElementById('se_plan_'+id)?.value || '';
+        if(!name) { showNotification('School name required','error'); return; }
+        const existing = schools.find(s=>s.id===id);
+        const inviteCode = existing?.inviteCode || Math.random().toString(36).slice(2,10);
+        await updateDoc(doc(db,'schools',id), { name, contact, location, logo, assignedPlanId, inviteCode });
+        showNotification('School updated ✓');
+        toggleSchoolEditor(id);
+    };
+
+    window.deleteSchoolAccount = async function(id) {
+        if(!confirm('Delete this school? This cannot be undone.')) return;
+        await deleteDoc(doc(db,'schools',id));
+        showNotification('School deleted');
+    };
 
     function populateVideoMappingDropdowns() {
         let subjSelect = document.getElementById('videoSubjectSelect'); if(!subjSelect) return;
@@ -5010,6 +5113,7 @@
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
         if (isSuper) { loadPushHistory(); initPushHistoryControls(); }
+        document.getElementById('schoolStudentsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
         document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
@@ -5032,10 +5136,15 @@
         const superPdfAcc = document.getElementById('superAdminPdfAccountSection');
         if(superPdfAcc) superPdfAcc.style.display = isSuper ? "block" : "none";
         if(isSuper) renderAccPdfList();
-        // School logo
+        // School logo / dual branding
         if(isSchool) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
             if(s?.logo) { document.getElementById('headerLogoImg').src = s.logo; document.getElementById('loginLogoImg').src = s.logo; }
+        }
+        // Dual branding for students linked to a school
+        if(!isSchool && !isSuper && !isTeacher && currentUser.schoolId) {
+            let s = schools.find(sch => sch.id === currentUser.schoolId);
+            if(s?.logo) applySchoolBranding(s.logo);
         }
         loadProfilePicPreview();
         if(isSuper) {
@@ -5073,10 +5182,16 @@
         onSnapshot(collection(db,"schools"), (snap) => {
             schools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderSchoolsAdmin();
+            renderSubscriptionPlansGrid();
             if(currentUser?.role === 'school') {
                 let s = schools.find(sch => sch.id === currentUser.schoolId);
                 if(s?.logo) { document.getElementById('headerLogoImg').src = s.logo; document.getElementById('loginLogoImg').src = s.logo; }
                 if(s) document.getElementById('attendanceSchoolName').innerText = ` - ${s.name}`;
+            }
+            // Update dual branding for school-linked students
+            if(currentUser && currentUser.role !== 'school' && currentUser.role !== 'superadmin' && currentUser.role !== 'teacher' && currentUser.schoolId) {
+                let s = schools.find(sch => sch.id === currentUser.schoolId);
+                if(s?.logo) applySchoolBranding(s.logo); else clearSchoolBranding();
             }
         });
     }
@@ -5305,7 +5420,7 @@
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') renderSchoolEventsList(); else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') { renderSchoolEventsList(); loadMyStudents(); } else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); } } }
     });
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
@@ -5339,13 +5454,16 @@
     // Admin button listeners
     document.getElementById('addSchoolBtn')?.addEventListener('click', async ()=>{
         let name=document.getElementById('schoolName').value.trim(),contact=document.getElementById('schoolContact').value.trim(),loc=document.getElementById('schoolLocation').value.trim(),logo=document.getElementById('schoolLogoUrl').value.trim(),email=document.getElementById('schoolLoginEmail').value.trim(),pwd=document.getElementById('schoolLoginPassword').value;
+        const assignedPlanId=document.getElementById('schoolAssignedPlan')?.value||'';
         if(!name||!contact||!loc||!email||!pwd){showNotification("Fill all fields","error");return;}
         if(pwd.length<4){showNotification("Password min 4","error");return;}
         if(schools.find(s=>s.loginEmail===email)){showNotification("Email exists","error");return;}
-        const schoolDocRef=await addDoc(collection(db,"schools"),{name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0});
+        const inviteCode=Math.random().toString(36).slice(2,10);
+        const schoolDocRef=await addDoc(collection(db,"schools"),{name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0,inviteCode,assignedPlanId});
         try { let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolDocRef.id,createdAt:new Date().toISOString()}); } catch(e){ console.error(e); }
-        showNotification("School added");
+        showNotification("School added ✓");
         ['schoolName','schoolContact','schoolLocation','schoolLogoUrl','schoolLoginEmail','schoolLoginPassword'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; });
+        const planSel=document.getElementById('schoolAssignedPlan'); if(planSel) planSel.value='';
     });
 
     // Add teacher (NEW)
@@ -5621,7 +5739,10 @@
         try {
             let cred=await createUserWithEmailAndPassword(auth,email,pwd);
             let location=await detectLocation();
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:""});
+            let extraFields={};
+            const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
+            if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
             showNotification("Account created!");
         } catch(err){ document.getElementById('loginError').innerText=err.message; }
     });
@@ -5703,6 +5824,10 @@
         if(wrap) wrap.style.display = this.value === 'once' ? 'none' : 'block';
     });
 
+    // In-memory guard: prevents double-firing the same scheduled notification
+    // from both the onSnapshot listener and the setInterval poll running concurrently.
+    if(!window._firingNotifIds) window._firingNotifIds = new Set();
+
     function loadScheduledNotifs() {
         const container = document.getElementById('scheduledNotifsList'); if(!container) return;
         onSnapshot(query(collection(db,'scheduledNotifications'), orderBy('createdAt','desc'), limit(20)), snap => {
@@ -5713,12 +5838,13 @@
                 const s = d.data();
                 if(s.frequency === 'once' && s.sent === false && s.nextSendAt) {
                     const fireAt = new Date(s.nextSendAt);
-                    if(fireAt <= now) {
-                        // Send and mark as sent atomically
+                    if(fireAt <= now && !window._firingNotifIds.has(d.id)) {
+                        window._firingNotifIds.add(d.id);
                         try {
                             await writeNotification(null, s.title, s.body || '');
                             await updateDoc(doc(db,'scheduledNotifications',d.id), { sent: true, sentAt: now.toISOString() });
                         } catch(e) { console.warn('[sched] fire error', e); }
+                        finally { window._firingNotifIds.delete(d.id); }
                     }
                 }
             });
@@ -6156,6 +6282,119 @@
   setupServiceWorker();
   connect();
 })();
+
+// ===== SCHOOL BRANDING HELPERS =====
+function applySchoolBranding(schoolLogoUrl) {
+    const el = document.getElementById('headerSchoolLogoImg');
+    if(el) { el.src = schoolLogoUrl; el.style.display = 'inline-block'; }
+}
+function clearSchoolBranding() {
+    const el = document.getElementById('headerSchoolLogoImg');
+    if(el) { el.src = ''; el.style.display = 'none'; }
+}
+
+// ===== SCHOOL INVITE URL CHECK =====
+(function(){
+    const params = new URLSearchParams(location.search);
+    const code = params.get('schoolInvite');
+    if(code) {
+        sessionStorage.setItem('pendingSchoolInvite', code);
+        history.replaceState(null, '', location.pathname);
+        // Show a subtle banner on the sign-up tab
+        const loginErr = document.getElementById('loginError');
+        const tabs = document.querySelectorAll('.login-tab');
+        tabs.forEach(t => { if(t.dataset.tab==='signup') t.click(); });
+        if(loginErr) { loginErr.style.color='#2E7D32'; loginErr.innerText='You were invited to a school — create an account to join!'; }
+    }
+})();
+
+// ===== MY STUDENTS (school admin) =====
+let _myStudentsUnsubscribe = null;
+
+function loadMyStudents() {
+    if(!currentUser || currentUser.role !== 'school') return;
+    const sid = currentUser.schoolId;
+    if(!sid) return;
+
+    // Show invite link
+    const school = schools.find(s => s.id === sid);
+    const invLinkDiv = document.getElementById('inviteLinkDisplay');
+    const copyBtn = document.getElementById('copyInviteLinkBtn');
+    if(school?.inviteCode) {
+        const url = location.origin + '?schoolInvite=' + school.inviteCode;
+        if(invLinkDiv) invLinkDiv.textContent = url;
+        if(copyBtn) copyBtn.onclick = () => navigator.clipboard.writeText(url).then(()=>showNotification('Invite link copied!')).catch(()=>showNotification('Copy failed','error'));
+    } else {
+        if(invLinkDiv) invLinkDiv.textContent = 'No invite code yet — contact superadmin to save your school settings.';
+        if(copyBtn) copyBtn.onclick = null;
+    }
+
+    // Live student list via Firestore
+    if(_myStudentsUnsubscribe) _myStudentsUnsubscribe();
+    _myStudentsUnsubscribe = onSnapshot(
+        query(collection(db,'users'), where('schoolId','==',sid)),
+        (snap) => {
+            const students = snap.docs.map(d=>({uid:d.id,...d.data()}))
+                .filter(u => u.role === 'student' || u.role === 'individual');
+            const badge = document.getElementById('studentCountBadge');
+            if(badge) badge.textContent = students.length;
+            const list = document.getElementById('myStudentsList');
+            if(!list) return;
+            if(!students.length) {
+                list.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:16px;">No students enrolled yet.<br><em>Share the invite link or create one directly above.</em></div>';
+                return;
+            }
+            list.innerHTML = students.map(u => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e0e0ff;border-radius:10px;margin-bottom:6px;background:white;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#4B2E9E;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;">${escHtml((u.name||'?')[0].toUpperCase())}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:600;">${escHtml(u.name||'Unknown')}</div>
+                        <div style="font-size:11px;color:#888;">${escHtml(u.email||'')}</div>
+                    </div>
+                    <div style="font-size:10px;color:#aaa;">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</div>
+                </div>`).join('');
+        }
+    );
+}
+
+// Create student button handler
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('createStudentBtn')?.addEventListener('click', async () => {
+        const name = document.getElementById('newStudentName')?.value.trim();
+        const email = document.getElementById('newStudentEmail')?.value.trim();
+        const password = document.getElementById('newStudentPassword')?.value;
+        const statusEl = document.getElementById('createStudentStatus');
+        if(!name||!email||!password) {
+            if(statusEl) { statusEl.style.color='#dc3545'; statusEl.textContent='Fill all fields'; }
+            return;
+        }
+        if(password.length < 6) {
+            if(statusEl) { statusEl.style.color='#dc3545'; statusEl.textContent='Password must be at least 6 characters'; }
+            return;
+        }
+        if(statusEl) { statusEl.style.color='#4B2E9E'; statusEl.textContent='Creating account…'; }
+        try {
+            const idToken = await auth.currentUser.getIdToken();
+            const resp = await fetch('/api/school/create-student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+                body: JSON.stringify({ name, email, password })
+            });
+            const data = await resp.json();
+            if(!data.ok) {
+                if(statusEl) { statusEl.style.color='#dc3545'; statusEl.textContent = data.error || 'Failed to create account'; }
+                return;
+            }
+            if(statusEl) { statusEl.style.color='#2E7D32'; statusEl.textContent='Student account created ✓'; }
+            document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentEmail').value = '';
+            document.getElementById('newStudentPassword').value = '';
+            setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000);
+        } catch(err) {
+            if(statusEl) { statusEl.style.color='#dc3545'; statusEl.textContent='Network error – try again'; }
+        }
+    });
+});
 </script>
 </body>
 </html>
