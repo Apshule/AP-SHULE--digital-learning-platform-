@@ -5091,15 +5091,12 @@
     async function sendFcmPush(targetUserId, title, body) {
         if(!targetUserId) return;
         try {
-            const snap = await getDoc(doc(db,'users', targetUserId));
-            const fcmToken = snap.exists() ? snap.data().fcmToken : null;
-            if(!fcmToken) return;
             const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
             if(!idToken) return;
             fetch('/api/notifications/send', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+idToken},
-                body: JSON.stringify({ token: fcmToken, title, body })
+                body: JSON.stringify({ targetUserId, title, body })
             }).catch(()=>{});
         } catch(_) {}
     }
@@ -5836,7 +5833,15 @@
       var reg = window._swRegistration ||
         (("serviceWorker" in navigator) ? await navigator.serviceWorker.ready : null);
       if (!reg) return;
-      var token = await m.getToken({ serviceWorkerRegistration: reg });
+      // Fetch the VAPID public key from the API server (same key pair used for web-push)
+      var vapidKey = null;
+      try {
+        var vresp = await fetch('/api/push-subscription/vapid-public-key');
+        if (vresp.ok) { var vdata = await vresp.json(); vapidKey = vdata.publicKey || null; }
+      } catch(_) {}
+      var tokenOpts = { serviceWorkerRegistration: reg };
+      if (vapidKey) tokenOpts.vapidKey = vapidKey;
+      var token = await m.getToken(tokenOpts);
       if (!token) return;
       // Save/refresh FCM token in user's Firestore doc
       var userRef = window.db && firebase.firestore && window.db.collection('users').doc(uid);
