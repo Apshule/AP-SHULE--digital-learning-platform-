@@ -5631,7 +5631,7 @@
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
             // Show device banner for 5 min after login then auto-hide
             const _banner = document.getElementById('responsiveDemoNotice');
-            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 180000); }
+            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 54000); }
         } else {
             clearSessionData();
             document.getElementById('loginScreen').classList.remove('hidden');
