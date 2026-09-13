@@ -20,7 +20,7 @@ Open these URLs and confirm each responds successfully:
 - `https://appshule.com/manifest.json`
 - `https://appshule.com/.well-known/assetlinks.json`
 
-The manifest already includes the fields needed by Bubblewrap: app name, short name, start URL, standalone display mode, theme colors, and 192×192 and 512×512 icons. The 512×512 icon is marked as maskable.
+The manifest includes the fields needed by Bubblewrap: app name, short name, start URL, standalone display mode, theme colors, and locally hosted PNG icons with verified 192×192 and 512×512 dimensions. The 512×512 icon keeps the APSHULE artwork inside the maskable safe area.
 
 The initial `assetlinks.json` contains a placeholder fingerprint. Replace it after Bubblewrap creates the signing key. The repository also contains `.nojekyll`, which allows GitHub Pages to publish the otherwise-hidden `.well-known` directory.
 
