@@ -4,6 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>APSHULE - Learn With Ease</title>
+
+    <!-- ── Open Graph (WhatsApp / Facebook / LinkedIn previews) ── -->
+    <meta property="og:type"        content="website">
+    <meta property="og:url"         content="https://appshule.com/">
+    <meta property="og:title"       content="APSHULE – Learn With Ease">
+    <meta property="og:description" content="Uganda's online learning platform — live lessons, PDF resources, smart attendance, and school management. Join thousands of students learning with APSHULE.">
+    <meta property="og:image"       content="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+    <meta property="og:image:width"  content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name"   content="APSHULE">
+    <meta property="og:locale"      content="en_UG">
+
+    <!-- ── Twitter / X Card ── -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="APSHULE – Learn With Ease">
+    <meta name="twitter:description" content="Uganda's online learning platform — live lessons, PDF resources, smart attendance, and school management.">
+    <meta name="twitter:image"       content="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
+
+    <!-- ── General SEO ── -->
+    <meta name="description" content="APSHULE is Uganda's online learning platform offering live lessons, PDF study resources, smart attendance tracking, and school management tools.">
+    <meta name="keywords"    content="Uganda online learning, APSHULE, school management Uganda, live lessons Uganda, online education Uganda, digital learning platform">
+    <meta name="author"      content="APSHULE">
+
+    <!-- ── Structured Data (Organization schema) ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "APSHULE",
+      "url": "https://appshule.com",
+      "logo": "https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg",
+      "description": "Uganda's online learning platform offering live lessons, PDF study resources, smart attendance tracking, and school management tools.",
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": "English"
+      }
+    }
+    </script>
+
+    <!-- ── PWA ── -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4B2E9E">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="APSHULE">
+
     <link rel="icon" type="image/png" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <link rel="apple-touch-icon" href="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg">
     <!-- Preconnect to every CDN used so DNS+TLS handshakes happen in parallel -->
@@ -116,7 +165,25 @@
         .payment-card.plan-custom { background: linear-gradient(135deg,#607D8B,#455A64); }
         .subscribe-btn-small { background: white; color: #4B2E9E; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-top: 8px; cursor: pointer; width: 100%; }
         .account-card, .about-card { background: white; border-radius: 20px; padding: 24px; }
+        .cbc-card { background: linear-gradient(145deg,#f5f1ff,#fff); border: 1.5px solid #d8ccff; border-radius: 18px; padding: 16px; margin-top: 16px; }
+        .cbc-card h4 { color:#4B2E9E; margin:0 0 6px; }
+        .cbc-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px; }
+        .cbc-action { border:1px solid #d8ccff; background:#fff; color:#4B2E9E; border-radius:12px; padding:10px 8px; font-size:12px; font-weight:700; cursor:pointer; }
+        .cbc-action.primary { background:#4B2E9E; color:#fff; border-color:#4B2E9E; }
+        .cbc-form { display:grid; gap:8px; margin-top:12px; }
+        .cbc-form input,.cbc-form select,.cbc-form textarea { box-sizing:border-box; width:100%; border:1px solid #ddd; border-radius:10px; padding:9px 10px; font-size:13px; }
+        .cbc-status { font-size:12px; color:#666; margin-top:8px; }
         .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
+        /* ── PWA Install Banner ── */
+        #pwaInstallBanner { position: fixed; bottom: 70px; left: 0; right: 0; max-width: 500px; margin: 0 auto; z-index: 1100; padding: 0 12px; pointer-events: none; }
+        #pwaInstallBanner .pwa-inner { background: #4B2E9E; color: white; border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); pointer-events: all; animation: slideUpBanner 0.35s ease; }
+        @keyframes slideUpBanner { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #pwaInstallBanner .pwa-icon { font-size: 28px; flex-shrink: 0; }
+        #pwaInstallBanner .pwa-text { flex: 1; min-width: 0; }
+        #pwaInstallBanner .pwa-text strong { display: block; font-size: 13px; font-weight: 700; }
+        #pwaInstallBanner .pwa-text span { font-size: 11px; opacity: 0.85; }
+        #pwaInstallBanner .pwa-install-btn { background: white; color: #4B2E9E; border: none; border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+        #pwaInstallBanner .pwa-dismiss-btn { background: none; border: none; color: rgba(255,255,255,0.7); font-size: 18px; cursor: pointer; padding: 0 4px; flex-shrink: 0; line-height: 1; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; background: white; display: flex; justify-content: space-around; padding: 12px 16px; border-top-left-radius: 20px; border-top-right-radius: 20px; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; font-size: 12px; cursor: pointer; }
         .nav-item i { font-size: 22px; }
@@ -506,6 +573,29 @@
         .my-q-answer { background: #e8f5e9; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: #2e7d32; }
         .my-q-answer strong { display: block; font-size: 11px; color: #4CAF50; margin-bottom: 4px; }
         .my-q-pending { font-size: 12px; color: #FF8C42; font-style: italic; }
+
+        /* ── Public Landing Page ── */
+        #landingScreen { max-width: 500px; margin: 0 auto; min-height: 100vh; background: linear-gradient(180deg, #4B2E9E 0%, #6B55C5 60%, #3d2280 100%); color: white; overflow-y: auto; padding-bottom: 40px; }
+        .landing-hero { text-align: center; padding: 48px 24px 32px; }
+        .landing-logo { width: 110px; height: 110px; border-radius: 28px; object-fit: cover; box-shadow: 0 8px 30px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        .landing-headline { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .landing-headline span { color: #FFD166; }
+        .landing-sub { font-size: 14px; opacity: 0.88; line-height: 1.6; max-width: 340px; margin: 0 auto 28px; }
+        .landing-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .landing-btn-primary { background: #FF8C42; color: white; border: none; border-radius: 30px; padding: 14px 32px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(255,140,66,0.45); transition: transform 0.15s; }
+        .landing-btn-primary:active { transform: scale(0.97); }
+        .landing-btn-secondary { background: rgba(255,255,255,0.15); color: white; border: 2px solid rgba(255,255,255,0.5); border-radius: 30px; padding: 12px 28px; font-size: 15px; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); transition: background 0.15s; }
+        .landing-btn-secondary:hover { background: rgba(255,255,255,0.25); }
+        .landing-features { padding: 0 16px 8px; }
+        .landing-features-title { text-align: center; font-size: 16px; font-weight: 700; opacity: 0.75; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .landing-feature-card { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 20px 18px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 16px; border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(6px); }
+        .landing-feature-icon { font-size: 32px; flex-shrink: 0; line-height: 1; }
+        .landing-feature-body h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .landing-feature-body p { font-size: 13px; opacity: 0.82; line-height: 1.5; margin: 0; }
+        .landing-about { margin: 20px 16px 0; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 20px 18px; }
+        .landing-about h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .landing-about p { font-size: 13px; opacity: 0.85; line-height: 1.6; margin: 0; }
+        .landing-footer { text-align: center; padding: 24px 16px 8px; font-size: 11px; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -513,12 +603,30 @@
 <!-- INSTANT LOGIN — show form immediately; buttons enabled once Firebase loads -->
 <script>
 (function(){
-    // Show login right away — no waiting for Firebase CDN
+    // Show landing page right away — no waiting for Firebase CDN
     document.addEventListener('DOMContentLoaded', function(){
-        var splash = document.getElementById('splashScreen');
-        var login  = document.getElementById('loginScreen');
-        if(splash) splash.style.display = 'none';
-        if(login)  login.classList.remove('hidden');
+        var splash   = document.getElementById('splashScreen');
+        var landing  = document.getElementById('landingScreen');
+        if(splash)   splash.style.display = 'none';
+        if(landing)  landing.classList.remove('hidden');
+        // CTA buttons: "Sign Up Free" → show login on Sign Up tab
+        function goToLogin(tab) {
+            var ld = document.getElementById('landingScreen');
+            var lg = document.getElementById('loginScreen');
+            if(ld) ld.classList.add('hidden');
+            if(lg) lg.classList.remove('hidden');
+            // Switch to the right tab
+            if(tab === 'signup') {
+                document.querySelectorAll('.login-tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-tab')==='signup'); });
+                document.querySelectorAll('.login-form').forEach(function(f){ f.classList.toggle('active', f.id==='signupFormDiv'); });
+            }
+        }
+        ['landingSignupBtn','landingSignupBtn2'].forEach(function(id){
+            var btn = document.getElementById(id);
+            if(btn) btn.addEventListener('click', function(){ goToLogin('signup'); });
+        });
+        var loginBtn = document.getElementById('landingLoginBtn');
+        if(loginBtn) loginBtn.addEventListener('click', function(){ goToLogin('login'); });
         // Disable action buttons until Firebase is ready
         ['loginBtn','signupBtn','sendResetEmailBtn'].forEach(function(id){
             var btn = document.getElementById(id);
@@ -570,6 +678,68 @@
 </script>
 
 <div class="demo-notice" id="responsiveDemoNotice">🖥️ Desktop | 🖥️ Tablet | 📱 Phone</div>
+
+<!-- PUBLIC LANDING PAGE — shown to unauthenticated visitors; Google can crawl this -->
+<div id="landingScreen" class="hidden">
+    <section class="landing-hero">
+        <img class="landing-logo" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE – Uganda Online Learning Platform Logo">
+        <h1 class="landing-headline">Uganda's <span>#1 Online</span><br>Learning Platform</h1>
+        <p class="landing-sub">Live lessons, PDF resources, smart attendance tracking, and school management — all in one app. Study anywhere, anytime.</p>
+        <div class="landing-cta-row">
+            <button class="landing-btn-primary" id="landingSignupBtn">Sign Up Free</button>
+            <button class="landing-btn-secondary" id="landingLoginBtn">Log In</button>
+        </div>
+    </section>
+
+    <section class="landing-features" aria-label="Platform features">
+        <p class="landing-features-title">Why students choose APSHULE</p>
+
+        <article class="landing-feature-card">
+            <div class="landing-feature-icon">📡</div>
+            <div class="landing-feature-body">
+                <h3>Live Online Lessons</h3>
+                <p>Join real-time classes taught by qualified Ugandan teachers. Ask questions, get feedback, and never miss a lesson with recorded replays.</p>
+            </div>
+        </article>
+
+        <article class="landing-feature-card">
+            <div class="landing-feature-icon">📚</div>
+            <div class="landing-feature-body">
+                <h3>PDF Study Resources</h3>
+                <p>Access a full library of notes, past papers, and revision guides — organised by subject and class level. Download once, study anytime.</p>
+            </div>
+        </article>
+
+        <article class="landing-feature-card">
+            <div class="landing-feature-icon">🏫</div>
+            <div class="landing-feature-body">
+                <h3>School Management System</h3>
+                <p>Schools can enrol students, track attendance with AI face recognition, manage subscriptions, and monitor academic progress — all from one dashboard.</p>
+            </div>
+        </article>
+
+        <article class="landing-feature-card">
+            <div class="landing-feature-icon">✅</div>
+            <div class="landing-feature-body">
+                <h3>Smart Attendance Tracking</h3>
+                <p>Automated face-recognition attendance for schools and institutions. Generate daily attendance reports and flag late arrivals automatically.</p>
+            </div>
+        </article>
+    </section>
+
+    <section class="landing-about" aria-label="About APSHULE">
+        <h2>About APSHULE</h2>
+        <p>APSHULE is a Ugandan digital learning platform built to make quality education accessible to every student across Uganda. Whether you're a primary pupil, secondary student, or school administrator, APSHULE has the tools you need — live classes, study materials, and powerful school management features, all on your phone.</p>
+    </section>
+
+    <div class="landing-cta-row" style="margin-top:24px;">
+        <button class="landing-btn-primary" id="landingSignupBtn2">Get Started — It's Free</button>
+    </div>
+
+    <footer class="landing-footer">
+        <p>© 2026 APSHULE · Uganda Online Learning Platform · <a href="https://appshule.com" style="color:inherit;">appshule.com</a></p>
+    </footer>
+</div>
 
 <!-- LOGIN SCREEN -->
 <div id="splashScreen">
@@ -724,42 +894,159 @@
         </div>
     </div>
 
-    <!-- ATTENDANCE MODAL -->
+    <!-- ATTENDANCE MODAL — Smart AI Vision System -->
     <div id="attendanceModal" class="attendance-modal">
         <div class="attendance-modal-content">
-            <div style="display:flex;justify-content:space-between;margin-bottom:20px;"><h3>📸 Facial Attendance <span id="attendanceSchoolName"></span></h3><button id="closeAttendanceModal" style="background:none;border:none;font-size:28px;cursor:pointer;">&times;</button></div>
-            <div class="attendance-tabs">
-                <button class="attendance-tab active" data-attendance-tab="mark">📝 Mark Attendance</button>
-                <button class="attendance-tab" data-attendance-tab="enroll">👤 Enroll Person</button>
-                <button class="attendance-tab" data-attendance-tab="manage">📋 Manage</button>
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div>
+                    <h3 style="margin:0;font-size:16px;">📸 AI Vision Attendance <span id="attendanceSchoolName" style="font-size:12px;color:#888;"></span></h3>
+                    <div id="faceApiStatus" style="font-size:11px;color:#FF8C42;margin-top:2px;">⏳ Loading AI models…</div>
+                </div>
+                <button id="closeAttendanceModal" style="background:none;border:none;font-size:26px;cursor:pointer;line-height:1;">&times;</button>
             </div>
+            <!-- Zone + Object Mode row -->
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+                <select id="attZoneSelect" style="flex:1;min-width:120px;padding:8px 10px;border:1.5px solid #4B2E9E;border-radius:20px;font-size:13px;">
+                    <option value="Gate">🚪 Gate</option>
+                    <option value="Classroom">🏫 Classroom</option>
+                    <option value="Office">🏢 Office</option>
+                    <option value="Hallway">🚶 Hallway</option>
+                    <option value="Factory Floor">🏭 Factory Floor</option>
+                    <option value="Custom">✏️ Custom…</option>
+                </select>
+                <input id="attZoneCustom" type="text" placeholder="Zone name" style="flex:1;padding:8px 10px;border:1.5px solid #ddd;border-radius:20px;font-size:13px;display:none;">
+                <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;padding:7px 12px;background:#f0f4ff;border-radius:20px;white-space:nowrap;">
+                    <input type="checkbox" id="objectModeToggle" style="width:auto;margin:0;"> 📦 Object Mode
+                </label>
+            </div>
+            <!-- Object label input + product type registration (shown only in Object Mode) -->
+            <div id="objectLabelRow" style="display:none;margin-bottom:6px;">
+                <input type="text" id="objectTargetLabel" placeholder="Or type a label (e.g. Iron Sheet, Coffee Bag)" style="width:100%;box-sizing:border-box;padding:8px 12px;border:1.5px solid #FF8C42;border-radius:20px;font-size:13px;">
+            </div>
+            <div id="objectProductRow" style="display:none;margin-bottom:10px;">
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <select id="objectProductSelect" style="flex:1;padding:8px 10px;border:1.5px solid #ddd;border-radius:20px;font-size:13px;background:white;">
+                        <option value="">All objects (no filter)</option>
+                    </select>
+                    <button onclick="attRegisterProductType()" style="padding:7px 14px;background:#FF8C42;color:white;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Register</button>
+                </div>
+            </div>
+            <!-- Tabs -->
+            <div class="attendance-tabs" style="flex-wrap:wrap;gap:6px;">
+                <button class="attendance-tab active" data-attendance-tab="mark" style="font-size:12px;padding:8px 10px;">📷 Live</button>
+                <button class="attendance-tab" data-attendance-tab="enroll" style="font-size:12px;padding:8px 10px;">👤 Enroll</button>
+                <button class="attendance-tab" data-attendance-tab="timeline" style="font-size:12px;padding:8px 10px;">⏱️ Timeline</button>
+                <button class="attendance-tab" data-attendance-tab="reports" style="font-size:12px;padding:8px 10px;">📊 Reports</button>
+                <button class="attendance-tab" data-attendance-tab="manage" style="font-size:12px;padding:8px 10px;">⚙️ Manage</button>
+            </div>
+
+            <!-- LIVE TAB -->
             <div id="markTab" class="attendance-tab-content active">
-                <div class="camera-container"><video id="attendanceVideo" autoplay playsinline style="width:100%"></video></div>
-                <div class="attendance-controls" style="display:flex;gap:10px;margin:15px 0;">
-                    <button id="switchAttendanceCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button>
-                    <button id="markAttendanceBtn" class="btn-primary"><i class="fas fa-smile"></i> Mark Attendance</button>
+                <div style="position:relative;background:#1a1a2e;border-radius:16px;overflow:hidden;margin-bottom:10px;">
+                    <video id="attendanceVideo" autoplay playsinline style="width:100%;display:block;max-height:250px;object-fit:cover;"></video>
+                    <canvas id="attCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                    <div id="objectCounter" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.75);color:#FFD700;padding:5px 12px;border-radius:12px;font-size:15px;font-weight:700;"></div>
                 </div>
-                <div id="attendanceResult" class="recognition-result" style="display:none;"></div>
-                <h4>📋 Today's Attendance</h4>
-                <div id="recentAttendanceList" class="recent-attendance-list"></div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <button id="switchAttendanceCamera" class="btn-secondary" style="flex:1;font-size:12px;padding:9px;">⟳ Cam</button>
+                    <button id="startRecognitionBtn" class="btn-primary" style="flex:2;font-size:13px;padding:9px;">▶ Start Recognition</button>
+                    <button id="stopRecognitionBtn" style="display:none;flex:1;background:#dc3545;color:white;border:none;border-radius:30px;font-size:12px;padding:9px;cursor:pointer;">■ Stop</button>
+                </div>
+                <div id="attLiveStatus" style="font-size:12px;color:#4B2E9E;text-align:center;min-height:16px;margin-bottom:8px;"></div>
+                <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">Today's Activity</div>
+                <div id="recentAttendanceList" class="recent-attendance-list" style="max-height:200px;overflow-y:auto;"></div>
             </div>
+
+            <!-- ENROLL TAB -->
             <div id="enrollTab" class="attendance-tab-content">
-                <div class="camera-container"><video id="enrollVideo" autoplay playsinline style="width:100%"></video></div>
-                <div class="attendance-controls" style="display:flex;gap:10px;margin:15px 0;">
-                    <button id="switchEnrollCamera" class="btn-secondary"><i class="fas fa-sync-alt"></i> Switch Camera</button>
-                    <button id="captureEnrollBtn" class="btn-primary"><i class="fas fa-camera"></i> Capture Face</button>
+                <div style="position:relative;background:#1a1a2e;border-radius:16px;overflow:hidden;margin-bottom:10px;">
+                    <video id="enrollVideo" autoplay playsinline style="width:100%;display:block;max-height:200px;object-fit:cover;"></video>
+                    <canvas id="enrollCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
                 </div>
-                <div style="text-align:center;"><label class="file-input-label" for="faceImageUpload"><i class="fas fa-folder-open"></i> Import Image</label><input type="file" id="faceImageUpload" accept="image/*"></div>
-                <div id="enrollPreview" style="text-align:center;"></div>
-                <div class="form-group"><label>Full Name</label><input type="text" id="enrollName" placeholder="Enter full name"></div>
-                <div class="form-group"><label>Category</label><select id="enrollCategory"><option>Student</option><option>Teacher</option><option>Staff</option><option>Visitor</option></select></div>
-                <div class="form-group"><label>Phone</label><input type="tel" id="enrollPhone" placeholder="Phone number"></div>
-                <button id="saveEnrolledPersonBtn" class="btn-primary">✅ Save Person</button>
+                <div id="enrollProgress" style="display:none;margin-bottom:8px;">
+                    <div style="font-size:11px;color:#4B2E9E;text-align:center;margin-bottom:3px;">Capturing face samples… <span id="enrollCount">0</span>/5</div>
+                    <div style="background:#eee;border-radius:8px;height:5px;"><div id="enrollProgressBar" style="background:#4B2E9E;height:5px;border-radius:8px;width:0%;transition:width 0.3s;"></div></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <button id="switchEnrollCamera" class="btn-secondary" style="flex:1;font-size:12px;padding:9px;">⟳ Cam</button>
+                    <button id="startEnrollCaptureBtn" class="btn-primary" style="flex:2;font-size:12px;padding:9px;">📷 Auto-Capture 5 Shots</button>
+                </div>
+                <div id="enrollPreview" style="text-align:center;margin-bottom:8px;"></div>
+                <div style="margin-bottom:8px;">
+                    <label style="font-size:12px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:3px;">Full Name *</label>
+                    <input type="text" id="enrollName" placeholder="e.g. Teacher Edrine" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #4B2E9E;border-radius:10px;font-size:13px;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:3px;">Category</label>
+                        <select id="enrollCategory" style="width:100%;box-sizing:border-box;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                            <option>Teacher</option><option>Student</option><option>Staff</option><option>Visitor</option><option>Product</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#4B2E9E;display:block;margin-bottom:3px;">Phone</label>
+                        <input type="tel" id="enrollPhone" placeholder="Optional" style="width:100%;box-sizing:border-box;padding:9px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f5f5ff;border-radius:10px;margin-bottom:10px;">
+                    <span style="font-size:12px;color:#555;">Dress code:</span>
+                    <input type="color" id="enrollDressColor" value="#1565C0" style="width:32px;height:26px;border:none;border-radius:6px;cursor:pointer;padding:0;">
+                    <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;">
+                        <input type="checkbox" id="enrollDressCodeEnabled" style="width:auto;margin:0;"> Check this person
+                    </label>
+                </div>
+                <button id="saveEnrolledPersonBtn" class="btn-primary" style="width:100%;padding:11px;font-weight:700;font-size:13px;">✅ Save to System</button>
+                <div id="enrollStatus" style="font-size:12px;text-align:center;margin-top:6px;min-height:14px;color:#4B2E9E;"></div>
             </div>
+
+            <!-- TIMELINE TAB -->
+            <div id="timelineTab" class="attendance-tab-content">
+                <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+                    <input type="date" id="timelineDate" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                    <button onclick="renderAttTimeline()" style="padding:8px 16px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:13px;cursor:pointer;">View</button>
+                </div>
+                <div id="timelineList" style="max-height:400px;overflow-y:auto;"></div>
+            </div>
+
+            <!-- REPORTS TAB -->
+            <div id="reportsTab" class="attendance-tab-content">
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <button id="reportDailyBtn" onclick="showAttDailyReport()" style="flex:1;padding:9px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">📅 Daily</button>
+                    <button id="reportMonthlyBtn" onclick="showAttMonthlyReport()" style="flex:1;padding:9px;background:#f0f0f0;color:#333;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">📆 28-Day</button>
+                </div>
+                <div id="reportDateRow" style="display:flex;gap:8px;margin-bottom:8px;">
+                    <input type="date" id="reportDate" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:10px;font-size:13px;">
+                    <button onclick="generateAttDailyReport()" style="padding:8px 14px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:13px;cursor:pointer;">Generate</button>
+                </div>
+                <button onclick="downloadAttCSV()" style="width:100%;padding:8px;background:#2E7D32;color:white;border:none;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:8px;">⬇ Download CSV</button>
+                <div id="reportContent" style="max-height:340px;overflow-y:auto;"></div>
+            </div>
+
+            <!-- MANAGE TAB -->
             <div id="manageTab" class="attendance-tab-content">
-                <h4>📋 Enrolled Persons</h4>
-                <div id="enrolledPersonsList" class="enrolled-list"></div>
-                <button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%;margin-top:15px;">🗑️ Clear All Records</button>
+                <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:8px;">Registered Persons (<span id="enrolledCount">0</span>)</div>
+                <div id="enrolledPersonsList" class="enrolled-list" style="max-height:280px;overflow-y:auto;margin-bottom:10px;"></div>
+                <button id="clearAllAttendanceBtn" class="btn-danger" style="width:100%;padding:10px;font-size:13px;">🗑️ Clear All Attendance Records</button>
+                <div style="margin-top:12px;padding:10px;background:#f5f5ff;border-radius:12px;">
+                    <label style="font-size:12px;font-weight:600;color:#4B2E9E;display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="schoolDressCodeEnabled" style="width:auto;margin:0;">
+                        Enable dress code checking for all staff
+                    </label>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                        <span style="font-size:12px;color:#555;">Uniform colour:</span>
+                        <input type="color" id="schoolUniformColor" value="#1565C0" style="width:32px;height:26px;border:none;border-radius:6px;cursor:pointer;padding:0;">
+                        <button onclick="saveAttDressCodeSettings()" style="padding:5px 14px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;">Save</button>
+                    </div>
+                </div>
+                <div style="margin-top:10px;padding:10px;background:#f5f5ff;border-radius:12px;">
+                    <div style="font-size:12px;font-weight:600;color:#4B2E9E;margin-bottom:8px;">Attendance Settings</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:12px;color:#555;">Late after:</span>
+                        <input type="time" id="lateCutoffTime" value="08:00" style="padding:4px 8px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;">
+                        <button onclick="saveAttSettings()" style="padding:5px 14px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:12px;cursor:pointer;">Save</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -887,18 +1174,20 @@
                 <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div>
                 <div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div>
             </div>
+            <div id="studentCbcSection" class="cbc-card" style="display:none;">
+                <h4>📘 CBC & UNEB</h4>
+                <p style="font-size:12px;color:#666;margin:0;">Build evidence for your learning journey and keep your competency record together.</p>
+                <div class="cbc-actions">
+                    <button class="cbc-action primary" id="openProjectsBtn">📁 My Projects</button>
+                    <button class="cbc-action" id="openScenarioPracticeBtn">📝 UNEB Scenario Practice</button>
+                    <button class="cbc-action" id="openCompetencyBtn">🎯 My Competency Passport</button>
+                </div>
+                <div id="studentCbcPanel" style="display:none;"></div>
+            </div>
             <!-- DYNAMIC SUBSCRIPTION PLANS (updated by Firestore) -->
             <div class="payment-plans-section">
                 <div class="payment-plans-title">🎯 Subscription Plans</div>
-                <div id="paymentPlansGrid" class="payment-plans-grid">
-                    <!-- Populated dynamically by listenToSubscriptionPlans() -->
-                    <div class="payment-card daily"><div>Daily</div><div class="payment-plan-price">UGX 500</div><button class="subscribe-btn-small" data-plan="Daily" data-price="500">Subscribe</button></div>
-                    <div class="payment-card weekly"><div>Weekly</div><div class="payment-plan-price">UGX 3,000</div><button class="subscribe-btn-small" data-plan="Weekly" data-price="3000">Subscribe</button></div>
-                    <div class="payment-card monthly"><div>Monthly</div><div class="payment-plan-price">UGX 10,000</div><button class="subscribe-btn-small" data-plan="Monthly" data-price="10000">Subscribe</button></div>
-                    <div class="payment-card half"><div>Term Plan</div><div class="payment-plan-price">UGX 50,000</div><button class="subscribe-btn-small" data-plan="Term" data-price="50000">Subscribe</button></div>
-                    <div class="payment-card half" style="background:linear-gradient(135deg,#9C27B0,#7B1FA2)"><div>Half Year</div><div class="payment-plan-price">UGX 80,000</div><button class="subscribe-btn-small" data-plan="Half Year" data-price="80000">Subscribe</button></div>
-                    <div class="payment-card full"><div>Full Year</div><div class="payment-plan-price">UGX 150,000</div><button class="subscribe-btn-small" data-plan="Full Year" data-price="150000">Subscribe</button></div>
-                </div>
+                <div id="paymentPlansGrid" class="payment-plans-grid"></div>
             </div>
 
             <!-- ADMIN PANEL -->
@@ -1326,6 +1615,18 @@
         <div id="teacherPage" class="page">
             <div class="section-title">👨‍🏫 Teacher Dashboard</div>
 
+            <div class="cbc-card" style="border-color:#FFB74D;background:linear-gradient(145deg,#fff8ec,#fff);">
+                <h4 style="color:#E67E00;">🧰 CBC Teaching Tools (Earn More)</h4>
+                <p style="font-size:12px;color:#666;margin:0;">Use the new competency tools, save your progress, and turn classroom evidence into useful records.</p>
+                <div class="cbc-actions">
+                    <button class="cbc-action primary" id="openRetoolingBtn">🎓 NCDC 10 Modules</button>
+                    <button class="cbc-action" id="openLessonPlanBtn">🗒 Lesson Plan Generator</button>
+                    <button class="cbc-action" id="openTriangulationBtn">📊 Triangulation Assessment</button>
+                    <button class="cbc-action" id="openCurriculumLinkerBtn">🔎 Curriculum Linker</button>
+                </div>
+                <div id="teacherCbcPanel" style="display:none;"></div>
+            </div>
+
             <!-- Live Lesson REQUEST (teacher submits, superadmin approves) -->
             <div class="teacher-card" style="border:2px solid #FF8C42;">
                 <h4 style="color:#FF8C42;margin-bottom:8px;">📡 Request a Live Lesson</h4>
@@ -1424,6 +1725,9 @@
                 <p style="font-size:12px;color:#999;margin-bottom:12px;">Questions you asked during lessons. You'll get a notification when your teacher replies.</p>
                 <div id="myVideoQList"><div style="text-align:center;color:#999;padding:16px;">No questions yet — ask one during a lesson!</div></div>
             </div>
+            <!-- Invite Friends / Referral Card (all roles except superadmin) -->
+            <div id="referralCard" class="account-card" style="margin-top:16px;display:none;"></div>
+
             <!-- Admission Form shortcut (students only) -->
             <div id="admissionShortcut" class="account-card" style="margin-top:16px;display:none;border:2px solid #4B2E9E22;">
                 <h4 style="color:#4B2E9E;margin-bottom:4px;">📋 Official Admission Form</h4>
@@ -1768,6 +2072,19 @@
         </div>
     </div>
 
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" style="display:none;">
+        <div class="pwa-inner">
+            <div class="pwa-icon">📲</div>
+            <div class="pwa-text">
+                <strong>Install APSHULE</strong>
+                <span>Add to your home screen for quick access</span>
+            </div>
+            <button class="pwa-install-btn" id="pwaInstallBtn">Install</button>
+            <button class="pwa-dismiss-btn" id="pwaDismissBtn" aria-label="Dismiss">✕</button>
+        </div>
+    </div>
+
     <div class="bottom-nav">
         <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div>
         <div class="nav-item" data-page="resources"><i class="fas fa-book-open"></i><span>Resources</span></div>
@@ -1928,8 +2245,19 @@
     let secondarySubjects = [];
     let allTeachers = [];
     let subscriptionPlans = [];
-    let attendancePeople = JSON.parse(localStorage.getItem('apshule_attendance_people')) || [];
-    let attendanceRecords = JSON.parse(localStorage.getItem('apshule_attendance_records')) || [];
+    let enrolledFaces = [];          // [{id,name,category,phone,descriptor:Float32Array,thumbnail,dressColor,dressCodeEnabled}]
+    let _faceApiReady = false;
+    let _recognitionActive = false;
+    let _recognitionRaf = null;
+    let _lastLogTime = {};           // debounce map: "personId_zone" → timestamp
+    let _enrollDescriptors = [];     // descriptors collected during enrollment
+    let _enrollThumbnail = null;
+    let _currentReportData = [];
+    let _reportMode = 'daily';
+    let _cocoModel = null;
+    let _objectCountActive = false;
+    let _presentInFrame = {};           // "personId|||zone" → {lastSeen: ms} for departure detection
+    let _schoolDressCode = { enabled: false, color: '#1565C0' }; // school-wide dress code
     let currentRating = 0, currentLessonSubject = "";
     let currentSelectedClassId = null;
     let currentLevel = "primary";
@@ -2445,10 +2773,203 @@
 
     function escHtml(s) { return (s||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
 
+    // ===== NCDC / UNEB PHASE 1 TOOLS =====
+    const CBC_MODULES = [
+        'Familiarisation','Curriculum Documents','Learner-Centred Methods','Assessment in CBC',
+        'Planning/Monitoring','Projects & PBL','ICT Integration','Inclusion','Record Keeping','Ethics'
+    ];
+    const DEFAULT_SUBSCRIPTION_PLANS = [
+        { id:'default-daily', name:'Daily', price:500, duration:'1 day' },
+        { id:'default-weekly', name:'Weekly', price:3000, duration:'1 week' },
+        { id:'default-monthly', name:'Monthly', price:10000, duration:'1 month' },
+        { id:'default-term', name:'Term Plan', price:50000, duration:'1 term' },
+        { id:'default-half', name:'Half Year', price:80000, duration:'6 months' },
+        { id:'default-full', name:'Full Year', price:150000, duration:'12 months' }
+    ];
+
+    async function complianceApi(path, options={}) {
+        const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
+        const headers = Object.assign({'Content-Type':'application/json'}, options.headers||{}, token ? {'Authorization':'Bearer '+token} : {});
+        const response = await fetch('/api/compliance'+path, Object.assign({}, options, {headers}));
+        const data = await response.json().catch(()=>({}));
+        if(!response.ok) throw new Error(data.error||'Could not complete that action');
+        return data;
+    }
+
+    function compressCompliancePhoto(file) {
+        return new Promise((resolve,reject)=>{
+            if(!file || !file.type.startsWith('image/')) return reject(new Error('Choose a photo file'));
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const scale = Math.min(1, 1200 / Math.max(img.width,img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(img.width*scale));
+                    canvas.height = Math.max(1, Math.round(img.height*scale));
+                    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+                    let quality = .72;
+                    const output = () => canvas.toBlob(blob=>{
+                        if(!blob) return reject(new Error('Could not compress photo'));
+                        if(blob.size > 500*1024 && quality > .35) { quality -= .08; output(); return; }
+                        const fr = new FileReader();
+                        fr.onload = () => resolve(fr.result);
+                        fr.onerror = () => reject(new Error('Could not read compressed photo'));
+                        fr.readAsDataURL(blob);
+                    },'image/jpeg',quality);
+                    output();
+                };
+                img.onerror = () => reject(new Error('Could not read photo'));
+                img.src = reader.result;
+            };
+            reader.onerror = () => reject(new Error('Could not read photo'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function setupComplianceTools() {
+        const student = currentUser && ['individual','student'].includes(currentUser.role);
+        const teacher = currentUser?.role === 'teacher';
+        const studentSection = document.getElementById('studentCbcSection');
+        if(studentSection) studentSection.style.display = student ? 'block' : 'none';
+        document.getElementById('openProjectsBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('projects'));
+        document.getElementById('openScenarioPracticeBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('practice'));
+        document.getElementById('openCompetencyBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('passport'));
+        document.getElementById('openRetoolingBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('modules'));
+        document.getElementById('openLessonPlanBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('lesson-plan'));
+        document.getElementById('openTriangulationBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('triangulation'));
+        document.getElementById('openCurriculumLinkerBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('curriculum'));
+        if(!student && studentSection) studentSection.style.display = 'none';
+        if(!teacher) document.querySelector('.cbc-card[style*="FFB74D"]')?.remove();
+    }
+
+    async function renderStudentCbcPanel(mode) {
+        const panel = document.getElementById('studentCbcPanel');
+        if(!panel) return;
+        panel.style.display='block';
+        panel.innerHTML='<div class="cbc-status">Loading…</div>';
+        try {
+            if(mode==='projects') {
+                const data = await complianceApi('/projects');
+                const projects = data.projects||[];
+                panel.innerHTML = `<div class="cbc-form">
+                    <strong style="color:#4B2E9E;">Start a project</strong>
+                    <input id="cbcProjectTitle" placeholder="Project title">
+                    <input id="cbcProjectClass" placeholder="Class (for example S2)">
+                    <input id="cbcProjectSubject" placeholder="Subject">
+                    <button class="cbc-action primary" id="createCbcProjectBtn">Create project</button>
+                </div>
+                <div class="cbc-status" id="cbcProjectStatus"></div>
+                <div style="margin-top:14px;">${projects.length ? projects.map(renderStudentProject).join('') : '<div class="cbc-status">No projects yet. Create your first project above.</div>'}</div>`;
+                document.getElementById('createCbcProjectBtn')?.addEventListener('click', async ()=>{
+                    const status=document.getElementById('cbcProjectStatus');
+                    try {
+                        await complianceApi('/projects',{method:'POST',body:JSON.stringify({
+                            schoolId:currentUser.schoolId, className:document.getElementById('cbcProjectClass').value.trim(),
+                            subject:document.getElementById('cbcProjectSubject').value.trim(), title:document.getElementById('cbcProjectTitle').value.trim()
+                        })});
+                        showNotification('Project created');
+                        renderStudentCbcPanel('projects');
+                    } catch(e) { if(status) status.textContent=e.message; }
+                });
+                panel.querySelectorAll('input[data-project-id]').forEach(input=>input.addEventListener('change', async e=>{
+                    const inputEl=e.target, projectId=inputEl.dataset.projectId, milestone=inputEl.dataset.milestone;
+                    try {
+                        const photo=await compressCompliancePhoto(inputEl.files[0]);
+                        await complianceApi(`/projects/${projectId}/milestones/${milestone}`,{method:'PATCH',body:JSON.stringify({photo})});
+                        showNotification('Milestone uploaded and sent for review');
+                        renderStudentCbcPanel('projects');
+                    } catch(err) { showNotification(err.message,'error'); }
+                }));
+            } else if(mode==='passport') {
+                const data=await complianceApi('/ca-records');
+                panel.innerHTML=`<strong style="color:#4B2E9E;">My Competency Passport</strong>
+                    <p class="cbc-status">Your teacher-assessed levels will appear here.</p>
+                    ${(data.records||[]).length ? data.records.map(r=>`<div style="padding:10px;border-bottom:1px solid #eee;"><strong>${escHtml(r.subject)}</strong> · ${escHtml(r.competency)}<br><span class="cbc-status">${escHtml(r.finalLevel)} · ${escHtml(r.term)}</span></div>`).join('') : '<div class="cbc-status">No competency records yet.</div>'}`;
+            } else {
+                const data=await complianceApi('/uneb-items');
+                const items=data.items||[];
+                panel.innerHTML=`<strong style="color:#4B2E9E;">UNEB Scenario Practice</strong>
+                    <p class="cbc-status">Scenario items are added by teachers and the super admin. Your practice bank currently has ${items.length} item(s).</p>
+                    ${items.length ? `<button class="cbc-action primary" onclick="showNotification('Timed practice will open when scenario items are published')">Start practice</button>` : '<div class="cbc-status">No practice items have been published yet.</div>'}`;
+            }
+        } catch(e) { panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(e.message)}</div>`; }
+    }
+
+    function renderStudentProject(project) {
+        const milestone = (number,label,status,photo) => `<div style="margin-top:8px;padding:8px;background:#fafafa;border-radius:10px;">
+            <div style="font-size:12px;font-weight:700;">${label} <span style="font-weight:400;color:${status==='approved'?'#2e7d32':'#999'};">· ${status}</span></div>
+            ${photo ? '<div class="cbc-status">Photo submitted for review</div>' : `<label class="cbc-action" style="display:inline-block;margin-top:6px;">Upload photo<input type="file" accept="image/*" data-project-id="${project.id}" data-milestone="${number}" style="display:none;"></label>`}
+        </div>`;
+        return `<div style="border:1px solid #e5e0f5;border-radius:12px;padding:10px;margin-top:10px;">
+            <strong>${escHtml(project.title)}</strong><div class="cbc-status">${escHtml(project.subject)} · ${escHtml(project.className)} · LIN ${escHtml(project.lin||'pending')}</div>
+            ${milestone('1','Week 2 · Proposal',project.milestone1Status,project.milestone1Photo)}
+            ${milestone('2','Week 5 · Progress',project.milestone2Status,project.milestone2Photo)}
+            ${milestone('final','Week 9 · Final',project.finalStatus,project.finalPhoto)}
+        </div>`;
+    }
+
+    async function renderTeacherCbcPanel(mode) {
+        const panel=document.getElementById('teacherCbcPanel');
+        if(!panel) return;
+        panel.style.display='block';
+        panel.innerHTML='<div class="cbc-status">Loading…</div>';
+        if(mode==='modules') {
+            try {
+                const data=await complianceApi('/retooling');
+                const progress=Object.fromEntries((data.progress||[]).map(p=>[p.moduleId,p]));
+                panel.innerHTML=`<strong style="color:#E67E00;">NCDC 10 Modules Course</strong><div class="cbc-status">Complete each module and save your progress.</div>
+                    ${CBC_MODULES.map((name,i)=>{const id=String(i+1), done=progress[id]?.completed; return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;"><span style="flex:1;font-size:13px;">${i+1}. ${name}</span><button class="cbc-action ${done?'':'primary'}" data-module-id="${id}" style="padding:7px 10px;">${done?'Completed':'Mark complete'}</button></div>`}).join('')}
+                    <div class="cbc-status">${Object.values(progress).filter(p=>p.completed).length}/10 modules complete. Certificate unlocks after all ten.</div>`;
+                panel.querySelectorAll('[data-module-id]').forEach(btn=>btn.addEventListener('click',async()=>{
+                    await complianceApi('/retooling',{method:'POST',body:JSON.stringify({moduleId:btn.dataset.moduleId,completed:true})});
+                    renderTeacherCbcPanel('modules');
+                }));
+            } catch(e) { panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(e.message)}</div>`; }
+        } else if(mode==='lesson-plan') {
+            panel.innerHTML=`<strong style="color:#E67E00;">Auto Lesson Plan Generator</strong><form class="cbc-form" id="lessonPlanForm">
+                <input name="subject" placeholder="Subject" required><input name="classLevel" placeholder="Class (S1-S4 or A-Level)" required>
+                <input name="topic" placeholder="Topic" required><input name="duration" placeholder="Duration (for example 80 minutes)" required>
+                <button class="cbc-action primary">Generate NCDC lesson plan</button></form><pre id="lessonPlanOutput" style="white-space:pre-wrap;font:12px/1.5 inherit;"></pre>`;
+            document.getElementById('lessonPlanForm').addEventListener('submit',async e=>{
+                e.preventDefault(); const output=document.getElementById('lessonPlanOutput'); output.textContent='Generating…';
+                try { const form=new FormData(e.target); const data=await complianceApi('/lesson-plan',{method:'POST',body:JSON.stringify(Object.fromEntries(form.entries()))}); output.textContent=data.content||'No lesson plan returned'; }
+                catch(err){ output.textContent=err.message; }
+            });
+        } else if(mode==='triangulation') {
+            panel.innerHTML=`<strong style="color:#E67E00;">Triangulation Assessment</strong><form class="cbc-form" id="triangulationForm">
+                <input name="learnerId" placeholder="Learner ID" required><input name="schoolId" placeholder="School ID" value="${escHtml(currentUser.schoolId||'')}" required>
+                <input name="subject" placeholder="Subject" required><input name="competency" placeholder="Competency" required>
+                <input name="term" placeholder="Term" value="Current term" required><input name="evidence1" type="number" min="0" max="100" placeholder="Quiz score (%)" required>
+                <label style="font-size:13px;"><input name="evidence2" type="checkbox"> I observed the learner</label>
+                <label style="font-size:13px;"><input name="evidence3" type="checkbox"> Project photo evidence is present</label>
+                <button class="cbc-action primary">Save competency record</button></form><div id="triangulationStatus" class="cbc-status"></div>`;
+            document.getElementById('triangulationForm').addEventListener('submit',async e=>{
+                e.preventDefault(); const form=new FormData(e.target); const payload=Object.fromEntries(form.entries()); payload.evidence2=form.get('evidence2')==='on'; payload.evidence3=form.get('evidence3')==='on';
+                try { const data=await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(payload)}); document.getElementById('triangulationStatus').textContent='Saved: '+data.record.finalLevel; }
+                catch(err){ document.getElementById('triangulationStatus').textContent=err.message; }
+            });
+        } else {
+            panel.innerHTML=`<strong style="color:#E67E00;">Curriculum Linker Search</strong><form class="cbc-form" id="curriculumForm"><input name="q" placeholder="Search a topic, for example Photosynthesis" required><button class="cbc-action primary">Search curriculum links</button></form><div id="curriculumResults" class="cbc-status"></div>`;
+            document.getElementById('curriculumForm').addEventListener('submit',async e=>{
+                e.preventDefault(); const q=new FormData(e.target).get('q'); const results=document.getElementById('curriculumResults'); results.textContent='Searching…';
+                try { const data=await complianceApi('/curriculum-links?q='+encodeURIComponent(q)); results.innerHTML=(data.links||[]).map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.'; }
+                catch(err){ results.textContent=err.message; }
+            });
+        }
+    }
+
     // ===== SUBSCRIPTION PLANS (NEW - dynamic from Firestore) =====
     function listenToSubscriptionPlans() {
         onSnapshot(collection(db,"subscriptionPlans"), (snap) => {
-            subscriptionPlans = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const seen = new Set();
+            subscriptionPlans = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                .filter(p => {
+                    const key = `${String(p.name||'').trim().toLowerCase()}|${Number(p.price)||0}`;
+                    if(seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
             renderSubscriptionPlansGrid();
             renderSubscriptionPlansAdmin();
         });
@@ -2458,7 +2979,7 @@
     function renderSubscriptionPlansGrid() {
         const grid = document.getElementById('paymentPlansGrid');
         if(!grid) return;
-        if(!subscriptionPlans.length) return; // Keep defaults if no Firestore plans yet
+        const plans = subscriptionPlans.length ? subscriptionPlans : DEFAULT_SUBSCRIPTION_PLANS;
         // Get the school's assigned plan for this user (school admin or school student)
         let schoolAssignedPlanId = null;
         if(currentUser) {
@@ -2468,7 +2989,7 @@
                 if(sch?.assignedPlanId) schoolAssignedPlanId = sch.assignedPlanId;
             }
         }
-        grid.innerHTML = subscriptionPlans.map((p, idx) => {
+        grid.innerHTML = plans.map((p, idx) => {
             const colorClass = planColorClasses[idx % planColorClasses.length];
             const bgStyle = p.color ? `background:linear-gradient(135deg,${p.color});` : '';
             const isAssigned = schoolAssignedPlanId && p.id === schoolAssignedPlanId;
@@ -3339,6 +3860,9 @@
         const q = query(collection(db,"videoQuestions"), orderBy("createdAt","desc"), limit(200));
         onSnapshot(q, (snap) => {
             renderVQAItems(snap.docs, 'adminVideoQList', currentUser.uid, currentUser.name);
+        }, () => {
+            const el=document.getElementById('adminVideoQList');
+            if(el) el.innerHTML='<div style="color:#c62828;font-size:13px;">Could not load questions. Please try again.</div>';
         });
     }
 
@@ -3559,16 +4083,579 @@
         try { let resp = await fetch('https://ipapi.co/json/'); let data = await resp.json(); return `${data.city}, ${data.country_name}`; } catch(e) { return "Unknown"; }
     }
 
-    // ===== ATTENDANCE =====
-    let attendanceStream=null, enrollStream=null, currentAttendanceCamera='environment', currentEnrollCamera='environment', capturedFaceImage=null;
-    async function setupCamera(vid, mode='environment') { try { const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:mode}}}); document.getElementById(vid).srcObject=s; return s; } catch(e) { try { const s=await navigator.mediaDevices.getUserMedia({video:true}); document.getElementById(vid).srcObject=s; return s; } catch(e) { showNotification("Camera access denied","error"); return null; } } }
-    function captureFace(vid) { let v=document.getElementById(vid); if(!v||!v.videoWidth) return null; let c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); return c.toDataURL('image/jpeg',0.8); }
-    function getImageHash(dataURL,cb) { let img=new Image(); img.onload=()=>{ let c=document.createElement('canvas'); c.width=8; c.height=8; let ctx=c.getContext('2d'); ctx.drawImage(img,0,0,8,8); let d=ctx.getImageData(0,0,8,8).data; let sum=0; for(let i=0;i<d.length;i+=4) sum+=(d[i]+d[i+1]+d[i+2])/3; let avg=sum/64; let hash=''; for(let i=0;i<d.length;i+=4) hash+=((d[i]+d[i+1]+d[i+2])/3>=avg)?'1':'0'; cb(hash); }; img.src=dataURL; }
-    function hamming(a,b){ if(a.length!==b.length) return 999; let d=0; for(let i=0;i<a.length;i++) if(a[i]!==b[i]) d++; return d; }
-    async function markAttendance() { if(!currentUser||currentUser.role!=='school'){showNotification("Only school accounts","error");return;} let sid=currentUser.schoolId; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){showNotification("No enrolled faces","error");return;} let img=captureFace('attendanceVideo'); if(!img){showNotification("Capture failed","error");return;} getImageHash(img,(hash)=>{ let best=null,bestDist=15; for(let p of people) if(p.faceHash){let d=hamming(hash,p.faceHash);if(d<bestDist){bestDist=d;best=p;}} let resDiv=document.getElementById('attendanceResult'); if(!best){resDiv.style.display='block';resDiv.innerHTML='<div style="color:red">❌ Not recognized</div>';return;} let today=new Date().toDateString(); let already=attendanceRecords.find(r=>r.personId===best.id&&r.schoolId===sid&&new Date(r.timestamp).toDateString()===today); if(already){resDiv.style.display='block';resDiv.innerHTML=`<div style="color:#FF8C42">⚠️ ${best.name} already marked</div>`;return;} attendanceRecords.push({id:Date.now(),schoolId:sid,personId:best.id,personName:best.name,category:best.category,phone:best.phone,timestamp:new Date().toISOString(),timeIn:new Date().toLocaleTimeString(),date:today}); localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords)); resDiv.style.display='block'; resDiv.innerHTML=`<div style="color:green">✅ ${best.name} marked at ${new Date().toLocaleTimeString()}</div>`; showNotification(`Attendance for ${best.name}`); renderRecentAttendance(); setTimeout(()=>resDiv.style.display='none',4000); }); }
-    function renderRecentAttendance() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('recentAttendanceList'); if(!c) return; let today=new Date().toDateString(); let rec=attendanceRecords.filter(r=>r.schoolId===sid&&new Date(r.timestamp).toDateString()===today).slice(-10); if(!rec.length){c.innerHTML='<div style="text-align:center;color:#999">No records today</div>';return;} c.innerHTML=rec.map(r=>`<div class="attendance-item"><div><strong>${r.personName}</strong><br><small>${r.category}</small></div><div>${r.timeIn}</div><i class="fas fa-check-circle" style="color:#2E7D32;"></i></div>`).join(''); }
-    function renderEnrolledList() { if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; let c=document.getElementById('enrolledPersonsList'); if(!c) return; let people=attendancePeople.filter(p=>p.schoolId===sid); if(!people.length){c.innerHTML='<div style="text-align:center;color:#999">No enrolled people</div>';return;} c.innerHTML=people.map(p=>`<div class="enrolled-person"><div><strong>${p.name}</strong><br><small>${p.category}</small><br>📞 ${p.phone||'N/A'}</div><button onclick="window.deleteEnrolled(${p.id})" style="background:#dc3545;color:white;border:none;padding:8px 12px;border-radius:20px;">Delete</button></div>`).join(''); }
-    window.deleteEnrolled = function(id) { if(confirm("Delete?")){attendancePeople=attendancePeople.filter(p=>p.id!==id);attendanceRecords=attendanceRecords.filter(r=>r.personId!==id);localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople));localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));showNotification("Person deleted");renderEnrolledList();renderRecentAttendance();} };
+    // ===== SMART ATTENDANCE — AI Vision System =====
+    let attendanceStream=null, enrollStream=null, currentAttendanceCamera='environment', currentEnrollCamera='environment';
+
+    async function setupCamera(vid, mode='environment') {
+        try { const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:mode}}}); document.getElementById(vid).srcObject=s; return s; }
+        catch(e) { try { const s=await navigator.mediaDevices.getUserMedia({video:true}); document.getElementById(vid).srcObject=s; return s; } catch(e2) { showNotification("Camera access denied","error"); return null; } }
+    }
+
+    function attGetOrgId() { return currentUser?.schoolId || currentUser?.uid || null; }
+    function attCatColor(c) { return c==='Teacher'?'#1565C0':c==='Student'?'#2E7D32':c==='Staff'?'#FF8C42':c==='Unknown'?'#dc3545':'#888'; }
+
+    // IndexedDB model cache — intercepts fetch() for face-api CDN files so models
+    // are served from IDB on repeat loads (avoids re-downloading ~13 MB each session)
+    (function(){
+        function _mOpen(){ return new Promise(res=>{ const r=indexedDB.open('faceapi-cache-v1',1); r.onupgradeneeded=e=>e.target.result.createObjectStore('f'); r.onsuccess=e=>res(e.target.result); r.onerror=()=>res(null); }); }
+        async function _mGet(k){ const d=await _mOpen(); if(!d) return null; return new Promise(res=>{ const q=d.transaction('f').objectStore('f').get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null); }); }
+        async function _mSet(k,v){ const d=await _mOpen(); if(!d) return; const tx=d.transaction('f','readwrite'); tx.objectStore('f').put(v,k); }
+        const _orig=window.fetch.bind(window);
+        window.fetch=async function(input,init){
+            const url=typeof input==='string'?input:(input&&input.url)||String(input);
+            const isModel=url.includes('vladmandic/face-api')&&(url.endsWith('.json')||url.endsWith('.bin'));
+            if(isModel){
+                const cached=await _mGet(url);
+                if(cached){ const ct=url.endsWith('.json')?'application/json':'application/octet-stream'; return new Response(cached,{status:200,statusText:'OK',headers:{'Content-Type':ct}}); }
+                const resp=await _orig(input,init);
+                if(resp.ok) resp.clone().arrayBuffer().then(b=>_mSet(url,b)).catch(()=>{});
+                return resp;
+            }
+            return _orig(input,init);
+        };
+    })();
+
+    async function initFaceApi() {
+        if(_faceApiReady) return true;
+        const statusEl=document.getElementById('faceApiStatus');
+        try {
+            if(typeof faceapi==='undefined') throw new Error('face-api.js not loaded yet — please wait');
+            if(statusEl){ statusEl.style.color='#FF8C42'; statusEl.textContent='⏳ Loading AI models (cached in browser after first load)…'; }
+            const MODEL_URL='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+            ]);
+            _faceApiReady=true;
+            if(statusEl){ statusEl.style.color='#2E7D32'; statusEl.textContent='✅ AI models ready'; }
+            return true;
+        } catch(e) {
+            if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='❌ Model load failed — check connection'; }
+            return false;
+        }
+    }
+
+    async function loadEnrolledFaces() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        try {
+            const snap=await getDocs(collection(db,'enrolledFaces',orgId,'persons'));
+            enrolledFaces=snap.docs.map(d=>{ const data=d.data(); return { id:d.id, name:data.name||'', category:data.category||'', phone:data.phone||'', descriptor:data.descriptor?new Float32Array(data.descriptor):null, thumbnail:data.thumbnail||'', dressColor:data.dressColor||'#1565C0', dressCodeEnabled:data.dressCodeEnabled||false }; }).filter(p=>p.descriptor);
+            renderEnrolledList();
+            const cnt=document.getElementById('enrolledCount'); if(cnt) cnt.textContent=enrolledFaces.length;
+        } catch(e) { console.error('loadEnrolledFaces',e); }
+    }
+
+    function attGetZone() {
+        const z=document.getElementById('attZoneSelect');
+        if(!z) return 'Gate';
+        if(z.value==='Custom') return document.getElementById('attZoneCustom')?.value.trim()||'Custom';
+        return z.value;
+    }
+
+    function attRgbToHue(r,g,b) { r/=255;g/=255;b/=255; const mx=Math.max(r,g,b),mn=Math.min(r,g,b); if(mx===mn) return 0; const d=mx-mn; let h; if(mx===r) h=((g-b)/d+(g<b?6:0))/6; else if(mx===g) h=((b-r)/d+2)/6; else h=((r-g)/d+4)/6; return h*360; }
+    function attHexToHue(hex) { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return attRgbToHue(r,g,b); }
+
+    function attCheckDressCode(imageData,bx,by,bw,bh,hexColor) {
+        const tx=Math.max(0,Math.floor(bx+bw*0.2)), ty=Math.max(0,Math.floor(by+bh*0.5));
+        const tw=Math.max(1,Math.floor(bw*0.6)), th=Math.max(1,Math.floor(bh*0.35));
+        const slice=imageData; const W=imageData.width;
+        let rS=0,gS=0,bS=0,n=0;
+        for(let y=ty;y<ty+th&&y<imageData.height;y++){ for(let x=tx;x<tx+tw&&x<W;x++){ const i=(y*W+x)*4; rS+=slice.data[i];gS+=slice.data[i+1];bS+=slice.data[i+2];n++; } }
+        if(!n) return false;
+        const hDom=attRgbToHue(rS/n,gS/n,bS/n), hExp=attHexToHue(hexColor);
+        const diff=Math.abs(hDom-hExp); return Math.min(diff,360-diff)>35;
+    }
+
+    async function attRunRecognitionFrame() {
+        if(!_recognitionActive||!_faceApiReady) return;
+        const video=document.getElementById('attendanceVideo');
+        const canvas=document.getElementById('attCanvas');
+        if(!video||!canvas||!video.videoWidth) { setTimeout(()=>{ if(_recognitionActive) _recognitionRaf=requestAnimationFrame(attRunRecognitionFrame); },500); return; }
+        canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+        const ctx=canvas.getContext('2d');
+        const opts=new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.5});
+        let detections=[];
+        try { detections=await faceapi.detectAllFaces(video,opts).withFaceLandmarks().withFaceDescriptors(); } catch(e) { detections=[]; }
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const zone=attGetZone(), nowMs=Date.now();
+        let imageData=null;
+        try { ctx.drawImage(video,0,0,canvas.width,canvas.height); imageData=ctx.getImageData(0,0,canvas.width,canvas.height); ctx.clearRect(0,0,canvas.width,canvas.height); } catch(e){}
+
+        // Build FaceMatcher once per frame (not per face)
+        let matcher=null;
+        if(enrolledFaces.length>0) {
+            const labeled=enrolledFaces.map(p=>new faceapi.LabeledFaceDescriptors(p.id,[p.descriptor]));
+            matcher=new faceapi.FaceMatcher(labeled,0.5);
+        }
+
+        const seenKeys=new Set();
+        for(const det of detections) {
+            const box=det.detection.box;
+            let mName='Unknown',mId=null,mCat='Unknown',mPerson=null;
+            if(matcher) {
+                const result=matcher.findBestMatch(det.descriptor);
+                if(result.label!=='unknown') { mPerson=enrolledFaces.find(p=>p.id===result.label); if(mPerson){ mName=mPerson.name; mId=mPerson.id; mCat=mPerson.category; } }
+            }
+            const color=attCatColor(mCat);
+            ctx.strokeStyle=color; ctx.lineWidth=3; ctx.strokeRect(box.x,box.y,box.width,box.height);
+            ctx.fillStyle=color; ctx.fillRect(box.x,box.y-22,box.width,22);
+            ctx.fillStyle='white'; ctx.font='bold 12px sans-serif';
+            ctx.fillText(mName+(mCat&&mCat!=='Unknown'?` (${mCat})`:''),box.x+4,box.y-6);
+
+            // Dress code — per-person setting OR school-wide setting
+            let dressFail=false;
+            if(imageData&&mPerson) {
+                const useDress=mPerson.dressCodeEnabled||_schoolDressCode.enabled;
+                const dressColor=mPerson.dressCodeEnabled?mPerson.dressColor:_schoolDressCode.color;
+                if(useDress) {
+                    dressFail=attCheckDressCode(imageData,box.x,box.y,box.width,box.height,dressColor);
+                    if(dressFail){ ctx.save(); ctx.strokeStyle='#FF0000'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(box.x,box.y,box.width,box.height); ctx.setLineDash([]); ctx.restore(); ctx.fillStyle='#FF0000'; ctx.fillRect(box.x,box.y+box.height,box.width,18); ctx.fillStyle='white'; ctx.font='bold 10px sans-serif'; ctx.fillText('⚠ Dress Code',box.x+4,box.y+box.height+13); }
+                }
+            }
+
+            // Presence tracking: first sight → arrived; ongoing → update lastSeen
+            if(mId) {
+                const pKey=mId+'|||'+zone;
+                seenKeys.add(pKey);
+                if(!_presentInFrame[pKey]) {
+                    // New presence session — apply 2-min arrived debounce per person+zone
+                    _presentInFrame[pKey]={lastSeen:nowMs};
+                    if(!_lastLogTime[pKey]||nowMs-_lastLogTime[pKey]>120000) {
+                        _lastLogTime[pKey]=nowMs;
+                        attLogEvent(mId,mName,mCat,zone,'arrived',dressFail);
+                    }
+                } else {
+                    _presentInFrame[pKey].lastSeen=nowMs;
+                }
+            } else {
+                // Unknown face — 2-min debounce + thumbnail snapshot for admin review
+                const uKey='unknown|||'+zone;
+                if(!_lastLogTime[uKey]||nowMs-_lastLogTime[uKey]>120000) {
+                    _lastLogTime[uKey]=nowMs;
+                    let snap64=null;
+                    try { const sc=document.createElement('canvas'); const sw=Math.max(1,Math.floor(box.width)),sh=Math.max(1,Math.floor(box.height)); sc.width=sw; sc.height=sh; sc.getContext('2d').drawImage(video,Math.floor(box.x),Math.floor(box.y),sw,sh,0,0,sw,sh); snap64=sc.toDataURL('image/jpeg',0.5); } catch(_e){}
+                    attLogEvent(null,'Unknown','Unknown',zone,'arrived',false,snap64);
+                }
+            }
+        }
+
+        // Departure detection: faces absent >3.5 s → log departed + reset arrived debounce
+        for(const pKey of Object.keys(_presentInFrame)) {
+            if(!seenKeys.has(pKey)&&nowMs-_presentInFrame[pKey].lastSeen>3500) {
+                const sep=pKey.indexOf('|||');
+                const pid=pKey.slice(0,sep), pzone=pKey.slice(sep+3);
+                const pp=enrolledFaces.find(p=>p.id===pid);
+                if(pp) attLogEvent(pid,pp.name,pp.category,pzone,'departed',false);
+                delete _presentInFrame[pKey];
+                delete _lastLogTime[pKey]; // Reset so next real arrival is always logged
+            }
+        }
+        if(_recognitionActive) setTimeout(()=>{ _recognitionRaf=requestAnimationFrame(attRunRecognitionFrame); },800);
+    }
+
+    function startRecognition() {
+        if(!_faceApiReady){ showNotification('AI models still loading — please wait','error'); return; }
+        if(!enrolledFaces.length) showNotification('No enrolled persons — will log unknown faces only');
+        _recognitionActive=true;
+        document.getElementById('startRecognitionBtn').style.display='none';
+        document.getElementById('stopRecognitionBtn').style.display='inline-block';
+        const s=document.getElementById('attLiveStatus'); if(s) s.textContent='🟢 AI recognition running…';
+        attRunRecognitionFrame();
+    }
+
+    function stopRecognition() {
+        _recognitionActive=false;
+        if(_recognitionRaf) cancelAnimationFrame(_recognitionRaf);
+        // Log departures for all persons currently tracked in frame
+        for(const pKey of Object.keys(_presentInFrame)) {
+            const sep=pKey.indexOf('|||');
+            const pid=pKey.slice(0,sep), pzone=pKey.slice(sep+3);
+            const pp=enrolledFaces.find(p=>p.id===pid);
+            if(pp) attLogEvent(pid,pp.name,pp.category,pzone,'departed',false);
+        }
+        _presentInFrame={};
+        const canvas=document.getElementById('attCanvas'); if(canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+        document.getElementById('startRecognitionBtn').style.display='inline-block';
+        document.getElementById('stopRecognitionBtn').style.display='none';
+        const s=document.getElementById('attLiveStatus'); if(s) s.textContent='⏹ Recognition stopped';
+    }
+
+    async function attLogEvent(personId,personName,category,zone,eventType,dresscodeFlag,snapshot) {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const now=new Date();
+        try {
+            const payload={ schoolId:orgId, personId:personId||null, personName, category, zone, eventType, timestamp:now.toISOString(), date:now.toISOString().slice(0,10), dresscodeFlag:dresscodeFlag||false };
+            if(snapshot) payload.snapshot=snapshot;
+            await addDoc(collection(db,'attendanceEvents',orgId,'records'),payload);
+            renderAttActivity();
+        } catch(e) { /* non-fatal */ }
+    }
+
+    async function renderAttActivity() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const listEl=document.getElementById('recentAttendanceList'); if(!listEl) return;
+        const today=new Date().toISOString().slice(0,10);
+        try {
+            const snap=await getDocs(query(collection(db,'attendanceEvents',orgId,'records'),where('date','==',today)));
+            const events=snap.docs.map(d=>d.data()).sort((a,b)=>b.timestamp.localeCompare(a.timestamp)).slice(0,25);
+            if(!events.length){ listEl.innerHTML='<div style="text-align:center;color:#999;padding:12px;font-size:13px;">No activity yet today</div>'; return; }
+            listEl.innerHTML=events.map(e=>`<div class="attendance-item">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:9px;height:9px;border-radius:50%;background:${attCatColor(e.category)};flex-shrink:0;"></div>
+                    <div><div style="font-size:13px;font-weight:600;">${escHtml(e.personName)}</div>
+                    <div style="font-size:10px;color:#888;">${escHtml(e.zone)} · ${escHtml(e.category)}${e.dresscodeFlag?' · ⚠ dress':''}</div></div>
+                </div>
+                <div style="font-size:11px;color:#aaa;white-space:nowrap;">${new Date(e.timestamp).toLocaleTimeString()}</div>
+            </div>`).join('');
+        } catch(e) { listEl.innerHTML='<div style="color:#dc3545;font-size:12px;padding:8px;">Could not load events</div>'; }
+    }
+
+    // ---- Enrollment ----
+    async function startEnrollCapture() {
+        if(!_faceApiReady){ showNotification('AI models still loading','error'); return; }
+        const video=document.getElementById('enrollVideo');
+        if(!video||!video.videoWidth){ showNotification('Camera not ready','error'); return; }
+        _enrollDescriptors=[]; _enrollThumbnail=null;
+        const statusEl=document.getElementById('enrollStatus');
+        const progressEl=document.getElementById('enrollProgress');
+        const countEl=document.getElementById('enrollCount');
+        const barEl=document.getElementById('enrollProgressBar');
+        const previewEl=document.getElementById('enrollPreview');
+        const captureBtn=document.getElementById('startEnrollCaptureBtn');
+        const enrollCanvas=document.getElementById('enrollCanvas');
+        captureBtn.disabled=true; captureBtn.textContent='Capturing…'; progressEl.style.display='block'; previewEl.innerHTML='';
+        const opts=new faceapi.TinyFaceDetectorOptions({inputSize:320,scoreThreshold:0.5});
+        for(let i=0;i<5;i++) {
+            await new Promise(r=>setTimeout(r,1500));
+            let det=null;
+            try { det=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceDescriptor(); } catch(e){}
+            if(det) {
+                _enrollDescriptors.push(det.descriptor);
+                if(enrollCanvas){ enrollCanvas.width=video.videoWidth; enrollCanvas.height=video.videoHeight; const ec=enrollCanvas.getContext('2d'); ec.clearRect(0,0,enrollCanvas.width,enrollCanvas.height); ec.strokeStyle='#4B2E9E'; ec.lineWidth=3; const b=det.detection.box; ec.strokeRect(b.x,b.y,b.width,b.height); }
+                if(i===0) {
+                    const tc=document.createElement('canvas'); tc.width=80; tc.height=80;
+                    tc.getContext('2d').drawImage(video,det.detection.box.x,det.detection.box.y,det.detection.box.width,det.detection.box.height,0,0,80,80);
+                    _enrollThumbnail=tc.toDataURL('image/jpeg',0.7);
+                    previewEl.innerHTML=`<img src="${_enrollThumbnail}" style="width:80px;height:80px;border-radius:50%;border:3px solid #4B2E9E;object-fit:cover;">`;
+                }
+            }
+            const got=_enrollDescriptors.length;
+            if(countEl) countEl.textContent=got;
+            if(barEl) barEl.style.width=(got*20)+'%';
+        }
+        captureBtn.disabled=false; captureBtn.textContent='📷 Auto-Capture 5 Shots';
+        if(_enrollDescriptors.length<2) {
+            if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='Could not detect face — try better lighting or move closer'; }
+        } else {
+            if(statusEl){ statusEl.style.color='#2E7D32'; statusEl.textContent=`✅ ${_enrollDescriptors.length} face samples captured — fill details below and save`; }
+        }
+    }
+
+    async function saveEnrolledPerson() {
+        const name=document.getElementById('enrollName')?.value.trim();
+        const category=document.getElementById('enrollCategory')?.value||'Student';
+        const phone=document.getElementById('enrollPhone')?.value.trim()||'';
+        const dressColor=document.getElementById('enrollDressColor')?.value||'#1565C0';
+        const dressCodeEnabled=document.getElementById('enrollDressCodeEnabled')?.checked||false;
+        const statusEl=document.getElementById('enrollStatus');
+        const orgId=attGetOrgId();
+        if(!name){ if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='Enter a name'; } return; }
+        if(_enrollDescriptors.length<3){ if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent=`Need at least 3 face samples — got ${_enrollDescriptors.length}. Retry capture in better lighting`; } return; }
+        if(!orgId){ if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='Not logged in as school account'; } return; }
+        if(statusEl){ statusEl.style.color='#4B2E9E'; statusEl.textContent='Saving to Firestore…'; }
+        const avg=new Float32Array(128);
+        for(const d of _enrollDescriptors) for(let i=0;i<128;i++) avg[i]+=d[i];
+        for(let i=0;i<128;i++) avg[i]/=_enrollDescriptors.length;
+        try {
+            await addDoc(collection(db,'enrolledFaces',orgId,'persons'),{ schoolId:orgId, name, category, phone, descriptor:Array.from(avg), thumbnail:_enrollThumbnail||'', dressColor, dressCodeEnabled, createdAt:new Date().toISOString() });
+            showNotification(`${name} enrolled ✓`);
+            if(statusEl){ statusEl.style.color='#2E7D32'; statusEl.textContent=`✅ ${name} saved`; }
+            document.getElementById('enrollName').value=''; document.getElementById('enrollPhone').value=''; document.getElementById('enrollPreview').innerHTML=''; _enrollDescriptors=[]; _enrollThumbnail=null;
+            const ce=document.getElementById('enrollCount'); if(ce) ce.textContent='0';
+            const pb=document.getElementById('enrollProgressBar'); if(pb) pb.style.width='0%';
+            const ep=document.getElementById('enrollProgress'); if(ep) ep.style.display='none';
+            await loadEnrolledFaces();
+        } catch(e) {
+            if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='Save failed: '+e.message; }
+        }
+    }
+
+    function renderEnrolledList() {
+        const container=document.getElementById('enrolledPersonsList'); if(!container) return;
+        const cnt=document.getElementById('enrolledCount'); if(cnt) cnt.textContent=enrolledFaces.length;
+        if(!enrolledFaces.length){ container.innerHTML='<div style="text-align:center;color:#999;padding:16px;font-size:13px;">No persons enrolled yet.<br>Go to the Enroll tab to register people.</div>'; return; }
+        container.innerHTML=enrolledFaces.map(p=>`<div class="attendance-item" style="gap:10px;">
+            ${p.thumbnail?`<img src="${p.thumbnail}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid ${attCatColor(p.category)};flex-shrink:0;">`:`<div style="width:42px;height:42px;border-radius:50%;background:${attCatColor(p.category)};color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;">${p.name[0]?.toUpperCase()||'?'}</div>`}
+            <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;">${escHtml(p.name)}</div><div style="font-size:11px;color:#888;">${escHtml(p.category)}${p.phone?' · '+escHtml(p.phone):''}</div></div>
+            <button onclick="attDeletePerson('${p.id}')" style="background:#dc3545;color:white;border:none;padding:6px 10px;border-radius:16px;font-size:11px;cursor:pointer;flex-shrink:0;">🗑</button>
+        </div>`).join('');
+    }
+
+    window.attDeletePerson=async function(id) {
+        if(!confirm('Remove this person from the system?')) return;
+        try { const _orgId=attGetOrgId(); await deleteDoc(doc(db,'enrolledFaces',_orgId,'persons',id)); showNotification('Person removed'); await loadEnrolledFaces(); }
+        catch(e) { showNotification('Delete failed','error'); }
+    };
+
+    // ---- Timeline ----
+    async function renderAttTimeline() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const dateStr=document.getElementById('timelineDate')?.value||new Date().toISOString().slice(0,10);
+        const listEl=document.getElementById('timelineList'); if(!listEl) return;
+        listEl.innerHTML='<div style="text-align:center;color:#999;padding:16px;">Loading…</div>';
+        try {
+            const snap=await getDocs(query(collection(db,'attendanceEvents',orgId,'records'),where('date','==',dateStr)));
+            const events=snap.docs.map(d=>d.data()).sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
+            if(!events.length){ listEl.innerHTML=`<div style="text-align:center;color:#999;padding:24px;font-size:13px;">No events on ${dateStr}</div>`; return; }
+            listEl.innerHTML=events.map(e=>`<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                <div style="width:10px;height:10px;border-radius:50%;background:${attCatColor(e.category)};margin-top:4px;flex-shrink:0;"></div>
+                <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${escHtml(e.personName)}</div>
+                <div style="font-size:11px;color:#888;">${escHtml(e.zone)} · ${escHtml(e.eventType)} · ${escHtml(e.category)}${e.dresscodeFlag?' · ⚠ dress code':''}</div></div>
+                <div style="font-size:11px;color:#aaa;white-space:nowrap;">${new Date(e.timestamp).toLocaleTimeString()}</div>
+            </div>`).join('');
+        } catch(e) { listEl.innerHTML='<div style="color:#dc3545;font-size:12px;padding:8px;">Could not load timeline: '+e.message+'</div>'; }
+    }
+    window.renderAttTimeline=renderAttTimeline;
+
+    // ---- Reports ----
+    function showAttDailyReport() {
+        _reportMode='daily';
+        document.getElementById('reportDailyBtn').style.cssText='flex:1;padding:9px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;';
+        document.getElementById('reportMonthlyBtn').style.cssText='flex:1;padding:9px;background:#f0f0f0;color:#333;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;';
+        document.getElementById('reportDateRow').style.display='flex';
+    }
+    function showAttMonthlyReport() {
+        _reportMode='monthly';
+        document.getElementById('reportMonthlyBtn').style.cssText='flex:1;padding:9px;background:#4B2E9E;color:white;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;';
+        document.getElementById('reportDailyBtn').style.cssText='flex:1;padding:9px;background:#f0f0f0;color:#333;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;';
+        document.getElementById('reportDateRow').style.display='none';
+        generateAttMonthlyReport();
+    }
+    window.showAttDailyReport=showAttDailyReport;
+    window.showAttMonthlyReport=showAttMonthlyReport;
+
+    async function generateAttDailyReport() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const dateStr=document.getElementById('reportDate')?.value||new Date().toISOString().slice(0,10);
+        const reportEl=document.getElementById('reportContent'); if(!reportEl) return;
+        reportEl.innerHTML='<div style="text-align:center;color:#999;padding:16px;">Generating…</div>';
+        try {
+            const snap=await getDocs(query(collection(db,'attendanceEvents',orgId,'records'),where('date','==',dateStr)));
+            const events=snap.docs.map(d=>d.data());
+            const personMap={};
+            for(const e of events.filter(e=>e.personId&&(e.eventType==='arrived'||e.eventType==='departed'))) {
+                if(!personMap[e.personId]) personMap[e.personId]={name:e.personName,category:e.category,arrivals:[],departures:[],zones:new Set()};
+                if(e.eventType==='arrived') personMap[e.personId].arrivals.push(e.timestamp);
+                else personMap[e.personId].departures.push(e.timestamp);
+                personMap[e.personId].zones.add(e.zone);
+            }
+            function calcDur(arr,dep) {
+                if(!arr.length) return '—';
+                const firstIn=Math.min(...arr.map(t=>new Date(t).getTime()));
+                if(!dep.length) return 'On premises';
+                const lastOut=Math.max(...dep.map(t=>new Date(t).getTime()));
+                const mins=Math.round((lastOut-firstIn)/60000);
+                return Math.floor(mins/60)+'h '+String(mins%60).padStart(2,'0')+'m';
+            }
+            _currentReportData=Object.values(personMap).map(p=>{
+                const firstInMs=p.arrivals.length?Math.min(...p.arrivals.map(t=>new Date(t).getTime())):null;
+                const cutoffT=(document.getElementById('lateCutoffTime')?.value||'08:00');
+                const cutoff=new Date(dateStr+'T'+cutoffT+':00').getTime();
+                return {Name:p.name,Role:p.category,'First Arrival':firstInMs?new Date(firstInMs).toLocaleTimeString():'—','Zones':[...p.zones].join(', '),'Duration':calcDur(p.arrivals,p.departures),'Status':firstInMs?(firstInMs<=cutoff?'Present':'Late'):'—'};
+            });
+            for(const p of enrolledFaces) {
+                if(!personMap[p.id]) _currentReportData.push({Name:p.name,Role:p.category,'First Arrival':'—',Zones:'—',Duration:'—',Status:'Absent'});
+            }
+            if(!_currentReportData.length){ reportEl.innerHTML='<div style="text-align:center;color:#999;padding:24px;">No data for '+dateStr+'</div>'; return; }
+            // Persist daily summary to Firestore
+            try { const _sum=_currentReportData.map(r=>Object.fromEntries(Object.entries(r).filter(([k])=>!k.startsWith('_')))); await setDoc(doc(db,'attendanceReports',orgId,'daily',dateStr),{date:dateStr,orgId,generatedAt:new Date().toISOString(),summary:_sum},{merge:true}); } catch(_){} 
+            const sc=s=>s==='Present'?'#2E7D32':s==='Late'?'#FF8C42':'#dc3545';
+            reportEl.innerHTML=`<div style="font-size:12px;font-weight:700;color:#4B2E9E;margin-bottom:8px;">Daily Report: ${dateStr} (${_currentReportData.length} persons)</div>
+            <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:#4B2E9E;color:white;">${['Name','Role','First Arrival','Zones','Duration','Status'].map(h=>`<th style="padding:7px 8px;text-align:left;white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+            <tbody>${_currentReportData.map((r,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'};">
+                <td style="padding:7px 8px;font-weight:600;">${escHtml(r.Name)}</td>
+                <td style="padding:7px 8px;color:#888;">${escHtml(r.Role)}</td>
+                <td style="padding:7px 8px;white-space:nowrap;">${escHtml(r['First Arrival'])}</td>
+                <td style="padding:7px 8px;font-size:10px;">${escHtml(r.Zones)}</td>
+                <td style="padding:7px 8px;white-space:nowrap;">${escHtml(r.Duration)}</td>
+                <td style="padding:7px 8px;"><span style="background:${sc(r.Status)};color:white;padding:2px 8px;border-radius:10px;font-size:11px;">${r.Status}</span></td>
+            </tr>`).join('')}</tbody></table></div>`;
+        } catch(e) { reportEl.innerHTML='<div style="color:#dc3545;padding:8px;">Report failed: '+e.message+'</div>'; }
+    }
+    window.generateAttDailyReport=generateAttDailyReport;
+
+    async function generateAttMonthlyReport() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const reportEl=document.getElementById('reportContent'); if(!reportEl) return;
+        reportEl.innerHTML='<div style="text-align:center;color:#999;padding:16px;">Generating 28-day report…</div>';
+        const endDate=new Date(); const startDate=new Date(); startDate.setDate(endDate.getDate()-27);
+        const startStr=startDate.toISOString().slice(0,10);
+        try {
+            const snap=await getDocs(collection(db,'attendanceEvents',orgId,'records'));
+            const events=snap.docs.map(d=>d.data()).filter(e=>e.personId&&e.date>=startStr&&e.eventType==='arrived');
+            const personMap={};
+            for(const e of events) {
+                if(!personMap[e.personId]) personMap[e.personId]={name:e.personName,category:e.category,dayFirstArrivals:{}};
+                const prev=personMap[e.personId].dayFirstArrivals[e.date];
+                if(!prev||e.timestamp<prev) personMap[e.personId].dayFirstArrivals[e.date]=e.timestamp;
+            }
+            function avgArrTime(dfa) {
+                const times=Object.values(dfa); if(!times.length) return '—';
+                const totalMins=times.reduce((s,ts)=>{ const d=new Date(ts); return s+d.getHours()*60+d.getMinutes(); },0);
+                const avg=Math.round(totalMins/times.length);
+                return String(Math.floor(avg/60)).padStart(2,'0')+':'+String(avg%60).padStart(2,'0');
+            }
+            function countLate(dfa) { const _ct=(document.getElementById('lateCutoffTime')?.value||'08:00').split(':'); const _ch=+_ct[0],_cm=+_ct[1]; return Object.values(dfa).filter(ts=>{ const d=new Date(ts); return d.getHours()>_ch||(d.getHours()===_ch&&d.getMinutes()>_cm); }).length; }
+            _currentReportData=enrolledFaces.map(p=>{
+                const d=personMap[p.id]||{dayFirstArrivals:{}};
+                const present=Object.keys(d.dayFirstArrivals).length;
+                return {Name:p.name,Role:p.category,'Days Present':present,'Days Absent':28-present,'Late Arrivals':countLate(d.dayFirstArrivals),'Avg Arrival':avgArrTime(d.dayFirstArrivals),_days:Object.keys(d.dayFirstArrivals)};
+            });
+            if(!_currentReportData.length){ reportEl.innerHTML='<div style="text-align:center;color:#999;padding:24px;">No enrolled persons found</div>'; return; }
+            const maxP=Math.max(..._currentReportData.map(r=>r['Days Present']),1);
+            reportEl.innerHTML=`<div style="font-size:12px;font-weight:700;color:#4B2E9E;margin-bottom:8px;">28-Day Report: ${startStr} → ${endDate.toISOString().slice(0,10)}</div>
+            <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead><tr style="background:#4B2E9E;color:white;">${['Name','Role','Present','Absent','Late','Avg Arrival','Attendance Bar'].map(h=>`<th style="padding:7px 8px;text-align:left;white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+            <tbody>${_currentReportData.map((r,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'};">
+                <td style="padding:7px 8px;font-weight:600;">${escHtml(r.Name)}</td>
+                <td style="padding:7px 8px;color:#888;">${escHtml(r.Role)}</td>
+                <td style="padding:7px 8px;text-align:center;color:#2E7D32;font-weight:600;">${r['Days Present']}</td>
+                <td style="padding:7px 8px;text-align:center;color:#dc3545;">${r['Days Absent']}</td>
+                <td style="padding:7px 8px;text-align:center;color:#FF8C42;">${r['Late Arrivals']}</td>
+                <td style="padding:7px 8px;text-align:center;">${escHtml(r['Avg Arrival'])}</td>
+                <td style="padding:7px 8px;min-width:70px;">
+                    <div style="background:#eee;border-radius:4px;height:7px;overflow:hidden;">
+                        <div style="background:${r['Days Present']>20?'#2E7D32':r['Days Present']>10?'#FF8C42':'#dc3545'};height:7px;width:${Math.round(r['Days Present']/maxP*100)}%;"></div>
+                    </div>
+                </td>
+            </tr>`).join('')}</tbody></table></div>`;
+        } catch(e) { reportEl.innerHTML='<div style="color:#dc3545;padding:8px;">Report failed: '+e.message+'</div>'; }
+    }
+
+    function downloadAttCSV() {
+        if(!_currentReportData.length){ showNotification('Generate a report first','error'); return; }
+        const filtered=_currentReportData.map(r=>Object.fromEntries(Object.entries(r).filter(([k])=>!k.startsWith('_'))));
+        const headers=Object.keys(filtered[0]);
+        const csv=[headers,...filtered.map(r=>headers.map(h=>String(r[h]||'').replace(/,/g,';')))].map(r=>r.join(',')).join('\n');
+        const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='attendance_report.csv'; a.click();
+    }
+    window.downloadAttCSV=downloadAttCSV;
+
+    // ---- Object Counting (COCO-SSD — loads on demand) ----
+    async function startObjectCounting() {
+        const statusEl=document.getElementById('attLiveStatus');
+        if(statusEl) statusEl.textContent='⏳ Loading object detection model…';
+        try {
+            if(!window.cocoSsd) {
+                // Dynamically load TF.js + COCO-SSD
+                await new Promise((resolve,reject)=>{
+                    const s1=document.createElement('script');
+                    s1.src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js';
+                    s1.onload=resolve; s1.onerror=reject; document.head.appendChild(s1);
+                });
+                await new Promise((resolve,reject)=>{
+                    const s2=document.createElement('script');
+                    s2.src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';
+                    s2.onload=resolve; s2.onerror=reject; document.head.appendChild(s2);
+                });
+            }
+            if(!_cocoModel) _cocoModel=await cocoSsd.load();
+            _objectCountActive=true;
+            const counter=document.getElementById('objectCounter'); if(counter) counter.style.display='block';
+            if(statusEl) statusEl.textContent='🟢 Object counting active';
+            attRunObjectFrame();
+        } catch(e) {
+            if(statusEl){ statusEl.style.color='#dc3545'; statusEl.textContent='Object detection failed: '+e.message; }
+        }
+    }
+
+    async function attRunObjectFrame() {
+        if(!_objectCountActive) return;
+        const video=document.getElementById('attendanceVideo');
+        if(!video||!video.videoWidth){ setTimeout(attRunObjectFrame,500); return; }
+        try {
+            const allPreds=await _cocoModel.detect(video);
+            const selectedClass=(document.getElementById('objectProductSelect')?.value||'').trim();
+            const targetLabel=(document.getElementById('objectTargetLabel')?.value||'').trim().toLowerCase();
+            let matchedPreds=allPreds,displayLabel='';
+            if(selectedClass) {
+                // Registered product type — match exact COCO class
+                matchedPreds=allPreds.filter(p=>p.class===selectedClass);
+                const opt=document.getElementById('objectProductSelect')?.selectedOptions[0];
+                displayLabel=opt&&opt.value?opt.text.split(' (')[0]:'';
+            } else if(targetLabel) {
+                matchedPreds=allPreds.filter(p=>p.class.toLowerCase().includes(targetLabel)||targetLabel.includes(p.class.toLowerCase()));
+                if(!matchedPreds.length) matchedPreds=allPreds.filter(p=>p.score>0.35);
+                displayLabel=targetLabel.charAt(0).toUpperCase()+targetLabel.slice(1);
+            }
+            const count=matchedPreds.length;
+            const c=document.getElementById('objectCounter');
+            if(c) c.textContent=(displayLabel?escHtml(displayLabel)+': ':'')+count;
+            const now=Date.now();
+            if(!window._attLastObjLog||now-window._attLastObjLog>30000) {
+                window._attLastObjLog=now;
+                const orgId=attGetOrgId();
+                if(orgId&&db) addDoc(collection(db,'attendanceEvents',orgId,'records'),{schoolId:orgId,personId:null,personName:targetLabel||'Object Count',category:'Object',zone:attGetZone(),eventType:'counted',timestamp:new Date().toISOString(),date:new Date().toISOString().slice(0,10),count,dresscodeFlag:false}).catch(()=>{});
+            }
+        } catch(_){}
+        if(_objectCountActive) setTimeout(attRunObjectFrame,1000);
+    }
+
+    function stopObjectCounting() {
+        _objectCountActive=false;
+        const c=document.getElementById('objectCounter'); if(c) c.style.display='none';
+        const s=document.getElementById('attLiveStatus'); if(s) s.textContent='⏹ Object counting stopped';
+    }
+
+    async function saveAttDressCodeSettings() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const enabled=document.getElementById('schoolDressCodeEnabled')?.checked||false;
+        const color=document.getElementById('schoolUniformColor')?.value||'#1565C0';
+        try {
+            await setDoc(doc(db,'appConfig','dressCode_'+orgId),{enabled,color,orgId},{merge:true});
+            showNotification('Dress code settings saved ✓');
+        } catch(e) { showNotification('Save failed','error'); }
+    }
+    window.saveAttDressCodeSettings=saveAttDressCodeSettings;
+
+    async function saveAttSettings() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        const cutoff=document.getElementById('lateCutoffTime')?.value||'08:00';
+        try {
+            await setDoc(doc(db,'appConfig','attSettings_'+orgId),{lateCutoff:cutoff,orgId},{merge:true});
+            showNotification('Attendance settings saved ✓');
+        } catch(e) { showNotification('Save failed','error'); }
+    }
+    window.saveAttSettings=saveAttSettings;
+
+    async function loadProductTypes() {
+        const orgId=attGetOrgId(); if(!orgId||!db) return;
+        try {
+            const snap=await getDocs(collection(db,'productTypes',orgId,'items'));
+            const sel=document.getElementById('objectProductSelect'); if(!sel) return;
+            const types=snap.docs.map(d=>({id:d.id,...d.data()}));
+            sel.innerHTML='<option value="">All objects (no filter)</option>'+types.map(t=>`<option value="${t.cocoClass}">${escHtml(t.name)} (${t.cocoClass})</option>`).join('');
+        } catch(e) { console.error('loadProductTypes',e); }
+    }
+
+    window.attRegisterProductType=async function() {
+        if(!_cocoModel){ showNotification('Enable Object Mode first','error'); return; }
+        const video=document.getElementById('attendanceVideo');
+        if(!video||!video.videoWidth){ showNotification('Camera not ready','error'); return; }
+        try {
+            const preds=await _cocoModel.detect(video);
+            if(!preds.length){ showNotification('No objects detected — point camera at the product','error'); return; }
+            const top=preds.sort((a,b)=>b.score-a.score)[0];
+            const name=prompt(`Detected: "${top.class}" (${Math.round(top.score*100)}% confidence)\n\nEnter a name for this product type (e.g. "Iron Sheet"):`);
+            if(!name||!name.trim()) return;
+            const orgId=attGetOrgId(); if(!orgId||!db) return;
+            await addDoc(collection(db,'productTypes',orgId,'items'),{name:name.trim(),cocoClass:top.class,orgId,createdAt:new Date().toISOString()});
+            showNotification('"'+name.trim()+'" registered as '+top.class+' ✓');
+            loadProductTypes();
+        } catch(e){ showNotification('Registration failed: '+e.message,'error'); }
+    };
 
     // ===== LIVE LESSONS — TEACHER SIDE =====
     document.getElementById('startLiveLessonBtn')?.addEventListener('click', async () => {
@@ -4188,19 +5275,37 @@
             }).join('');
         }
 
+        function renderCachedLiveLessons() {
+            try {
+                const cached = JSON.parse(localStorage.getItem('apshule_live_lessons_cache')||'[]');
+                const cachedSnap = { empty: !cached.length, docs: cached.map(item=>({ id:item.id, data:()=>item })) };
+                renderCards(cachedSnap).catch(()=>{});
+                if(cached.length) {
+                    const note = document.createElement('div');
+                    note.style.cssText='text-align:center;color:#8a6d3b;font-size:11px;padding:6px;';
+                    note.textContent='Showing the last synced lessons. We will refresh when the connection returns.';
+                    container.prepend(note);
+                }
+            } catch(_) {
+                container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">No synced lessons are available offline.</div>';
+            }
+        }
+
         // Cancel any previous listener then start a live one
         if(_livePageUnsub) { _livePageUnsub(); _livePageUnsub = null; }
-        // Cancel any previous listener then start a live one
-if(_livePageUnsub) { _livePageUnsub(); _livePageUnsub = null; }
-try {
-    _livePageUnsub = onSnapshot(
-        query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
-        snap => renderCards(snap),
-        (error) => { container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>'; }
-    );
-} catch(e) {
-    container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
-}
+        try {
+            _livePageUnsub = onSnapshot(
+                query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
+                snap => {
+                    localStorage.setItem('apshule_live_lessons_cache', JSON.stringify(snap.docs.map(d=>({id:d.id,...d.data()}))));
+                    renderCards(snap).catch(()=>renderCachedLiveLessons());
+                },
+                () => renderCachedLiveLessons()
+            );
+        } catch(e) {
+            renderCachedLiveLessons();
+        }
+    }
 
     // ---- Feature 1: Render the full Live Page ----
     async function renderLivePage() {
@@ -4668,7 +5773,7 @@ try {
                     <div style="font-weight:700;font-size:13px;color:#FF8C42;margin-bottom:4px;">${escHtml(subj)} <span style="background:#FF8C42;color:white;border-radius:10px;padding:1px 7px;font-size:11px;">${names.length}</span></div>
                     <div style="font-size:12px;color:#555;">${names.map(n=>escHtml(n)).join(', ')}</div>
                 </div>`).join('');
-        } catch(e) { container.innerHTML='<div style="color:#ccc;font-size:13px;">Could not load.</div>'; }
+        } catch(e) { container.innerHTML='<div style="color:#c62828;font-size:13px;">Could not load weak areas. Please try again.</div>'; }
     }
 
     // Superadmin analytics: weak areas overview
@@ -4688,7 +5793,7 @@ try {
                     <span>${escHtml(s)}</span>
                     <span style="background:#4B2E9E;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${n} student${n!==1?'s':''}</span>
                 </div>`).join('');
-        } catch(e){}
+        } catch(e){ el.innerHTML='<div style="color:#c62828;font-size:13px;">Could not load weak areas. Please try again.</div>'; }
     }
 
     // =====================================================================
@@ -5086,6 +6191,7 @@ try {
         let docSnap = await getDoc(doc(db,"users",user.uid));
         if(!docSnap.exists()) return;
         currentUser = { uid: user.uid, ...docSnap.data() };
+        document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
         updateGreeting();
@@ -5136,6 +6242,9 @@ try {
         const superPdfAcc = document.getElementById('superAdminPdfAccountSection');
         if(superPdfAcc) superPdfAcc.style.display = isSuper ? "block" : "none";
         if(isSuper) renderAccPdfList();
+        // Referral / invite card (all roles except superadmin)
+        if(!isSuper) loadReferralCard();
+        setupComplianceTools();
         // School logo / dual branding
         if(isSchool) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
@@ -5156,7 +6265,6 @@ try {
             loadSuperAdminWeakAreasOverview();
         }
         renderClasses();
-        renderRecentAttendance();
         renderEnrolledList();
         renderEventsTicker();
         if(isTeacher) loadTeacherDashboard();
@@ -5175,6 +6283,7 @@ try {
         renderForYouSection();
         renderMyWeakAreasTags();
         checkAndPromptWeakAreas();
+        navigateTo('home');
     }
 
     // ===== FIRESTORE LISTENERS =====
@@ -5209,6 +6318,7 @@ try {
         onSnapshot(collection(db,"pdfs"), (snap) => {
             pdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderPdfList(); renderPdfAdmin(); renderResources();
+            if(currentUser?.role==='superadmin') renderAccPdfList();
         });
     }
 
@@ -5434,17 +6544,104 @@ try {
     });
     document.getElementById('closeFeedbackBtn')?.addEventListener('click', closeVideoModal);
 
-    // Attendance modal
-    document.getElementById('attendanceMenuItem')?.addEventListener('click', async ()=>{ if(!currentUser||currentUser.role!=='school'){showNotification("Only school accounts","error");return;} document.getElementById('attendanceModal').classList.add('show'); attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera); enrollStream=await setupCamera('enrollVideo',currentEnrollCamera); });
-    document.getElementById('closeAttendanceModal')?.addEventListener('click', ()=>{ document.getElementById('attendanceModal').classList.remove('show'); if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); });
-    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{ let name=t.getAttribute('data-attendance-tab'); document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active')); t.classList.add('active'); document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); }));
-    document.getElementById('switchAttendanceCamera')?.addEventListener('click', async()=>{ if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop()); let newMode=currentAttendanceCamera==='environment'?'user':'environment'; let s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode; });
-    document.getElementById('switchEnrollCamera')?.addEventListener('click', async()=>{ if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop()); let newMode=currentEnrollCamera==='environment'?'user':'environment'; let s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode; });
-    document.getElementById('markAttendanceBtn')?.addEventListener('click', markAttendance);
-    document.getElementById('captureEnrollBtn')?.addEventListener('click', ()=>{ let img=captureFace('enrollVideo'); if(img){capturedFaceImage=img;document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face captured</p>`;showNotification("Face captured");}else showNotification("Camera not ready","error"); });
-    document.getElementById('faceImageUpload')?.addEventListener('change', function(e){ let file=e.target.files[0]; if(file){let reader=new FileReader();reader.onload=function(ev){capturedFaceImage=ev.target.result;document.getElementById('enrollPreview').innerHTML=`<img src="${capturedFaceImage}" class="preview-image"><p>✅ Face imported</p>`;showNotification("Face imported");};reader.readAsDataURL(file);} });
-    document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click', ()=>{ if(!currentUser||currentUser.role!=='school'){showNotification("Only school accounts","error");return;} let sid=currentUser.schoolId; let name=document.getElementById('enrollName').value.trim(); let cat=document.getElementById('enrollCategory').value; let phone=document.getElementById('enrollPhone').value.trim(); if(!name){showNotification("Enter name","error");return;} if(!capturedFaceImage){showNotification("Capture face first","error");return;} getImageHash(capturedFaceImage,(hash)=>{ attendancePeople.push({id:Date.now(),schoolId:sid,name,category:cat,phone,faceHash:hash,enrolledAt:new Date().toISOString()}); localStorage.setItem('apshule_attendance_people',JSON.stringify(attendancePeople)); document.getElementById('enrollName').value='';document.getElementById('enrollPhone').value='';document.getElementById('enrollPreview').innerHTML='';capturedFaceImage=null;document.getElementById('faceImageUpload').value=''; showNotification(`${name} enrolled`); renderEnrolledList(); }); });
-    document.getElementById('clearAllAttendanceBtn')?.addEventListener('click', ()=>{ if(!currentUser||currentUser.role!=='school') return; let sid=currentUser.schoolId; if(confirm("Delete all attendance records for this school?")){attendanceRecords=attendanceRecords.filter(r=>r.schoolId!==sid);localStorage.setItem('apshule_attendance_records',JSON.stringify(attendanceRecords));showNotification("All records cleared");renderRecentAttendance();} });
+    // ===== ATTENDANCE EVENT LISTENERS =====
+    document.getElementById('attendanceMenuItem')?.addEventListener('click', async ()=>{
+        if(!currentUser||currentUser.role!=='school'){ showNotification("Only school accounts","error"); return; }
+        document.getElementById('attendanceModal').classList.add('show');
+        const schoolNameEl=document.getElementById('attendanceSchoolName');
+        if(schoolNameEl) schoolNameEl.textContent=currentUser.schoolName||'';
+        // Set today's date in pickers
+        const today=new Date().toISOString().slice(0,10);
+        const tdEl=document.getElementById('timelineDate'); if(tdEl) tdEl.value=today;
+        const rdEl=document.getElementById('reportDate'); if(rdEl) rdEl.value=today;
+        // Start cameras
+        attendanceStream=await setupCamera('attendanceVideo',currentAttendanceCamera);
+        enrollStream=await setupCamera('enrollVideo',currentEnrollCamera);
+        // Load AI models + enrolled faces in parallel (non-blocking)
+        initFaceApi();
+        loadEnrolledFaces();
+        renderAttActivity();
+        // Load school dress code settings
+        const dcOrgId=attGetOrgId();
+        if(dcOrgId&&db) {
+            getDoc(doc(db,'appConfig','dressCode_'+dcOrgId)).then(dcSnap=>{
+                if(dcSnap&&dcSnap.exists){ _schoolDressCode={enabled:dcSnap.data().enabled||false,color:dcSnap.data().color||'#1565C0'}; const el=document.getElementById('schoolDressCodeEnabled'); if(el) el.checked=_schoolDressCode.enabled; const cl=document.getElementById('schoolUniformColor'); if(cl) cl.value=_schoolDressCode.color; }
+            }).catch(()=>{});
+            // Load late cutoff setting
+            getDoc(doc(db,'appConfig','attSettings_'+dcOrgId)).then(asSnap=>{
+                if(asSnap&&asSnap.exists){ const lc=asSnap.data().lateCutoff; const el=document.getElementById('lateCutoffTime'); if(el&&lc) el.value=lc; }
+            }).catch(()=>{});
+        }
+    });
+
+    document.getElementById('closeAttendanceModal')?.addEventListener('click', ()=>{
+        stopRecognition();
+        stopObjectCounting();
+        document.getElementById('attendanceModal').classList.remove('show');
+        if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop());
+        if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop());
+        attendanceStream=null; enrollStream=null;
+    });
+
+    document.querySelectorAll('.attendance-tab').forEach(t=>t.addEventListener('click',()=>{
+        const name=t.getAttribute('data-attendance-tab');
+        document.querySelectorAll('.attendance-tab').forEach(tt=>tt.classList.remove('active'));
+        t.classList.add('active');
+        document.querySelectorAll('.attendance-tab-content').forEach(c=>c.classList.remove('active'));
+        document.getElementById(name+'Tab').classList.add('active');
+    }));
+
+    document.getElementById('switchAttendanceCamera')?.addEventListener('click', async()=>{
+        if(attendanceStream) attendanceStream.getTracks().forEach(t=>t.stop());
+        const newMode=currentAttendanceCamera==='environment'?'user':'environment';
+        const s=await setupCamera('attendanceVideo',newMode); if(s) currentAttendanceCamera=newMode;
+    });
+
+    document.getElementById('switchEnrollCamera')?.addEventListener('click', async()=>{
+        if(enrollStream) enrollStream.getTracks().forEach(t=>t.stop());
+        const newMode=currentEnrollCamera==='environment'?'user':'environment';
+        const s=await setupCamera('enrollVideo',newMode); if(s) currentEnrollCamera=newMode;
+    });
+
+    document.getElementById('startRecognitionBtn')?.addEventListener('click', startRecognition);
+    document.getElementById('stopRecognitionBtn')?.addEventListener('click', stopRecognition);
+    document.getElementById('startEnrollCaptureBtn')?.addEventListener('click', startEnrollCapture);
+    document.getElementById('saveEnrolledPersonBtn')?.addEventListener('click', saveEnrolledPerson);
+
+    document.getElementById('attZoneSelect')?.addEventListener('change', function(){
+        const customInput=document.getElementById('attZoneCustom');
+        if(customInput) customInput.style.display=this.value==='Custom'?'block':'none';
+    });
+
+    document.getElementById('objectModeToggle')?.addEventListener('change', function(){
+        const labelRow=document.getElementById('objectLabelRow');
+        const productRow=document.getElementById('objectProductRow');
+        if(this.checked) {
+            if(labelRow) labelRow.style.display='block';
+            if(productRow) productRow.style.display='block';
+            loadProductTypes();
+            stopRecognition();
+            startObjectCounting();
+        } else {
+            if(labelRow) labelRow.style.display='none';
+            if(productRow) productRow.style.display='none';
+            stopObjectCounting();
+        }
+    });
+
+    document.getElementById('clearAllAttendanceBtn')?.addEventListener('click', async ()=>{
+        if(!currentUser||currentUser.role!=='school') return;
+        const orgId=attGetOrgId(); if(!orgId) return;
+        if(!confirm("Delete ALL attendance event records for this school? (Enrolled persons are kept)")) return;
+        try {
+            const snap=await getDocs(collection(db,'attendanceEvents',orgId,'records'));
+            const batch=[];
+            snap.docs.forEach(d=>batch.push(deleteDoc(doc(db,'attendanceEvents',orgId,'records',d.id))));
+            await Promise.all(batch);
+            showNotification("All records cleared");
+            renderAttActivity();
+        } catch(e){ showNotification("Clear failed: "+e.message,"error"); }
+    });
 
     // Subscribe buttons on default plans
     document.querySelectorAll('.subscribe-btn-small').forEach(btn => {
@@ -5581,22 +6778,18 @@ try {
     });
 
     // ===== ACCOUNT PAGE: SUPERADMIN PDF UPLOAD =====
-    async function renderAccPdfList() {
+    // Uses the shared pdfMaterials array (kept live by onSnapshot) — no extra Firestore query
+    function renderAccPdfList() {
         const listEl = document.getElementById('accPdfList'); if(!listEl) return;
-        try {
-            const snap = await getDocs(query(collection(db,'pdfs'),orderBy('uploadedAt','desc')));
-            if(snap.empty){ listEl.innerHTML='<div style="color:#999;font-size:13px;text-align:center;padding:10px;">No PDFs uploaded yet.</div>'; return; }
-            listEl.innerHTML = snap.docs.slice(0,8).map(d=>{
-                const f=d.data();
-                return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:13px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${escHtml(f.title||'Untitled')}</div>
-                        <div style="font-size:11px;color:#999;">${escHtml(f.category||'General')} &bull; ${escHtml((f.uploadedAt||'').slice(0,10))}</div>
-                    </div>
-                    <button onclick="deleteAccPdf('${d.id}','${escHtml(f.storagePath||'')}')" style="background:none;border:none;color:#c62828;font-size:18px;cursor:pointer;flex-shrink:0;padding:4px 6px;">🗑</button>
-                </div>`;
-            }).join('') + (snap.docs.length>8?`<div style="font-size:11px;color:#999;text-align:center;padding:8px 0;">+${snap.docs.length-8} more in Admin Panel</div>`:'');
-        } catch(_){ listEl.innerHTML=''; }
+        const sorted = [...pdfMaterials].sort((a,b)=>(b.uploadedAt||'').localeCompare(a.uploadedAt||''));
+        if(!sorted.length){ listEl.innerHTML='<div style="color:#999;font-size:13px;text-align:center;padding:10px;">No PDFs uploaded yet.</div>'; return; }
+        listEl.innerHTML = sorted.slice(0,8).map(f=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:600;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${escHtml(f.title||'Untitled')}</div>
+                    <div style="font-size:11px;color:#999;">${escHtml(f.category||'General')} &bull; ${escHtml((f.uploadedAt||'').slice(0,10))}</div>
+                </div>
+                <button onclick="deleteAccPdf('${f.id}','${escHtml(f.storagePath||'')}')" style="background:none;border:none;color:#c62828;font-size:18px;cursor:pointer;flex-shrink:0;padding:4px 6px;">🗑</button>
+            </div>`).join('')+(sorted.length>8?`<div style="font-size:11px;color:#999;text-align:center;padding:8px 0;">+${sorted.length-8} more in Admin Panel</div>`:'');
     }
     async function deleteAccPdf(docId, storagePath) {
         if(!confirm('Delete this PDF?')) return;
@@ -5743,6 +6936,21 @@ try {
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
             await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
+            // Attach referral if user arrived via a referral link
+            const pendingRef = sessionStorage.getItem('pendingReferral');
+            if(pendingRef) {
+                try {
+                    const refSnap = await getDocs(query(collection(db,'users'), where('referralCode','==',pendingRef)));
+                    if(refSnap.docs.length > 0) {
+                        const referrerId = refSnap.docs[0].id;
+                        if(referrerId !== cred.user.uid) {
+                            await updateDoc(doc(db,'users',cred.user.uid), { referredBy: referrerId });
+                            await updateDoc(doc(db,'users',referrerId), { referralCount: increment(1) });
+                        }
+                    }
+                    sessionStorage.removeItem('pendingReferral');
+                } catch(e) {}
+            }
             showNotification("Account created!");
         } catch(err){ document.getElementById('loginError').innerText=err.message; }
     });
@@ -5769,7 +6977,8 @@ try {
 
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
         clearSessionData();
-        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('landingScreen').classList.remove('hidden');
+        document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.add('hidden');
         try { await signOut(auth); } catch(e) {}
     });
@@ -5790,7 +6999,8 @@ try {
             if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 54000); }
         } else {
             clearSessionData();
-            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('landingScreen').classList.remove('hidden');
+            document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.add('hidden');
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
         }
@@ -5802,7 +7012,7 @@ try {
         const splash = document.getElementById('splashScreen');
         if(splash && splash.style.display !== 'none') {
             splash.style.display = 'none';
-            document.getElementById('loginScreen')?.classList.remove('hidden');
+            document.getElementById('landingScreen').classList.remove('hidden');
             document.getElementById('loginError').textContent = '⚠️ Slow connection detected. Please check your internet and try again.';
         }
     }, 14000);
@@ -6283,6 +7493,50 @@ try {
   connect();
 })();
 
+// ===== REFERRAL CARD =====
+async function loadReferralCard() {
+    const card = document.getElementById('referralCard');
+    if(!card || !currentUser) return;
+
+    // Ensure user has a referralCode; generate one if missing
+    let code = currentUser.referralCode;
+    if(!code) {
+        code = currentUser.uid.slice(0, 8) + Math.random().toString(36).slice(2, 5);
+        try {
+            await updateDoc(doc(db,'users', currentUser.uid), { referralCode: code });
+            currentUser.referralCode = code;
+        } catch(e) { return; }
+    }
+
+    const count = currentUser.referralCount || 0;
+    const url = location.origin + '?ref=' + code;
+    const waMsg = encodeURIComponent('Join me on APSHULE \u2013 Uganda\u2019s online learning platform! Sign up here: ' + url);
+    const badge = count >= 1
+        ? `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FFD166,#FF8C42);color:white;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;margin-bottom:10px;">\u2b50 Referrer Badge</div>`
+        : '';
+
+    card.style.display = 'block';
+    card.innerHTML = `
+        <h4 style="color:#4B2E9E;margin:0 0 4px;">\uD83D\uDD17 Invite Friends</h4>
+        <p style="font-size:12px;color:#888;margin:0 0 10px;">Share your personal link \u2014 earn a \u2b50 Referrer badge when a friend signs up!</p>
+        ${badge}
+        <div style="background:#f5f5ff;border-radius:12px;padding:10px 14px;font-size:12px;color:#444;word-break:break-all;margin-bottom:10px;border:1px solid #e0e0ff;">${escHtml(url)}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <button id="copyReferralBtn" style="flex:1;background:#4B2E9E;color:white;border:none;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;">📋 Copy Link</button>
+            <a href="https://wa.me/?text=${waMsg}" target="_blank" rel="noopener" style="flex:1;background:#25D366;color:white;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">💬 WhatsApp</a>
+        </div>
+        <p style="margin:0;font-size:13px;${count>0?'color:#4B2E9E;font-weight:600;':'color:#aaa;'}">
+            ${count>0 ? `\uD83C\uDF89 You\u2019ve invited ${count} friend${count===1?'':'s'}!` : 'No referrals yet \u2014 share your link to get started!'}
+        </p>`;
+
+    const copyBtn = document.getElementById('copyReferralBtn');
+    if(copyBtn) copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(url)
+            .then(() => showNotification('Referral link copied!'))
+            .catch(() => showNotification('Copy failed', 'error'));
+    });
+}
+
 // ===== SCHOOL BRANDING HELPERS =====
 function applySchoolBranding(schoolLogoUrl) {
     const el = document.getElementById('headerSchoolLogoImg');
@@ -6293,19 +7547,30 @@ function clearSchoolBranding() {
     if(el) { el.src = ''; el.style.display = 'none'; }
 }
 
-// ===== SCHOOL INVITE URL CHECK =====
+// ===== SCHOOL INVITE & REFERRAL URL CHECK =====
 (function(){
     const params = new URLSearchParams(location.search);
+    let didReplace = false;
+
     const code = params.get('schoolInvite');
     if(code) {
         sessionStorage.setItem('pendingSchoolInvite', code);
-        history.replaceState(null, '', location.pathname);
+        didReplace = true;
         // Show a subtle banner on the sign-up tab
         const loginErr = document.getElementById('loginError');
         const tabs = document.querySelectorAll('.login-tab');
         tabs.forEach(t => { if(t.dataset.tab==='signup') t.click(); });
         if(loginErr) { loginErr.style.color='#2E7D32'; loginErr.innerText='You were invited to a school — create an account to join!'; }
     }
+
+    // Capture individual referral code (?ref=<code>)
+    const refCode = params.get('ref');
+    if(refCode) {
+        sessionStorage.setItem('pendingReferral', refCode);
+        didReplace = true;
+    }
+
+    if(didReplace) history.replaceState(null, '', location.pathname);
 })();
 
 // ===== MY STUDENTS (school admin) =====
@@ -6357,6 +7622,89 @@ function loadMyStudents() {
     );
 }
 
+// ── PWA Install Prompt ──────────────────────────────────────────────────────
+(function() {
+    const BANNER_KEY   = 'pwaInstallDismissedAt';
+    const IOS_KEY      = 'pwaIosTipDismissedAt';
+    const WEEK_MS      = 7 * 24 * 60 * 60 * 1000;
+    const isIos        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandalone = ('standalone' in navigator && navigator.standalone) ||
+                           window.matchMedia('(display-mode: standalone)').matches;
+
+    let deferredPrompt = null;
+
+    // ── Android / Chrome: capture beforeinstallprompt ──
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const dismissed = localStorage.getItem(BANNER_KEY);
+        if (dismissed && (Date.now() - Number(dismissed)) < WEEK_MS) return;
+        if (!isInStandalone) showInstallBanner();
+    });
+
+    function showInstallBanner() {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (!banner) return;
+        banner.style.display = 'block';
+
+        document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            hideBanner();
+            if (outcome === 'accepted') localStorage.setItem(BANNER_KEY, Date.now().toString());
+        });
+
+        document.getElementById('pwaDismissBtn')?.addEventListener('click', () => {
+            hideBanner();
+            localStorage.setItem(BANNER_KEY, Date.now().toString());
+        });
+    }
+
+    function hideBanner() {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+    }
+
+    // ── iOS Safari: show manual "Add to Home Screen" tip ──
+    if (isIos && !isInStandalone) {
+        const dismissed = localStorage.getItem(IOS_KEY);
+        if (!dismissed || (Date.now() - Number(dismissed)) >= WEEK_MS) {
+            // Show tip after a short delay so it doesn't flash on load
+            setTimeout(() => showIosTip(), 3000);
+        }
+    }
+
+    function showIosTip() {
+        const existing = document.getElementById('pwaIosTip');
+        if (existing) return;
+        const tip = document.createElement('div');
+        tip.id = 'pwaIosTip';
+        tip.style.cssText = [
+            'position:fixed','bottom:76px','left:0','right:0','max-width:500px',
+            'margin:0 auto','z-index:1100','padding:0 12px','pointer-events:none'
+        ].join(';');
+        tip.innerHTML = `
+            <div style="background:#4B2E9E;color:white;border-radius:16px;padding:12px 16px;
+                        display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);
+                        pointer-events:all;animation:slideUpBanner 0.35s ease;">
+                <div style="font-size:26px;flex-shrink:0;">🍎</div>
+                <div style="flex:1;min-width:0;">
+                    <strong style="display:block;font-size:13px;font-weight:700;">Install on iPhone</strong>
+                    <span style="font-size:11px;opacity:0.85;">Tap <b>Share ↑</b> then <b>"Add to Home Screen"</b></span>
+                </div>
+                <button id="pwaIosDismiss" style="background:none;border:none;color:rgba(255,255,255,0.7);
+                        font-size:18px;cursor:pointer;padding:0 4px;line-height:1;">✕</button>
+            </div>`;
+        document.body.appendChild(tip);
+        document.getElementById('pwaIosDismiss')?.addEventListener('click', () => {
+            tip.remove();
+            localStorage.setItem(IOS_KEY, Date.now().toString());
+        });
+    }
+})();
+
 // Create student button handler
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('createStudentBtn')?.addEventListener('click', async () => {
@@ -6396,5 +7744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
+<!-- face-api.js — AI face recognition (vladmandic maintained fork) -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 </body>
 </html>
