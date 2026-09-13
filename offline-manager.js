@@ -694,6 +694,11 @@
     listProjects: function () { return allRecords('offline_projects'); },
     listCARecords: function () { return allRecords('offline_ca_records'); },
     listViews: function () { return allRecords('offline_views'); },
+    markViewSynced: function (viewId, extra) {
+      return getRecord('offline_views', viewId).then(function (item) {
+        return item ? putRecord('offline_views', Object.assign({}, item, extra || {}, { synced: true, syncedAt: Date.now() })) : false;
+      });
+    },
     markProjectSynced: function (localId, extra) { return getRecord('offline_projects', localId).then(function (item) { return item ? putRecord('offline_projects', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false; }); },
     recordVideoView: function (view) { return API.queueView(view); },
     isCacheEligibleUrl: isCacheEligibleUrl,

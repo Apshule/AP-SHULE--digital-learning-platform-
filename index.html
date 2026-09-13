@@ -2504,6 +2504,58 @@
         else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
         await refreshOfflineUi(mode);
     }
+    async function syncOfflineViews(items) {
+        if(!Offline || !navigator.onLine || !auth?.currentUser) return {synced:0,failed:0};
+        const queued=Array.isArray(items) ? items : (await Offline.listViews()).filter(view=>view.synced===false);
+        let syncedCount=0, failed=[];
+        for(const view of queued) {
+            if(!view?.viewId) continue;
+            try {
+                const completionRef=doc(db,'videoCompletions',view.viewId);
+                const earningRef=doc(db,'teacherEarnings',view.viewId);
+                const teacherRef=doc(db,'users',view.teacherId);
+                const result=await runTransaction(db, async tx=>{
+                    const existing=await tx.get(completionRef);
+                    if(existing.exists) return {created:false, revenue:Number(view.earningsAmount||0)};
+                    const teacherSnap=await tx.get(teacherRef);
+                    const teacher=teacherSnap.exists ? teacherSnap.data() : {};
+                    const revenue=Number(teacher.revenuePerView||100);
+                    const watchedAt=view.watchedAt||new Date().toISOString();
+                    tx.set(completionRef,{
+                        studentId:view.studentId,
+                        studentName:view.studentName||'',
+                        teacherId:view.teacherId,
+                        videoKey:view.videoId,
+                        completedAt:watchedAt,
+                        deviceType:view.deviceType,
+                        connectionMode:view.connectionMode||'offline',
+                        syncedFrom:'offline'
+                    });
+                    tx.set(earningRef,{
+                        teacherId:view.teacherId,
+                        studentId:view.studentId,
+                        studentName:view.studentName||'',
+                        videoKey:view.videoId,
+                        amount:revenue,
+                        paid:false,
+                        earnedAt:watchedAt,
+                        connectionMode:view.connectionMode||'offline'
+                    });
+                    tx.set(teacherRef,{pendingEarnings:increment(revenue)},{merge:true});
+                    return {created:true,revenue};
+                });
+                await Offline.markViewSynced(view.viewId,{earningsAmount:result.revenue||0});
+                syncedCount++;
+            } catch(error) {
+                console.error('Offline view sync failed:', view.viewId, error);
+                failed.push(view.viewId);
+            }
+        }
+        if(failed.length) throw new Error(`${failed.length} offline view${failed.length===1?'':'s'} could not sync`);
+        if(syncedCount) showNotification(`✅ ${syncedCount} offline views synced`,'success');
+        return {synced:syncedCount,failed:0};
+    }
+    window.syncOfflineViews=syncOfflineViews;
     function configureOfflineSync() {
         if(!Offline) return;
         Offline.setSyncHooks({
@@ -2514,7 +2566,7 @@
                 }
             },
             pushCARecords: async items => { for(const item of items) await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(item.payload||item)}); },
-            pushViews: async items => { for(const item of items) await addDoc(collection(db,'videoViews'),item.payload||item); },
+            pushViews: async items => syncOfflineViews(items),
             pullProjects: async () => {
                 if(!auth?.currentUser) return [];
                 const data=await complianceApi('/projects');
