@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-3.11"]
+modules = ["nodejs-24", "python-3.11", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -56,3 +56,6 @@ externalPort = 3000
 [userenv.shared]
 VAPID_PUBLIC_KEY = "BLwAQ9BA55zaw2_be7hgH7tAvU47bJvKTI_HtZd6AGnSO0B5BESi69nWM8J3yiuFI8G5_1Mv-fptR-XoB72vBb0"
 VAPID_PRIVATE_KEY = "0Waaa2AKteejU8aaO5G72mtPJ9RaEkVSjjHAhtPsZ9o"
+
+[nix]
+channel = "stable-25_05"

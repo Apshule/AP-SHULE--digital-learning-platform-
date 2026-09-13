@@ -1,0 +1,89 @@
+The Task 1 you completed was missing the first 3 steps. Please add them now.
+
+STEP 1: FIX EXISTING BUGS
+Fix these bugs in the existing app:
+
+1. Live Lessons shows "Could not load lessons. Check connection."
+   - Find renderLivePageLessons()
+   - Fix the onSnapshot() error callback to log the real error (error.code, error.message)
+   - Check if Firestore security rules allow reading the 'liveLessons' collection
+   - Check if a composite index is needed on liveLessons collection
+   - Show cached lessons when offline
+
+2. Student Weak Areas Overview and Student Q&A stuck on "Loading..."
+   - Find loadSuperAdminWeakAreasOverview() and similar functions
+   - Empty catch blocks silently swallow errors
+   - Add proper error handling: show "No data available" or the real error message
+
+3. Verify no duplicate subscription plan cards on Home screen
+   - Plans must be populated ONLY by listenToSubscriptionPlans() from Firestore
+   - Remove any static fallback cards in HTML
+   - If Firestore is empty, JS should inject the default 6 plans dynamically
+STEP 2: ADD 5 FIRESTORE COLLECTIONS
+Create these 5 collections with the exact fields listed:
+
+1. uneb_items
+   subject, classLevel, topic, scenarioText, competency,
+   markingGrid (Exceeds/Meets/Approaching/Needs Support),
+   sourceYear, createdBy, createdAt
+
+2. ca_records
+   learnerId, schoolId, subject, competency,
+   evidence1 (quiz score), evidence2 (observation notes),
+   evidence3 (project photo URL), finalLevel, term,
+   teacherId, syncedAt, createdAt
+
+3. projects
+   learnerId, schoolId, className, subject, title, lin, qrCode,
+   milestone_1_date, milestone_1_photo, milestone_1_status,
+   milestone_2_date, milestone_2_photo, milestone_2_status,
+   final_date, final_photo, final_status,
+   teacher_observed_tick, viva_audio_path,
+   similarity_flag, previous_title_check, createdAt
+
+4. curriculum_links
+   subject, classLevel, topic, syllabusRef, learnerBookPage,
+   teacherGuidePage, summaryText (200 words max),
+   activitySuggestion, createdAt
+
+5. teacher_retooling_progress
+   teacherId, moduleId (1-10), completed, quizScore,
+   practical_upload_path, certificateIssued, completedAt, updatedAt
+
+STEP 3: SCHOOL ADMIN — NCDC/UNEB Compliance Card
+LOCATION: Inside Admin Panel (3-dot menu → Admin Panel)
+PLACE IT: BELOW "Manage School Events" section
+SHOW WHEN: user.role === 'school'
+
+Add "NCDC/UNEB Compliance" card with 4 buttons:
+
+BUTTON 1: "Export UNEB CA File"
+- Generates .xlsx from ca_records filtered by school_id
+- Filter by class/term
+- One-click download
+
+BUTTON 2: "Headteacher Dashboard"
+- Teachers retooled % (from teacher_retooling_progress)
+- Lessons taught with CBC
+- Competency levels pie chart (from ca_records)
+- Projects approved vs pending (from projects)
+- Offline sync status
+
+BUTTON 3: "Project Evidence Folder"
+- Lists all projects by class
+- Green tick = approved, Red = pending
+- Shows timestamp + QR code per milestone
+- Purpose: shown to UNEB moderator during school visit
+- Filter by subject
+
+BUTTON 4: "Learner Portfolio S1-S4"
+- Download cumulative PDF per learner
+- Contains all competencies + project titles from S1 to S4
+- Source: ca_records + projects filtered by learner_id
+
+TECHNICAL NOTES (Add to existing requirements)
+
+- Compress all uploaded photos to <500KB before storing
+- Videos must be hosted on YouTube unlisted (not stored in Firebase Storage as it is)
+- Keep total app size <30MB for initial download
+- Use Gemini API free tier for all AI features (lesson plans, activities, scenarios)
