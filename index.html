@@ -71,6 +71,7 @@
     <link rel="preload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" as="script" crossorigin>
     <link rel="preload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" as="script" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
@@ -173,6 +174,27 @@
         .cbc-form { display:grid; gap:8px; margin-top:12px; }
         .cbc-form input,.cbc-form select,.cbc-form textarea { box-sizing:border-box; width:100%; border:1px solid #ddd; border-radius:10px; padding:9px 10px; font-size:13px; }
         .cbc-status { font-size:12px; color:#666; margin-top:8px; }
+        /* ===== SCHOOL COMPLIANCE WORKSPACE ===== */
+        .compliance-workspace { background:#f7f9fc; border:1px solid #d9e2ef; border-radius:16px; padding:14px; margin-top:14px; }
+        .compliance-workspace h4 { color:#173b63; margin:0 0 4px; font-size:15px; }
+        .compliance-kicker { color:#63758a; font-size:11px; line-height:1.45; margin-bottom:12px; }
+        .compliance-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+        .compliance-action { border:1px solid #c5d5e6; background:#fff; color:#173b63; border-radius:10px; padding:10px 8px; font-size:11px; font-weight:700; cursor:pointer; text-align:left; }
+        .compliance-action:hover { border-color:#4B2E9E; background:#f7f3ff; }
+        .compliance-action.primary { background:#173b63; border-color:#173b63; color:#fff; }
+        .compliance-panel { margin-top:12px; background:#fff; border:1px solid #e3e9f0; border-radius:12px; padding:12px; }
+        .compliance-filters { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
+        .compliance-filters input,.compliance-filters select { width:100%; box-sizing:border-box; padding:8px 9px; border:1px solid #d5dde7; border-radius:8px; font:12px inherit; background:#fff; }
+        .compliance-table { width:100%; border-collapse:collapse; font-size:11px; }
+        .compliance-table th { color:#63758a; background:#f3f6fa; text-align:left; padding:7px 5px; font-size:10px; }
+        .compliance-table td { border-top:1px solid #edf0f4; padding:7px 5px; vertical-align:top; }
+        .compliance-pill { display:inline-block; border-radius:10px; padding:2px 7px; font-size:10px; font-weight:700; }
+        .compliance-pill.ok { background:#e6f5ec; color:#237a42; } .compliance-pill.wait { background:#fff2dd; color:#9a5b00; }
+        .compliance-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-bottom:10px; }
+        .compliance-metric { background:#f4f7fb; border-radius:9px; padding:9px; } .compliance-metric strong { display:block; color:#173b63; font-size:18px; } .compliance-metric span { color:#63758a; font-size:10px; }
+        .compliance-bars { display:grid; gap:6px; margin:8px 0 12px; } .compliance-bar-row { display:grid; grid-template-columns:90px 1fr 28px; align-items:center; gap:6px; font-size:10px; color:#52677e; } .compliance-bar { height:7px; border-radius:6px; background:#e8edf3; overflow:hidden; } .compliance-bar i { display:block; height:100%; background:#4B2E9E; border-radius:6px; }
+        .compliance-note { color:#63758a; font-size:11px; padding:10px; text-align:center; background:#f7f9fc; border-radius:8px; }
+        @media(max-width:390px){ .compliance-actions,.compliance-filters { grid-template-columns:1fr; } }
         .account-field { padding: 12px; background: #f5f5f5; border-radius: 12px; margin-bottom: 12px; }
         /* ── PWA Install Banner ── */
         #pwaInstallBanner { position: fixed; bottom: 70px; left: 0; right: 0; max-width: 500px; margin: 0 auto; z-index: 1100; padding: 0 12px; pointer-events: none; }
@@ -1518,6 +1540,22 @@
                     <div id="schoolEventsList"></div>
                 </div>
 
+                <div class="admin-section" id="schoolComplianceSection" style="display:none;">
+                    <div class="compliance-workspace">
+                        <h4>NCDC / UNEB Compliance</h4>
+                        <div class="compliance-kicker">A compact evidence desk for moderation visits. Records stay scoped to this school.</div>
+                        <div class="compliance-actions">
+                            <button class="compliance-action primary" id="complianceExportBtn">Export UNEB CA File</button>
+                            <button class="compliance-action" id="complianceDashboardBtn">Headteacher Dashboard</button>
+                            <button class="compliance-action" id="complianceProjectsBtn">Project Evidence Folder</button>
+                            <button class="compliance-action" id="compliancePortfolioBtn">Learner Portfolio S1-S4</button>
+                        </div>
+                        <div class="compliance-panel" id="schoolCompliancePanel">
+                            <div class="compliance-note">Choose a compliance workspace above to begin.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- GLOBAL EVENTS SECTION -->
                 <div class="admin-section" id="globalEventsSection" style="display:none;">
                     <h4>📅 Manage Global Events</h4>
@@ -2771,7 +2809,11 @@
         }));
     }
 
-    function escHtml(s) { return (s||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;"); }
+    function escHtml(s) {
+        return String(s??'')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+    }
 
     // ===== NCDC / UNEB PHASE 1 TOOLS =====
     const CBC_MODULES = [
@@ -2827,9 +2869,74 @@
         });
     }
 
+    function complianceMessage(error) {
+        const message = error && error.message ? error.message : 'The compliance service is unavailable.';
+        console.error('Compliance request failed:', error && error.code ? error.code : 'unknown', message);
+        return message;
+    }
+    function complianceFilters(kind) {
+        return `<div class="compliance-filters">
+            <select id="complianceClassFilter"><option value="">All classes</option>${['S1','S2','S3','S4'].map(c=>`<option>${c}</option>`).join('')}</select>
+            <select id="complianceTermFilter"><option value="">All terms</option><option>Term 1</option><option>Term 2</option><option>Term 3</option></select>
+            ${kind==='projects'?'<input id="complianceSubjectFilter" placeholder="Filter by subject">':''}
+        </div>`;
+    }
+    function complianceSetBusy(html='Loading compliance records…') {
+        const panel=document.getElementById('schoolCompliancePanel'); if(panel) panel.innerHTML=`<div class="compliance-note">${html}</div>`;
+    }
+    function downloadComplianceXlsx(records) {
+        if(!window.XLSX) throw new Error('The Excel exporter is still loading. Please try again.');
+        const rows=records.map(r=>({
+            Learner:r.learnerName||r.name||'', 'Learner ID':r.learnerId||'', Class:r.className||r.classLevel||'',
+            Subject:r.subject||'', Competency:r.competency||'', 'Evidence 1':r.evidence1||'',
+            'Evidence 2':r.evidence2||'', 'Evidence 3':r.evidence3||'', 'Final level':r.finalLevel||'',
+            Term:r.term||'', 'Synced at':r.syncedAt||r.createdAt||''
+        }));
+        const book=XLSX.utils.book_new(), sheet=XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(book,sheet,'UNEB CA');
+        XLSX.writeFile(book,`APSHULE-UNEB-CA-${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+    async function renderComplianceExport() {
+        const panel=document.getElementById('schoolCompliancePanel');
+        panel.innerHTML=`${complianceFilters('ca')}<button class="compliance-action primary" id="runComplianceExport">Download Excel-compatible CA file</button><div id="complianceExportStatus" class="compliance-note" style="margin-top:9px;">Select filters, then download the moderation file.</div>`;
+        document.getElementById('runComplianceExport').onclick=async()=>{
+            const status=document.getElementById('complianceExportStatus'); status.textContent='Preparing CA records…';
+            try { const q=`?className=${encodeURIComponent(document.getElementById('complianceClassFilter').value)}&term=${encodeURIComponent(document.getElementById('complianceTermFilter').value)}&subject=`; const data=await complianceApi('/school-overview'+q); const records=data.records||[]; if(!records.length){status.textContent='No CA records match these filters.';return;} downloadComplianceXlsx(records); status.textContent=`Downloaded ${records.length} CA record(s).`; }
+            catch(e){ status.textContent=complianceMessage(e); status.style.color='#c62828'; }
+        };
+    }
+    async function renderComplianceDashboard() {
+        complianceSetBusy();
+        try {
+            const data=await complianceApi(`/school-overview?className=&term=&subject=`);
+            const records=data.records||[], projects=data.projects||[], teachers=data.teachers||[];
+            const levels={Exceeds:0,Meets:0,Approaching:0,'Needs Support':0}; records.forEach(r=>{if(levels[r.finalLevel]!==undefined) levels[r.finalLevel]++;});
+            const totalTeachers=teachers.length, complete=teachers.filter(t=>t.retooled).length, pct=totalTeachers?complete/totalTeachers*100:0;
+            const approved=projects.filter(p=>String(p.status||p.finalStatus||'').toLowerCase()==='approved').length;
+            document.getElementById('schoolCompliancePanel').innerHTML=`<div class="compliance-metrics">
+                <div class="compliance-metric"><strong>${pct.toFixed(0)}%</strong><span>Teacher retooling</span></div>
+                <div class="compliance-metric"><strong>${Number(data.cbcLessons||0)}</strong><span>CBC lessons taught</span></div>
+                <div class="compliance-metric"><strong>${approved}/${projects.length}</strong><span>Projects approved</span></div>
+                <div class="compliance-metric"><strong>${navigator.onLine?'Online':'Offline'}</strong><span>Navigator sync status</span></div>
+            </div><div style="font-weight:700;color:#173b63;font-size:12px;">Competency levels</div>
+            <div class="compliance-bars">${Object.entries(levels).map(([name,n])=>`<div class="compliance-bar-row"><span>${name}</span><div class="compliance-bar"><i style="width:${records.length?Math.round(n/records.length*100):0}%"></i></div><b>${n}</b></div>`).join('')}</div>
+            <div class="compliance-note">${Math.max(0,totalTeachers-complete)} teacher(s) pending retooling sync. Projects pending: ${projects.length-approved}.</div>`;
+        } catch(e){ document.getElementById('schoolCompliancePanel').innerHTML=`<div class="compliance-note" style="color:#c62828;">${escHtml(complianceMessage(e))}</div>`; }
+    }
+    async function renderComplianceProjects() {
+        const panel=document.getElementById('schoolCompliancePanel'); panel.innerHTML=`${complianceFilters('projects')}<div id="complianceProjectResults" class="compliance-note">Loading project evidence…</div>`;
+        const load=async()=>{ const result=document.getElementById('complianceProjectResults'); result.textContent='Loading project evidence…'; try { const c=document.getElementById('complianceClassFilter').value,s=document.getElementById('complianceSubjectFilter').value; const data=await complianceApi(`/projects?className=${encodeURIComponent(c)}&subject=${encodeURIComponent(s)}`), ps=data.projects||[]; if(!ps.length){result.textContent='No project evidence matches these filters.';return;} result.className=''; result.innerHTML=`<table class="compliance-table"><thead><tr><th>Project</th><th>Status</th><th>Milestones / QR</th></tr></thead><tbody>${ps.map(p=>{const ok=String(p.finalStatus||'').toLowerCase()==='approved'; const milestone=(label,date,status)=>`${label}: ${escHtml(status||'pending')} · ${date?new Date(date).toLocaleString():'not submitted'}`; const qr=encodeURIComponent(p.qrCode||p.lin||p.id); return `<tr><td><strong>${escHtml(p.title||'Untitled project')}</strong><br><span style="color:#63758a">${escHtml(p.className||'')} · ${escHtml(p.subject||'')}</span></td><td><span class="compliance-pill ${ok?'ok':'wait'}">${ok?'Approved':'Pending'}</span></td><td>${milestone('M1',p.milestone1Date,p.milestone1Status)}<br>${milestone('M2',p.milestone2Date,p.milestone2Status)}<br>${milestone('Final',p.finalDate,p.finalStatus)}<br><img alt="Project QR code" src="https://quickchart.io/qr?size=90&text=${qr}" width="72" height="72" loading="lazy"><br><small>${escHtml(p.qrCode||p.lin||'Not assigned')}</small></td></tr>`}).join('')}</tbody></table>`; } catch(e){result.textContent=complianceMessage(e);result.style.color='#c62828';} };
+        panel.querySelectorAll('select,input').forEach(el=>el.addEventListener('change',load)); load();
+    }
+    async function renderCompliancePortfolio() {
+        const panel=document.getElementById('schoolCompliancePanel'); panel.innerHTML=`<div class="compliance-filters"><select id="portfolioLearner"><option value="">Loading learners…</option></select></div><div id="portfolioResult" class="compliance-note">Choose a learner to view their cumulative portfolio.</div>`;
+        try { const [ca,pr]=await Promise.all([complianceApi('/ca-records?className=&term='),complianceApi('/projects?className=&subject=')]); const records=ca.records||[], projects=pr.projects||[], ids=[...new Set(records.map(r=>r.learnerId).concat(projects.map(p=>p.learnerId)).filter(Boolean))]; const select=document.getElementById('portfolioLearner'); select.innerHTML='<option value="">Select learner</option>'+ids.map(id=>{const r=records.find(x=>x.learnerId===id);return `<option value="${escHtml(id)}">${escHtml(r?.learnerName||r?.name||id)}</option>`}).join(''); const show=()=>{const id=select.value,res=document.getElementById('portfolioResult'); if(!id){res.textContent='Choose a learner to view their cumulative portfolio.';return;} const rs=records.filter(r=>r.learnerId===id), ps=projects.filter(p=>p.learnerId===id); res.className='';res.innerHTML=`<div id="portfolioPrint"><strong style="color:#173b63;">Cumulative learner portfolio</strong><p style="font-size:11px;color:#63758a;">${escHtml(rs[0]?.learnerName||rs[0]?.name||id)} · S1-S4</p><table class="compliance-table"><thead><tr><th>Subject / competency</th><th>Level</th><th>Term</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${escHtml(r.subject)}<br>${escHtml(r.competency)}</td><td>${escHtml(r.finalLevel)}</td><td>${escHtml(r.term)}</td></tr>`).join('')||'<tr><td colspan="3">No CA records.</td></tr>'}</tbody></table><div style="font-weight:700;color:#173b63;font-size:12px;margin-top:10px;">Projects</div>${ps.map(p=>`<div style="font-size:11px;padding:6px 0;border-bottom:1px solid #edf0f4;">${escHtml(p.title)} · ${escHtml(p.subject)} · ${escHtml(p.status||p.finalStatus||'Pending')}</div>`).join('')||'<div class="compliance-note">No projects recorded.</div>'}</div><button class="compliance-action primary" id="printPortfolio" style="margin-top:10px;">Print / Save as PDF</button>`; document.getElementById('printPortfolio').onclick=()=>{const w=window.open('','_blank');w.document.write(`<html><head><title>APSHULE learner portfolio</title><style>body{font:13px system-ui;padding:28px;color:#173b63}table{width:100%;border-collapse:collapse}td,th{padding:8px;border:1px solid #d5dde7;text-align:left}</style></head><body>${document.getElementById('portfolioPrint').innerHTML}</body></html>`);w.document.close();w.focus();w.print();};}; select.onchange=show; } catch(e){document.getElementById('portfolioResult').textContent=complianceMessage(e);}
+    }
+
     function setupComplianceTools() {
         const student = currentUser && ['individual','student'].includes(currentUser.role);
         const teacher = currentUser?.role === 'teacher';
+        const school = currentUser?.role === 'school';
         const studentSection = document.getElementById('studentCbcSection');
         if(studentSection) studentSection.style.display = student ? 'block' : 'none';
         document.getElementById('openProjectsBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('projects'));
@@ -2841,6 +2948,11 @@
         document.getElementById('openCurriculumLinkerBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('curriculum'));
         if(!student && studentSection) studentSection.style.display = 'none';
         if(!teacher) document.querySelector('.cbc-card[style*="FFB74D"]')?.remove();
+        const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
+        document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
+        document.getElementById('complianceDashboardBtn')?.addEventListener('click',renderComplianceDashboard);
+        document.getElementById('complianceProjectsBtn')?.addEventListener('click',renderComplianceProjects);
+        document.getElementById('compliancePortfolioBtn')?.addEventListener('click',renderCompliancePortfolio);
     }
 
     async function renderStudentCbcPanel(mode) {
@@ -2972,6 +3084,11 @@
                 });
             renderSubscriptionPlansGrid();
             renderSubscriptionPlansAdmin();
+        }, (error) => {
+            console.error('Subscription plans listener failed:', error.code || 'unknown', error.message || error);
+            subscriptionPlans = [];
+            renderSubscriptionPlansGrid();
+            renderSubscriptionPlansAdmin();
         });
     }
 
@@ -3044,6 +3161,9 @@
             allTeachers = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
             renderTeachersAdmin();
             populateVideoTeacherDropdown();
+        }, (error) => {
+            console.error('Student Q&A listener failed:', error.code || 'unknown', error.message || error);
+            c.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
 
@@ -3782,7 +3902,9 @@
             document.getElementById('vqTextarea').value = '';
             document.getElementById('vqSubmitBtn').disabled = false;
         } catch(e) {
-            status.textContent = 'Error sending question. Try again.';
+            console.error('Video question submit failed:', e.code || 'unknown', e.message || e);
+            status.style.color = '#c62828';
+            status.textContent = e.message || 'Could not send your question. Please check your connection and try again.';
             document.getElementById('vqSubmitBtn').disabled = false;
         }
     });
@@ -3819,7 +3941,8 @@
             showNotification("Answer sent! Student has been notified. ✅", "success");
             if(btn) btn.disabled = false;
         } catch(e) {
-            showNotification("Error saving answer", "error");
+            console.error('Video question answer failed:', e.code || 'unknown', e.message || e);
+            showNotification(e.message || "Could not save the answer. Please try again.", "error");
             if(btn) btn.disabled = false;
         }
     };
@@ -3852,6 +3975,10 @@
         const q = query(collection(db,"videoQuestions"), where("teacherId","==",currentUser.uid), orderBy("createdAt","desc"), limit(100));
         onSnapshot(q, (snap) => {
             renderVQAItems(snap.docs, 'teacherVideoQList', currentUser.uid, currentUser.name);
+        }, (error) => {
+            console.error('Teacher Q&A listener failed:', error.code || 'unknown', error.message || error);
+            const el=document.getElementById('teacherVideoQList');
+            if(el) el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
 
@@ -3860,9 +3987,10 @@
         const q = query(collection(db,"videoQuestions"), orderBy("createdAt","desc"), limit(200));
         onSnapshot(q, (snap) => {
             renderVQAItems(snap.docs, 'adminVideoQList', currentUser.uid, currentUser.name);
-        }, () => {
+        }, (error) => {
+            console.error('Admin Q&A listener failed:', error.code || 'unknown', error.message || error);
             const el=document.getElementById('adminVideoQList');
-            if(el) el.innerHTML='<div style="color:#c62828;font-size:13px;">Could not load questions. Please try again.</div>';
+            if(el) el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
 
@@ -5300,9 +5428,15 @@
                     localStorage.setItem('apshule_live_lessons_cache', JSON.stringify(snap.docs.map(d=>({id:d.id,...d.data()}))));
                     renderCards(snap).catch(()=>renderCachedLiveLessons());
                 },
-                () => renderCachedLiveLessons()
+                (error) => {
+                    console.error('Live lessons listener failed:', error.code || 'unknown', error.message || error);
+                    renderCachedLiveLessons();
+                    const cached = JSON.parse(localStorage.getItem('apshule_live_lessons_cache')||'[]');
+                    if(!cached.length) container.innerHTML = `<div style="text-align:center;color:#c62828;padding:20px;font-size:13px;">${escHtml(error.message || 'Live lessons are unavailable right now.')}</div>`;
+                }
             );
         } catch(e) {
+            console.error('Live lessons query failed:', e.code || 'unknown', e.message || e);
             renderCachedLiveLessons();
         }
     }
@@ -5793,7 +5927,7 @@
                     <span>${escHtml(s)}</span>
                     <span style="background:#4B2E9E;color:white;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${n} student${n!==1?'s':''}</span>
                 </div>`).join('');
-        } catch(e){ el.innerHTML='<div style="color:#c62828;font-size:13px;">Could not load weak areas. Please try again.</div>'; }
+        } catch(e){ console.error('Weak areas overview failed:', e.code || 'unknown', e.message || e); el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(e.message || 'Weak areas are unavailable right now.')}</div>`; }
     }
 
     // =====================================================================

@@ -1,4 +1,4 @@
-import { pgTable, text } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -12,8 +12,11 @@ export const curriculumLinksTable = pgTable("curriculum_links", {
   teacherGuidePage: text("teacher_guide_page"),
   summaryText: text("summary_text").notNull(),
   activitySuggestion: text("activity_suggestion"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertCurriculumLinkSchema = createInsertSchema(curriculumLinksTable);
+export const insertCurriculumLinkSchema = createInsertSchema(curriculumLinksTable).omit({
+  createdAt: true,
+});
 export type InsertCurriculumLink = z.infer<typeof insertCurriculumLinkSchema>;
 export type CurriculumLink = typeof curriculumLinksTable.$inferSelect;

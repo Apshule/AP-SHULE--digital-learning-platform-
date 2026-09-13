@@ -84,6 +84,14 @@ function canSeeProject(caller: Caller, project: typeof projectsTable.$inferSelec
   return false;
 }
 
+function decodedDataUrlBytes(value: string): number {
+  const comma = value.indexOf(",");
+  if (comma < 0) return Number.POSITIVE_INFINITY;
+  const base64 = value.slice(comma + 1).replace(/\s/g, "");
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+}
+
 async function generateWithGemini(prompt: string): Promise<string> {
   if (!GOOGLE_API_KEY) throw new Error("GOOGLE_API_KEY is not configured");
   const response = await fetch(
@@ -110,7 +118,13 @@ router.get("/compliance/projects", async (req, res) => {
   const caller = await requireCaller(req, res);
   if (!caller) return;
   const rows = await db.select().from(projectsTable).orderBy(desc(projectsTable.createdAt));
-  const visible = rows.filter((project) => canSeeProject(caller, project));
+  const className = String(req.query.className ?? "").trim();
+  const subject = String(req.query.subject ?? "").trim();
+  const visible = rows.filter((project) =>
+    canSeeProject(caller, project) &&
+    (!className || project.className === className) &&
+    (!subject || project.subject === subject),
+  );
   res.json({ ok: true, projects: visible });
 });
 
@@ -170,7 +184,7 @@ router.patch("/compliance/projects/:id/milestones/:milestone", async (req, res) 
     final: { date: projectsTable.finalDate, photo: projectsTable.finalPhoto, status: projectsTable.finalStatus },
   }[milestone];
   const photo = typeof req.body?.photo === "string" ? req.body.photo : "";
-  if (!fields || !photo || photo.length > 700_000) {
+  if (!fields || !photo || decodedDataUrlBytes(photo) > 500 * 1024) {
     res.status(400).json({ ok: false, error: "Choose a milestone and a compressed photo under 500KB" });
     return;
   }
@@ -242,12 +256,60 @@ router.get("/compliance/ca-records", async (req, res) => {
   const learnerId = caller.role === "individual" || caller.role === "student"
     ? caller.uid
     : String(req.query.learnerId ?? "");
-  const rows = learnerId
+  let rows = learnerId
     ? await db.select().from(caRecordsTable).where(eq(caRecordsTable.learnerId, learnerId))
     : caller.role === "superadmin"
       ? await db.select().from(caRecordsTable)
+      : caller.role === "school" && caller.schoolId
+        ? await db.select().from(caRecordsTable).where(eq(caRecordsTable.schoolId, caller.schoolId))
       : [];
+  const term = String(req.query.term ?? "").trim();
+  if (term) rows = rows.filter((row) => row.term === term);
   res.json({ ok: true, records: rows });
+});
+
+router.get("/compliance/school-overview", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "school" || !caller.schoolId) {
+    res.status(403).json({ ok: false, error: "Only school administrators can view this dashboard" });
+    return;
+  }
+  const [allRecords, allProjects, retooling] = await Promise.all([
+    db.select().from(caRecordsTable).where(eq(caRecordsTable.schoolId, caller.schoolId)),
+    db.select().from(projectsTable).where(eq(projectsTable.schoolId, caller.schoolId)).orderBy(desc(projectsTable.createdAt)),
+    db.select().from(teacherRetoolingProgressTable).where(eq(teacherRetoolingProgressTable.schoolId, caller.schoolId)),
+  ]);
+  const className = String(req.query.className ?? "").trim();
+  const term = String(req.query.term ?? "").trim();
+  const subject = String(req.query.subject ?? "").trim();
+  const projects = allProjects.filter((project) =>
+    (!className || project.className === className) &&
+    (!subject || project.subject === subject),
+  );
+  const learnerIdsForClass = className
+    ? new Set(projects.map((project) => project.learnerId))
+    : null;
+  const records = allRecords.filter((record) =>
+    (!term || record.term === term) &&
+    (!subject || record.subject === subject) &&
+    (!learnerIdsForClass || learnerIdsForClass.has(record.learnerId)),
+  ).map((record) => ({
+    ...record,
+    className: allProjects.find((project) => project.learnerId === record.learnerId)?.className ?? "",
+  }));
+  const teacherIds = [...new Set(retooling.map((row) => row.teacherId))];
+  const completedTeachers = new Set(
+    retooling.filter((row) => row.completed).map((row) => row.teacherId),
+  );
+  res.json({
+    ok: true,
+    records,
+    projects,
+    retooling,
+    teachers: teacherIds.map((id) => ({ id, retooled: completedTeachers.has(id) })),
+    cbcLessons: records.length,
+  });
 });
 
 router.get("/compliance/uneb-items", async (req, res) => {
@@ -264,16 +326,18 @@ router.post("/compliance/retooling", async (req, res) => {
     res.status(403).json({ ok: false, error: "Only teachers can update course progress" });
     return;
   }
-  const moduleId = String(req.body?.moduleId ?? "").trim();
-  if (!moduleId) {
-    res.status(400).json({ ok: false, error: "moduleId is required" });
+  const moduleNumber = Number(req.body?.moduleId);
+  if (!Number.isInteger(moduleNumber) || moduleNumber < 1 || moduleNumber > 10) {
+    res.status(400).json({ ok: false, error: "moduleId must be an integer from 1 to 10" });
     return;
   }
+  const moduleId = String(moduleNumber);
   const values = {
     completed: Boolean(req.body?.completed),
     quizScore: Number.isFinite(Number(req.body?.quizScore)) ? Number(req.body.quizScore) : null,
     certificateIssued: Boolean(req.body?.certificateIssued),
     practicalUploadPath: typeof req.body?.practicalUploadPath === "string" ? req.body.practicalUploadPath : null,
+    completedAt: req.body?.completed ? new Date() : null,
     updatedAt: new Date(),
   };
   const [existing] = await db
@@ -286,6 +350,7 @@ router.post("/compliance/retooling", async (req, res) => {
     await db.insert(teacherRetoolingProgressTable).values({
       id: randomUUID(),
       teacherId: caller.uid,
+      schoolId: caller.schoolId,
       moduleId,
       ...values,
     });

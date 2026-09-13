@@ -15,10 +15,12 @@ export const caRecordsTable = pgTable("ca_records", {
   term: text("term").notNull(),
   teacherId: text("teacher_id").notNull(),
   syncedAt: timestamp("synced_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const insertCaRecordSchema = createInsertSchema(caRecordsTable).omit({
   syncedAt: true,
+  createdAt: true,
 });
 export type InsertCaRecord = z.infer<typeof insertCaRecordSchema>;
 export type CaRecord = typeof caRecordsTable.$inferSelect;
