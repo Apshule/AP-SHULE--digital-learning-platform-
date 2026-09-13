@@ -1730,6 +1730,15 @@
                 <div class="stat-box"><div class="stat-value" id="teacherTotalViews">0</div><div class="stat-label">Video Completions</div></div>
             </div>
 
+            <!-- Offline earnings summary -->
+            <div class="teacher-card" id="teacherOfflineEarningsCard" style="border:2px solid #4B2E9E;background:linear-gradient(145deg,#f7f2ff,#fff);">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <h4 style="color:#4B2E9E;margin:0;">📊 OFFLINE EARNINGS SUMMARY</h4>
+                    <button id="teacherOfflineSyncNowBtn" class="sync-now-btn" type="button" aria-busy="false" style="background:#4B2E9E;color:#fff;border-color:#4B2E9E;"><i class="fas fa-sync-alt" aria-hidden="true"></i><span>Sync Now</span></button>
+                </div>
+                <div id="teacherOfflineEarningsSummary" style="margin-top:12px;color:#555;font-size:13px;">Loading offline earnings…</div>
+            </div>
+
             <!-- Earnings per video breakdown -->
             <div class="teacher-card">
                 <h4 style="color:#4B2E9E;margin-bottom:12px;">💰 Earnings Breakdown</h4>
@@ -2502,6 +2511,7 @@
         if(result.status==='offline') showNotification(`Sync Now (${result.pending} items) - Connect to internet`,'info');
         else if(result.status==='mobile-paused') showNotification('Pending work will sync on WiFi','info');
         else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
+        if(currentUser?.role==='teacher') await loadOfflineEarningsSummary();
         await refreshOfflineUi(mode);
     }
     async function syncOfflineViews(items) {
@@ -2556,6 +2566,40 @@
         return {synced:syncedCount,failed:0};
     }
     window.syncOfflineViews=syncOfflineViews;
+    async function loadOfflineEarningsSummary() {
+        const container=document.getElementById('teacherOfflineEarningsSummary');
+        if(!container || !currentUser || currentUser.role!=='teacher' || !Offline) return;
+        try {
+            const views=(await Offline.listViews()).filter(view=>view.teacherId===currentUser.uid);
+            const pending=views.filter(view=>view.synced===false);
+            const synced=views.filter(view=>view.synced===true);
+            const pendingAmount=pending.reduce((sum,view)=>sum+Number(view.earningsAmount||0),0);
+            const currentMonth=new Date().toISOString().slice(0,7);
+            const monthlyAmount=synced.filter(view=>String(view.watchedAt||'').slice(0,7)===currentMonth)
+                .reduce((sum,view)=>sum+Number(view.earningsAmount||0),0);
+            const devices={phone:0,laptop:0,tablet:0,desktop:0};
+            const connections={offline:0,mobile_data:0,wifi:0};
+            views.forEach(view=>{
+                if(Object.prototype.hasOwnProperty.call(devices,view.deviceType)) devices[view.deviceType]++;
+                if(Object.prototype.hasOwnProperty.call(connections,view.connectionMode)) connections[view.connectionMode]++;
+            });
+            const amount=value=>`UGX ${Number(value||0).toLocaleString()}`;
+            container.innerHTML=`
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px;">
+                    <div style="background:#fff;border:1px solid #e4dafa;border-radius:10px;padding:10px;"><strong>${pending.length}</strong><br><span>Offline views pending sync</span></div>
+                    <div style="background:#fff;border:1px solid #e4dafa;border-radius:10px;padding:10px;"><strong>${amount(pendingAmount)}</strong><br><span>Earnings from offline (pending)</span></div>
+                    <div style="background:#fff;border:1px solid #e4dafa;border-radius:10px;padding:10px;"><strong>${amount(monthlyAmount)}</strong><br><span>Total earnings this month</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;">
+                    <div><strong>Device breakdown</strong><div style="margin-top:5px;line-height:1.8;">📱 Phone: ${devices.phone} views<br>💻 Laptop: ${devices.laptop} views<br>📱 Tablet: ${devices.tablet} views<br>🖥️ Desktop: ${devices.desktop} views</div></div>
+                    <div><strong>Connection mode breakdown</strong><div style="margin-top:5px;line-height:1.8;">📴 Offline: ${connections.offline} views<br>📶 Mobile data: ${connections.mobile_data} views<br>📡 WiFi: ${connections.wifi} views</div></div>
+                </div>`;
+        } catch(error) {
+            console.error('Offline earnings summary failed:',error);
+            container.innerHTML='<div style="color:#c62828;">Offline earnings are unavailable right now.</div>';
+        }
+    }
+    window.loadOfflineEarningsSummary=loadOfflineEarningsSummary;
     function configureOfflineSync() {
         if(!Offline) return;
         Offline.setSyncHooks({
@@ -2592,6 +2636,7 @@
         ['downloadHdWifiToggle','autoSyncWifiToggle','autoSyncMobileToggle','preferredLanguage'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>saveConnectionSettings().catch(console.error)));
         document.getElementById('headerSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
         document.getElementById('accountSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
+        document.getElementById('teacherOfflineSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
     }
 
     window.togglePassword = function(id) {
@@ -3894,6 +3939,7 @@
     function loadTeacherDashboard() {
         if(!currentUser || currentUser.role !== 'teacher') return;
         loadTeacherEarnings();
+        loadOfflineEarningsSummary();
         loadTeacherPdfs();
         loadTeacherQuestions();
         loadTeacherComments();
