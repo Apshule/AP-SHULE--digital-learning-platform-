@@ -43,6 +43,8 @@ const FILES = [
   ".nojekyll",
   ".well-known/assetlinks.json",
   "PLAY_STORE_GUIDE.md",
+  "icons/icon-192.png",
+  "icons/icon-512-maskable.png",
 ];
 
 function run(cmd: string): void {
