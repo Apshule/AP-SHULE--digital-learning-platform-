@@ -72,6 +72,8 @@
     <link rel="preload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" as="script" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(180deg, #4B2E9E 0%, #7B5FCF 100%); min-height: 100vh; }
@@ -174,6 +176,36 @@
         .cbc-form { display:grid; gap:8px; margin-top:12px; }
         .cbc-form input,.cbc-form select,.cbc-form textarea { box-sizing:border-box; width:100%; border:1px solid #ddd; border-radius:10px; padding:9px 10px; font-size:13px; }
         .cbc-status { font-size:12px; color:#666; margin-top:8px; }
+        .project-modal { position:fixed; inset:0; z-index:7000; display:none; background:rgba(28,18,55,.72); padding:12px; box-sizing:border-box; align-items:center; justify-content:center; }
+        .project-modal.show { display:flex; }
+        .project-modal-card { width:min(720px,100%); max-height:calc(100vh - 24px); overflow:auto; background:#fff; border-radius:20px; box-shadow:0 20px 70px rgba(0,0,0,.28); }
+        .project-modal-header { position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 18px; background:linear-gradient(135deg,#4B2E9E,#6744bd); color:#fff; }
+        .project-modal-header h3 { margin:0; font-size:18px; }
+        .project-modal-close { border:0; background:rgba(255,255,255,.16); color:#fff; border-radius:50%; width:34px; height:34px; font-size:22px; cursor:pointer; }
+        .project-modal-body { padding:16px; }
+        .project-list { display:grid; gap:10px; }
+        .project-card { border:1px solid #e5e0f5; border-radius:15px; padding:13px; background:#fff; cursor:pointer; transition:box-shadow .15s,transform .15s; }
+        .project-card:hover { box-shadow:0 7px 20px rgba(75,46,158,.13); transform:translateY(-1px); }
+        .project-card-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+        .project-card-title { color:#34206f; font-weight:800; font-size:15px; }
+        .project-card-meta { color:#6b6680; font-size:12px; margin-top:4px; }
+        .project-status-summary { color:#555; font-size:12px; line-height:1.6; margin-top:9px; }
+        .project-status-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:800; white-space:nowrap; }
+        .project-status-badge.not_started { background:#f0f0f2; color:#666; }
+        .project-status-badge.pending { background:#fff3cd; color:#8a5a00; }
+        .project-status-badge.approved { background:#e7f6ea; color:#28763b; }
+        .project-status-badge.rejected { background:#ffebee; color:#b3261e; }
+        .project-warning { border:1px solid #ffd180; background:#fff8e1; color:#7a4c00; border-radius:12px; padding:10px; font-size:12px; margin-bottom:10px; }
+        .project-milestone { border:1px solid #ece8f5; border-radius:14px; padding:13px; margin-top:10px; background:#fff; }
+        .project-milestone.locked { opacity:.65; background:#f7f7f9; }
+        .project-milestone-title { display:flex; justify-content:space-between; align-items:center; gap:8px; font-weight:800; color:#34206f; }
+        .project-milestone-photo { display:block; max-width:100%; max-height:220px; object-fit:contain; margin-top:10px; border-radius:10px; border:1px solid #eee; }
+        .project-primary-btn { width:100%; border:0; background:#4B2E9E; color:#fff; border-radius:22px; padding:12px 16px; font-weight:800; cursor:pointer; }
+        .project-secondary-btn { border:1px solid #d8ccff; background:#fff; color:#4B2E9E; border-radius:22px; padding:10px 14px; font-weight:800; cursor:pointer; }
+        .project-form-actions { display:flex; gap:8px; margin-top:14px; }
+        .project-form-actions > * { flex:1; }
+        .project-helper { color:#777; font-size:11px; line-height:1.45; }
+        @media (max-width:520px) { .project-modal { padding:0; align-items:stretch; } .project-modal-card { max-height:100vh; border-radius:0; } .project-modal-header { padding-top:calc(14px + env(safe-area-inset-top)); } }
         /* ===== SCHOOL COMPLIANCE WORKSPACE ===== */
         .compliance-workspace { background:#f7f9fc; border:1px solid #d9e2ef; border-radius:16px; padding:14px; margin-top:14px; }
         .compliance-workspace h4 { color:#173b63; margin:0 0 4px; font-size:15px; }
@@ -1138,6 +1170,55 @@
         </div>
     </div>
 
+    <!-- STUDENT PROJECT MODALS -->
+    <div id="myProjectsModal" class="project-modal" role="dialog" aria-modal="true" aria-labelledby="myProjectsTitle">
+        <div class="project-modal-card">
+            <div class="project-modal-header">
+                <h3 id="myProjectsTitle">📁 My Projects</h3>
+                <button class="project-modal-close" id="closeMyProjectsBtn" aria-label="Close">&times;</button>
+            </div>
+            <div class="project-modal-body">
+                <div id="myProjectsStatus" class="cbc-status"></div>
+                <div id="myProjectsList" class="project-list"></div>
+                <button id="openCreateProjectBtn" class="project-primary-btn" style="margin-top:14px;">➕ Create New Project</button>
+            </div>
+        </div>
+    </div>
+    <div id="createProjectModal" class="project-modal" role="dialog" aria-modal="true" aria-labelledby="createProjectTitle">
+        <div class="project-modal-card">
+            <div class="project-modal-header">
+                <h3 id="createProjectTitle">➕ Create New Project</h3>
+                <button class="project-modal-close" id="closeCreateProjectBtn" aria-label="Close">&times;</button>
+            </div>
+            <div class="project-modal-body">
+                <form id="createProjectForm" class="cbc-form">
+                    <label class="project-helper" for="newProjectTitle">Project title</label>
+                    <input id="newProjectTitle" maxlength="100" required placeholder="For example: Solar Cooker">
+                    <label class="project-helper" for="newProjectSubject">Subject</label>
+                    <select id="newProjectSubject" required></select>
+                    <label class="project-helper" for="newProjectClass">Class</label>
+                    <input id="newProjectClass" maxlength="40" required placeholder="For example: P5 or S2">
+                    <label class="project-helper" for="newProjectDescription">Short description (optional)</label>
+                    <textarea id="newProjectDescription" maxlength="300" rows="3" placeholder="What will you investigate or build?"></textarea>
+                    <div id="createProjectStatus" class="cbc-status"></div>
+                    <div class="project-form-actions">
+                        <button type="button" id="cancelCreateProjectBtn" class="project-secondary-btn">Cancel</button>
+                        <button type="submit" class="project-primary-btn">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="projectDetailModal" class="project-modal" role="dialog" aria-modal="true" aria-labelledby="projectDetailTitle">
+        <div class="project-modal-card">
+            <div class="project-modal-header">
+                <h3 id="projectDetailTitle">Project details</h3>
+                <button class="project-modal-close" id="closeProjectDetailBtn" aria-label="Close">&times;</button>
+            </div>
+            <div id="projectDetailBody" class="project-modal-body"></div>
+        </div>
+    </div>
+
     <!-- GLOBAL SEARCH OVERLAY -->
     <div id="globalSearchOverlay" class="global-search-overlay">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -1594,10 +1675,24 @@
                             <button class="compliance-action" id="complianceDashboardBtn">Headteacher Dashboard</button>
                             <button class="compliance-action" id="complianceProjectsBtn">Project Evidence Folder</button>
                             <button class="compliance-action" id="compliancePortfolioBtn">Learner Portfolio S1-S4</button>
+                            <button class="compliance-action" id="complianceDuplicateBtn">Duplicate Alerts</button>
+                            <button class="compliance-action" id="complianceRepeatBtn">Repeat-title Log</button>
                         </div>
                         <div class="compliance-panel" id="schoolCompliancePanel">
                             <div class="compliance-note">Choose a compliance workspace above to begin.</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- SUPER ADMIN OFFLINE VIEWS OVERVIEW -->
+                <div class="admin-section" id="offlineViewsOverviewSection" style="display:none;background:#fffaf0;border:1.5px solid #ffd59b;border-radius:16px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                        <h4 style="margin:0;color:#8a4b08;">📊 OFFLINE VIEWS OVERVIEW</h4>
+                        <button id="offlineViewsRefreshBtn" type="button" style="border:1px solid #f0b866;background:#fff;color:#8a4b08;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">↻ Refresh</button>
+                    </div>
+                    <p style="font-size:12px;color:#8a6a42;margin:6px 0 12px;">Offline lesson activity synced from student devices and unpaid teacher earnings from non-WiFi views.</p>
+                    <div id="offlineViewsOverviewContent">
+                        <div style="color:#999;font-size:13px;">Loading offline activity…</div>
                     </div>
                 </div>
 
@@ -1710,6 +1805,16 @@
                 <div id="teacherCbcPanel" style="display:none;"></div>
             </div>
 
+            <div class="teacher-card" id="teacherProjectVerificationCard" style="border:2px solid #4B2E9E;background:linear-gradient(145deg,#f7f2ff,#fff);">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <h4 style="color:#4B2E9E;margin:0;">✅ Project Verification Queue</h4>
+                    <button id="refreshTeacherProjectsBtn" class="admin-toggle" type="button">↻ Refresh</button>
+                </div>
+                <p style="font-size:12px;color:#666;margin:6px 0 12px;">Review each submitted milestone, inspect evidence metadata, record the learner observation, and issue a competency record.</p>
+                <div id="teacherProjectsStatus" class="cbc-status">Loading project evidence…</div>
+                <div id="teacherProjectsList"></div>
+            </div>
+
             <!-- Live Lesson REQUEST (teacher submits, superadmin approves) -->
             <div class="teacher-card" style="border:2px solid #FF8C42;">
                 <h4 style="color:#FF8C42;margin-bottom:8px;">📡 Request a Live Lesson</h4>
@@ -1737,6 +1842,9 @@
                     <button id="teacherOfflineSyncNowBtn" class="sync-now-btn" type="button" aria-busy="false" style="background:#4B2E9E;color:#fff;border-color:#4B2E9E;"><i class="fas fa-sync-alt" aria-hidden="true"></i><span>Sync Now</span></button>
                 </div>
                 <div id="teacherOfflineEarningsSummary" style="margin-top:12px;color:#555;font-size:13px;">Loading offline earnings…</div>
+            </div>
+            <div style="margin:10px 0 14px;">
+                <button id="downloadOfflineEarningsPdfBtn" type="button" style="width:100%;border:none;border-radius:24px;padding:12px 16px;background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(75,46,158,0.22);">📥 Download Offline Earnings Report</button>
             </div>
 
             <!-- Earnings per video breakdown -->
@@ -2358,6 +2466,7 @@
 
     // ===== GLOBAL STATE =====
     let currentUser = null;
+    let _studentProjects = [];
     let schools = [];
     let globalEventsList = [];
     let pdfMaterials = [];
@@ -2390,6 +2499,10 @@
     let offlineSession = false;
     let _offlineSlideshowTimer = null;
     let _offlineObjectUrls = [];
+    let _offlineProgressTimer = null;
+    let _offlineProgressWrite = null;
+    let _offlineProgressPending = null;
+    let currentOfflineViewId = null;
 
     // ===== SESSION ISOLATION — wipe ALL user data on logout / auth-null =====
     function clearSessionData() {
@@ -2416,13 +2529,15 @@
             'eventsAdminList','globalEventsAdminList','existingMappingsList',
             'adminLiveAttendanceList','adminActiveTokens','adminPaymentRequests',
             'adminWeakAreasOverview','feedbackAdminList','adminVideoQList',
-            'liveExpiryWarnings','teacherStatBoxes','myWeakAreasTags'
+            'liveExpiryWarnings','teacherStatBoxes','myWeakAreasTags',
+            'offlineViewsOverviewContent'
         ].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
         // Reset greeting and profile
         const greet = document.getElementById('greeting'); if(greet) greet.textContent = 'Welcome';
         const pic = document.getElementById('profilePicImg'); if(pic) pic.src = '';
         // Collapse admin panel
         const ap = document.getElementById('adminPanel'); if(ap) ap.classList.remove('show');
+        const offlineOverview = document.getElementById('offlineViewsOverviewSection'); if(offlineOverview) offlineOverview.style.display = 'none';
         // Navigate to home tab
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         const hp = document.getElementById('homePage'); if(hp) hp.classList.add('active');
@@ -2516,22 +2631,61 @@
     }
     async function syncOfflineViews(items) {
         if(!Offline || !navigator.onLine || !auth?.currentUser) return {synced:0,failed:0};
-        const queued=Array.isArray(items) ? items : (await Offline.listViews()).filter(view=>view.synced===false);
+        const queued=(Array.isArray(items) ? items : await Offline.listViews())
+            .filter(view=>view?.synced===false && (view.completed===true || Number(view.completionPercent||0)>=90));
         let syncedCount=0, failed=[];
         for(const view of queued) {
             if(!view?.viewId) continue;
             try {
                 const completionRef=doc(db,'videoCompletions',view.viewId);
                 const earningRef=doc(db,'teacherEarnings',view.viewId);
+                const offlineViewRef=doc(db,'offline_views',view.viewId);
                 const teacherRef=doc(db,'users',view.teacherId);
+                // Query by viewId as well as using deterministic document IDs. The query
+                // handles records created by older clients, while the transaction below
+                // prevents two devices from creating the same earning concurrently.
+                const [completionMatches, earningMatches]=await Promise.all([
+                    getDocs(query(collection(db,'videoCompletions'),where('viewId','==',view.viewId),limit(1))),
+                    getDocs(query(collection(db,'teacherEarnings'),where('viewId','==',view.viewId),limit(1)))
+                ]);
+                if(!completionMatches.empty || !earningMatches.empty) {
+                    const existingEarning=earningMatches.docs[0]?.data();
+                    await Offline.markViewSynced(view.viewId,{earningsAmount:Number(existingEarning?.amount||0)});
+                    syncedCount++;
+                    continue;
+                }
                 const result=await runTransaction(db, async tx=>{
                     const existing=await tx.get(completionRef);
-                    if(existing.exists) return {created:false, revenue:Number(view.earningsAmount||0)};
+                    const existingEarning=await tx.get(earningRef);
                     const teacherSnap=await tx.get(teacherRef);
                     const teacher=teacherSnap.exists ? teacherSnap.data() : {};
                     const revenue=Number(teacher.revenuePerView||100);
                     const watchedAt=view.watchedAt||new Date().toISOString();
+                    tx.set(offlineViewRef,{
+                        viewId:view.viewId,
+                        studentId:view.studentId,
+                        studentName:view.studentName||'',
+                        teacherId:view.teacherId,
+                        videoId:view.videoId||view.videoKey||'',
+                        videoKey:view.videoId||view.videoKey||'',
+                        schoolId:view.schoolId||null,
+                        deviceType:view.deviceType||'unknown',
+                        connectionMode:view.connectionMode||'offline',
+                        watchedSeconds:Number(view.watchedSeconds||0),
+                        completionPercent:Number(view.completionPercent||0),
+                        completed:view.completed===true || Number(view.completionPercent||0)>=90,
+                        earningsAmount:Number(view.earningsAmount||revenue),
+                        watchedAt,
+                        synced:true,
+                        syncedAt:new Date().toISOString()
+                    },{merge:true});
+                    // Both checks must happen inside the transaction too: two devices
+                    // can pass the preflight queries before either transaction commits.
+                    if(existing.exists || existingEarning.exists) {
+                        return {created:false, revenue:Number(existingEarning.data()?.amount||view.earningsAmount||0)};
+                    }
                     tx.set(completionRef,{
+                        viewId:view.viewId,
                         studentId:view.studentId,
                         studentName:view.studentName||'',
                         teacherId:view.teacherId,
@@ -2542,6 +2696,7 @@
                         syncedFrom:'offline'
                     });
                     tx.set(earningRef,{
+                        viewId:view.viewId,
                         teacherId:view.teacherId,
                         studentId:view.studentId,
                         studentName:view.studentName||'',
@@ -2566,11 +2721,185 @@
         return {synced:syncedCount,failed:0};
     }
     window.syncOfflineViews=syncOfflineViews;
+
+    async function loadOfflineViewsOverview() {
+        const section=document.getElementById('offlineViewsOverviewSection');
+        const container=document.getElementById('offlineViewsOverviewContent');
+        if(!section || !container || currentUser?.role!=='superadmin') return;
+        container.innerHTML='<div style="color:#999;font-size:13px;">Loading offline activity…</div>';
+        try {
+            const [viewSnap, earningSnap, userSnap, schoolSnap]=await Promise.all([
+                getDocs(collection(db,'offline_views')),
+                getDocs(query(collection(db,'teacherEarnings'),where('paid','==',false))),
+                getDocs(collection(db,'users')),
+                getDocs(collection(db,'schools'))
+            ]);
+            const offlineViews=viewSnap.docs.map(d=>({id:d.id,...d.data()}))
+                .filter(view=>view.completed===true || Number(view.completionPercent||0)>=90);
+            const pendingOfflineEarnings=earningSnap.docs.map(d=>({id:d.id,...d.data()})).filter(earning=>{
+                const mode=String(earning.connectionMode||'').toLowerCase();
+                return mode && mode!=='wifi';
+            });
+            const usersById=new Map(userSnap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+            const schoolsById=new Map(schoolSnap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));
+            const teacherStats=new Map();
+            offlineViews.forEach(view=>{
+                if(!view.teacherId) return;
+                const existing=teacherStats.get(view.teacherId)||{count:0,name:''};
+                existing.count++;
+                if(view.teacherName) existing.name=view.teacherName;
+                teacherStats.set(view.teacherId,existing);
+            });
+            const schoolStats=new Map();
+            offlineViews.forEach(view=>{
+                if(!view.schoolId) return;
+                const existing=schoolStats.get(view.schoolId)||{count:0};
+                existing.count++;
+                schoolStats.set(view.schoolId,existing);
+            });
+            const topTeachers=Array.from(teacherStats.entries()).sort((a,b)=>b[1].count-a[1].count).slice(0,5);
+            const topSchools=Array.from(schoolStats.entries()).sort((a,b)=>b[1].count-a[1].count).slice(0,5);
+            const pendingAmount=pendingOfflineEarnings.reduce((sum,earning)=>sum+Number(earning.amount||0),0);
+            const amount=value=>`UGX ${Number(value||0).toLocaleString()}`;
+            const teacherRows=topTeachers.length ? topTeachers.map(([id,stats],index)=>{
+                const teacher=usersById.get(id);
+                const name=stats.name||teacher?.name||teacher?.email||id;
+                return `<tr><td><strong>${index+1}. ${escHtml(name)}</strong></td><td style="text-align:right;font-weight:700;">${stats.count.toLocaleString()}</td></tr>`;
+            }).join('') : '<tr><td colspan="2" style="color:#999;text-align:center;">No synced offline views yet.</td></tr>';
+            const schoolRows=topSchools.length ? topSchools.map(([id,stats],index)=>{
+                const school=schoolsById.get(id);
+                const name=school?.name||id;
+                return `<tr><td><strong>${index+1}. ${escHtml(name)}</strong></td><td style="text-align:right;font-weight:700;">${stats.count.toLocaleString()}</td></tr>`;
+            }).join('') : '<tr><td colspan="2" style="color:#999;text-align:center;">No school-linked offline activity yet.</td></tr>';
+            container.innerHTML=`
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin-bottom:14px;">
+                    <div style="background:#fff;border:1px solid #ffe0b2;border-radius:10px;padding:11px;"><strong style="display:block;font-size:21px;color:#8a4b08;">${offlineViews.length.toLocaleString()}</strong><span style="font-size:11px;color:#8a6a42;">Total offline views</span></div>
+                    <div style="background:#fff;border:1px solid #ffe0b2;border-radius:10px;padding:11px;"><strong style="display:block;font-size:18px;color:#8a4b08;">${amount(pendingAmount)}</strong><span style="font-size:11px;color:#8a6a42;">Pending non-WiFi earnings</span></div>
+                    <div style="background:#fff;border:1px solid #ffe0b2;border-radius:10px;padding:11px;"><strong style="display:block;font-size:21px;color:#8a4b08;">${pendingOfflineEarnings.length.toLocaleString()}</strong><span style="font-size:11px;color:#8a6a42;">Unpaid offline earnings</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+                    <div style="background:#fff;border:1px solid #ffe0b2;border-radius:10px;padding:11px;">
+                        <strong style="color:#8a4b08;">Top five teachers</strong>
+                        <table style="width:100%;border-collapse:collapse;margin-top:7px;font-size:12px;"><thead><tr style="color:#8a6a42;text-align:left;"><th style="padding:4px 0;">Teacher</th><th style="padding:4px 0;text-align:right;">Views</th></tr></thead><tbody>${teacherRows}</tbody></table>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ffe0b2;border-radius:10px;padding:11px;">
+                        <strong style="color:#8a4b08;">Schools with most offline activity</strong>
+                        <table style="width:100%;border-collapse:collapse;margin-top:7px;font-size:12px;"><thead><tr style="color:#8a6a42;text-align:left;"><th style="padding:4px 0;">School</th><th style="padding:4px 0;text-align:right;">Views</th></tr></thead><tbody>${schoolRows}</tbody></table>
+                    </div>
+                </div>
+                <div style="font-size:11px;color:#9a7b55;margin-top:10px;">Last refreshed ${new Date().toLocaleString()}</div>`;
+        } catch(error) {
+            console.error('Offline views overview failed:',error);
+            container.innerHTML='<div style="color:#c62828;font-size:13px;">Offline views are unavailable right now. Try Refresh again.</div>';
+        }
+    }
+    window.loadOfflineViewsOverview=loadOfflineViewsOverview;
+
+    async function generateOfflineEarningsPdf() {
+        if(!currentUser || currentUser.role!=='teacher') {
+            showNotification('Only teachers can download an offline earnings report','error');
+            return;
+        }
+        const pdfApi=window.jspdf;
+        if(!pdfApi?.jsPDF) {
+            showNotification('PDF tools are still loading. Please try again.','error');
+            return;
+        }
+        try {
+            const [viewSnap, earningSnap]=await Promise.all([
+                getDocs(query(collection(db,'offline_views'),where('teacherId','==',currentUser.uid))),
+                getDocs(query(collection(db,'teacherEarnings'),where('teacherId','==',currentUser.uid)))
+            ]);
+            const earningsByViewId=new Map();
+            earningSnap.forEach(d=>{
+                const earning=d.data()||{};
+                earningsByViewId.set(String(earning.viewId||d.id),{id:d.id,...earning});
+            });
+            const views=viewSnap.docs.map(d=>({id:d.id,...d.data()}))
+                .filter(view=>view.teacherId===currentUser.uid && (view.completed===true || Number(view.completionPercent||0)>=90))
+                .sort((a,b)=>new Date(a.watchedAt||0)-new Date(b.watchedAt||0));
+            if(!views.length) {
+                showNotification('No offline earnings yet','info');
+                return;
+            }
+            const formatDate=value=>{
+                const date=new Date(value);
+                return Number.isNaN(date.getTime()) ? 'Unknown date' : date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+            };
+            const today=new Date();
+            const earliest=views[0].watchedAt;
+            const totalOffline=views.reduce((sum,view)=>{
+                const earning=earningsByViewId.get(String(view.viewId||view.id));
+                return sum+Number(view.earningsAmount ?? earning?.amount ?? 0);
+            },0);
+            const totalPaid=views.reduce((sum,view)=>{
+                const earning=earningsByViewId.get(String(view.viewId||view.id));
+                if(!earning?.paid) return sum;
+                return sum+Number(view.earningsAmount ?? earning.amount ?? 0);
+            },0);
+            const totalPending=views.reduce((sum,view)=>{
+                const earning=earningsByViewId.get(String(view.viewId||view.id));
+                if(earning?.paid) return sum;
+                return sum+Number(view.earningsAmount ?? earning?.amount ?? 0);
+            },0);
+            const rows=views.map(view=>{
+                const earning=earningsByViewId.get(String(view.viewId||view.id));
+                const videoKey=view.videoId||view.videoKey||'Unknown video';
+                const mapping=videoMappings[videoKey]||window._videoMappingData?.[videoKey];
+                const videoLabel=view.videoTitle||mapping?.title||mapping?.subject||videoKey;
+                return [
+                    formatDate(view.watchedAt),
+                    view.studentName||view.studentId||'Unknown student',
+                    videoLabel,
+                    view.deviceType||'Unknown',
+                    String(view.connectionMode||'Unknown').replace('_',' '),
+                    Number(view.earningsAmount ?? earning?.amount ?? 0).toLocaleString()
+                ];
+            });
+            const {jsPDF}=pdfApi;
+            const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+            doc.setTextColor(75,46,158);
+            doc.setFontSize(18);
+            doc.text('Offline Earnings Report',14,16);
+            doc.setTextColor(45,45,45);
+            doc.setFontSize(10);
+            doc.text(`Teacher: ${currentUser.name||'Unknown'}`,14,24);
+            doc.text(`Email: ${currentUser.email||'N/A'}`,14,30);
+            doc.text(`Date range: ${formatDate(earliest)} to ${formatDate(today)}`,14,36);
+            doc.text(`Generated on: ${formatDate(today)}`,14,42);
+            if(typeof doc.autoTable!=='function') {
+                showNotification('PDF table tools are unavailable. Please reload and try again.','error');
+                return;
+            }
+            doc.autoTable({
+                startY:48,
+                head:[['Date','Student','Video','Device','Connection','Amount (UGX)']],
+                body:rows,
+                theme:'grid',
+                styles:{fontSize:8,cellPadding:2.5,textColor:[45,45,45]},
+                headStyles:{fillColor:[75,46,158],textColor:[255,255,255],fontStyle:'bold'},
+                columnStyles:{0:{cellWidth:25},1:{cellWidth:42},2:{cellWidth:70},3:{cellWidth:28},4:{cellWidth:30},5:{cellWidth:30,halign:'right'}}
+            });
+            const summaryY=(doc.lastAutoTable?.finalY||48)+10;
+            doc.setFontSize(10);
+            doc.setTextColor(75,46,158);
+            doc.text(`Total offline earnings: UGX ${totalOffline.toLocaleString()}`,14,summaryY);
+            doc.text(`Total paid: UGX ${totalPaid.toLocaleString()}`,14,summaryY+6);
+            doc.text(`Total pending: UGX ${totalPending.toLocaleString()}`,14,summaryY+12);
+            doc.save(`offline_earnings_${currentUser.uid}_${today.toISOString().slice(0,10)}.pdf`);
+            showNotification('Offline earnings report downloaded','success');
+        } catch(error) {
+            console.error('Offline earnings PDF failed:',error);
+            showNotification('Unable to create the offline earnings report','error');
+        }
+    }
+    window.generateOfflineEarningsPdf=generateOfflineEarningsPdf;
     async function loadOfflineEarningsSummary() {
         const container=document.getElementById('teacherOfflineEarningsSummary');
         if(!container || !currentUser || currentUser.role!=='teacher' || !Offline) return;
         try {
-            const views=(await Offline.listViews()).filter(view=>view.teacherId===currentUser.uid);
+            const views=(await Offline.listViews())
+                .filter(view=>view.teacherId===currentUser.uid && (view.completed===true || Number(view.completionPercent||0)>=90));
             const pending=views.filter(view=>view.synced===false);
             const synced=views.filter(view=>view.synced===true);
             const pendingAmount=pending.reduce((sum,view)=>sum+Number(view.earningsAmount||0),0);
@@ -2604,9 +2933,35 @@
         if(!Offline) return;
         Offline.setSyncHooks({
             pushProjects: async items => {
-                for(const item of items) {
-                    if(item.operation==='milestone') await complianceApi(`/projects/${item.projectId}/milestones/${item.milestone}`,{method:'PATCH',body:JSON.stringify({photo:item.photo})});
-                    else await complianceApi('/projects',{method:'POST',body:JSON.stringify(item.payload||item)});
+                const ordered = [...items].sort((a,b) => (a.operation === 'create' ? -1 : 0) - (b.operation === 'create' ? -1 : 0));
+                const serverIds = new Map();
+                for(const item of ordered) {
+                    if(item.operation==='milestone') {
+                        const projectId = serverIds.get(item.projectId) || item.projectId;
+                        const project = _studentProjects.find(value => String(value.id) === String(projectId)) || {
+                            id:projectId,
+                            schoolId:currentUser?.schoolId
+                        };
+                        let photo = item.photo;
+                        if(typeof photo === 'string' && photo.startsWith('data:image/')) {
+                            photo = await uploadProjectPhotoToStorage(project, item.milestone, photo);
+                        }
+                        await complianceApi(`/projects/${projectId}/milestones/${item.milestone}`,{
+                            method:'PATCH',
+                            body:JSON.stringify({
+                                photo,
+                                gpsLat:item.gpsLat ?? null,
+                                gpsLng:item.gpsLng ?? null,
+                                deviceType:item.deviceType || projectDeviceType(),
+                                uploadedFromConnection:item.uploadedFromConnection === 'mobile'
+                                    ? 'mobile_data'
+                                    : (item.uploadedFromConnection || 'offline')
+                            })
+                        });
+                    } else {
+                        const result = await complianceApi('/projects',{method:'POST',body:JSON.stringify(item.payload||item)});
+                        if(item.localId && result.project?.id) serverIds.set(item.localId, result.project.id);
+                    }
                 }
             },
             pushCARecords: async items => { for(const item of items) await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(item.payload||item)}); },
@@ -2807,6 +3162,7 @@
 
     function closeVideoModal() {
         stopProgressTracking();
+        stopOfflineViewTracking();
         stopVcTimer();
         if(_offlineSlideshowTimer){clearInterval(_offlineSlideshowTimer);_offlineSlideshowTimer=null;}
         _offlineObjectUrls.forEach(url=>URL.revokeObjectURL(url)); _offlineObjectUrls=[];
@@ -2827,12 +3183,61 @@
         vqBoxShown = false;
     }
 
+    function stopOfflineViewTracking(clearViewId=true) {
+        if(_offlineProgressTimer) {
+            clearInterval(_offlineProgressTimer);
+            _offlineProgressTimer=null;
+        }
+        _offlineProgressPending=null;
+        if(clearViewId) currentOfflineViewId=null;
+    }
+
+    function queueOfflineViewProgress(watchedSeconds, videoDuration, completed=false) {
+        if(!Offline || !currentOfflineViewId || !currentUser) return Promise.resolve();
+        const viewId=currentOfflineViewId;
+        const duration=Math.max(0,Number(videoDuration)||0);
+        const watched=Math.max(0,Number(watchedSeconds)||0);
+        _offlineProgressPending={viewId,duration,watched,completed};
+        if(_offlineProgressWrite) return _offlineProgressWrite;
+        _offlineProgressWrite=(async()=>{
+            while(_offlineProgressPending) {
+                const progress=_offlineProgressPending;
+                _offlineProgressPending=null;
+                const existing=(await Offline.listViews()).find(view=>view.viewId===progress.viewId && view.synced===false);
+                if(!existing) continue;
+                const completionPercent=progress.duration>0
+                    ? Math.min(100,(progress.watched/progress.duration)*100)
+                    : (progress.completed ? 100 : Number(existing.completionPercent||0));
+                await Offline.queueView({
+                    ...existing,
+                    watchedSeconds:progress.watched,
+                    videoDuration:progress.duration,
+                    completionPercent,
+                    completed:progress.completed || completionPercent>=90
+                });
+            }
+        })().catch(error=>console.error('Offline view progress update failed:',error))
+          .finally(()=>{_offlineProgressWrite=null;});
+        return _offlineProgressWrite;
+    }
+
     async function showOfflineVideo(videoKey) {
+        stopOfflineViewTracking(false);
         const playback=await Offline.getVideoPlayback(videoKey), div=document.getElementById('ytPlayerDiv');
         if(!playback.available) { div.innerHTML=`<div style="padding:30px;color:white;text-align:center;">${escHtml(playback.message)}</div>`; return; }
         if(playback.type==='custom-mp4') {
-            const url=URL.createObjectURL(playback.blob); _offlineObjectUrls.push(url);
-            div.innerHTML=`<video controls autoplay playsinline style="width:100%;height:100%;background:#000;"><source src="${url}"></video>`;
+            const url=URL.createObjectURL(playback.blob);
+            _offlineObjectUrls.push(url);
+            const video=document.createElement('video');
+            video.controls=true;
+            video.autoplay=true;
+            video.playsInline=true;
+            video.src=url;
+            video.style.cssText='width:100%;height:100%;background:#000;';
+            video.addEventListener('timeupdate',()=>queueOfflineViewProgress(video.currentTime,video.duration||0));
+            video.addEventListener('ended',()=>queueOfflineViewProgress(video.duration||video.currentTime,video.duration||video.currentTime,true));
+            div.innerHTML='';
+            div.appendChild(video);
             return;
         }
         _offlineObjectUrls=playback.images.map(blob=>URL.createObjectURL(blob));
@@ -2840,6 +3245,17 @@
         div.innerHTML=`<img id="offlineSlideImage" src="${_offlineObjectUrls[0]||''}" alt="Offline lesson slide" style="width:100%;height:100%;object-fit:contain;background:#111;"><div style="position:absolute;left:10px;right:10px;bottom:8px;background:rgba(0,0,0,.72);color:white;padding:7px;border-radius:8px;font-size:12px;">${escHtml(playback.captions||'Offline slideshow lesson')}</div>`;
         if(playback.audio) { const audioUrl=URL.createObjectURL(playback.audio);_offlineObjectUrls.push(audioUrl);const audio=new Audio(audioUrl);audio.play().catch(()=>{}); }
         _offlineSlideshowTimer=setInterval(()=>{index=(index+1)%Math.max(1,playback.images.length);const img=document.getElementById('offlineSlideImage');if(img)img.src=_offlineObjectUrls[index];},8000);
+        const duration=Math.max(8,playback.images.length*8);
+        const startedAt=Date.now();
+        _offlineProgressTimer=setInterval(()=>{
+            const watched=Math.min(duration,(Date.now()-startedAt)/1000);
+            const completed=watched/duration>=0.9;
+            queueOfflineViewProgress(watched,duration,completed);
+            if(completed) {
+                clearInterval(_offlineProgressTimer);
+                _offlineProgressTimer=null;
+            }
+        },1000);
     }
     function setupOfflineVideoActions(videoKey,mapping) {
         const light=document.getElementById('downloadLightVideoBtn'), hd=document.getElementById('downloadHdVideoBtn'), status=document.getElementById('offlineVideoStatus');
@@ -2965,12 +3381,18 @@
         if(!currentUser) return;
         const payload={ subject, classId, className, userId: currentUser.uid, userName: currentUser.name, teacherId:currentTeacherId, videoId:currentVideoKey, watchedSeconds:0, completed:false, schoolId:currentUser.schoolId||null, deviceType:navigator.userAgent, watchedAt:new Date().toISOString(), connectionMode:await resolveConnectionMode() };
         if(!navigator.onLine || offlineSession) {
-            await Offline?.queueView({payload,...payload});
+            const queued=await Offline?.queueView({payload,...payload});
+            currentOfflineViewId=queued?.viewId||null;
             refreshOfflineUi();
             return;
         }
+        currentOfflineViewId=null;
         try { await addDoc(collection(db,"videoViews"), payload); }
-        catch(error) { await Offline?.queueView({payload,...payload}); refreshOfflineUi(); }
+        catch(error) {
+            const queued=await Offline?.queueView({payload,...payload});
+            currentOfflineViewId=queued?.viewId||null;
+            refreshOfflineUi();
+        }
     }
 
     // ===== PDF INLINE VIEWER (NEW) =====
@@ -3053,7 +3475,7 @@
         currentVideoKey = key;
         const mappingData = window._videoMappingData && window._videoMappingData[key];
         currentTeacherId = mappingData?.teacherId || "";
-        saveVideoView(subject, currentSelectedClassId.id, currentSelectedClassId.name);
+        await saveVideoView(subject, currentSelectedClassId.id, currentSelectedClassId.name);
         document.getElementById('currentVideoTitle').innerText = `${subject} - ${currentSelectedClassId.name} Lesson`;
         document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
         document.getElementById('feedbackSection').style.display = 'block';
@@ -3072,7 +3494,7 @@
         if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
         if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
         setupOfflineVideoActions(key,mappingData||{youtubeId:vid});
-        if(!navigator.onLine) await showOfflineVideo(key); else createYTPlayer(vid);
+        if(!navigator.onLine || offlineSession) await showOfflineVideo(key); else createYTPlayer(vid);
     };
 
     // openVideo helper for vc prev/next (subject key already resolved)
@@ -3081,6 +3503,9 @@
         if(!vid) return;
         currentVideoKey = videoKey;
         currentTeacherId = teacherId || '';
+        if(!navigator.onLine || offlineSession) {
+            await saveVideoView(title||'Lesson',currentSelectedClassId?.id||'',currentSelectedClassId?.name||'');
+        }
         document.getElementById('currentVideoTitle').innerText = title || 'Lesson';
         document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${title || 'Lesson'}`;
         document.getElementById('videoModal').classList.add('show');
@@ -3092,7 +3517,7 @@
         if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
         const mappingData=window._videoMappingData&&window._videoMappingData[videoKey];
         setupOfflineVideoActions(videoKey,mappingData||{youtubeId:vid});
-        if(!navigator.onLine) await showOfflineVideo(videoKey); else createYTPlayer(vid);
+        if(!navigator.onLine || offlineSession) await showOfflineVideo(videoKey); else createYTPlayer(vid);
     }
 
     // ===== PDF LIST (home page, inline viewer) =====
@@ -3254,7 +3679,13 @@
         const school = currentUser?.role === 'school';
         const studentSection = document.getElementById('studentCbcSection');
         if(studentSection) studentSection.style.display = student ? 'block' : 'none';
-        document.getElementById('openProjectsBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('projects'));
+        document.getElementById('openProjectsBtn')?.addEventListener('click', openMyProjects);
+        document.getElementById('closeMyProjectsBtn').onclick = () => closeProjectModal('myProjectsModal');
+        document.getElementById('openCreateProjectBtn').onclick = openCreateProject;
+        document.getElementById('closeCreateProjectBtn').onclick = () => closeProjectModal('createProjectModal');
+        document.getElementById('cancelCreateProjectBtn').onclick = () => closeProjectModal('createProjectModal');
+        document.getElementById('createProjectForm').onsubmit = saveNewProject;
+        document.getElementById('closeProjectDetailBtn').onclick = () => closeProjectModal('projectDetailModal');
         document.getElementById('openScenarioPracticeBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('practice'));
         document.getElementById('openCompetencyBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('passport'));
         document.getElementById('openRetoolingBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('modules'));
@@ -3277,49 +3708,8 @@
         panel.innerHTML='<div class="cbc-status">Loading…</div>';
         try {
             if(mode==='projects') {
-                const data = await complianceApi('/projects');
-                const projects = data.projects||[];
-                panel.innerHTML = `<div class="cbc-form">
-                    <strong style="color:#4B2E9E;">Start a project</strong>
-                    <input id="cbcProjectTitle" placeholder="Project title">
-                    <input id="cbcProjectClass" placeholder="Class (for example S2)">
-                    <input id="cbcProjectSubject" placeholder="Subject">
-                    <button class="cbc-action primary" id="createCbcProjectBtn">Create project</button>
-                </div>
-                <div class="cbc-status" id="cbcProjectStatus"></div>
-                <div style="margin-top:14px;">${projects.length ? projects.map(renderStudentProject).join('') : '<div class="cbc-status">No projects yet. Create your first project above.</div>'}</div>`;
-                document.getElementById('createCbcProjectBtn')?.addEventListener('click', async ()=>{
-                    const status=document.getElementById('cbcProjectStatus');
-                    const payload={schoolId:currentUser.schoolId, className:document.getElementById('cbcProjectClass').value.trim(),subject:document.getElementById('cbcProjectSubject').value.trim(), title:document.getElementById('cbcProjectTitle').value.trim()};
-                    try {
-                        if(!navigator.onLine) throw new Error('OFFLINE_QUEUE');
-                        await complianceApi('/projects',{method:'POST',body:JSON.stringify(payload)});
-                        showNotification('Project created');
-                        renderStudentCbcPanel('projects');
-                    } catch(e) {
-                        if(!navigator.onLine || e.message==='OFFLINE_QUEUE') {
-                            await Offline.queueProject({operation:'create',payload,...payload});
-                            if(status) status.textContent='Saved offline - will sync at school';
-                            refreshOfflineUi();
-                        } else if(status) status.textContent=e.message;
-                    }
-                });
-                panel.querySelectorAll('input[data-project-id]').forEach(input=>input.addEventListener('change', async e=>{
-                    const inputEl=e.target, projectId=inputEl.dataset.projectId, milestone=inputEl.dataset.milestone;
-                    try {
-                        const photo=await compressCompliancePhoto(inputEl.files[0]);
-                        if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'),{photo});
-                        await complianceApi(`/projects/${projectId}/milestones/${milestone}`,{method:'PATCH',body:JSON.stringify({photo})});
-                        showNotification('Milestone uploaded and sent for review');
-                        renderStudentCbcPanel('projects');
-                    } catch(err) {
-                        if(!navigator.onLine || err.message==='OFFLINE_QUEUE') {
-                            const photo=err.photo||await compressCompliancePhoto(inputEl.files[0]);
-                            await Offline.queueProject({operation:'milestone',projectId,milestone,photo,size:Math.ceil(photo.length*0.75)});
-                            showNotification('Saved offline - will sync at school','info'); refreshOfflineUi();
-                        } else showNotification(err.message,'error');
-                    }
-                }));
+                openMyProjects();
+                return;
             } else if(mode==='passport') {
                 const data=await complianceApi('/ca-records');
                 panel.innerHTML=`<strong style="color:#4B2E9E;">My Competency Passport</strong>
@@ -3334,6 +3724,354 @@
             }
         } catch(e) { panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(e.message)}</div>`; }
     }
+
+    function projectStatusText(status) {
+        const value = String(status || 'not_started').toLowerCase();
+        return { not_started:'Not Started', pending:'⏳ Pending Review', approved:'✅ Approved', rejected:'❌ Rejected' }[value] || value;
+    }
+
+    function projectStatusBadge(status) {
+        const value = String(status || 'not_started').toLowerCase();
+        return `<span class="project-status-badge ${escHtml(value)}">${escHtml(projectStatusText(value))}</span>`;
+    }
+
+    function projectDate(value) {
+        if(!value) return 'Not updated yet';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? 'Not updated yet' : date.toLocaleString();
+    }
+
+    function studentProjectSubjects() {
+        const education = String(currentUser?.educationLevel || '').toLowerCase();
+        const subjects = education.includes('secondary') || currentLevel === 'secondary' ? secondarySubjects : primarySubjects;
+        const fallback = education.includes('secondary')
+            ? ['Mathematics','English','Biology','Chemistry','Physics','History','Geography']
+            : ['Mathematics','English','Science','Social Studies','Agriculture'];
+        return [...new Set((subjects && subjects.length ? subjects : fallback).map(String).filter(Boolean))];
+    }
+
+    function studentProjectClass() {
+        return String(
+            currentUser?.className || currentUser?.class || currentUser?.classLevel ||
+            currentUser?.currentClass || currentSelectedClassId?.name || ''
+        ).trim();
+    }
+
+    function generateLin(schoolId, studentUid) {
+        const schoolCode = String(schoolId || 'SCHOOL').replace(/[^a-z0-9]/gi,'').slice(0,6).toUpperCase() || 'SCHOOL';
+        const uid = String(studentUid || currentUser?.uid || '').slice(-6).toUpperCase() || 'STUDENT';
+        const lin = `APSH-${schoolCode}-${new Date().getFullYear()}-${uid}`;
+        if(currentUser && !currentUser.lin) {
+            currentUser.lin = lin;
+            setDoc(doc(db,'users',currentUser.uid), { lin }, { merge:true }).catch(()=>{});
+        }
+        return lin;
+    }
+
+    function offlineProjectToProject(item) {
+        const payload = item?.payload || item || {};
+        return {
+            ...payload,
+            id: payload.id || item.localId,
+            localId: item.localId,
+            syncStatus: item.syncStatus || 'pending',
+            title: payload.title || item.title || 'Untitled project',
+            subject: payload.subject || item.subject || '',
+            className: payload.className || item.className || '',
+            description: payload.description || item.description || '',
+            lin: payload.lin || item.lin || '',
+            milestone1Status: payload.milestone1Status || 'not_started',
+            milestone2Status: payload.milestone2Status || 'not_started',
+            finalStatus: payload.finalStatus || 'not_started',
+            createdAt: payload.createdAt || item.queuedAt || new Date().toISOString(),
+            updatedAt: payload.updatedAt || item.queuedAt || new Date().toISOString()
+        };
+    }
+
+    async function loadStudentProjects() {
+        let serverProjects = [];
+        if(navigator.onLine) {
+            const data = await complianceApi('/projects');
+            serverProjects = data.projects || [];
+        }
+        let offlineProjects = [];
+        if(Offline) {
+            offlineProjects = (await Offline.listProjects()).filter(item =>
+                item.syncStatus !== 'synced' && (!item.learnerId || item.learnerId === currentUser?.uid)
+            ).map(offlineProjectToProject);
+        }
+        const merged = [...serverProjects];
+        offlineProjects.forEach(local => {
+            if(!merged.some(project => project.id === local.id || (local.payload?.title && project.title === local.payload.title))) merged.push(local);
+        });
+        _studentProjects = merged.sort((a,b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+        return _studentProjects;
+    }
+
+    function renderProjectCard(project) {
+        const statuses = [
+            `Milestone 1: ${projectStatusText(project.milestone1Status)}`,
+            `Milestone 2: ${projectStatusText(project.milestone2Status)}`,
+            `Final: ${projectStatusText(project.finalStatus)}`
+        ];
+        return `<button type="button" class="project-card" data-project-card="${escHtml(project.id)}">
+            <div class="project-card-top">
+                <div><div class="project-card-title">${escHtml(project.title || 'Untitled project')}</div>
+                <div class="project-card-meta">${escHtml(project.subject || 'Subject not set')} · ${escHtml(project.className || 'Class not set')}</div></div>
+                ${project.syncStatus === 'pending' ? '<span class="project-status-badge pending">Saved offline</span>' : ''}
+            </div>
+            <div class="project-status-summary">${statuses.map(escHtml).join(' · ')}</div>
+            <div class="project-card-meta">Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
+        </button>`;
+    }
+
+    async function openMyProjects() {
+        const modal = document.getElementById('myProjectsModal');
+        const list = document.getElementById('myProjectsList');
+        const status = document.getElementById('myProjectsStatus');
+        if(!modal || !list) return;
+        modal.classList.add('show');
+        list.innerHTML = '<div class="cbc-status">Loading your projects…</div>';
+        if(status) status.textContent = '';
+        try {
+            const projects = await loadStudentProjects();
+            list.innerHTML = projects.length
+                ? projects.map(renderProjectCard).join('')
+                : '<div class="cbc-status">No projects yet. Create your first project below.</div>';
+            list.querySelectorAll('[data-project-card]').forEach(card => card.addEventListener('click', () => openProjectDetail(card.dataset.projectCard)));
+        } catch(error) {
+            list.innerHTML = `<div class="cbc-status" style="color:#c62828;">${escHtml(complianceMessage(error))}</div>`;
+        }
+    }
+
+    function closeProjectModal(id) {
+        document.getElementById(id)?.classList.remove('show');
+    }
+
+    function openCreateProject() {
+        const modal = document.getElementById('createProjectModal');
+        const subject = document.getElementById('newProjectSubject');
+        const classInput = document.getElementById('newProjectClass');
+        const status = document.getElementById('createProjectStatus');
+        if(!modal || !subject) return;
+        subject.innerHTML = studentProjectSubjects().map(value => `<option value="${escHtml(value)}">${escHtml(value)}</option>`).join('');
+        classInput.value = studentProjectClass();
+        document.getElementById('newProjectTitle').value = '';
+        document.getElementById('newProjectDescription').value = '';
+        if(status) status.textContent = '';
+        modal.classList.add('show');
+    }
+
+    async function saveNewProject(event) {
+        event?.preventDefault();
+        const titleInput = document.getElementById('newProjectTitle');
+        const subjectInput = document.getElementById('newProjectSubject');
+        const classInput = document.getElementById('newProjectClass');
+        const descriptionInput = document.getElementById('newProjectDescription');
+        const status = document.getElementById('createProjectStatus');
+        const title = titleInput.value.trim();
+        const subject = subjectInput.value.trim();
+        const className = classInput.value.trim();
+        const description = descriptionInput.value.trim();
+        if(!title || title.length > 100) { status.textContent = 'Enter a project title of 1–100 characters.'; return; }
+        if(!subject || !className) { status.textContent = 'Choose a subject and enter your class.'; return; }
+        if(_studentProjects.some(project => String(project.title || '').trim().toLowerCase() === title.toLowerCase())) {
+            status.textContent = 'You already have a project with this title.';
+            return;
+        }
+        status.style.color = '#4B2E9E';
+        status.textContent = 'Saving project…';
+        const payload = {
+            schoolId: currentUser?.schoolId || '',
+            className,
+            subject,
+            title,
+            description,
+            lin: generateLin(currentUser?.schoolId, currentUser?.uid)
+        };
+        try {
+            if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'), { code:'OFFLINE_QUEUE' });
+            const result = await complianceApi('/projects', { method:'POST', body:JSON.stringify(payload) });
+            status.style.color = '#2e7d32';
+            status.textContent = '✅ Project created! Upload Week 2 Proposal.';
+            showNotification('Project created! Upload Week 2 Proposal.','success');
+            closeProjectModal('createProjectModal');
+            await openMyProjects();
+            return result.project;
+        } catch(error) {
+            if(error.code === 'OFFLINE_QUEUE' || !navigator.onLine) {
+                const localId = `local-project-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+                await Offline.queueProject({
+                    localId,
+                    operation:'create',
+                    learnerId:currentUser?.uid,
+                    payload:{
+                        ...payload,
+                        id:localId,
+                        learnerId:currentUser?.uid,
+                        learnerName:currentUser?.name || currentUser?.uid,
+                        milestone1Status:'not_started',
+                        milestone2Status:'not_started',
+                        finalStatus:'not_started',
+                        previousTitleCheck:true,
+                        previousTitleMatch:false,
+                        createdAt:new Date().toISOString(),
+                        updatedAt:new Date().toISOString()
+                    }
+                });
+                status.style.color = '#2e7d32';
+                status.textContent = 'Saved offline — will sync at school WiFi.';
+                showNotification('Saved offline — will sync at school WiFi','info');
+                closeProjectModal('createProjectModal');
+                await openMyProjects();
+                refreshOfflineUi();
+                return;
+            }
+            status.style.color = '#c62828';
+            status.textContent = complianceMessage(error);
+        }
+    }
+
+    function getProjectLocation() {
+        return new Promise(resolve => {
+            if(!navigator.geolocation) return resolve(null);
+            navigator.geolocation.getCurrentPosition(
+                position => resolve({ lat:position.coords.latitude, lng:position.coords.longitude }),
+                () => resolve(null),
+                { enableHighAccuracy:false, timeout:5000, maximumAge:300000 }
+            );
+        });
+    }
+
+    function projectDeviceType() {
+        const ua = navigator.userAgent.toLowerCase();
+        if(/ipad|tablet|playbook|silk/.test(ua)) return 'tablet';
+        if(/mobile|iphone|android/.test(ua)) return 'phone';
+        return 'laptop';
+    }
+
+    async function uploadProjectPhotoToStorage(project, milestone, dataUrl) {
+        if(!storage || !storageRef) return dataUrl;
+        const path = `projects/${project.schoolId}/${currentUser.uid}/${project.id}/milestone_${milestone}.jpg`;
+        const reference = storageRef(storage, path);
+        if(typeof reference.putString === 'function') {
+            await reference.putString(dataUrl, 'data_url', { contentType:'image/jpeg' });
+        } else {
+            const task = uploadBytesResumable(reference, dataUrl);
+            await new Promise((resolve,reject) => task.on('state_changed', null, reject, resolve));
+        }
+        return getDownloadURL(reference);
+    }
+
+    function milestonePhoto(project, milestone) {
+        return milestone === '1' ? project.milestone1Photo : milestone === '2' ? project.milestone2Photo : project.finalPhoto;
+    }
+
+    function milestoneStatus(project, milestone) {
+        return milestone === '1' ? project.milestone1Status : milestone === '2' ? project.milestone2Status : project.finalStatus;
+    }
+
+    function renderProjectMilestone(project, milestone, label, requirement, unlockStatus) {
+        const status = milestoneStatus(project, milestone) || 'not_started';
+        const photo = milestonePhoto(project, milestone);
+        const locked = unlockStatus && unlockStatus !== 'approved';
+        const approved = status === 'approved';
+        const uploadId = `projectPhoto_${project.id}_${milestone}`.replace(/[^a-zA-Z0-9_-]/g,'_');
+        return `<section class="project-milestone ${locked ? 'locked' : ''}">
+            <div class="project-milestone-title"><span>${label}</span>${projectStatusBadge(status)}</div>
+            <div class="project-helper" style="margin-top:6px;">${locked ? `🔒 Locked until ${requirement} is approved.` : approved ? 'This milestone is read-only after approval.' : requirement}</div>
+            ${photo ? `<a href="${escHtml(photo)}" target="_blank" rel="noopener"><img class="project-milestone-photo" src="${escHtml(photo)}" alt="${escHtml(label)} evidence"></a>` : ''}
+            ${(milestone === '1' ? project.milestone1Comment : milestone === '2' ? project.milestone2Comment : project.finalComment) ? `<div class="project-helper" style="color:#5d4a86;margin-top:8px;">Teacher comment: ${escHtml(milestone === '1' ? project.milestone1Comment : milestone === '2' ? project.milestone2Comment : project.finalComment)}</div>` : ''}
+            ${!locked && !approved && (!photo || status === 'rejected') ? `<label class="project-secondary-btn" style="display:inline-block;margin-top:10px;">${photo ? 'Replace Photo' : 'Upload Photo'}<input id="${uploadId}" type="file" accept="image/*" capture="environment" data-upload-project="${escHtml(project.id)}" data-upload-milestone="${milestone}" style="display:none;"></label>` : ''}
+        </section>`;
+    }
+
+    async function openProjectDetail(projectId) {
+        const project = _studentProjects.find(item => String(item.id) === String(projectId));
+        const modal = document.getElementById('projectDetailModal');
+        const body = document.getElementById('projectDetailBody');
+        if(!project || !modal || !body) return;
+        document.getElementById('projectDetailTitle').textContent = project.title || 'Project details';
+        modal.classList.add('show');
+        body.innerHTML = `<div class="cbc-status">Loading project details…</div>`;
+        body.innerHTML = `<div class="project-card-meta">${escHtml(project.subject || '')} · ${escHtml(project.className || '')}</div>
+            <div class="project-helper" style="margin-top:5px;">LIN: <strong>${escHtml(project.lin || 'Pending')}</strong> · Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
+            ${project.description ? `<p class="project-helper">${escHtml(project.description)}</p>` : ''}
+            ${project.previousTitleMatch ? '<div class="project-warning">⚠️ You used this title last term. Consider choosing a different approach or explaining what is new.</div>' : ''}
+            ${project.similarityFlag ? '<div class="project-warning">⚠️ Similar to another student’s project. Your teacher will review it.</div>' : ''}
+            ${project.syncStatus === 'pending' ? '<div class="project-warning">Saved offline. It will sync when your connection returns.</div>' : ''}
+            <div style="margin-top:14px;font-weight:800;color:#34206f;">Milestone evidence</div>
+            ${renderProjectMilestone(project,'1','📋 Milestone 1 — Proposal','Upload your Week 2 proposal photo',null)}
+            ${renderProjectMilestone(project,'2','📊 Milestone 2 — Progress','Upload your Week 5 progress photo',project.milestone1Status)}
+            ${renderProjectMilestone(project,'3','🎯 Milestone 3 — Final','Upload your Week 9 final photo',project.milestone2Status)}
+            <button type="button" class="project-secondary-btn" id="backToMyProjectsBtn" style="margin-top:14px;">← Back to My Projects</button>`;
+        body.querySelectorAll('[data-upload-project]').forEach(input => input.addEventListener('change', event => {
+            const file = event.target.files?.[0];
+            if(file) uploadMilestone(event.target.dataset.uploadProject, event.target.dataset.uploadMilestone, file);
+        }));
+        document.getElementById('backToMyProjectsBtn')?.addEventListener('click', () => {
+            closeProjectModal('projectDetailModal');
+            openMyProjects();
+        });
+    }
+
+    async function uploadMilestone(projectId, milestoneNumber, file) {
+        const project = _studentProjects.find(item => String(item.id) === String(projectId));
+        if(!project || !file) return;
+        const milestone = String(milestoneNumber);
+        const status = milestoneStatus(project, milestone);
+        if(status === 'approved') return showNotification('Approved milestones are read-only.','info');
+        if(milestone === '2' && project.milestone1Status !== 'approved') return showNotification('Complete Milestone 1 first.','info');
+        if(milestone === '3' && project.milestone2Status !== 'approved') return showNotification('Complete Milestone 2 first.','info');
+        try {
+            const photo = await compressCompliancePhoto(file);
+            const location = await getProjectLocation();
+            const connection = await resolveConnectionMode();
+            const metadata = {
+                gpsLat:location?.lat ?? null,
+                gpsLng:location?.lng ?? null,
+                deviceType:projectDeviceType(),
+                uploadedFromConnection:connection === 'mobile' ? 'mobile_data' : connection
+            };
+            if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'), { code:'OFFLINE_QUEUE', photo, metadata });
+            const photoReference = await uploadProjectPhotoToStorage(project, milestone, photo);
+            await complianceApi(`/projects/${project.id}/milestones/${milestone}`, {
+                method:'PATCH',
+                body:JSON.stringify({ photo:photoReference, ...metadata })
+            });
+            showNotification(`Milestone ${milestone} uploaded — waiting for teacher approval`,'success');
+            await openProjectDetail(project.id);
+        } catch(error) {
+            if(error.code === 'OFFLINE_QUEUE' || !navigator.onLine) {
+                const offlinePhoto = error.photo || await compressCompliancePhoto(file);
+                const metadata = error.metadata || {};
+                await Offline.queueProject({
+                    operation:'milestone',
+                    projectId:project.id,
+                    learnerId:currentUser?.uid,
+                    milestone,
+                    photo:offlinePhoto,
+                    ...metadata,
+                    size:Math.ceil(offlinePhoto.length * 0.75),
+                    updatedAt:new Date().toISOString()
+                });
+                showNotification('Saved offline — will sync at school WiFi','info');
+                closeProjectModal('projectDetailModal');
+                openMyProjects();
+                refreshOfflineUi();
+            } else {
+                showNotification(complianceMessage(error),'error');
+                openProjectDetail(project.id);
+            }
+        }
+    }
+
+    window.openMyProjects = openMyProjects;
+    window.openCreateProject = openCreateProject;
+    window.saveNewProject = saveNewProject;
+    window.openProjectDetail = openProjectDetail;
+    window.uploadMilestone = uploadMilestone;
+    window.generateLin = generateLin;
 
     function renderStudentProject(project) {
         const milestone = (number,label,status,photo) => `<div style="margin-top:8px;padding:8px;background:#fafafa;border-radius:10px;">
@@ -6703,6 +7441,7 @@
         document.getElementById('liveLessonMenuItem').style.display = "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
+        document.getElementById('offlineViewsOverviewSection').style.display = isSuper ? "block" : "none";
         if (isSuper) { loadPushHistory(); initPushHistoryControls(); }
         document.getElementById('schoolStudentsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
@@ -6749,6 +7488,7 @@
             renderQuestionsAdmin();
             loadAdminVideoQuestions();
             loadSuperAdminWeakAreasOverview();
+            loadOfflineViewsOverview();
         }
         renderClasses();
         renderEnrolledList();
@@ -7022,8 +7762,10 @@
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') { renderSchoolEventsList(); loadMyStudents(); } else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') { renderSchoolEventsList(); loadMyStudents(); } else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); loadOfflineViewsOverview(); } } }
     });
+    document.getElementById('offlineViewsRefreshBtn')?.addEventListener('click', ()=>loadOfflineViewsOverview());
+    document.getElementById('downloadOfflineEarningsPdfBtn')?.addEventListener('click', ()=>generateOfflineEarningsPdf());
     document.getElementById('closeVideoBtn')?.addEventListener('click', closeVideoModal);
     document.getElementById('fullscreenBtn')?.addEventListener('click', ()=>{ let vc=document.getElementById('videoContent'); if(!document.fullscreenElement) vc.requestFullscreen(); else document.exitFullscreen(); });
     document.addEventListener('fullscreenchange', ()=>{ let btn=document.getElementById('fullscreenBtn'); if(btn) btn.innerHTML=document.fullscreenElement?'<i class="fas fa-compress"></i>':'<i class="fas fa-expand"></i>'; });
@@ -7756,7 +8498,6 @@
     try { renderEventsTicker(); } catch(e){ console.warn('renderEventsTicker',e); }
     // Flutterwave uses inline callbacks — no redirect-back check needed
 
-    console.log("✅ APSHULE fully loaded with all features.");
 </script>
 <script>
 (function () {

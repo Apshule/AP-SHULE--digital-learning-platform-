@@ -84,7 +84,7 @@
       watchedSeconds: watchedSeconds,
       videoDuration: videoDuration,
       completionPercent: completionPercent,
-      completed: completionPercent >= 90,
+      completed: view.completed === true || completionPercent >= 90,
       synced: typeof view.synced === 'boolean' ? view.synced : false,
       schoolId: view.schoolId || '',
       deviceType: VIEW_DEVICE_TYPES.indexOf(requestedDeviceType) >= 0 ? requestedDeviceType : deviceType(),
@@ -92,6 +92,10 @@
       connectionMode: VIEW_CONNECTION_MODES.indexOf(requestedConnectionMode) >= 0 ? requestedConnectionMode : 'offline',
       earningsAmount: numberOr(view.earningsAmount, 0)
     });
+  }
+
+  function isCompletedView(view) {
+    return !!view && (view.completed === true || Number(view.completionPercent || 0) >= 90);
   }
 
   function ensureStoreIndexes(name, store) {
@@ -487,7 +491,7 @@
       .then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
-        var views = records[2].filter(function (item) { return item.synced === false; });
+        var views = records[2].filter(function (item) { return item.synced === false && isCompletedView(item); });
         var pending = projects.concat(caRecords, views);
         var cachedSize = records[3].reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         return {
@@ -511,7 +515,7 @@
       ]).then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
-        var views = records[2].filter(function (item) { return item.synced === false; });
+        var views = records[2].filter(function (item) { return item.synced === false && isCompletedView(item); });
         var total = projects.length + caRecords.length + views.length;
         if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
         if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
