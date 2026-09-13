@@ -1,15 +1,14 @@
 {
-  "name": "APSHULE – Learn With Ease",
-  "short_name": "APSHULE",
-  "description": "Uganda's online learning platform — live lessons, PDF resources, smart attendance, and school management.",
+  "name": "AppShule",
+  "short_name": "AppShule",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "theme_color": "#4B2E9E",
   "background_color": "#4B2E9E",
   "lang": "en",
-  "categories": ["education"],
+  "categories": ["education", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",

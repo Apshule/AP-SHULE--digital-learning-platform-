@@ -14,6 +14,8 @@ const FILES = [
   "index.html",
   "CNAME",
   "firebase-messaging-sw.js",
+  "sw.js",
+  "offline-manager.js",
   "manifest.json",
   "robots.txt",
   "sitemap.xml",

@@ -618,6 +618,42 @@
         .landing-about h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
         .landing-about p { font-size: 13px; opacity: 0.85; line-height: 1.6; margin: 0; }
         .landing-footer { text-align: center; padding: 24px 16px 8px; font-size: 11px; opacity: 0.5; }
+        /* ===== OFFLINE-FIRST CONNECTION SURFACES ===== */
+        .connection-tools { display:flex; align-items:center; gap:8px; }
+        .connection-mode-badge { display:inline-flex; align-items:center; gap:7px; min-height:32px; max-width:190px; padding:7px 10px; border:1px solid rgba(255,255,255,.28); border-radius:18px; background:rgba(255,255,255,.14); color:#fff; font-size:11px; line-height:1.2; font-weight:700; }
+        .connection-mode-badge .connection-dot { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:#9BE7B0; box-shadow:0 0 0 3px rgba(155,231,176,.18); }
+        .connection-mode-badge[data-mode="mobile"] .connection-dot { background:#FFD166; box-shadow:0 0 0 3px rgba(255,209,102,.18); }
+        .connection-mode-badge[data-mode="wifi"] .connection-dot { background:#B7F0D0; box-shadow:0 0 0 3px rgba(183,240,208,.18); }
+        .connection-mode-badge[data-mode="offline"] { background:rgba(32,121,77,.22); }
+        .sync-now-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid rgba(255,255,255,.5); border-radius:18px; background:#fff; color:#4B2E9E; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; }
+        .sync-now-btn:hover, .sync-now-btn:focus-visible { background:#FFF3E8; outline:3px solid rgba(255,209,102,.42); outline-offset:2px; }
+        .sync-now-btn[aria-busy="true"] i { animation:spin .8s linear infinite; }
+        .connection-settings-card { margin-top:16px; background:#fff; border-radius:20px; padding:20px; border:1px solid rgba(75,46,158,.1); box-shadow:0 5px 18px rgba(38,25,91,.1); }
+        .connection-settings-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+        .connection-settings-head h3 { margin:0; color:#4B2E9E; font-size:17px; }
+        .connection-settings-head p { margin:4px 0 0; color:#747474; font-size:12px; line-height:1.4; }
+        .connection-settings-head i { color:#FF8C42; font-size:20px; }
+        .connection-setting-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-top:1px solid #F0EDF8; }
+        .connection-setting-copy { min-width:0; }
+        .connection-setting-copy strong { display:block; color:#333; font-size:13px; line-height:1.3; }
+        .connection-setting-copy span { display:block; color:#818181; font-size:11px; line-height:1.35; margin-top:3px; }
+        .connection-switch { position:relative; display:inline-flex; flex:0 0 auto; width:44px; height:25px; }
+        .connection-switch input { position:absolute; opacity:0; width:1px; height:1px; }
+        .connection-switch-track { width:44px; height:25px; border-radius:20px; background:#D7D3E4; transition:background .2s ease; cursor:pointer; }
+        .connection-switch-track::after { content:""; display:block; width:19px; height:19px; margin:3px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.2); transition:transform .2s ease; }
+        .connection-switch input:checked + .connection-switch-track { background:#4B2E9E; }
+        .connection-switch input:checked + .connection-switch-track::after { transform:translateX(19px); }
+        .connection-switch input:focus-visible + .connection-switch-track { outline:3px solid rgba(255,140,66,.35); outline-offset:2px; }
+        .connection-language { width:100%; margin-top:12px; padding:11px 12px; border:1px solid #DED9ED; border-radius:11px; background:#FBFAFE; color:#333; font:inherit; font-size:13px; }
+        .connection-language:focus { outline:3px solid rgba(255,140,66,.25); border-color:#FF8C42; }
+        .connection-usage { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:14px; }
+        .connection-usage-item { padding:11px 12px; border-radius:12px; background:#F7F4FD; }
+        .connection-usage-item span { display:block; color:#888; font-size:10px; }
+        .connection-usage-item strong { display:block; margin-top:3px; color:#4B2E9E; font-size:14px; }
+        .connection-status { display:flex; align-items:flex-start; gap:8px; min-height:18px; margin-top:13px; padding:9px 10px; border-radius:10px; color:#41614D; background:#EFF9F2; font-size:11px; line-height:1.35; }
+        .connection-status i { margin-top:2px; color:#2E8B57; }
+        @media (max-width:420px) { .connection-mode-badge { max-width:32px; padding:8px; } .connection-mode-badge .connection-label { display:none; } .header-right { gap:7px; } .sync-now-btn { padding:8px 10px; } }
+        @media (max-width:350px) { .sync-now-btn .sync-label { display:none; } .sync-now-btn { width:36px; padding:8px; } }
     </style>
 </head>
 <body>
@@ -819,6 +855,10 @@
             <div><div class="app-title">APSHULE</div><div class="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting">Hello, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
+            <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" role="status" aria-live="polite" aria-label="Connection mode: Offline mode">
+                <span class="connection-dot" aria-hidden="true"></span><span id="connectionModeLabel" class="connection-label">Offline mode</span>
+            </div>
+            <button id="headerSyncNowBtn" class="sync-now-btn" type="button" aria-label="Sync now" aria-busy="false"><i class="fas fa-sync-alt" aria-hidden="true"></i><span class="sync-label">Sync Now</span></button>
             <button class="search-icon-btn" id="openGlobalSearchBtn" title="Search everything"><i class="fas fa-search"></i></button>
             <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
             <div style="position:relative;">
@@ -856,6 +896,11 @@
             </div>
             <div class="video-title" id="currentVideoTitle"></div>
             <div class="video-progress-bar"><div class="video-progress-fill" id="videoProgressFill"></div></div>
+            <div id="offlineVideoActions" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 12px 2px;">
+                <button id="downloadLightVideoBtn" class="cbc-action primary" type="button">Download Offline (Light) — ~2MB</button>
+                <button id="downloadHdVideoBtn" class="cbc-action" type="button" style="display:none;">Download HD Offline</button>
+                <span id="offlineVideoStatus" class="cbc-status" role="status" aria-live="polite"></span>
+            </div>
             <!-- VIDEO QUESTION BOX — appears at ≤120s remaining -->
             <div id="videoQuestionBox" class="vq-box" style="display:none;">
                 <div class="vq-box-title">💬 Got a question about this lesson?</div>
@@ -1729,6 +1774,31 @@
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
+            <section id="connectionSettingsCard" class="connection-settings-card" aria-labelledby="connectionSettingsTitle">
+                <div class="connection-settings-head">
+                    <div><h3 id="connectionSettingsTitle">Connection Settings</h3><p>Choose how APSHULE uses data on this phone.</p></div>
+                    <i class="fas fa-signal" aria-hidden="true"></i>
+                </div>
+                <div class="connection-setting-row">
+                    <div class="connection-setting-copy"><strong>Download HD videos only on WiFi</strong><span>Keep mobile data light by waiting for WiFi.</span></div>
+                    <label class="connection-switch" for="downloadHdWifiToggle"><input id="downloadHdWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Download HD videos only on WiFi</span></label>
+                </div>
+                <div class="connection-setting-row">
+                    <div class="connection-setting-copy"><strong>Auto-sync on WiFi</strong><span>Send saved work when WiFi is available.</span></div>
+                    <label class="connection-switch" for="autoSyncWifiToggle"><input id="autoSyncWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on WiFi</span></label>
+                </div>
+                <div class="connection-setting-row">
+                    <div class="connection-setting-copy"><strong>Auto-sync on mobile data</strong><span>Uses mobile data to send pending work.</span></div>
+                    <label class="connection-switch" for="autoSyncMobileToggle"><input id="autoSyncMobileToggle" type="checkbox"><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on mobile data</span></label>
+                </div>
+                <label class="connection-setting-copy" for="preferredLanguage"><strong>Preferred language</strong><select id="preferredLanguage" class="connection-language" aria-label="Preferred language"><option value="en">English</option><option value="lg">Luganda</option><option value="lus">Lusoga</option><option value="nyn">Runyankore</option><option value="nyo">Runyoro</option><option value="ach">Acholi</option><option value="sw">Swahili</option></select></label>
+                <div class="connection-usage" aria-label="Data usage">
+                    <div class="connection-usage-item"><span>Last sync size</span><strong id="lastSyncSize">Not synced yet</strong></div>
+                    <div class="connection-usage-item"><span>Total cached size</span><strong id="totalCachedSize">0 MB</strong></div>
+                </div>
+                <div id="connectionStatusFeedback" class="connection-status" role="status" aria-live="polite"><i class="fas fa-check-circle" aria-hidden="true"></i><span id="connectionStatusText">Working offline. Saved work will sync when you connect.</span></div>
+                <button id="accountSyncNowBtn" class="sync-now-btn" type="button" aria-busy="false" style="width:100%;margin-top:12px;background:#4B2E9E;color:#fff;border-color:#4B2E9E;"><i class="fas fa-sync-alt" aria-hidden="true"></i><span>Sync Now</span></button>
+            </section>
             <div id="profilePicUploadSection" class="profile-pic-upload" style="display:none;">
                 <h4>Profile Picture</h4>
                 <img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile preview">
@@ -2145,6 +2215,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js" onerror="void 0"></script>
+<script src="/offline-manager.js"></script>
 
 <script>
     // Initialise Firebase (wrapped in try-catch so any error unblocks the login form)
@@ -2161,6 +2232,9 @@
         firebase.initializeApp(firebaseConfig);
         auth    = firebase.auth();
         db      = firebase.firestore();
+        db.enablePersistence({ synchronizeTabs: true }).catch(function(error) {
+            if(error && error.code !== 'failed-precondition' && error.code !== 'unimplemented') console.warn('Firestore offline cache unavailable:', error);
+        });
         storage = firebase.storage();
         window.db = db; window.auth = auth; window.storage = storage;
         try { window._fcmMessaging = firebase.messaging(); } catch(_) {}
@@ -2304,6 +2378,9 @@
     let ytPlayer = null;
     let videoProgressInterval = null;
     let earningRecorded = false;
+    let offlineSession = false;
+    let _offlineSlideshowTimer = null;
+    let _offlineObjectUrls = [];
 
     // ===== SESSION ISOLATION — wipe ALL user data on logout / auth-null =====
     function clearSessionData() {
@@ -2360,6 +2437,110 @@
         setTimeout(() => n.style.display = 'none', 3500);
     }
     window.showNotification = showNotification;
+
+    const Offline = window.AppShuleOffline;
+    function formatOfflineBytes(bytes) {
+        const value = Number(bytes)||0;
+        if(value < 1024) return `${value} B`;
+        if(value < 1048576) return `${Math.round(value/1024)} KB`;
+        return `${(value/1048576).toFixed(1)} MB`;
+    }
+    async function resolveConnectionMode() {
+        if(!Offline) return navigator.onLine ? 'wifi' : 'offline';
+        let mode = await Offline.getConnectionMode();
+        if(!mode) {
+            const answer = String(prompt('What is your internet? Type: WiFi, Mobile Data, or No internet', 'WiFi')||'').toLowerCase();
+            mode = answer.includes('mobile') ? 'mobile' : answer.includes('no') ? 'offline' : 'wifi';
+            await Offline.setConnectionPreference(mode);
+        }
+        return mode;
+    }
+    async function refreshOfflineUi(mode) {
+        if(!Offline) return;
+        mode = mode || await resolveConnectionMode();
+        const badge=document.getElementById('connectionModeBadge'), label=document.getElementById('connectionModeLabel');
+        if(badge) { badge.dataset.mode=mode; badge.setAttribute('aria-label','Connection mode: '+Offline.connectionLabel(mode)); }
+        if(label) label.textContent=Offline.connectionLabel(mode);
+        const summary=await Offline.getPendingSummary();
+        const syncText=mode==='offline' ? `Sync Now (${summary.total} items) - Connect to internet` : `Sync Now (${summary.total} items - ${formatOfflineBytes(summary.size)})`;
+        [document.getElementById('headerSyncNowBtn'),document.getElementById('accountSyncNowBtn')].forEach(btn=>{if(btn){const span=btn.querySelector('.sync-label');if(span)span.textContent=syncText;else btn.textContent=syncText;}});
+        const last=document.getElementById('lastSyncSize'), total=document.getElementById('totalCachedSize');
+        if(last) last.textContent=formatOfflineBytes(summary.size);
+        if(total) total.textContent=formatOfflineBytes(summary.cachedSize);
+    }
+    async function loadConnectionSettings() {
+        if(!Offline) return;
+        const settings=await Offline.getSettings(currentUser?.uid);
+        const hd=document.getElementById('downloadHdWifiToggle'), wifi=document.getElementById('autoSyncWifiToggle'), mobile=document.getElementById('autoSyncMobileToggle'), language=document.getElementById('preferredLanguage');
+        if(hd) hd.checked=settings.downloadHdWifiOnly!==false;
+        if(wifi) wifi.checked=settings.autoSyncWifi!==false;
+        if(mobile) mobile.checked=settings.autoSyncMobile===true;
+        if(language) language.value=settings.languagePreference||'English';
+        await refreshOfflineUi();
+    }
+    async function saveConnectionSettings() {
+        if(!Offline || !currentUser) return;
+        const settings=await Offline.saveSettings(currentUser.uid,{
+            downloadHdWifiOnly:document.getElementById('downloadHdWifiToggle')?.checked!==false,
+            autoDownloadWifi:document.getElementById('downloadHdWifiToggle')?.checked!==false,
+            autoSyncWifi:document.getElementById('autoSyncWifiToggle')?.checked!==false,
+            autoSyncMobile:document.getElementById('autoSyncMobileToggle')?.checked===true,
+            languagePreference:document.getElementById('preferredLanguage')?.value||'English'
+        });
+        if(navigator.onLine && auth?.currentUser) updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:settings}).catch(()=>{});
+        const status=document.getElementById('connectionStatusText'); if(status) status.textContent='Connection settings saved';
+    }
+    async function runOfflineSync(manual=false) {
+        if(!Offline) return;
+        const mode=await resolveConnectionMode(), settings=await Offline.getSettings(currentUser?.uid);
+        if(mode==='mobile' && manual && !confirm('Sync pending work using mobile data? Continue?')) return;
+        const result=await Offline.syncNow({force:manual||mode==='wifi',auto:!manual,allowMobile:settings.autoSyncMobile,confirm:true});
+        if(result.status==='complete' && auth?.currentUser && currentUser) {
+            const savedSettings=await Offline.getSettings(currentUser.uid);
+            await updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:savedSettings}).catch(()=>{});
+        }
+        if(result.status==='offline') showNotification(`Sync Now (${result.pending} items) - Connect to internet`,'info');
+        else if(result.status==='mobile-paused') showNotification('Pending work will sync on WiFi','info');
+        else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
+        await refreshOfflineUi(mode);
+    }
+    function configureOfflineSync() {
+        if(!Offline) return;
+        Offline.setSyncHooks({
+            pushProjects: async items => {
+                for(const item of items) {
+                    if(item.operation==='milestone') await complianceApi(`/projects/${item.projectId}/milestones/${item.milestone}`,{method:'PATCH',body:JSON.stringify({photo:item.photo})});
+                    else await complianceApi('/projects',{method:'POST',body:JSON.stringify(item.payload||item)});
+                }
+            },
+            pushCARecords: async items => { for(const item of items) await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(item.payload||item)}); },
+            pushViews: async items => { for(const item of items) await addDoc(collection(db,'videoViews'),item.payload||item); },
+            pullProjects: async () => {
+                if(!auth?.currentUser) return [];
+                const data=await complianceApi('/projects');
+                return (data.projects||[]).map(p=>({...p,localId:`server-${p.id}`,syncStatus:'synced'}));
+            },
+            pullCARecords: async () => {
+                if(!auth?.currentUser) return [];
+                const data=await complianceApi('/ca-records');
+                return (data.records||[]).map(r=>({...r,recordId:String(r.id),synced:true,syncStatus:'synced'}));
+            }
+        });
+    }
+    async function initOfflineFeatures() {
+        if(!Offline) return;
+        await Offline.open();
+        configureOfflineSync();
+        const mode=await resolveConnectionMode();
+        await refreshOfflineUi(mode);
+        Offline.onConnectionChange(async(next,previous)=>{
+            await refreshOfflineUi(next);
+            if(previous==='offline' && next!=='offline') runOfflineSync(false).catch(console.error);
+        });
+        ['downloadHdWifiToggle','autoSyncWifiToggle','autoSyncMobileToggle','preferredLanguage'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>saveConnectionSettings().catch(console.error)));
+        document.getElementById('headerSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
+        document.getElementById('accountSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
+    }
 
     window.togglePassword = function(id) {
         let inp = document.getElementById(id);
@@ -2530,6 +2711,8 @@
     function closeVideoModal() {
         stopProgressTracking();
         stopVcTimer();
+        if(_offlineSlideshowTimer){clearInterval(_offlineSlideshowTimer);_offlineSlideshowTimer=null;}
+        _offlineObjectUrls.forEach(url=>URL.revokeObjectURL(url)); _offlineObjectUrls=[];
         document.getElementById('videoModal').classList.remove('show');
         if(ytPlayer) { try { ytPlayer.stopVideo(); } catch(e) {} }
         // Clear iframe too
@@ -2545,6 +2728,32 @@
         const vqs = document.getElementById('vqStatus');
         if(vqs) vqs.textContent = '';
         vqBoxShown = false;
+    }
+
+    async function showOfflineVideo(videoKey) {
+        const playback=await Offline.getVideoPlayback(videoKey), div=document.getElementById('ytPlayerDiv');
+        if(!playback.available) { div.innerHTML=`<div style="padding:30px;color:white;text-align:center;">${escHtml(playback.message)}</div>`; return; }
+        if(playback.type==='custom-mp4') {
+            const url=URL.createObjectURL(playback.blob); _offlineObjectUrls.push(url);
+            div.innerHTML=`<video controls autoplay playsinline style="width:100%;height:100%;background:#000;"><source src="${url}"></video>`;
+            return;
+        }
+        _offlineObjectUrls=playback.images.map(blob=>URL.createObjectURL(blob));
+        let index=0;
+        div.innerHTML=`<img id="offlineSlideImage" src="${_offlineObjectUrls[0]||''}" alt="Offline lesson slide" style="width:100%;height:100%;object-fit:contain;background:#111;"><div style="position:absolute;left:10px;right:10px;bottom:8px;background:rgba(0,0,0,.72);color:white;padding:7px;border-radius:8px;font-size:12px;">${escHtml(playback.captions||'Offline slideshow lesson')}</div>`;
+        if(playback.audio) { const audioUrl=URL.createObjectURL(playback.audio);_offlineObjectUrls.push(audioUrl);const audio=new Audio(audioUrl);audio.play().catch(()=>{}); }
+        _offlineSlideshowTimer=setInterval(()=>{index=(index+1)%Math.max(1,playback.images.length);const img=document.getElementById('offlineSlideImage');if(img)img.src=_offlineObjectUrls[index];},8000);
+    }
+    function setupOfflineVideoActions(videoKey,mapping) {
+        const light=document.getElementById('downloadLightVideoBtn'), hd=document.getElementById('downloadHdVideoBtn'), status=document.getElementById('offlineVideoStatus');
+        if(hd) hd.style.display=mapping?.customMp4Url?'inline-flex':'none';
+        if(light) light.onclick=async()=>{
+            if(!mapping?.slideshowImages?.length){status.textContent='The light offline version has not been published yet.';return;}
+            status.textContent='Downloading light version…';
+            try { const result=await Offline.downloadLightVideo({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,youtubeUrl:mapping.youtubeId,slideshowImages:mapping.slideshowImages,slideshowAudioUrl:mapping.slideshowAudioUrl,captionsText:mapping.captionsText||''}); status.textContent=`Offline version saved (${formatOfflineBytes(result.size)})`;refreshOfflineUi(); }
+            catch(e){status.textContent=e.message;}
+        };
+        if(hd) hd.onclick=async()=>{status.textContent='Downloading HD version…';try{const result=await Offline.downloadCustomMp4({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,customMp4Url:mapping.customMp4Url});status.textContent=`HD version saved (${formatOfflineBytes(result.size)})`;refreshOfflineUi();}catch(e){status.textContent=e.message;}};
     }
 
     // ===== VIDEO CONTROLS =====
@@ -2657,7 +2866,14 @@
 
     async function saveVideoView(subject, classId, className) {
         if(!currentUser) return;
-        await addDoc(collection(db,"videoViews"), { subject, classId, className, userId: currentUser.uid, userName: currentUser.name, timestamp: new Date().toISOString() });
+        const payload={ subject, classId, className, userId: currentUser.uid, userName: currentUser.name, teacherId:currentTeacherId, videoId:currentVideoKey, watchedSeconds:0, completed:false, schoolId:currentUser.schoolId||null, deviceType:navigator.userAgent, watchedAt:new Date().toISOString(), connectionMode:await resolveConnectionMode() };
+        if(!navigator.onLine || offlineSession) {
+            await Offline?.queueView({payload,...payload});
+            refreshOfflineUi();
+            return;
+        }
+        try { await addDoc(collection(db,"videoViews"), payload); }
+        catch(error) { await Offline?.queueView({payload,...payload}); refreshOfflineUi(); }
     }
 
     // ===== PDF INLINE VIEWER (NEW) =====
@@ -2722,7 +2938,7 @@
         }).join('');
     }
 
-    window.openVideoLesson = function(subject) {
+    window.openVideoLesson = async function(subject) {
         if(!currentUser) { showNotification("Please login first","error"); return; }
         if(!currentSelectedClassId) { showNotification("Please select a class first","error"); return; }
         const key = `${currentSelectedClassId.level}_${currentSelectedClassId.id}_${subject}`;
@@ -2758,12 +2974,12 @@
         const nextBtn = document.getElementById('vcNextBtn');
         if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
         if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
-        // Instant playback — always use iframe-based player
-        createYTPlayer(vid);
+        setupOfflineVideoActions(key,mappingData||{youtubeId:vid});
+        if(!navigator.onLine) await showOfflineVideo(key); else createYTPlayer(vid);
     };
 
     // openVideo helper for vc prev/next (subject key already resolved)
-    function openVideo(videoKey, title, teacherId) {
+    async function openVideo(videoKey, title, teacherId) {
         const vid = videoMappings[videoKey];
         if(!vid) return;
         currentVideoKey = videoKey;
@@ -2777,7 +2993,9 @@
         const nextBtn = document.getElementById('vcNextBtn');
         if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
         if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
-        createYTPlayer(vid);
+        const mappingData=window._videoMappingData&&window._videoMappingData[videoKey];
+        setupOfflineVideoActions(videoKey,mappingData||{youtubeId:vid});
+        if(!navigator.onLine) await showOfflineVideo(videoKey); else createYTPlayer(vid);
     }
 
     // ===== PDF LIST (home page, inline viewer) =====
@@ -2975,23 +3193,35 @@
                 <div style="margin-top:14px;">${projects.length ? projects.map(renderStudentProject).join('') : '<div class="cbc-status">No projects yet. Create your first project above.</div>'}</div>`;
                 document.getElementById('createCbcProjectBtn')?.addEventListener('click', async ()=>{
                     const status=document.getElementById('cbcProjectStatus');
+                    const payload={schoolId:currentUser.schoolId, className:document.getElementById('cbcProjectClass').value.trim(),subject:document.getElementById('cbcProjectSubject').value.trim(), title:document.getElementById('cbcProjectTitle').value.trim()};
                     try {
-                        await complianceApi('/projects',{method:'POST',body:JSON.stringify({
-                            schoolId:currentUser.schoolId, className:document.getElementById('cbcProjectClass').value.trim(),
-                            subject:document.getElementById('cbcProjectSubject').value.trim(), title:document.getElementById('cbcProjectTitle').value.trim()
-                        })});
+                        if(!navigator.onLine) throw new Error('OFFLINE_QUEUE');
+                        await complianceApi('/projects',{method:'POST',body:JSON.stringify(payload)});
                         showNotification('Project created');
                         renderStudentCbcPanel('projects');
-                    } catch(e) { if(status) status.textContent=e.message; }
+                    } catch(e) {
+                        if(!navigator.onLine || e.message==='OFFLINE_QUEUE') {
+                            await Offline.queueProject({operation:'create',payload,...payload});
+                            if(status) status.textContent='Saved offline - will sync at school';
+                            refreshOfflineUi();
+                        } else if(status) status.textContent=e.message;
+                    }
                 });
                 panel.querySelectorAll('input[data-project-id]').forEach(input=>input.addEventListener('change', async e=>{
                     const inputEl=e.target, projectId=inputEl.dataset.projectId, milestone=inputEl.dataset.milestone;
                     try {
                         const photo=await compressCompliancePhoto(inputEl.files[0]);
+                        if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'),{photo});
                         await complianceApi(`/projects/${projectId}/milestones/${milestone}`,{method:'PATCH',body:JSON.stringify({photo})});
                         showNotification('Milestone uploaded and sent for review');
                         renderStudentCbcPanel('projects');
-                    } catch(err) { showNotification(err.message,'error'); }
+                    } catch(err) {
+                        if(!navigator.onLine || err.message==='OFFLINE_QUEUE') {
+                            const photo=err.photo||await compressCompliancePhoto(inputEl.files[0]);
+                            await Offline.queueProject({operation:'milestone',projectId,milestone,photo,size:Math.ceil(photo.length*0.75)});
+                            showNotification('Saved offline - will sync at school','info'); refreshOfflineUi();
+                        } else showNotification(err.message,'error');
+                    }
                 }));
             } else if(mode==='passport') {
                 const data=await complianceApi('/ca-records');
@@ -3045,7 +3275,17 @@
                 <button class="cbc-action primary">Generate NCDC lesson plan</button></form><pre id="lessonPlanOutput" style="white-space:pre-wrap;font:12px/1.5 inherit;"></pre>`;
             document.getElementById('lessonPlanForm').addEventListener('submit',async e=>{
                 e.preventDefault(); const output=document.getElementById('lessonPlanOutput'); output.textContent='Generating…';
-                try { const form=new FormData(e.target); const data=await complianceApi('/lesson-plan',{method:'POST',body:JSON.stringify(Object.fromEntries(form.entries()))}); output.textContent=data.content||'No lesson plan returned'; }
+                try {
+                    const form=new FormData(e.target), payload=Object.fromEntries(form.entries()), templateId=`${payload.subject}|${payload.classLevel}|${payload.topic}`.toLowerCase();
+                    if(!navigator.onLine) {
+                        const cached=await Offline.getNcdcTemplate(templateId);
+                        output.textContent=(cached?.content||cached||`Offline - using saved template\n\nSubject: ${payload.subject}\nClass: ${payload.classLevel}\nTopic: ${payload.topic}\nDuration: ${payload.duration}\n\nCompetency: Learners demonstrate understanding through a practical activity.\nIntroduction: Review prior knowledge.\nActivity: Guided group investigation using locally available materials.\nAssessment: Observation, learner explanation, and short written reflection.`);
+                        return;
+                    }
+                    const data=await complianceApi('/lesson-plan',{method:'POST',body:JSON.stringify(payload)});
+                    output.textContent=data.content||'No lesson plan returned';
+                    if(data.content) Offline.cacheNcdcTemplate(templateId,{content:data.content},currentUser.uid).catch(()=>{});
+                }
                 catch(err){ output.textContent=err.message; }
             });
         } else if(mode==='triangulation') {
@@ -3058,14 +3298,22 @@
                 <button class="cbc-action primary">Save competency record</button></form><div id="triangulationStatus" class="cbc-status"></div>`;
             document.getElementById('triangulationForm').addEventListener('submit',async e=>{
                 e.preventDefault(); const form=new FormData(e.target); const payload=Object.fromEntries(form.entries()); payload.evidence2=form.get('evidence2')==='on'; payload.evidence3=form.get('evidence3')==='on';
-                try { const data=await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(payload)}); document.getElementById('triangulationStatus').textContent='Saved: '+data.record.finalLevel; }
-                catch(err){ document.getElementById('triangulationStatus').textContent=err.message; }
+                try {
+                    if(!navigator.onLine) throw new Error('OFFLINE_QUEUE');
+                    const data=await complianceApi('/triangulation',{method:'POST',body:JSON.stringify(payload)}); document.getElementById('triangulationStatus').textContent='Saved: '+data.record.finalLevel;
+                } catch(err){
+                    if(!navigator.onLine || err.message==='OFFLINE_QUEUE') {
+                        await Offline.queueCARecord({payload,...payload});
+                        document.getElementById('triangulationStatus').textContent='Saved offline - will sync at school';
+                        refreshOfflineUi();
+                    } else document.getElementById('triangulationStatus').textContent=err.message;
+                }
             });
         } else {
             panel.innerHTML=`<strong style="color:#E67E00;">Curriculum Linker Search</strong><form class="cbc-form" id="curriculumForm"><input name="q" placeholder="Search a topic, for example Photosynthesis" required><button class="cbc-action primary">Search curriculum links</button></form><div id="curriculumResults" class="cbc-status"></div>`;
             document.getElementById('curriculumForm').addEventListener('submit',async e=>{
                 e.preventDefault(); const q=new FormData(e.target).get('q'); const results=document.getElementById('curriculumResults'); results.textContent='Searching…';
-                try { const data=await complianceApi('/curriculum-links?q='+encodeURIComponent(q)); results.innerHTML=(data.links||[]).map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.'; }
+                try { const data=await complianceApi('/curriculum-links?q='+encodeURIComponent(q)); results.innerHTML=(data.links||[]).map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.'; (data.links||[]).forEach(l=>Offline?.cacheNcdcTemplate(`${l.subject||''}|${l.classLevel||''}|${l.topic||''}`.toLowerCase(),l,currentUser.uid).catch(()=>{})); }
                 catch(err){ results.textContent=err.message; }
             });
         }
@@ -3162,8 +3410,7 @@
             renderTeachersAdmin();
             populateVideoTeacherDropdown();
         }, (error) => {
-            console.error('Student Q&A listener failed:', error.code || 'unknown', error.message || error);
-            c.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
+            console.error('Teacher listener failed:', error.code || 'unknown', error.message || error);
         });
     }
 
@@ -3200,6 +3447,9 @@
             const wp = document.getElementById('editWeeklyPrice');  if(wp && d.weeklyPrice)  wp.value = d.weeklyPrice;
             const mp = document.getElementById('editMonthlyPrice'); if(mp && d.monthlyPrice) mp.value = d.monthlyPrice;
             const tp = document.getElementById('editTermlyPrice');  if(tp && d.termlyPrice)  tp.value = d.termlyPrice;
+        }, (error) => {
+            console.error('Student Q&A listener failed:', error.code || 'unknown', error.message || error);
+            c.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
 
@@ -6321,10 +6571,13 @@
     }
 
     // ===== LOAD USER =====
-    async function loadUserAndShowApp(user) {
-        let docSnap = await getDoc(doc(db,"users",user.uid));
-        if(!docSnap.exists()) return;
-        currentUser = { uid: user.uid, ...docSnap.data() };
+    async function loadUserAndShowApp(user, cachedProfile=null) {
+        if(cachedProfile) currentUser = { uid:user.uid, ...cachedProfile };
+        else {
+            let docSnap = await getDoc(doc(db,"users",user.uid));
+            if(!docSnap.exists()) return;
+            currentUser = { uid: user.uid, ...docSnap.data() };
+        }
         document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
@@ -6379,6 +6632,7 @@
         // Referral / invite card (all roles except superadmin)
         if(!isSuper) loadReferralCard();
         setupComplianceTools();
+        loadConnectionSettings().catch(console.error);
         // School logo / dual branding
         if(isSchool) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
@@ -6407,12 +6661,18 @@
             Notification.requestPermission().catch(()=>{});
         }
         // Set up FCM: register token + foreground message handler
-        setupFcmMessaging(user.uid).catch(()=>{});
-        // Start notification listener for this user
-        listenToNotifications();
-        listenLiveLessons();
-        loadAboutFromFirestore();
-        checkExpiryWarnings();
+        if(!offlineSession) {
+            setupFcmMessaging(user.uid).catch(()=>{});
+            // Start network-backed listeners for this user
+            listenToNotifications();
+            listenLiveLessons();
+            loadAboutFromFirestore();
+            checkExpiryWarnings();
+            runOfflineSync(false).catch(console.error);
+        } else {
+            showNotification('Logged in offline - will sync when connected','info');
+            renderLivePage();
+        }
         // Personalised experience
         renderForYouSection();
         renderMyWeakAreasTags();
@@ -7093,6 +7353,14 @@
         e.preventDefault();
         let email=document.getElementById('loginEmail').value.trim(),pwd=document.getElementById('loginPassword').value;
         try {
+            if(!navigator.onLine && Offline) {
+                const profile=await Offline.verifyOfflineLoginByEmail(email,pwd);
+                if(!profile) throw new Error('This account is not saved for offline login. Connect once and log in first.');
+                offlineSession=true;
+                await loadUserAndShowApp({uid:profile.userId},profile);
+                return;
+            }
+            offlineSession=false;
             // Use SESSION persistence — auth clears when browser tab closes (shared-device safety)
             if(auth && auth.setPersistence) {
                 await auth.setPersistence('session').catch(()=>{});
@@ -7100,16 +7368,21 @@
             let cred=await signInWithEmailAndPassword(auth,email,pwd);
             let userRef=doc(db,"users",cred.user.uid);
             let snap=await getDoc(userRef);
-            if(snap.exists()) { let cnt=(snap.data().loginCount||0)+1; await updateDoc(userRef,{loginCount:cnt,lastLogin:new Date().toISOString()}); }
+            if(snap.exists()) {
+                let cnt=(snap.data().loginCount||0)+1;
+                await updateDoc(userRef,{loginCount:cnt,lastLogin:new Date().toISOString()});
+                await Offline?.saveAuthProfile({userId:cred.user.uid,...snap.data(),loginCount:cnt},pwd);
+            }
             showNotification("Login successful");
         } catch(err){
-            document.getElementById('loginError').innerText="Invalid email/password";
+            document.getElementById('loginError').innerText=err.message||"Invalid email/password";
             // Record failed login for analytics
-            addDoc(collection(db,"failedLogins"),{email,timestamp:new Date().toISOString()}).catch(()=>{});
+            if(navigator.onLine) addDoc(collection(db,"failedLogins"),{email,timestamp:new Date().toISOString()}).catch(()=>{});
         }
     });
 
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+        offlineSession=false;
         clearSessionData();
         document.getElementById('landingScreen').classList.remove('hidden');
         document.getElementById('loginScreen').classList.add('hidden');
@@ -7446,19 +7719,18 @@
   }
 
   async function setupServiceWorker() {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (!("serviceWorker" in navigator)) return;
 
     try {
-      var permission = Notification.permission === "default"
-        ? await Notification.requestPermission()
-        : Notification.permission;
-
-      if (permission !== "granted") return;
-
-      var registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      var registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
-      await registerWebPush(registration);
+      if(("PushManager" in window) && ("Notification" in window)) {
+        var permission = Notification.permission === "default"
+          ? await Notification.requestPermission()
+          : Notification.permission;
+        if (permission === "granted") await registerWebPush(registration);
+      }
     } catch (err) {
       console.warn("[APSHULE] Service worker setup failed:", err);
     }
@@ -7624,6 +7896,9 @@
   }
 
   setupServiceWorker();
+  initOfflineFeatures().catch(function(error){
+    console.warn("[APSHULE] Offline features unavailable:", error);
+  });
   connect();
 })();
 

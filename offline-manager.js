@@ -1,0 +1,709 @@
+/* APSHULE offline storage and synchronisation core.
+ *
+ * This file intentionally has no Firebase, framework, or bundler dependency.  It
+ * is safe to load before the application and exposes one small browser global.
+ */
+(function (root) {
+  'use strict';
+
+  var DB_NAME = 'appshule-offline';
+  var DB_VERSION = 2;
+  var STORE_NAMES = [
+    'offline_videos',
+    'offline_ca_records',
+    'offline_projects',
+    'offline_auth',
+    'offline_views',
+    'offline_settings'
+  ];
+  var FALLBACK_KEY = '__connection__';
+  var TEMPLATE_PREFIX = '__ncdc_template__:';
+  var VALID_MODES = ['offline', 'mobile', 'wifi'];
+  var DEFAULT_SETTINGS = {
+    dataSaverMode: false,
+    autoDownloadWifi: true,
+    downloadHdWifiOnly: true,
+    languagePreference: 'English',
+    autoSyncWifi: true,
+    autoSyncMobile: false
+  };
+  var dbPromise;
+  var syncHooks = {};
+  var modeListeners = [];
+  var lastMode;
+
+  function fail(message) {
+    return Promise.reject(new Error(message));
+  }
+
+  function hasIndexedDb() {
+    return !!(root && root.indexedDB);
+  }
+
+  function openDatabase() {
+    if (!hasIndexedDb()) return fail('IndexedDB is not available in this browser');
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve, reject) {
+      var request;
+      try {
+        request = root.indexedDB.open(DB_NAME, DB_VERSION);
+      } catch (error) {
+        reject(error);
+        return;
+      }
+      request.onupgradeneeded = function (event) {
+        var db = event.target.result;
+        STORE_NAMES.forEach(function (name) {
+          var store;
+          if (!db.objectStoreNames.contains(name)) {
+            var keyPath = {
+              offline_videos: 'videoId',
+              offline_ca_records: 'recordId',
+              offline_projects: 'localId',
+              offline_auth: 'userId',
+              offline_views: 'viewId',
+              offline_settings: 'userId'
+            }[name];
+            store = db.createObjectStore(name, { keyPath: keyPath });
+          } else {
+            store = event.target.transaction.objectStore(name);
+          }
+          if (name === 'offline_projects' && !store.indexNames.contains('syncStatus')) store.createIndex('syncStatus', 'syncStatus', { unique: false });
+          if (name === 'offline_views' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
+          if (name === 'offline_ca_records' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
+          if (name === 'offline_videos' && !store.indexNames.contains('cached')) store.createIndex('cached', 'cached', { unique: false });
+        });
+      };
+      request.onsuccess = function () {
+        var db = request.result;
+        db.onversionchange = function () {
+          db.close();
+          dbPromise = null;
+        };
+        resolve(db);
+      };
+      request.onerror = function () {
+        dbPromise = null;
+        reject(request.error || new Error('Unable to open offline storage'));
+      };
+      request.onblocked = function () {
+        /* A later open can proceed once an old tab closes; keep this request alive. */
+      };
+    });
+    return dbPromise;
+  }
+
+  function requestPromise(request) {
+    return new Promise(function (resolve, reject) {
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error || new Error('IndexedDB request failed')); };
+    });
+  }
+
+  function transaction(storeNames, mode, operation) {
+    return openDatabase().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx;
+        try {
+          tx = db.transaction(storeNames, mode);
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        var result;
+        var settled = false;
+        tx.oncomplete = function () {
+          settled = true;
+          resolve(result);
+        };
+        tx.onerror = function () {
+          if (!settled) reject(tx.error || new Error('IndexedDB transaction failed'));
+        };
+        tx.onabort = function () {
+          if (!settled) reject(tx.error || new Error('IndexedDB transaction aborted'));
+        };
+        try {
+          result = operation(tx);
+        } catch (error) {
+          try { tx.abort(); } catch (_) { /* transaction already finished */ }
+          reject(error);
+        }
+      });
+    });
+  }
+
+  function getRecord(store, key) {
+    return transaction(store, 'readonly', function (tx) {
+      return requestPromise(tx.objectStore(store).get(key));
+    });
+  }
+
+  function putRecord(store, value) {
+    return transaction(store, 'readwrite', function (tx) {
+      return requestPromise(tx.objectStore(store).put(value));
+    });
+  }
+
+  function deleteRecord(store, key) {
+    return transaction(store, 'readwrite', function (tx) {
+      return requestPromise(tx.objectStore(store).delete(key));
+    });
+  }
+
+  function allRecords(store) {
+    return transaction(store, 'readonly', function (tx) {
+      var objectStore = tx.objectStore(store);
+      if (objectStore.getAll) return requestPromise(objectStore.getAll());
+      return new Promise(function (resolve, reject) {
+        var values = [];
+        var cursor = objectStore.openCursor();
+        cursor.onsuccess = function (event) {
+          var current = event.target.result;
+          if (current) {
+            values.push(current.value);
+            current.continue();
+          } else {
+            resolve(values);
+          }
+        };
+        cursor.onerror = function () { reject(cursor.error || new Error('Unable to read offline records')); };
+      });
+    });
+  }
+
+  function randomId(prefix) {
+    if (root.crypto && root.crypto.randomUUID) return prefix + root.crypto.randomUUID();
+    var bytes = new Uint8Array(12);
+    if (root.crypto && root.crypto.getRandomValues) root.crypto.getRandomValues(bytes);
+    else for (var i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+    var result = '';
+    for (var j = 0; j < bytes.length; j += 1) result += bytes[j].toString(16).padStart(2, '0');
+    return prefix + Date.now().toString(36) + '-' + result;
+  }
+
+  function textBytes(value) {
+    if (root.TextEncoder) return new root.TextEncoder().encode(String(value));
+    var encoded = unescape(encodeURIComponent(String(value)));
+    var bytes = new Uint8Array(encoded.length);
+    for (var i = 0; i < encoded.length; i += 1) bytes[i] = encoded.charCodeAt(i);
+    return bytes;
+  }
+
+  function bytesToBase64(bytes) {
+    var value = '';
+    for (var i = 0; i < bytes.length; i += 1) value += String.fromCharCode(bytes[i]);
+    return root.btoa(value);
+  }
+
+  function base64ToBytes(value) {
+    var binary = root.atob(value);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  function hashPassword(password, salt) {
+    if (!root.crypto || !root.crypto.subtle) return fail('Web Crypto is required for offline password verification');
+    return root.crypto.subtle.digest('SHA-256', new Blob([salt, textBytes(password)]))
+      .then(function (digest) { return new Uint8Array(digest); });
+  }
+
+  function secureHash(password, salt) {
+    /* Blob is not accepted by all older subtle.digest implementations. */
+    if (!root.crypto || !root.crypto.subtle) return fail('Web Crypto is required for offline password verification');
+    var saltBytes = base64ToBytes(salt);
+    var input = new Uint8Array(saltBytes.length + textBytes(password).length);
+    input.set(saltBytes, 0);
+    input.set(textBytes(password), saltBytes.length);
+    return root.crypto.subtle.digest('SHA-256', input).then(function (digest) {
+      return bytesToBase64(new Uint8Array(digest));
+    });
+  }
+
+  function safeProfile(record) {
+    if (!record) return null;
+    return {
+      userId: record.userId,
+      role: record.role,
+      schoolId: record.schoolId,
+      lastSync: record.lastSync,
+      email: record.email,
+      name: record.name || '',
+      phone: record.phone || '',
+      educationLevel: record.educationLevel || '',
+      address: record.address || '',
+      loginCount: record.loginCount || 0
+    };
+  }
+
+  function normalizeMode(mode) {
+    return VALID_MODES.indexOf(mode) >= 0 ? mode : null;
+  }
+
+  function connectionInfo() {
+    return root.navigator && (root.navigator.connection || root.navigator.mozConnection || root.navigator.webkitConnection);
+  }
+
+  function detectConnectionMode() {
+    var nav = root.navigator || {};
+    if (nav.onLine === false) return 'offline';
+    var connection = connectionInfo();
+    if (connection) {
+      var type = String(connection.type || '').toLowerCase();
+      var effective = String(connection.effectiveType || '').toLowerCase();
+      if (type === 'cellular' || /(^|-)2g|(^|-)3g/.test(effective)) return 'mobile';
+      if (type === 'wifi' || effective.indexOf('4g') >= 0) return 'wifi';
+    }
+    return null;
+  }
+
+  function getConnectionMode() {
+    var live = detectConnectionMode();
+    if (live) return Promise.resolve(live);
+    return getRecord('offline_settings', FALLBACK_KEY).then(function (record) {
+      return normalizeMode(record && record.connectionMode) || null;
+    });
+  }
+
+  function emitMode(mode) {
+    if (mode === lastMode) return;
+    var previous = lastMode;
+    lastMode = mode;
+    modeListeners.slice().forEach(function (listener) {
+      try { listener(mode, previous); } catch (_) { /* listeners are application-owned */ }
+    });
+  }
+
+  function refreshMode() {
+    return getConnectionMode().then(function (mode) {
+      emitMode(mode);
+      return mode;
+    });
+  }
+
+  function sizeOf(value, seen) {
+    if (value == null) return 0;
+    if (typeof value === 'string') return textBytes(value).byteLength;
+    if (typeof value === 'number' || typeof value === 'boolean') return 8;
+    if (typeof Blob !== 'undefined' && value instanceof Blob) return value.size;
+    if (value instanceof ArrayBuffer) return value.byteLength;
+    if (ArrayBuffer.isView && ArrayBuffer.isView(value)) return value.byteLength;
+    if (typeof value !== 'object') return 0;
+    seen = seen || [];
+    if (seen.indexOf(value) >= 0) return 0;
+    seen.push(value);
+    return Object.keys(value).reduce(function (total, key) { return total + sizeOf(value[key], seen); }, 0);
+  }
+
+  function compressPhoto(value, maxBytes) {
+    maxBytes = maxBytes || 500 * 1024;
+    if (!value || typeof value.size !== 'number' || value.size <= maxBytes) return Promise.resolve(value);
+    if (!root.createImageBitmap) return fail('Photo is larger than 500KB and this browser cannot compress it offline');
+    return root.createImageBitmap(value).then(function (image) {
+      var width = image.width;
+      var height = image.height;
+      var scale = Math.min(1, Math.sqrt(maxBytes / value.size));
+      width = Math.max(1, Math.round(width * scale));
+      height = Math.max(1, Math.round(height * scale));
+      var canvas = root.OffscreenCanvas ? new root.OffscreenCanvas(width, height) :
+        (root.document && root.document.createElement ? root.document.createElement('canvas') : null);
+      if (!canvas) throw new Error('Photo is larger than 500KB and no offline image canvas is available');
+      canvas.width = width;
+      canvas.height = height;
+      var context = canvas.getContext('2d');
+      context.drawImage(image, 0, 0, width, height);
+      function encode(quality) {
+        var output;
+        if (canvas.convertToBlob) output = canvas.convertToBlob({ type: 'image/jpeg', quality: quality });
+        else output = new Promise(function (resolve) { canvas.toBlob(resolve, 'image/jpeg', quality); });
+        return output.then(function (blob) {
+          if (!blob) throw new Error('Unable to compress project photo');
+          if (blob.size <= maxBytes || quality <= 0.35) {
+            if (blob.size > maxBytes) throw new Error('Project photo could not be compressed below 500KB');
+            return blob;
+          }
+          return encode(quality - 0.1);
+        });
+      }
+      return encode(0.85);
+    });
+  }
+
+  function mergeLatest(existing, incoming) {
+    if (!existing) return incoming;
+    var existingTime = new Date(existing.updatedAt || existing.watchedAt || existing.createdAt || 0).getTime();
+    var incomingTime = new Date(incoming.updatedAt || incoming.watchedAt || incoming.createdAt || 0).getTime();
+    return incomingTime >= existingTime ? incoming : existing;
+  }
+
+  function fetchBlob(url) {
+    if (typeof root.fetch !== 'function') return fail('Fetch is not available in this browser');
+    return root.fetch(url, { credentials: 'same-origin' }).then(function (response) {
+      if (!response.ok) throw new Error('Unable to download offline resource (' + response.status + ')');
+      return response.blob();
+    });
+  }
+
+  function urlObject(url) {
+    try {
+      return new URL(url, root.location && root.location.href ? root.location.href : 'http://localhost/');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function isBlockedMediaHost(hostname) {
+    var host = String(hostname || '').toLowerCase().replace(/\.$/, '');
+    return host === 'youtube.com' || host.slice(-12) === '.youtube.com' ||
+      host === 'youtu.be' || host.slice(-9) === '.youtu.be' || /(^|\.)youtube-nocookie\.com$/.test(host) ||
+      host === 'googlevideo.com' || host.slice(-16) === '.googlevideo.com';
+  }
+
+  function isFirebaseStorageHost(hostname) {
+    var host = String(hostname || '').toLowerCase();
+    return host === 'firebasestorage.googleapis.com' ||
+      host === 'storage.googleapis.com' ||
+      host === 'appshule-app.firebasestorage.app';
+  }
+
+  function isCacheEligibleUrl(url) {
+    var parsed = urlObject(url);
+    if (!parsed || (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')) return false;
+    if (isBlockedMediaHost(parsed.hostname)) return false;
+    var location = root.location;
+    var sameOrigin = location && parsed.origin === location.origin;
+    return !!(sameOrigin || isFirebaseStorageHost(parsed.hostname));
+  }
+
+  function isSafeCustomMediaUrl(url) {
+    var parsed = urlObject(url);
+    return !!(parsed && (parsed.protocol === 'http:' || parsed.protocol === 'https:') && !isBlockedMediaHost(parsed.hostname));
+  }
+
+  function mobileConfirmation(options) {
+    if (!options) options = {};
+    if (typeof options.confirm === 'function') return !!options.confirm();
+    if (options.confirm === true) return true;
+    if (options.confirm === false) return false;
+    if (typeof root.confirm === 'function') return root.confirm('This download uses mobile data. Continue?');
+    throw new Error('MOBILE_CONFIRMATION_REQUIRED');
+  }
+
+  function currentMode() {
+    return getConnectionMode();
+  }
+
+  function saveSettings(userId, settings) {
+    if (!userId) return fail('userId is required for offline settings');
+    return getRecord('offline_settings', userId).then(function (old) {
+      var result = Object.assign({}, DEFAULT_SETTINGS, old || {}, settings || {}, { userId: userId });
+      return putRecord('offline_settings', result).then(function () { return result; });
+    });
+  }
+
+  function getSettings(userId) {
+    if (!userId) return Promise.resolve(Object.assign({}, DEFAULT_SETTINGS));
+    return getRecord('offline_settings', userId).then(function (record) {
+      return Object.assign({}, DEFAULT_SETTINGS, record || {}, { userId: userId });
+    });
+  }
+
+  function pendingSummary() {
+    return Promise.all([allRecords('offline_projects'), allRecords('offline_ca_records'), allRecords('offline_views'), allRecords('offline_videos')])
+      .then(function (records) {
+        var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
+        var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
+        var views = records[2].filter(function (item) { return item.synced === false; });
+        var pending = projects.concat(caRecords, views);
+        var cachedSize = records[3].reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
+        return {
+          projects: projects.length,
+          caRecords: caRecords.length,
+          views: views.length,
+          total: pending.length,
+          size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
+          cachedSize: cachedSize
+        };
+      });
+  }
+
+  function sync(options) {
+    options = options || {};
+    return currentMode().then(function (mode) {
+      return Promise.all([
+        allRecords('offline_projects'),
+        allRecords('offline_ca_records'),
+        allRecords('offline_views')
+      ]).then(function (records) {
+        var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
+        var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
+        var views = records[2].filter(function (item) { return item.synced === false; });
+        var total = projects.length + caRecords.length + views.length;
+        if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
+        if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
+          return { status: 'mobile-paused', mode: mode, uploaded: 0, pending: total };
+        }
+        var context = { mode: mode, api: API };
+        /* Every push completes before any pull begins. */
+        var pushed = { projects: false, caRecords: false, views: false };
+        return Promise.resolve()
+          .then(function () {
+            if (!syncHooks.pushProjects || !projects.length) return null;
+            return syncHooks.pushProjects(projects, context);
+          })
+          .then(function (result) { if (syncHooks.pushProjects && projects.length) pushed.projects = true; return result; })
+          .then(function () {
+            if (!syncHooks.pushCARecords || !caRecords.length) return null;
+            return syncHooks.pushCARecords(caRecords, context);
+          })
+          .then(function (result) { if (syncHooks.pushCARecords && caRecords.length) pushed.caRecords = true; return result; })
+          .then(function () {
+            if (!syncHooks.pushViews || !views.length) return null;
+            return syncHooks.pushViews(views, context);
+          })
+          .then(function (result) { if (syncHooks.pushViews && views.length) pushed.views = true; return result; })
+          .then(function () {
+            return Promise.all((pushed.projects ? projects.map(function (item) { return putRecord('offline_projects', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+              .concat(pushed.caRecords ? caRecords.map(function (item) { return putRecord('offline_ca_records', Object.assign({}, item, { synced: true, syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+              .concat(pushed.views ? views.map(function (item) { return putRecord('offline_views', Object.assign({}, item, { synced: true, syncedAt: Date.now() })); }) : []));
+          })
+          .then(function () {
+            var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};
+            return Promise.resolve(pullResult).then(function (pulled) {
+              pulled = pulled || {};
+              var individualPulls = [
+                syncHooks.pullProjects ? syncHooks.pullProjects(context) : null,
+                syncHooks.pullCARecords ? syncHooks.pullCARecords(context) : null,
+                syncHooks.pullViews ? syncHooks.pullViews(context) : null
+              ];
+              return Promise.all(individualPulls).then(function (individual) {
+                pulled = Object.assign({}, pulled, {
+                  projects: pulled.projects || individual[0] || [],
+                  caRecords: pulled.caRecords || individual[1] || [],
+                  views: pulled.views || individual[2] || []
+                });
+                return pulled;
+              });
+            }).then(function (pulled) {
+              if (!pulled) return null;
+              return Promise.all([
+                (pulled.projects || []).reduce(function (p, item) {
+                  return p.then(function () { return getRecord('offline_projects', item.localId).then(function (old) { return putRecord('offline_projects', mergeLatest(old, item)); }); });
+                }, Promise.resolve()),
+                (pulled.caRecords || []).reduce(function (p, item) {
+                  return p.then(function () { return getRecord('offline_ca_records', item.recordId).then(function (old) { return putRecord('offline_ca_records', mergeLatest(old, item)); }); });
+                }, Promise.resolve()),
+                (pulled.views || []).reduce(function (p, item) {
+                  return p.then(function () { return getRecord('offline_views', item.viewId).then(function (old) { return putRecord('offline_views', mergeLatest(old, item)); }); });
+                }, Promise.resolve())
+              ]);
+            });
+          })
+          .then(function () {
+            var uploaded = (pushed.projects ? projects.length : 0) + (pushed.caRecords ? caRecords.length : 0) + (pushed.views ? views.length : 0);
+            return pendingSummary().then(function (remaining) {
+              return { status: 'complete', mode: mode, uploaded: uploaded, pending: remaining.total };
+            });
+          });
+      });
+    });
+  }
+
+  var API = {
+    databaseName: DB_NAME,
+    stores: STORE_NAMES.slice(),
+    open: openDatabase,
+    detectConnectionMode: detectConnectionMode,
+    getConnectionMode: getConnectionMode,
+    resolveConnectionMode: getConnectionMode,
+    onConnectionChange: function (listener) {
+      if (typeof listener !== 'function') return function () {};
+      modeListeners.push(listener);
+      return function () { modeListeners = modeListeners.filter(function (item) { return item !== listener; }); };
+    },
+    setConnectionPreference: function (mode) {
+      if (!normalizeMode(mode)) return fail('Connection preference must be offline, mobile, or wifi');
+      return putRecord('offline_settings', { userId: FALLBACK_KEY, connectionMode: mode }).then(function () { emitMode(mode); return mode; });
+    },
+    needsConnectionPreference: function () { return !detectConnectionMode(); },
+    connectionLabel: function (mode) {
+      return { offline: 'Offline Mode - Working, will sync at school', mobile: 'Mobile data - Data saver mode', wifi: 'WiFi connected - Full HD mode' }[mode] || '';
+    },
+    saveAuthProfile: function (profile, password) {
+      if (!profile || !profile.userId || typeof password !== 'string' || !password) return fail('userId and password are required to cache an offline profile');
+      if (!root.crypto || !root.crypto.getRandomValues) return fail('Secure random number generation is required');
+      var saltBytes = new Uint8Array(16);
+      root.crypto.getRandomValues(saltBytes);
+      var salt = bytesToBase64(saltBytes);
+      return secureHash(password, salt).then(function (verifier) {
+        var record = {
+          userId: String(profile.userId),
+          role: profile.role || null,
+          schoolId: profile.schoolId || null,
+          email: profile.email || null,
+          name: profile.name || '',
+          phone: profile.phone || '',
+          educationLevel: profile.educationLevel || '',
+          address: profile.address || '',
+          loginCount: profile.loginCount || 0,
+          lastSync: Date.now(),
+          passwordSalt: salt,
+          passwordVerifier: verifier
+        };
+        return putRecord('offline_auth', record).then(function () { return safeProfile(record); });
+      });
+    },
+    cacheOnlineProfile: function (profile, password) {
+      return API.saveAuthProfile(profile, password);
+    },
+    verifyOfflineLogin: function (userId, password) {
+      return getRecord('offline_auth', userId).then(function (record) {
+        if (!record || !record.passwordSalt || !record.passwordVerifier || typeof password !== 'string') return false;
+        return secureHash(password, record.passwordSalt).then(function (candidate) {
+          var left = base64ToBytes(candidate);
+          var right = base64ToBytes(record.passwordVerifier);
+          if (left.length !== right.length) return false;
+          var difference = 0;
+          for (var i = 0; i < left.length; i += 1) difference |= left[i] ^ right[i];
+          return difference === 0;
+        });
+      });
+    },
+    getCachedAuthProfile: function (userId) { return getRecord('offline_auth', userId).then(safeProfile); },
+    findCachedAuthProfile: function (email) {
+      email = String(email || '').trim().toLowerCase();
+      return allRecords('offline_auth').then(function (records) {
+        var record = records.find(function (item) { return String(item.email || '').trim().toLowerCase() === email; });
+        return safeProfile(record);
+      });
+    },
+    verifyOfflineLoginByEmail: function (email, password) {
+      email = String(email || '').trim().toLowerCase();
+      return allRecords('offline_auth').then(function (records) {
+        var record = records.find(function (item) { return String(item.email || '').trim().toLowerCase() === email; });
+        if (!record) return null;
+        return API.verifyOfflineLogin(record.userId, password).then(function (valid) { return valid ? safeProfile(record) : null; });
+      });
+    },
+    saveSettings: saveSettings,
+    getSettings: getSettings,
+    getPendingSummary: pendingSummary,
+    getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, total: summary.total }; }); },
+    getPendingSize: function () { return pendingSummary().then(function (summary) { return summary.size; }); },
+    getStorageSummary: pendingSummary,
+    queueProject: function (project) {
+      project = project || {};
+      var photoKey = project.photoBlob ? 'photoBlob' : (project.photo && typeof project.photo.size === 'number' ? 'photo' : null);
+      return (photoKey ? compressPhoto(project[photoKey]) : Promise.resolve(null)).then(function (photo) {
+        var value = Object.assign({}, project, {
+          localId: project.localId || randomId('project-'),
+          syncStatus: 'pending',
+          queuedAt: project.queuedAt || Date.now()
+        });
+        if (photoKey && photo) value[photoKey] = photo;
+        value.size = project.size || sizeOf(value);
+        return putRecord('offline_projects', value).then(function () { return value; });
+      });
+    },
+    compressProjectPhoto: compressPhoto,
+    queueCARecord: function (record) {
+      if (!record) return fail('A CA record is required');
+      var value = Object.assign({}, record, { recordId: record.recordId || randomId('ca-'), synced: false, syncStatus: 'pending' });
+      return putRecord('offline_ca_records', value).then(function () { return value; });
+    },
+    queueView: function (view) {
+      view = view || {};
+      var value = Object.assign({}, view, { viewId: view.viewId || randomId('view-'), synced: false, queuedAt: view.queuedAt || Date.now() });
+      return putRecord('offline_views', value).then(function () { return value; });
+    },
+    listProjects: function () { return allRecords('offline_projects'); },
+    listCARecords: function () { return allRecords('offline_ca_records'); },
+    listViews: function () { return allRecords('offline_views'); },
+    markProjectSynced: function (localId, extra) { return getRecord('offline_projects', localId).then(function (item) { return item ? putRecord('offline_projects', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false; }); },
+    recordVideoView: function (view) { return API.queueView(view); },
+    isCacheEligibleUrl: isCacheEligibleUrl,
+    isSafeCustomMediaUrl: isSafeCustomMediaUrl,
+    downloadLightVideo: function (video, options) {
+      video = video || {};
+      options = options || {};
+      return currentMode().then(function (mode) {
+        if (mode === 'offline') throw new Error('Connect to WiFi or mobile data before downloading an offline lesson');
+        if (mode === 'mobile' && !mobileConfirmation(options)) throw new Error('MOBILE_DOWNLOAD_CANCELLED');
+        var images = video.slideshowImages || [];
+        return Promise.all(images.map(function (item) {
+          var url = typeof item === 'string' ? item : item && item.url;
+          if (item && item.blob) return Promise.resolve(item.blob);
+          if (!url || !isCacheEligibleUrl(url)) throw new Error('Offline light media must be same-origin or Firebase Storage; YouTube media is never cached');
+          return fetchBlob(url);
+        })).then(function (imageBlobs) {
+          var audioUrl = video.slideshowAudioUrl;
+          var audioPromise = video.slideshowAudioBlob ? Promise.resolve(video.slideshowAudioBlob) :
+            (audioUrl ? (isCacheEligibleUrl(audioUrl) ? fetchBlob(audioUrl) : fail('Offline audio URL is not cache-eligible')) : Promise.resolve(null));
+          return audioPromise.then(function (audioBlob) {
+            var record = Object.assign({}, video, {
+              videoId: video.videoId,
+              slideshowImageBlobs: imageBlobs,
+              slideshowAudioBlob: audioBlob,
+              cached: true,
+              versionType: 'slideshow',
+              size: imageBlobs.reduce(function (sum, blob) { return sum + sizeOf(blob); }, 0) + sizeOf(audioBlob) + sizeOf(video.captionsText)
+            });
+            if (record.size > 2 * 1024 * 1024) throw new Error('The light offline lesson is larger than the 2MB limit');
+            return putRecord('offline_videos', record).then(function () { return record; });
+          });
+        });
+      });
+    },
+    downloadCustomMp4: function (video, options) {
+      video = video || {};
+      options = options || {};
+      if (!video.videoId || !video.customMp4Url || !isSafeCustomMediaUrl(video.customMp4Url)) return fail('A non-YouTube customMp4Url is required; YouTube and Googlevideo media cannot be cached');
+      return currentMode().then(function (mode) {
+        if (mode !== 'wifi') throw new Error('HD offline downloads are available on WiFi only');
+        return fetchBlob(video.customMp4Url).then(function (blob) {
+          var record = Object.assign({}, video, { customMp4Blob: blob, cached: true, versionType: 'custom-mp4', size: blob.size });
+          return putRecord('offline_videos', record).then(function () { return record; });
+        });
+      });
+    },
+    getOfflineVideo: function (videoId) { return getRecord('offline_videos', videoId); },
+    deleteOfflineVideo: function (videoId) { return deleteRecord('offline_videos', videoId); },
+    cacheNcdcTemplate: function (templateId, template, userId) {
+      if (!templateId || !template) return fail('templateId and template are required');
+      return putRecord('offline_settings', { userId: TEMPLATE_PREFIX + templateId, template: template, cachedAt: Date.now(), ownerUserId: userId || null }).then(function () { return template; });
+    },
+    getNcdcTemplate: function (templateId) {
+      return getRecord('offline_settings', TEMPLATE_PREFIX + templateId).then(function (record) { return record && record.template || null; });
+    },
+    cacheTemplate: function (templateId, template, userId) {
+      return API.cacheNcdcTemplate(templateId, template, userId);
+    },
+    setSyncHooks: function (hooks) { syncHooks = Object.assign({}, hooks || {}); return syncHooks; },
+    configureSync: function (hooks) { syncHooks = Object.assign({}, hooks || {}); return syncHooks; },
+    sync: sync,
+    syncNow: function (options) {
+      options = options || {};
+      return currentMode().then(function (mode) {
+        if (mode === 'mobile' && !options.force && !mobileConfirmation(options)) throw new Error('MOBILE_SYNC_CANCELLED');
+        if (mode === 'offline') return pendingSummary().then(function (summary) { return { status: 'offline', mode: mode, uploaded: 0, pending: summary.total }; });
+        return sync(Object.assign({}, options, { force: true }));
+      });
+    },
+    getVideoPlayback: function (videoId) {
+      return getRecord('offline_videos', videoId).then(function (record) {
+        if (!record || !record.cached) return { available: false, message: 'Video not available offline. Download the offline version at school WiFi.' };
+        if (record.versionType === 'custom-mp4' && record.customMp4Blob) return { available: true, type: 'custom-mp4', blob: record.customMp4Blob, record: record };
+        if (record.versionType === 'slideshow' && record.slideshowImageBlobs) return { available: true, type: 'slideshow', images: record.slideshowImageBlobs, audio: record.slideshowAudioBlob || null, captions: record.captionsText || '', record: record };
+        return { available: false, message: 'Video not available offline. Download the offline version at school WiFi.' };
+      });
+    }
+  };
+
+  if (root.addEventListener) {
+    root.addEventListener('online', refreshMode);
+    root.addEventListener('offline', refreshMode);
+    var connection = connectionInfo();
+    if (connection && connection.addEventListener) connection.addEventListener('change', refreshMode);
+  }
+  root.AppShuleOffline = API;
+}(typeof window !== 'undefined' ? window : globalThis));
