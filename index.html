@@ -4190,17 +4190,16 @@
 
         // Cancel any previous listener then start a live one
         if(_livePageUnsub) { _livePageUnsub(); _livePageUnsub = null; }
-        // Cancel any previous listener then start a live one
-if(_livePageUnsub) { _livePageUnsub(); _livePageUnsub = null; }
-try {
-    _livePageUnsub = onSnapshot(
-        query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
-        snap => renderCards(snap),
-        (error) => { container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>'; }
-    );
-} catch(e) {
-    container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
-}
+        try {
+            _livePageUnsub = onSnapshot(
+                query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
+                snap => renderCards(snap),
+                () => { container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>'; }
+            );
+        } catch(e) {
+            container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
+        }
+    }
 
     // ---- Feature 1: Render the full Live Page ----
     async function renderLivePage() {
