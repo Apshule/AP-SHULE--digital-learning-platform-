@@ -3,6 +3,19 @@ import { execSync } from "node:child_process";
 const REPO = "Apshule/AP-SHULE--digital-learning-platform-";
 const ORIGIN_URL = `https://github.com/${REPO}.git`;
 
+export function redactCredentials(value: unknown): string {
+  return String(value)
+    .replace(
+      /(https?:\/\/)([^/\s:@]+):([^@\s/]+)@/gi,
+      "$1[redacted]:[redacted]@"
+    )
+    .replace(/\b(?:ghp|github_pat|gho|ghu|ghs|ghr)_[A-Za-z0-9_]+\b/g, "[redacted-github-token]")
+    .replace(
+      /(authorization\s*[:=]\s*(?:bearer|basic)\s+)[^\s,;]+/gi,
+      "$1[redacted]"
+    );
+}
+
 export function ensureGitHubRemote(): void {
   try {
     execSync("git remote get-url origin", { stdio: "pipe" });
@@ -27,10 +40,11 @@ export function authenticatedPushUrl(): string {
  * specific next step the user can act on immediately.
  */
 export function friendlyPushError(err: unknown): string {
-  const raw =
+  const raw = redactCredentials(
     err instanceof Error
       ? `${err.message}\n${(err as NodeJS.ErrnoException).code ?? ""}`
-      : String(err);
+      : String(err)
+  );
 
   const lower = raw.toLowerCase();
 
@@ -47,6 +61,7 @@ export function friendlyPushError(err: unknown): string {
     lower.includes("401") ||
     lower.includes("403") ||
     lower.includes("bad credentials") ||
+    lower.includes("invalid username or token") ||
     lower.includes("could not read username") ||
     lower.includes("invalid username or password")
   ) {
@@ -107,7 +122,7 @@ export function friendlyPushError(err: unknown): string {
   }
 
   return (
-    `Push failed: ${err instanceof Error ? err.message : String(err)}\n` +
+    `Push failed: ${raw.trim()}\n` +
     "  → Check the error above. Common causes: expired token, missing repo access,\n" +
     "    or a network issue. Update GITHUB_PERSONAL_ACCESS_TOKEN in Replit Secrets\n" +
     "    if you suspect an auth problem."

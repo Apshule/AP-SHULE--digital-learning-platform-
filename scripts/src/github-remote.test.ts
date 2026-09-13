@@ -1,5 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { friendlyPushError } from "./github-remote.js";
+import { friendlyPushError, redactCredentials } from "./github-remote.js";
+
+describe("redactCredentials", () => {
+  it("removes credentials embedded in a GitHub URL", () => {
+    const secret = "ghp_" + "A".repeat(36);
+    const result = redactCredentials(
+      `Command failed: git push https://x-access-token:${secret}@github.com/example/repo.git`
+    );
+    expect(result).not.toContain(secret);
+    expect(result).toContain("[redacted]");
+  });
+
+  it("removes standalone GitHub token formats", () => {
+    const classic = "ghp_" + "B".repeat(36);
+    const fineGrained = "github_pat_" + "C".repeat(60);
+    const result = redactCredentials(`${classic} ${fineGrained}`);
+    expect(result).not.toContain(classic);
+    expect(result).not.toContain(fineGrained);
+  });
+
+  it("removes authorization header values", () => {
+    const result = redactCredentials("Authorization: Bearer secret-value");
+    expect(result).toBe("Authorization: Bearer [redacted]");
+  });
+});
 
 describe("friendlyPushError", () => {
   it("returns missing-token message when GITHUB_PERSONAL_ACCESS_TOKEN is not set", () => {
@@ -170,5 +194,16 @@ describe("friendlyPushError", () => {
     );
     const result = friendlyPushError(err);
     expect(result).toContain("GITHUB_PERSONAL_ACCESS_TOKEN is missing");
+  });
+
+  it("never returns a token from an unrecognised push error", () => {
+    const secret = "ghp_" + "D".repeat(36);
+    const result = friendlyPushError(
+      new Error(
+        `Command failed: git push https://x-access-token:${secret}@github.com/example/repo.git`
+      )
+    );
+    expect(result).not.toContain(secret);
+    expect(result).toContain("[redacted]");
   });
 });

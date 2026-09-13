@@ -50,6 +50,7 @@ Thumbs.db
 
 # Push script state
 scripts/.last-push-message
+artifacts/api-server/data/push-history.json
 
 # VAPID key persistence (contains private key — do not commit)
 .vapid-keys.json

@@ -1,7 +1,12 @@
 import { Router, type IRouter, type Response } from "express";
 import { sendWebPush } from "../lib/vapid";
 import { isAuthorized } from "../lib/push-secret";
-import { loadHistory, saveHistory, type PushEvent } from "../lib/push-history-store";
+import {
+  loadHistory,
+  sanitizePushMessage,
+  saveHistory,
+  type PushEvent,
+} from "../lib/push-history-store";
 import { verifyFirebaseAdmin } from "../lib/firebase-auth";
 
 const router: IRouter = Router();
@@ -73,9 +78,10 @@ router.post("/push-events", async (req, res) => {
     return;
   }
 
-  recordEvent({ type, message, timestamp: new Date().toISOString() });
+  const safeMessage = sanitizePushMessage(message);
+  recordEvent({ type, message: safeMessage, timestamp: new Date().toISOString() });
 
-  const payload = JSON.stringify({ type, message });
+  const payload = JSON.stringify({ type, message: safeMessage });
   const event = `event: push-${type}\ndata: ${payload}\n\n`;
 
   let notified = 0;
@@ -91,7 +97,7 @@ router.post("/push-events", async (req, res) => {
   req.log.info({ type, notified }, "Push event broadcast via SSE");
 
   const title = type === "success" ? "APSHULE Push ✅" : "APSHULE Push ❌";
-  const body = (type === "success" ? "✅ " : "❌ ") + message;
+  const body = (type === "success" ? "✅ " : "❌ ") + safeMessage;
   const { sent, failed } = await sendWebPush(title, body);
 
   req.log.info({ sent, failed }, "Push event broadcast via Web Push");
