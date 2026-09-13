@@ -1,11 +1,34 @@
 import { execSync, execFileSync } from "node:child_process";
-import { watch } from "node:fs";
+import { watch, watchFile, unlinkSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { ensureGitHubRemote, authenticatedPushUrl } from "./github-remote.js";
+import {
+  ensureGitHubRemote,
+  authenticatedPushUrl,
+  friendlyPushError,
+} from "./github-remote.js";
 
-const WORKSPACE_ROOT = new URL("../../", import.meta.url).pathname;
-const FILES = ["index.html", "CNAME", "firebase-messaging-sw.js"];
-const DEBOUNCE_MS = 5_000;
+const WORKSPACE_ROOT =
+  process.env["PUSH_WATCH_ROOT"] ?? new URL("../../", import.meta.url).pathname;
+const FILES = [
+  "index.html",
+  "CNAME",
+  "firebase-messaging-sw.js",
+  "manifest.json",
+  "robots.txt",
+  "sitemap.xml",
+  ".nojekyll",
+  ".well-known/assetlinks.json",
+  "PLAY_STORE_GUIDE.md",
+];
+const DEBOUNCE_MS = process.env["PUSH_WATCH_DEBOUNCE_MS"]
+  ? Number(process.env["PUSH_WATCH_DEBOUNCE_MS"])
+  : 5_000;
+const POLL_MS = process.env["PUSH_WATCH_POLL_MS"]
+  ? Number(process.env["PUSH_WATCH_POLL_MS"])
+  : 2_000;
+const NOTIFY_URL =
+  process.env["PUSH_NOTIFY_URL"] ?? "http://localhost:8080/api/push-events";
+const PUSH_SECRET = process.env["PUSH_SECRET"] ?? "";
 
 const GIT_OPTS = { stdio: "inherit" as const, cwd: WORKSPACE_ROOT };
 
@@ -25,7 +48,26 @@ function hasChanges(): boolean {
   }
 }
 
-function push(): void {
+async function notify(type: "success" | "error", message: string): Promise<void> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (PUSH_SECRET) {
+      headers["Authorization"] = `Bearer ${PUSH_SECRET}`;
+    }
+    const res = await fetch(NOTIFY_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ type, message }),
+    });
+    if (!res.ok) {
+      console.warn(`[${timestamp()}] Browser notify: non-OK response ${res.status} from ${NOTIFY_URL}`);
+    }
+  } catch (err) {
+    console.warn(`[${timestamp()}] Browser notify: could not reach ${NOTIFY_URL} — ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+async function push(): Promise<void> {
   // Ensure git identity is set (required in some sandbox environments)
   try {
     execSync("git config user.email 2>/dev/null || git config --global user.email 'apshule-bot@apshule.app'", { cwd: WORKSPACE_ROOT });
@@ -36,6 +78,26 @@ function push(): void {
     execSync("git config user.name 'APSHULE Bot'", { cwd: WORKSPACE_ROOT });
   } catch {}
 
+  ensureGitHubRemote();
+
+  // Remove any stale git index.lock left by a previously-killed git process.
+  const lockPath = resolve(WORKSPACE_ROOT, ".git", "index.lock");
+  try {
+    if (existsSync(lockPath)) {
+      unlinkSync(lockPath);
+      console.log(`[${timestamp()}] Removed stale .git/index.lock`);
+    }
+  } catch { /* non-fatal */ }
+
+  // Always sync to remote HEAD first so local and remote never diverge.
+  // This handles the case where another process (e.g. direct GitHub API push)
+  // has added commits to remote that the local clone doesn't have yet.
+  const pushUrl = authenticatedPushUrl();
+  try {
+    execSync(`git fetch ${pushUrl} main:refs/remotes/origin/main --no-tags 2>/dev/null || true`, { cwd: WORKSPACE_ROOT });
+    execSync("git reset --mixed origin/main 2>/dev/null || true", { cwd: WORKSPACE_ROOT });
+  } catch { /* non-fatal — local history may already be in sync */ }
+
   run(`git add ${FILES.join(" ")}`);
 
   if (!hasChanges()) {
@@ -43,13 +105,13 @@ function push(): void {
     return;
   }
 
-  ensureGitHubRemote();
-
   const message = `chore: sync site files [${timestamp()}]`;
   console.log(`[${timestamp()}] Committing: ${message}`);
   execFileSync("git", ["commit", "-m", message], GIT_OPTS);
-  execFileSync("git", ["push", authenticatedPushUrl()], GIT_OPTS);
+  // Force-push: safe because this repo only contains site files we fully control.
+  execFileSync("git", ["push", "--force", pushUrl], GIT_OPTS);
   console.log(`[${timestamp()}] Pushed to GitHub ✓`);
+  await notify("success", `Pushed to GitHub ✓ (${timestamp()})`);
 }
 
 function timestamp(): string {
@@ -65,23 +127,74 @@ function schedulePush(filename: string): void {
   console.log(`[${timestamp()}] Change detected in ${filename} — pushing in ${DEBOUNCE_MS / 1000}s…`);
   timer = setTimeout(() => {
     timer = null;
-    try {
-      push();
-    } catch (err) {
-      console.error(`[${timestamp()}] Push failed:`, err);
-    }
+    push().catch(async (err) => {
+      const friendly = friendlyPushError(err);
+      console.error(`[${timestamp()}] ${friendly}`);
+      await notify("error", friendly);
+    });
   }, DEBOUNCE_MS);
 }
 
-console.log(`[${timestamp()}] Watching for changes in: ${FILES.join(", ")}`);
+// Keep the event loop alive indefinitely so the process never exits even
+// when none of the watched files exist yet.
+const keepalive = setInterval(() => {}, 60_000);
+keepalive.unref(); // Don't prevent clean exit on SIGTERM — just keeps the loop non-empty
 
-for (const file of FILES) {
-  const absPath = resolve(WORKSPACE_ROOT, file);
+// Track which files are already being watched with fs.watch (efficient inode watcher).
+const fsWatched = new Set<string>();
+
+function startFsWatch(file: string, absPath: string): void {
+  if (fsWatched.has(file)) return;
   try {
     watch(absPath, { persistent: true }, (_event, filename) => {
       schedulePush(filename ?? file);
     });
+    fsWatched.add(file);
   } catch {
-    console.warn(`[${timestamp()}] Warning: could not watch ${file} (file may not exist yet)`);
+    // File disappeared between the existence check and watch call — handled by watchFile polling
   }
+}
+
+for (const file of FILES) {
+  const absPath = resolve(WORKSPACE_ROOT, file);
+
+  // Try efficient fs.watch first (works for existing files).
+  startFsWatch(file, absPath);
+
+  // Always set up a polling watcher (fs.watchFile) as a safety net:
+  //   • For missing files: detects creation and starts the efficient watcher.
+  //   • For existing files: catches any changes that inode-based watch might miss.
+  watchFile(absPath, { persistent: true, interval: POLL_MS }, (curr, prev) => {
+    const wasAbsent = prev.nlink === 0;
+    const nowExists = curr.nlink > 0;
+    const changed = nowExists && curr.mtimeMs !== prev.mtimeMs;
+
+    if (wasAbsent && nowExists) {
+      startFsWatch(file, absPath);
+      const pending = FILES.filter((f) => !fsWatched.has(f));
+      if (pending.length === 0) {
+        console.log(`[${timestamp()}] ${file} created — now watching all ${FILES.length} files ✓`);
+      } else {
+        console.log(
+          `[${timestamp()}] ${file} created — watching ${fsWatched.size}/${FILES.length} files — still pending: ${pending.join(", ")}`
+        );
+      }
+      schedulePush(file);
+    } else if (changed && !fsWatched.has(file)) {
+      // fs.watch not running for this file — handle change via polling
+      schedulePush(file);
+    }
+  });
+}
+
+// Print a single startup summary showing watched vs pending files.
+const pendingAtStart = FILES.filter((f) => !fsWatched.has(f));
+if (pendingAtStart.length === 0) {
+  console.log(`[${timestamp()}] Watching all ${FILES.length} files — watcher fully active ✓`);
+} else {
+  const watchedList = FILES.filter((f) => fsWatched.has(f));
+  const watchedStr = watchedList.length > 0 ? ` (${watchedList.join(", ")})` : "";
+  console.log(
+    `[${timestamp()}] Watching ${fsWatched.size}/${FILES.length} files${watchedStr} — pending: ${pendingAtStart.join(", ")}`
+  );
 }

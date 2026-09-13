@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "O-SqDNrQHlh7H20oJf-F4"
+uri = "file://apshule.tar.gz"
+type = "unspecified"
+title = "APSHULE index.html (tar.gz)"

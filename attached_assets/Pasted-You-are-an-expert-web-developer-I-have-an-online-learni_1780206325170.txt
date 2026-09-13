@@ -1,0 +1,57 @@
+You are an expert web developer. I have an online learning platform called APSHULE. The current code is a single HTML file (index.html) that uses Firebase (Auth + Firestore) and includes these working features:
+
+✅ Login / Signup (Firebase Auth)
+✅ Class selection (Primary 1‑7, Secondary 1‑6 with colours)
+✅ Subject selection after class
+✅ Teacher selection after subject
+✅ Video playback (YouTube) with progress tracking (every 10s, marks completed at 90% of 5 min)
+✅ Teacher earnings (one payment per unique completed view)
+✅ Teacher dashboard (basic earnings and completions)
+✅ PDF materials list (global, but currently downloads)
+✅ Subscription plans (defaults appear, but no admin editing)
+✅ Superadmin panel (partial)
+✅ Attendance (facial recognition)
+✅ AI chat (demo)
+✅ Events ticker
+✅ About page
+✅ Account page (profile picture)
+
+I need you to produce a **single, final index.html** that adds ALL the missing features listed below, while preserving every existing feature. Do not rewrite the whole file from scratch; instead, modify the existing code by adding new functions, HTML blocks, and event listeners. Keep the existing CSS, structure, and Firebase logic intact.
+
+### MISSING FEATURES (must add):
+
+#### 1. Superadmin – Complete Management
+- **Subscription plans** : Add, edit, delete plans. The home page payment grid must update in real time (Firestore onSnapshot).
+- **Schools** : Add, edit, delete schools.
+- **Teachers** : Create teacher accounts (email/password) with editable revenue per view (default 100 UGX). Also allow superadmin to update revenue at any time.
+- **Video mapping** : Dropdowns for Teacher, Subject, Class (Primary 1‑7, Secondary 1‑6), and a field for YouTube URL/ID. Save mapping to Firestore. Also display existing mappings.
+- **Earnings payment tracking** : Superadmin can see total earnings for each teacher. A button “Mark as Paid” resets that teacher’s earnings counter (or records payment history). After marking paid, the system continues counting new earnings from that point.
+- **Analytics** : Show total users, active users (last 7 days), failed login attempts (today), most watched videos (by teacher), all feedback & questions (from Firestore collections `feedbacks` and `questions`).
+
+#### 2. Teacher Dashboard – Enhancements
+- **PDF upload** : Teacher can upload a PDF (stored as base64 in Firestore with teacherId, title, views count). Show list of teacher’s PDFs with view counts.
+- **Earnings display** : Show total earnings and a list of videos with the number of completed views and revenue earned per video.
+- **Questions & Comments** : Display questions (with user details) and comments (name only) from users.
+
+#### 3. PDF Viewer – Inline (not download)
+- When a user clicks a PDF, open a modal iframe that displays the PDF. Track views (increment counter in Firestore).
+
+#### 4. Superadmin – Universal Edit Access
+- Superadmin can edit any school, any teacher, any video mapping, any subscription plan, any PDF (including delete). All changes sync to all users via Firestore listeners.
+
+#### 5. Teacher Revenue – Automatic, with Payment Reset
+- When a student completes ≥90% of a video, the teacher earns the agreed revenue (stored in `users.revenuePerView`). This is a one‑time earning per student per video.
+- Superadmin can see total earnings per teacher and click “Mark as Paid”. After that, the teacher’s earnings for future views accumulate from zero. (Keep a history if needed, but at minimum reset the running total.)
+
+### DELIVERABLE:
+- Provide the complete index.html file. Use the existing Firebase config (already in the code). Ensure all new features use the existing Firestore collections or create new ones only if necessary (e.g., `teacherPdfs`, `paymentHistory`).
+- Include comments explaining each major addition.
+- The final file must be fully functional when deployed on GitHub Pages.
+
+Before outputting the final code, confirm you understand and will:
+1. Preserve all existing working features.
+2. Add features incrementally inside the same file.
+3. Not remove any existing CSS classes or JavaScript functions unless they are replaced with better versions.
+4. Use real‑time listeners where needed (subscription plans, video mappings, teacher earnings).
+
+Now, produce the final index.html.

@@ -1,0 +1,256 @@
+Nakaima Peninah:
+APSHULE — TASK 1: NCDC/UNEB COMPLIANCE SYSTEM
+Build/update existing ApShule. DO NOT rebuild new app.
+CONTEXT: EXISTING APSHULE STRUCTURE
+We have 4 existing accounts:
+1. STUDENT — video tutorials + PDFs + studying
+2. SCHOOL ADMIN — automated report cards + school management
+3. TEACHER — teaches online + tracks earnings from videos/PDFs/online teaching
+4. SUPER ADMIN — controls whole app
+
+Existing bottom navigation per role:
+- STUDENT: Home | Resources | Live | Alerts | Account | About
+- SCHOOL ADMIN: Home | Resources | Live | Alerts | Account | About + 3-dot menu (Facial Attendance, Live Lessons, Admin Panel, Logout)
+- TEACHER: Home | Resources | Dashboard | Alerts | Account | About
+- SUPER ADMIN: Home | Resources | Alerts | Account | About + 3-dot menu (Live Lessons, Admin Panel, Logout)
+
+Existing features already built:
+- School Admin Admin Panel: My Students, Manage School Events
+- Teacher Dashboard: Request Live Lesson, Earnings Breakdown, Upload PDF Material, Student Questions, Student Comments/Feedback
+- Super Admin Admin Panel: Global Analytics, Most Watched Videos, Student Weak Areas, User Feedback, Student Q&A, Schedule Live Lesson, Teacher Requests, Live Lesson Attendance, Live Lesson Enrollments, Generate Student Access Token, All Active Tokens, Edit About Page, Managing Team
+- Facial Recognition: Mark Attendance, Enroll Person (Category: Student), Manage
+
+YOUR TASK:
+Add new features as buttons inside existing accounts.
+Keep existing login, keep app size <30MB, keep offline-first PWA with IndexedDB/SQLite, compress photos to <500KB, videos via YouTube unlisted not hosted. Use Gemini API free tier (key in .env) for AI.
+
+STEP 1: FIX THESE EXISTING BUGS FIRST
+1. Home screen (Student, School Admin, Super Admin) shows DUPLICATE subscription plans:
+   - "Daily UGX 500" appears twice
+   - "Term Plan UGX 50,000" appears twice
+   - "Half Year UGX 80,000" appears twice
+   FIX: Remove duplicates. Show each plan ONCE.
+
+2. Live Lessons page shows "Could not load lessons. Check connection." even when connected.
+   FIX: Investigate API call. Add proper error handling. Show cached lessons when offline.
+
+3. Student Weak Areas and Student Q&A show "Loading..." and never complete.
+   FIX: Investigate API call. Add timeout and error message.
+
+STEP 2: ADD THESE DATABASE TABLES TO EXISTING DB
+
+1. uneb_items(id, subject, class_level, topic, scenario_text, competency, marking_grid, source_year)
+
+2. ca_records(id, learner_id, school_id, subject, competency, evidence_1, evidence_2, evidence_3, final_level, term, teacher_id, synced_at)
+
+3. projects(id, learner_id, school_id, class_name, subject, title, lin, qr_code, milestone_1_date, milestone_1_photo, milestone_1_status, milestone_2_date, milestone_2_photo, milestone_2_status, final_date, final_photo, final_status, teacher_observed_tick, viva_audio_path, similarity_flag, previous_title_check, created_at)
+
+4. curriculum_links(id, subject, class_level, topic, syllabus_ref, learner_book_page, teacher_guide_page, summary_text, activity_suggestion)
+
+5. teacher_retooling_progress(id, teacher_id, module_id, completed, quiz_score, certificate_issued, practical_upload_path)
+
+STEP 3: SCHOOL ADMIN — Add "NCDC/UNEB Compliance" card
+LOCATION: Inside Admin Panel (accessed via 3-dot menu → Admin Panel).
+PLACE IT: BELOW "Manage School Events" section.
+
+Add new card "NCDC/UNEB Compliance" with 4 buttons:
+
+BUTTON 1: "Export UNEB CA File"
+- Generates .xlsx in UNEB 20% CA format from ca_records table
+- Filter by class/term
+- One click download
+
+BUTTON 2: "Headteacher Dashboard"
+- Shows: teachers retooled %, lessons taught with CBC, competency levels pie chart, projects approved vs pending, offline sync status
+
+BUTTON 3: "Project Evidence Folder"
+- Shows all projects in school by class
+- Green tick = approved, Red = pending
+- With timestamp + QR
+- For UNEB moderator visit
+- Filter by subject
+
+BUTTON 4: "Learner Portfolio S1-S4"
+- Download cumulative PDF passport per learner (competencies + projects)
+
+STEP 4: STUDENT ACCOUNT — Add "CBC & UNEB" section
+
+LOCATION: On Home screen.
+PLACE IT: BETWEEN "Learning Materials (PDFs)" and "Subscription Plans".
+
+Add new section "CBC & UNEB" with 3 buttons:
+
+BUTTON 1: "My Projects"
+- Upload flow with 3 forced milestones:
+  • Week 2 Proposal (photo)
+  • Week 5 Progress (photo)
+  • Week 9 Final (photo)
+- Each upload auto timestamp + school GPS on sync
+- Generates QR + LIN lock
+- After teacher approval, cannot edit
+- Shows status: Pending/Approved/Rejected
+- Block duplicate title from last term: check previous_title_check
+- Block same photo hash as friend: set similarity_flag
+
+BUTTON 2: "UNEB Scenario Practice"
+- Pulls from uneb_items
+- Timed 1hr
+- Random questions
+- e-assessment mode
+
+BUTTON 3: "My Competency Passport"
+- View own ca_records levels: Exceeds/Meets/Approaching/Needs Support
+
+ALSO: Add a new "Subscribe" tab to bottom navigation:
+- New order: Home | Resources | Live | Subscribe | Alerts | Account | About
+- Move subscription plans from Home to this new tab
+- Two sections: "Learning Subscription" (videos + PDFs) and "Live Lessons Subscription" (separate)
+
+ALSO: Add to Account screen:
+- "My Payment History"
+- "My Subscriptions" (shows both subscriptions active/expired)
+- "My Projects" (summary view)
+
+STEP 5: TEACHER ACCOUNT — Add "CBC Teaching Tools"
+
+LOCATION: On Teacher Dashboard.
+PLACE IT: ABOVE "Request a Live Lesson" (so it's the first thing teachers see).
+
+Add new card "CBC Teaching Tools (Earn More)" with 6 sub-buttons:
+
+SUB-BUTTON 1: "NCDC 10 Modules Course"
+- 10 modules exactly:
+  1. Familiarisation
+  2. Curriculum Documents
+  3. Learner-Centred Methods
+  4. Assessment in CBC
+  5. Planning/Monitoring (with Lesson Plan Builder)
+  6. Projects & PBL
+  7. ICT Integration
+  8. Inclusion
+  9. Record Keeping
+  10. Ethics
+- Each module = 3min video (YouTube unlisted) + PDF summary + 5Q quiz (local) + practical photo upload
+- Progress saved in teacher_retooling_progress
+- After 10 modules, auto generate CPD Certificate 20 points PDF
+
+SUB-BUTTON 2: "Auto Lesson Plan Generator"
+- Inputs: Subject, Class (S1-S4 + New A-Level 2025), Topic, Duration
+- Calls Gemini API with prompt: "You are Ugandan CBC expert, generate NCDC format lesson plan"
+- Output printable PDF in NCDC format
+- Save to DB
+
+SUB-BUTTON 3: "Triangulation Assessment"
+- Form: Select learner + competency + Evidence1 (Quiz score) + Evidence2 (Observation tick) + Evidence3 (Project photo)
+- Auto calculate final level
+- Save to ca_records
+- This feeds School CA Export
+
+SUB-BUTTON 4: "Curriculum Linker Search"
+- Search topic (e.g., Photosynthesis)
+- Query curriculum_links table
+- Show: syllabus_ref, learner_book_page, teacher_guide_page, summary_text
+- Plus button "Generate CBC Activity" → calls Gemini API with topic + syllabus_ref to generate activity with values & generic skills
+
+SUB-BUTTON 5: "Project Verification"
+- Notification list of projects assigned to my subject/class
+- View photos + timestamp
+- Buttons: "Verify I Observed" tick + Record 30-sec viva audio + Approve/Reject with comment
+- On approve: update projects table status and create ca_records entry
+
+SUB-BUTTON 6: "Create UNEB Scenario Items"
+- Input topic → Gemini API generates UNEB-style scenario + marking grid
+- Teacher can save to uneb_items
+- Optionally sell as PDF in earnings store
+
+ALSO: Update "Earnings Breakdown" section:
+- Add "Offline views pending sync: X"
+- Add "Earnings from offline: UGX X"
+STEP 6: SUPER ADMIN — Add "NCDC/UNEB Control"
+LOCATION: Inside Admin Panel.
+PLACE IT: AFTER "Most Watched Videos" section.
+
+Add new card "NCDC/UNEB Control" with these buttons:
+
+- Manage uneb_items (upload UNEB 2024/2025 samples from uneb.ac.ug & elearn.ncdc.go.ug)
+- Manage curriculum_links (bulk import 800 topics)
+- View all ca_records exports by school
+- View all projects with similarity_flag = true (duplication alerts)
+- Issue/revoke CPD certificates
+- View offline sync logs
+- View teacher_retooling_progress across schools
+- Manage Institution Beneficiaries (for payment disbursement)
+- Manage Farm Cameras (for future farming module)
+- Manage Subscriptions & Pricing (set custom plans per institution)
+
+STEP 7: PROJECT FLOW LOGIC
+One projects table, 3 role views filtered by school_id + class_name + subject:
+
+- Student view: WHERE learner_id = me
+- Teacher view: WHERE subject = my_subject AND class_name = my_classes AND school_id = my_school
+- School view: WHERE school_id = my_school
+
+WORKFLOW:
+1. Student uploads milestone
+2. Teacher gets notification
+3. Teacher verifies + approves
+4. Status changes to approved
+5. Data auto-copies to ca_records
+6. School sees green tick
+7. Super admin sees( maintain current role)
+STEP 8: CURRICULUM LINKER LOGIC
+Don't copy full NCDC books (copyright + size).
+Build curriculum_links with page references only + 200-word summary.
+
+AI prompt for activity generator:
+"You are Ugandan CBC expert, use only NCDC competency-based materials for Lower Secondary and New A-Level 2025. Generate activity with real-life scenario, values, generic skills. Cite NCDC page references."
+STEP 9: BUILD ORDER — DO THIS NOW
+PHASE 1 (Build First):
+- Fix bugs (duplicate subscriptions, loading errors)
+- Create 5 database tables
+- Teacher: NCDC 10 Modules + Lesson Plan Generator + Triangulation + curriculum_links search
+- Projects table with milestone upload
+
+PHASE 2 (After Phase 1 tested):
+- School CA Export Excel
+- Evidence Folder
+- Student Passport
+- Similarity check
+- QR lock
+
+PHASE 3 (After Phase 2 tested):
+- UNEB Practice mode
+- Super Admin flags
+- Headteacher Dashboard
+
+STEP 10: TESTING INSTRUCTIONS
+After building Phase 1, test with ONE school_id containing:
+- 1 School Admin account
+- 1 Teacher account
+- 1 Student account
+
+Test scenarios:
+1. Teacher uploads a module → Student sees it
+2. Student uploads project milestone → Teacher gets notification
+3. Teacher approves project → Data appears in ca_records
+4. School Admin sees project in Evidence Folder
+5. Super Admin sees project in duplication flags (if applicable)
+
+TECHNICAL REQUIREMENTS
+
+- Keep UI simple, Ugandan, works on Tecno Pop 1GB
+- Download whole term button for offline
+- Responsive design for phone, tablet, laptop, desktop
+- Role-based access (users see only what they need)
+- All new features work offline after initial sync
+
+DO NOT:
+- Do NOT rebuild the app
+- Do NOT break existing features
+- Do NOT delete existing database tables
+- Do NOT change existing login system
+- Do NOT upload full NCDC books (copyright)
+
+END OF TASK 1
+
+Build Phase 1 now. After Phase 1 is complete, I will confirm and provide Phase 2 instructions.
