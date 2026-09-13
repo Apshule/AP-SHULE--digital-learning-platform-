@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -31,6 +31,8 @@
   var syncHooks = {};
   var modeListeners = [];
   var lastMode;
+  var VIEW_DEVICE_TYPES = ['phone', 'tablet', 'laptop', 'desktop'];
+  var VIEW_CONNECTION_MODES = ['offline', 'mobile_data', 'wifi'];
 
   function fail(message) {
     return Promise.reject(new Error(message));
@@ -38,6 +40,75 @@
 
   function hasIndexedDb() {
     return !!(root && root.indexedDB);
+  }
+
+  function deviceType() {
+    var userAgent = String((root.navigator && root.navigator.userAgent) || '').toLowerCase();
+    if (/ipad|tablet|playbook|silk/.test(userAgent)) return 'tablet';
+    if (/mobile|iphone|android/.test(userAgent)) return 'phone';
+    if (/macintosh|windows|linux|cros/.test(userAgent)) return 'desktop';
+    return 'desktop';
+  }
+
+  function viewDate(value) {
+    var date = value ? new Date(value) : new Date();
+    if (isNaN(date.getTime())) date = new Date();
+    return date.toISOString().slice(0, 10);
+  }
+
+  function viewIdFor(value) {
+    var studentId = String(value.studentId || 'unknown-student');
+    var videoId = String(value.videoId || value.videoKey || 'unknown-video');
+    return studentId + '_' + videoId + '_' + viewDate(value.watchedAt || value.queuedAt);
+  }
+
+  function numberOr(value, fallback) {
+    var number = Number(value);
+    return isFinite(number) && number >= 0 ? number : fallback;
+  }
+
+  function normalizeOfflineView(view) {
+    view = view || {};
+    var watchedSeconds = numberOr(view.watchedSeconds, numberOr(view.currentTime, 0));
+    var videoDuration = numberOr(view.videoDuration, numberOr(view.duration, 0));
+    var completionPercent = videoDuration > 0 ? (watchedSeconds / videoDuration) * 100 : 0;
+    var requestedDeviceType = String(view.deviceType || '').toLowerCase();
+    var requestedConnectionMode = String(view.connectionMode || '').toLowerCase();
+    if (requestedConnectionMode === 'mobile') requestedConnectionMode = 'mobile_data';
+    return Object.assign({}, view, {
+      viewId: view.viewId || viewIdFor(view),
+      videoId: view.videoId || view.videoKey || '',
+      teacherId: view.teacherId || '',
+      studentId: view.studentId || '',
+      studentName: view.studentName || '',
+      watchedSeconds: watchedSeconds,
+      videoDuration: videoDuration,
+      completionPercent: numberOr(view.completionPercent, completionPercent),
+      completed: typeof view.completed === 'boolean' ? view.completed : completionPercent >= 90,
+      synced: typeof view.synced === 'boolean' ? view.synced : false,
+      schoolId: view.schoolId || '',
+      deviceType: VIEW_DEVICE_TYPES.indexOf(requestedDeviceType) >= 0 ? requestedDeviceType : deviceType(),
+      watchedAt: view.watchedAt || new Date().toISOString(),
+      connectionMode: VIEW_CONNECTION_MODES.indexOf(requestedConnectionMode) >= 0 ? requestedConnectionMode : 'offline',
+      earningsAmount: numberOr(view.earningsAmount, 0)
+    });
+  }
+
+  function ensureStoreIndexes(name, store) {
+    if (name === 'offline_projects' && !store.indexNames.contains('syncStatus')) store.createIndex('syncStatus', 'syncStatus', { unique: false });
+    if (name === 'offline_views' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
+    if (name === 'offline_ca_records' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
+    if (name === 'offline_videos' && !store.indexNames.contains('cached')) store.createIndex('cached', 'cached', { unique: false });
+  }
+
+  function migrateOfflineViewsStore(store) {
+    var cursorRequest = store.openCursor();
+    cursorRequest.onsuccess = function (event) {
+      var cursor = event.target.result;
+      if (!cursor) return;
+      cursor.update(normalizeOfflineView(cursor.value));
+      cursor.continue();
+    };
   }
 
   function openDatabase() {
@@ -53,7 +124,8 @@
       }
       request.onupgradeneeded = function (event) {
         var db = event.target.result;
-        STORE_NAMES.forEach(function (name) {
+        var oldVersion = event.oldVersion || 0;
+        if (oldVersion < 2) STORE_NAMES.forEach(function (name) {
           var store;
           if (!db.objectStoreNames.contains(name)) {
             var keyPath = {
@@ -68,11 +140,13 @@
           } else {
             store = event.target.transaction.objectStore(name);
           }
-          if (name === 'offline_projects' && !store.indexNames.contains('syncStatus')) store.createIndex('syncStatus', 'syncStatus', { unique: false });
-          if (name === 'offline_views' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
-          if (name === 'offline_ca_records' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
-          if (name === 'offline_videos' && !store.indexNames.contains('cached')) store.createIndex('cached', 'cached', { unique: false });
+          ensureStoreIndexes(name, store);
         });
+        if (oldVersion < 3) {
+          var viewsStore = event.target.transaction.objectStore('offline_views');
+          ensureStoreIndexes('offline_views', viewsStore);
+          migrateOfflineViewsStore(viewsStore);
+        }
       };
       request.onsuccess = function () {
         var db = request.result;
@@ -612,8 +686,8 @@
       return putRecord('offline_ca_records', value).then(function () { return value; });
     },
     queueView: function (view) {
-      view = view || {};
-      var value = Object.assign({}, view, { viewId: view.viewId || randomId('view-'), synced: false, queuedAt: view.queuedAt || Date.now() });
+      view = Object.assign({}, view || {}, { queuedAt: (view && view.queuedAt) || Date.now() });
+      var value = Object.assign({}, normalizeOfflineView(view), { synced: false });
       return putRecord('offline_views', value).then(function () { return value; });
     },
     listProjects: function () { return allRecords('offline_projects'); },
