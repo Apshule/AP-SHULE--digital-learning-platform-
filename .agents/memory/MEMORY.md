@@ -1,0 +1,1 @@
+- [PWA service-worker ownership](pwa-service-worker-ownership.md) — Keep one root worker; the offline worker imports the Firebase messaging worker so caching and push coexist.
