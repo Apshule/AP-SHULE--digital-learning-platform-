@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 3;
+  var DB_VERSION = 4;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -676,13 +676,25 @@
       return (photoKey ? compressPhoto(project[photoKey]) : Promise.resolve(null)).then(function (photo) {
         var value = Object.assign({}, project, {
           localId: project.localId || randomId('project-'),
-          syncStatus: 'pending',
+          syncStatus: project.syncStatus || 'pending',
           queuedAt: project.queuedAt || Date.now()
         });
         if (photoKey && photo) value[photoKey] = photo;
         value.size = project.size || sizeOf(value);
         return putRecord('offline_projects', value).then(function () { return value; });
       });
+    },
+    cacheProject: function (project) {
+      project = project || {};
+      if (!project.id) return fail('A server project id is required for caching');
+      var value = Object.assign({}, project, {
+        localId: project.localId || 'cache-project-' + project.id,
+        payload: project,
+        syncStatus: 'synced',
+        cachedAt: Date.now(),
+        size: sizeOf(project)
+      });
+      return putRecord('offline_projects', value).then(function () { return value; });
     },
     compressProjectPhoto: compressPhoto,
     queueCARecord: function (record) {
