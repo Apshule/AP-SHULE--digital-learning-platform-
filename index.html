@@ -4194,11 +4194,8 @@
             _livePageUnsub = onSnapshot(
                 query(collection(db,'liveLessons'), where('status','==','approved'), orderBy('createdAt','desc')),
                 snap => renderCards(snap),
-                () => { container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>'; }
-            );
-        } catch(e) {
-            container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">Could not load lessons. Check connection.</div>';
-        }
+                (error) => { console.log('Live lessons error:', error.code, error.message); container.innerHTML = '<div style="text-align:center;color:#c62828;padding:20px;font-size:11px;">Debug: [' + error.code + '] ' + error.message + '</div>'; }
+            console.log('Live lessons catch error:', e.code, e.message); container.innerHTML = '<div style="text-align:center;color:#c62828;padding:20px;font-size:11px;">Debug catch: [' + (e.code||'no-code') + '] ' + (e.message||e.toString()) + '</div>';
     }
 
     // ---- Feature 1: Render the full Live Page ----
