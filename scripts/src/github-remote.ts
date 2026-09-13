@@ -32,7 +32,23 @@ export function authenticatedPushUrl(): string {
       "GITHUB_PERSONAL_ACCESS_TOKEN is not set. Add it as a secret in Replit."
     );
   }
-  return `https://x-access-token:${token}@github.com/${REPO}.git`;
+  return ORIGIN_URL;
+}
+
+export function authenticatedGitEnv(): NodeJS.ProcessEnv {
+  const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error(
+      "GITHUB_PERSONAL_ACCESS_TOKEN is not set. Add it as a secret in Replit."
+    );
+  }
+  const authorization = Buffer.from(`x-access-token:${token}`).toString("base64");
+  return {
+    ...process.env,
+    GIT_CONFIG_COUNT: "1",
+    GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${authorization}`,
+  };
 }
 
 /**

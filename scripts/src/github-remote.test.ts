@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { friendlyPushError, redactCredentials } from "./github-remote.js";
+import {
+  authenticatedGitEnv,
+  authenticatedPushUrl,
+  friendlyPushError,
+  redactCredentials,
+} from "./github-remote.js";
 
 describe("redactCredentials", () => {
   it("removes credentials embedded in a GitHub URL", () => {
@@ -22,6 +27,43 @@ describe("redactCredentials", () => {
   it("removes authorization header values", () => {
     const result = redactCredentials("Authorization: Bearer secret-value");
     expect(result).toBe("Authorization: Bearer [redacted]");
+  });
+});
+
+describe("GitHub authentication transport", () => {
+  it("keeps the token out of the Git remote URL", () => {
+    const previous = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+    process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "generated-test-token";
+    try {
+      const url = authenticatedPushUrl();
+      expect(url).toBe(
+        "https://github.com/Apshule/AP-SHULE--digital-learning-platform-.git"
+      );
+      expect(url).not.toContain("generated-test-token");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      } else {
+        process.env.GITHUB_PERSONAL_ACCESS_TOKEN = previous;
+      }
+    }
+  });
+
+  it("passes authentication through Git environment configuration", () => {
+    const previous = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+    process.env.GITHUB_PERSONAL_ACCESS_TOKEN = "generated-test-token";
+    try {
+      const env = authenticatedGitEnv();
+      expect(env.GIT_CONFIG_KEY_0).toContain("extraheader");
+      expect(env.GIT_CONFIG_VALUE_0).toContain("AUTHORIZATION: basic");
+      expect(env.GIT_CONFIG_VALUE_0).not.toContain("generated-test-token");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      } else {
+        process.env.GITHUB_PERSONAL_ACCESS_TOKEN = previous;
+      }
+    }
   });
 });
 

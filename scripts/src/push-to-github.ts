@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ensureGitHubRemote,
+  authenticatedGitEnv,
   authenticatedPushUrl,
   friendlyPushError,
 } from "./github-remote.js";
@@ -194,7 +195,10 @@ try {
   console.log(`> git commit -m <message>`);
   execFileSync("git", ["commit", "-m", message], { stdio: "inherit" });
   console.log("> git push");
-  execFileSync("git", ["push", authenticatedPushUrl()], { stdio: "inherit" });
+  execFileSync("git", ["push", authenticatedPushUrl()], {
+    stdio: "inherit",
+    env: authenticatedGitEnv(),
+  });
 
   saveLastMessage(message);
   console.log("\nDone! Changes are live on GitHub.");

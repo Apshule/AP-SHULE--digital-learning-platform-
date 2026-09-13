@@ -3,6 +3,7 @@ import { watch, watchFile, unlinkSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   ensureGitHubRemote,
+  authenticatedGitEnv,
   authenticatedPushUrl,
   friendlyPushError,
 } from "./github-remote.js";
@@ -93,8 +94,13 @@ async function push(): Promise<void> {
   // This handles the case where another process (e.g. direct GitHub API push)
   // has added commits to remote that the local clone doesn't have yet.
   const pushUrl = authenticatedPushUrl();
+  const gitAuthEnv = authenticatedGitEnv();
   try {
-    execSync(`git fetch ${pushUrl} main:refs/remotes/origin/main --no-tags 2>/dev/null || true`, { cwd: WORKSPACE_ROOT });
+    execFileSync(
+      "git",
+      ["fetch", pushUrl, "main:refs/remotes/origin/main", "--no-tags"],
+      { cwd: WORKSPACE_ROOT, env: gitAuthEnv, stdio: "ignore" }
+    );
     execSync("git reset --mixed origin/main 2>/dev/null || true", { cwd: WORKSPACE_ROOT });
   } catch { /* non-fatal — local history may already be in sync */ }
 
@@ -109,7 +115,10 @@ async function push(): Promise<void> {
   console.log(`[${timestamp()}] Committing: ${message}`);
   execFileSync("git", ["commit", "-m", message], GIT_OPTS);
   // Force-push: safe because this repo only contains site files we fully control.
-  execFileSync("git", ["push", "--force", pushUrl], GIT_OPTS);
+  execFileSync("git", ["push", "--force", pushUrl], {
+    ...GIT_OPTS,
+    env: gitAuthEnv,
+  });
   console.log(`[${timestamp()}] Pushed to GitHub ✓`);
   await notify("success", `Pushed to GitHub ✓ (${timestamp()})`);
 }
