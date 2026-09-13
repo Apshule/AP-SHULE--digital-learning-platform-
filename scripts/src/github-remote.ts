@@ -13,10 +13,13 @@ export function ensureGitHubRemote(): void {
 }
 
 export function authenticatedPushUrl(): string {
-  // Replit's GitHub connection authenticates normal git commands through the
-  // workspace credential helper. Keeping credentials out of the URL also
-  // prevents tokens from being echoed in git errors and workflow logs.
-  return ORIGIN_URL;
+  const token = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error(
+      "GITHUB_PERSONAL_ACCESS_TOKEN is not set. Add it as a secret in Replit."
+    );
+  }
+  return `https://x-access-token:${token}@github.com/${REPO}.git`;
 }
 
 /**
