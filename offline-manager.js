@@ -690,6 +690,7 @@
       var value = Object.assign({}, project, {
         localId: project.localId || 'cache-project-' + project.id,
         payload: project,
+        cacheOnly: true,
         syncStatus: 'synced',
         cachedAt: Date.now(),
         size: sizeOf(project)

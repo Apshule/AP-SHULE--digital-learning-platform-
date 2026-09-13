@@ -1,0 +1,361 @@
+Task 4 — Step 6 of 8: Teacher verification flow + viva audio recording
+
+CONTEXT:
+- Step 1: projects collection verified with all integrity fields
+- Step 2: Student My Projects UI with 3-milestone uploads
+- Step 3: LIN-locked QR generation
+- Step 4: Duplicate detection (text + photo hash)
+- Step 5: Repeat title block with improvement tracking
+- Project doc has teacher_observed_tick (boolean), viva_audio_path (string), 
+  viva_audio_uploadedAt, verifiedBy (string), verifiedAt fields — 
+  but they're not being used yet
+
+GOAL:
+Teacher reviews each student's milestone uploads, verifies authenticity, 
+and either approves or rejects. Teacher must:
+1. See a list of pending projects assigned to their subject/class
+2. View milestone photos + timestamps + QR code
+3. Tick "I observed this student working on it"
+4. Record a 30-second viva audio (student explains project)
+5. Approve or reject with a comment
+
+When approved:
+- milestone status → "approved"
+- Create a ca_records entry (for Task 1's CA export)
+
+═══════════════════════════════════════════════════════════════
+PART A: TEACHER PROJECT VERIFICATION SECTION
+═══════════════════════════════════════════════════════════════
+
+Add a new card to the Teacher Dashboard:
+
+LOCATION: BELOW the "CBC Teaching Tools" card (from Task 1), 
+ABOVE "Request a Live Lesson".
+
+Card title: "📋 Project Verification"
+
+Inside the card:
+- Badge showing count of pending reviews: "X pending"
+- A list of projects awaiting teacher review
+- Each list item shows:
+  * Student name + class
+  * Project title + subject
+  * Which milestone is pending (M1/M2/M3)
+  * How long ago it was uploaded (e.g. "2 days ago")
+  * [Review] button
+
+Query for pending projects:
+- WHERE schoolId == currentUser.schoolId
+- WHERE subject IN currentTeacher.subjectsTaught (or subject == 
+  teacher's primary subject)
+- WHERE at least one milestone status == "pending"
+- Order by milestone uploadedAt ASC (oldest first)
+
+═══════════════════════════════════════════════════════════════
+PART B: MILESTONE REVIEW MODAL
+═══════════════════════════════════════════════════════════════
+
+When teacher taps [Review], open a modal (id="projectReviewModal"):
+
+Content:
+┌─────────────────────────────────────────┐
+│ 📋 REVIEW PROJECT                        │
+├─────────────────────────────────────────┤
+│ Student: John Doe (S2A)                 │
+│ Project: "Solar Cooker" — Science       │
+│ LIN: APSH-ROSE-2026-A1B2C3             │
+│ Submitted: 2 days ago                   │
+├─────────────────────────────────────────┤
+│ [QR CODE IMAGE — 150x150]               │
+│ Verify by scanning (optional)           │
+├─────────────────────────────────────────┤
+│ 📸 MILESTONE 1 — PROPOSAL               │
+│ [Photo thumbnail — tap to enlarge]      │
+│ Uploaded: 12 Sep 2026, 3:45 PM          │
+│ GPS: 0.3476°N, 32.5825°E (Kampala)      │
+│ Device: phone                           │
+├─────────────────────────────────────────┤
+│ ☐ I observed this student working on it │
+├─────────────────────────────────────────┤
+│ 🎤 VIVA AUDIO (30 seconds)              │
+│ [🔴 Record] or [▶️ Play recording]      │
+│ (Student explains project in own words) │
+├─────────────────────────────────────────┤
+│ Teacher comment (optional):             │
+│ [textarea]                              │
+├─────────────────────────────────────────┤
+│ [✅ Approve]  [❌ Reject]  [Cancel]     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART C: PHOTO ENLARGE
+═══════════════════════════════════════════════════════════════
+
+When teacher taps a photo thumbnail:
+- Open a full-screen lightbox
+- Show the photo at full size
+- Show caption: "Milestone X — {date} — {studentName}"
+- Pinch zoom supported (native on mobile)
+- Close button top-right
+
+Use the existing image viewer pattern from the app if one exists, 
+otherwise build a simple one with overlay + <img>.
+
+═══════════════════════════════════════════════════════════════
+PART D: VIVA AUDIO RECORDING
+═══════════════════════════════════════════════════════════════
+
+Add audio recording using MediaRecorder API:
+
+1. When teacher taps [🔴 Record]:
+   - Request microphone permission
+   - Start MediaRecorder
+   - Show timer counting up: "0:00 / 0:30"
+   - Auto-stop at 30 seconds
+   - Show visual feedback (pulsing red dot)
+   - Button becomes [⏹ Stop] to stop early
+
+2. When recording stops:
+   - Convert recording blob to file
+   - Show preview: [▶️ Play recording] to verify
+   - Add [🔄 Re-record] button
+   - Keep the blob in memory
+
+3. When teacher taps [✅ Approve]:
+   - Upload viva audio to Firebase Storage:
+     * Path: projects/{schoolId}/{learnerId}/{projectId}/viva_{milestoneNumber}.webm
+   - Save download URL to project doc:
+     * viva_audio_path = URL
+     * viva_audio_uploadedAt = serverTimestamp()
+
+Fallback:
+- If browser doesn't support MediaRecorder:
+  - Show message: "Audio recording not supported in this browser"
+  - Allow approval without viva (log a warning)
+- If teacher denies microphone permission:
+  - Show message and allow "Approve without viva" with a warning
+
+═══════════════════════════════════════════════════════════════
+PART E: APPROVE FLOW
+═══════════════════════════════════════════════════════════════
+
+When teacher clicks [✅ Approve]:
+
+Validation:
+1. Check teacher_observed_tick is checked (the ☐ box must be ☑)
+   - If not checked, show error: "Please confirm you observed the student"
+2. Check viva audio was recorded OR "Approve without viva" was chosen
+   - If neither, show error: "Please record viva audio first"
+
+On successful validation:
+1. Update project doc:
+   - teacher_observed_tick = true
+   - viva_audio_path = (uploaded URL)
+   - viva_audio_uploadedAt = serverTimestamp()
+   - verifiedBy = currentUser.uid
+   - verifiedAt = serverTimestamp()
+   - milestone_{N}_status = "approved"
+   - milestone_{N}_comment = (teacher's comment)
+   - milestone_{N}_approvedAt = serverTimestamp()
+   - updatedAt = serverTimestamp()
+
+2. Create a ca_records entry (Task 1 collection):
+   {
+     learnerId: project.learnerId,
+     schoolId: project.schoolId,
+     subject: project.subject,
+     competency: "Project Work — " + project.title,
+     evidence1: "Milestone " + N + " photo uploaded",
+     evidence2: "Teacher observed: yes",
+     evidence3: "Viva audio recorded",
+     finalLevel: "Meets",  // default, can be changed later
+     term: project.term,
+     teacherId: currentUser.uid,
+     syncedAt: serverTimestamp(),
+     createdAt: serverTimestamp()
+   }
+
+3. Send notification to student:
+   {
+     type: 'project_approved',
+     title: '✅ Milestone {N} approved!',
+     body: '"{projectTitle}" — teacher approved your {milestoneName}.',
+     targetUserId: project.learnerId,
+     timestamp: serverTimestamp(),
+     author: currentUser.name
+   }
+
+4. Close the review modal
+5. Refresh the pending list
+6. Show toast: "✅ Milestone approved"
+
+Special case — if this was milestone 2 or 3:
+- Milestone 1 was already approved, so student can now upload Milestone 2
+- After Milestone 2 approved → Milestone 3 unlocked
+- After Milestone 3 (final) approved → project is fully complete
+
+If milestone N was the FINAL milestone:
+- Set project status = "completed" (add new field)
+- Notify school admin: "{studentName}'s project '{title}' is complete."
+
+═══════════════════════════════════════════════════════════════
+PART F: REJECT FLOW
+═══════════════════════════════════════════════════════════════
+
+When teacher clicks [❌ Reject]:
+
+1. Show a prompt asking for the reason (required, min 20 chars)
+   - Use a small modal with a textarea
+   - Examples shown as placeholder: "Photo unclear, please re-upload"
+
+2. On confirm:
+   - Update project doc:
+     * milestone_{N}_status = "rejected"
+     * milestone_{N}_comment = (reason)
+     * milestone_{N}_rejectedAt = serverTimestamp()
+     * verifiedBy = currentUser.uid
+     * updatedAt = serverTimestamp()
+   - Send notification to student:
+     {
+       type: 'project_rejected',
+       title: '❌ Milestone {N} needs work',
+       body: '"{projectTitle}" — {reason}. Please re-upload.',
+       targetUserId: project.learnerId,
+       timestamp: serverTimestamp(),
+       author: currentUser.name
+     }
+   - Close the modal
+   - Refresh list
+   - Show toast: "Milestone rejected — student notified"
+
+3. Student can re-upload the milestone (this is allowed after reject)
+
+═══════════════════════════════════════════════════════════════
+PART G: STUDENT SIDE — VIEW TEACHER FEEDBACK
+═══════════════════════════════════════════════════════════════
+
+Modify project detail view (from Step 2):
+
+After each milestone section, if milestone has a comment:
+- Show teacher's comment below the status badge
+- If rejected → show comment in red banner with "Please re-upload"
+- If approved → show comment in green banner
+- Show a small [▶️ Play teacher's viva] button if viva_audio_path exists
+  (student can hear teacher's viva)
+
+═══════════════════════════════════════════════════════════════
+PART H: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 teacher + 1 student from same school:
+
+A. Pending list:
+   1. Login as teacher
+   2. Open Teacher Dashboard
+   3. Verify "Project Verification" card shows with pending count
+   4. Verify student's milestone 1 appears in the list
+
+B. Review modal:
+   1. Tap [Review]
+   2. Verify modal opens with correct data:
+      - Student name, project title, subject
+      - QR code visible
+      - Milestone 1 photo visible
+      - Photo metadata (timestamp, GPS, device) shown
+
+C. Photo enlarge:
+   1. Tap photo thumbnail
+   2. Verify full-size image opens
+   3. Verify caption shows correctly
+   4. Close lightbox
+
+D. Viva recording:
+   1. Tap [🔴 Record]
+   2. Grant microphone permission
+   3. Speak for 10 seconds
+   4. Tap [⏹ Stop]
+   5. Tap [▶️ Play recording] → verify playback
+   6. Verify recording state is saved in modal
+
+E. Approve without tick:
+   1. Do NOT check "I observed" box
+   2. Tap [✅ Approve]
+   3. Verify error: "Please confirm you observed the student"
+
+F. Approve with everything:
+   1. Check "I observed" box
+   2. Record 10-second viva
+   3. Tap [✅ Approve]
+   4. Verify:
+      - Project doc updated (milestone_1_status = "approved")
+      - viva_audio_path set to Firebase Storage URL
+      - ca_records has new entry
+      - Student got notification
+      - Modal closed, list refreshed
+
+G. Reject flow:
+   1. Student uploads Milestone 2 (after M1 approved)
+   2. Teacher taps [Review]
+   3. Click [❌ Reject]
+   4. Enter reason: "Photo unclear, please re-upload at higher quality"
+   5. Verify:
+      - milestone_2_status = "rejected"
+      - milestone_2_comment = reason
+      - Student got notification
+
+H. Student sees feedback:
+   1. Login as student
+   2. Open project detail
+   3. Verify teacher comments appear under each milestone
+   4. Verify [▶️ Play teacher's viva] button works (for approved)
+
+═══════════════════════════════════════════════════════════════
+PART I: OFFLINE BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+If teacher is offline:
+- Cannot load pending projects (Firestore query fails)
+- Show message: "Connect to WiFi to review projects"
+- Teacher can still review any project previously cached
+- Approval / rejection actions queue for sync (use Task 2's offline queue)
+
+═══════════════════════════════════════════════════════════════
+PART J: NOTIFICATIONS ON TEACHER SIDE
+═══════════════════════════════════════════════════════════════
+
+When a student uploads a milestone:
+- Teacher assigned to that subject/class receives notification:
+  {
+    type: 'project_submitted',
+    title: '📥 New project submission',
+    body: '{studentName} uploaded Milestone {N} for "{projectTitle}"',
+    targetUserId: teacherUid,
+    timestamp: serverTimestamp(),
+    author: 'System'
+  }
+
+This notification is set from the student's uploadMilestone() 
+function (add this in this step — it was not added before).
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT allow approval without teacher_observed_tick
+- Do NOT allow approval without viva (unless explicit override)
+- Do NOT allow editing an approved milestone
+- Do NOT delete the viva audio after approval
+- Do NOT break Tasks 1, 2, 3 or Steps 1-5 of Task 4
+- Do NOT query more than 100 pending projects (limit query)
+- Do NOT store viva audio in Firestore (only Firebase Storage)
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Step 6 complete — Teacher verification flow with viva audio built and tested"
+
+Report:
+- Which tests A, B, C, D, E, F, G, H passed
+- Any bugs found
+- Screenshots recommended: teacher pending list, review modal, 
+  viva recording UI, student view with teacher feedback

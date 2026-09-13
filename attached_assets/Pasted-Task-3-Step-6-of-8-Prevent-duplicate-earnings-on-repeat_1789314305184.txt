@@ -1,0 +1,50 @@
+Task 3 — Step 6 of 8: Prevent duplicate earnings on repeated syncs
+
+Add safety checks to the syncOfflineViews() function you built in Step 3.
+
+Problem being solved:
+- If sync runs multiple times (manual + auto), the same view could create
+  duplicate entries in videoCompletions and teacherEarnings
+- Multiple devices (phone + tablet) watching the same video same day
+  should count as ONE earning, not two
+
+Implement these three protections:
+
+PROTECTION 1: Check videoCompletions before writing
+- In the loop inside syncOfflineViews(), before writing to videoCompletions:
+  * Query videoCompletions WHERE viewId == current view's viewId (limit 1)
+  * If a document already exists:
+    - Skip the Firestore write
+    - Still update local offline_views.synced = true
+    - Continue to next view
+
+PROTECTION 2: Check teacherEarnings before incrementing
+- Before adding to teacherEarnings collection:
+  * Query teacherEarnings WHERE viewId == current view's viewId (limit 1)
+  * If a document already exists:
+    - Skip creating a new earning
+    - Skip incrementing teacher's pendingEarnings
+    - Continue to next view
+
+PROTECTION 3: viewId uniqueness rule
+- Ensure viewId format is: `${studentId}_${videoId}_${YYYY-MM-DD}`
+- This means: same student + same video + same day = one viewId
+- Multi-device (phone then tablet same day) = SAME viewId = counts as ONE
+- Different day = different viewId = counts as separate earning
+- Verify the viewId generation code from Step 2 follows this exact format
+
+Additional requirement:
+- Add a comment in the code explaining WHY these checks exist
+- Use transactions where possible to prevent race conditions
+  (Firestore runTransaction() for the earnings increment)
+
+Testing after implementation:
+1. Watch video offline → sync → verify 1 earning created
+2. Without clearing offline_views, run sync again manually
+3. Verify NO new earning is created (only 1 total remains)
+4. Check teacher's pendingEarnings did not increase twice
+
+Do NOT break existing online earnings tracking.
+Do NOT break Task 2 offline system.
+
+Confirm when done with: "Step 6 complete — duplicate protection added and tested

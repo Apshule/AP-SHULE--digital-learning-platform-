@@ -1,0 +1,106 @@
+Task 3 — Step 8 of 8: Final testing and cleanup
+
+Run through these tests systematically. Fix any issues found. 
+Report which tests pass and which fail.
+TEST A: OFFLINE VIEW → SYNC → EARNINGS
+
+Setup:
+- 1 school_id with 1 School Admin + 1 Teacher + 1 Student
+
+Steps:
+1. Student logs in on WiFi
+2. Download a video slideshow for offline (using Task 2 download button)
+3. Turn OFF WiFi + data
+4. Play the video to at least 90% completion
+5. Verify offline_views has 1 record with synced=false
+   (check via console.log or DevTools)
+6. Turn ON WiFi
+7. Click "Sync Now" (or wait for auto-sync)
+8. Verify:
+   - offline_views record now has synced=true
+   - videoCompletions has 1 new document
+   - teacherEarnings has 1 new document with amount=revenuePerView
+   - Teacher's pendingEarnings field increased by revenuePerView
+9. Login as teacher → see updated "Offline Earnings Summary"
+
+Expected result: ✅ All 4 verifications pass
+
+TEST B: MULTI-DEVICE (SAME DAY)
+
+Steps:
+1. Student watches video on phone offline → completes 90%
+2. Student watches SAME video on tablet offline → completes 90%
+3. Sync both devices
+4. Verify:
+   - Only ONE earning created (per viewId rule: studentId_videoId_date)
+   - Teacher's pendingEarnings increased by only 1× revenuePerView
+
+Expected result: ✅ Only ONE earning counted
+TEST C: DUPLICATE SYNC PROTECTION
+
+Steps:
+1. Watch video offline → sync
+2. Verify 1 earning exists in teacherEarnings
+3. WITHOUT clearing offline_views, click Sync Now again manually
+4. Verify:
+   - teacherEarnings STILL has 1 record (not 2)
+   - Teacher's pendingEarnings did NOT increase twice
+
+Expected result: ✅ No duplicates created
+TEST D: PDF REPORT
+
+Steps:
+1. Login as teacher with existing offline views
+2. Click "Download Offline Earnings Report"
+3. Verify:
+   - PDF downloads to device
+   - Filename: offline_earnings_{teacherId}_{YYYY-MM-DD}.pdf
+   - PDF opens correctly
+   - Header shows teacher name + date range
+   - Table lists all offline views
+   - Footer totals match Offline Earnings Summary card
+4. Also test with teacher who has NO offline views:
+   - Should show "No offline earnings yet" message (not crash)
+
+Expected result: ✅ PDF generates with correct data
+
+TEST E: SUPER ADMIN OVERVIEW
+
+Steps:
+1. Login as super admin
+2. Open Admin Panel
+3. Scroll to "Offline Views Overview" section
+4. Verify:
+   - Total offline views count matches
+   - Total pending earnings matches
+   - Top 5 teachers list appears
+   - Schools list appears
+
+Expected result: ✅ All data displays correctly
+
+CLEANUP TASKS
+
+After tests pass:
+1. Remove any console.log() debug statements added during development
+2. Verify no syntax errors in the JavaScript (check DevTools Console)
+3. Verify app loads normally on Chrome, Firefox, Edge
+4. Confirm no regressions to:
+   - Online video watching (still works)
+   - Online earnings tracking (still works)
+   - Existing Task 1 features (still work)
+   - Existing Task 2 offline system (still works)
+
+FINAL REPORT
+
+Report back with:
+- ✅ Tests A, B, C, D, E — which passed, which failed
+- ⚠️ Any bugs found and how you fixed them
+- 📝 Any remaining issues that need attention
+- 💡 Any improvements you recommend for future tasks
+
+If all 5 tests pass and no regressions, confirm with:
+"Step 8 complete — Task 3 fully tested and working"
+
+Do NOT rebuild anything.
+Do NOT break existing features.
+Do NOT add new features beyond Task 3 scope.

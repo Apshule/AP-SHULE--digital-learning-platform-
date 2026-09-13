@@ -4,6 +4,8 @@ import { z } from "zod/v4";
 
 export const caRecordsTable = pgTable("ca_records", {
   id: text("id").primaryKey(),
+  projectId: text("project_id"),
+  milestone: text("milestone"),
   learnerId: text("learner_id").notNull(),
   schoolId: text("school_id").notNull(),
   subject: text("subject").notNull(),

@@ -1,0 +1,502 @@
+Task 4 — Steps 7 & 8 Combined: Evidence Folder, Admin Views, and Final Testing
+
+CONTEXT:
+- Step 1: projects collection verified with all integrity fields
+- Step 2: Student My Projects UI with 3-milestone uploads
+- Step 3: LIN-locked QR generation
+- Step 4: Duplicate detection (text + photo hash)
+- Step 5: Repeat title block with improvement tracking
+- Step 6: Teacher verification flow + viva audio recording
+- Now we add the School Admin Evidence Folder + final polish + full testing
+
+This combined step has TWO parts:
+- PART A-J: Build the Evidence Folder and admin views (was Step 7)
+- PART K-R: Final testing, cleanup, and regression checks (was Step 8)
+
+═══════════════════════════════════════════════════════════════
+PART A: SCHOOL ADMIN — PROJECT EVIDENCE FOLDER
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Inside Admin Panel (3-dot menu → Admin Panel)
+PLACE IT: BELOW the "NCDC/UNEB Compliance" card (from Task 1)
+SHOW WHEN: user.role === 'school'
+
+Add a new card "📁 Project Evidence Folder"
+
+Purpose: When UNEB moderator visits the school, the headteacher 
+opens this folder to show all projects with dated evidence.
+
+Card content:
+- Filter bar at top:
+  * Class dropdown (All, P1-P7, S1-S6)
+  * Subject dropdown (All + subjects)
+  * Status dropdown (All, Approved, Pending, Rejected)
+  * Term selector (default: current term)
+- Summary stats:
+  * Total projects: X
+  * Fully approved: X
+  * In progress: X
+  * Flagged duplicates: X
+- Grid/list of projects below
+
+Each project card shows:
+┌─────────────────────────────────────────┐
+│ John Doe — S2A                          │
+│ "Solar Cooker" — Science                │
+│ LIN: APSH-ROSE-2026-A1B2C3             │
+│                                         │
+│ M1: ✅ approved (12 Sep)                │
+│ M2: ✅ approved (26 Sep)                │
+│ M3: ⏳ pending (10 Oct)                 │
+│                                         │
+│ 🚩 Similarity flag (if any)             │
+│ [📄 View full] [📥 Download bundle]     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART B: PROJECT DETAIL VIEW (ADMIN)
+═══════════════════════════════════════════════════════════════
+
+When admin taps [📄 View full]:
+- Opens a full-screen modal (id="adminProjectViewModal")
+- Shows ALL details:
+  * Student info (name, class, LIN)
+  * Project info (title, subject, description)
+  * QR code image
+  * For each milestone:
+    - Photo
+    - Upload date
+    - GPS coordinates
+    - Device type
+    - Status badge
+    - Teacher comment
+    - Viva audio player (if exists)
+    - Teacher who verified + when
+  * Duplication flags (if any)
+  * Repeat title banner (if any)
+  * Created date, last updated
+
+Buttons at top:
+- [🖨 Print Project Report] — generates PDF via jsPDF
+- [📥 Download all photos] — ZIP download (or individual)
+- Close (X)
+
+═══════════════════════════════════════════════════════════════
+PART C: DOWNLOAD PROJECT BUNDLE (for UNEB)
+═══════════════════════════════════════════════════════════════
+
+When admin taps [📥 Download bundle]:
+1. Generate a ZIP file using JSZip (add via CDN):
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+2. ZIP contains:
+   - project_report.pdf (generated summary)
+   - qr_code.png
+   - milestone_1.jpg
+   - milestone_2.jpg
+   - final.jpg
+   - viva_audio.webm (if exists)
+   - metadata.json (all project fields)
+3. Filename: {studentName}_{projectTitle}_{lin}.zip
+4. Trigger download
+
+This gives the admin a complete evidence bundle for each project 
+— easy to submit to UNEB if required.
+
+═══════════════════════════════════════════════════════════════
+PART D: SUPER ADMIN — DUPLICATION ALERTS (REFINED)
+═══════════════════════════════════════════════════════════════
+
+Modify the "Duplication Alerts" section from Step 4:
+
+Add these controls to the super admin version:
+
+1. Filter bar:
+   - Reason dropdown (All, text_match, photo_hash_match)
+   - School dropdown (All + schools)
+   - Date range (Last 7 days, Last 30 days, All)
+
+2. Each alert card now shows:
+   - Student name + project
+   - Matched student + project
+   - Similarity reason + score (as percentage)
+   - [View both side-by-side] button
+   - [Clear flag] button (with confirm)
+   - [Notify teachers] button — sends notification to both teachers
+
+3. Bulk actions:
+   - Select multiple → [Clear all selected]
+   - [Export CSV] of all flags
+
+═══════════════════════════════════════════════════════════════
+PART E: SUPER ADMIN — REPEAT TITLE LOG (REFINED)
+═══════════════════════════════════════════════════════════════
+
+Modify the "Repeat Title Log" section from Step 5:
+
+Add:
+- Date filter
+- Sort by: most recent, student name, term
+- Export CSV button
+- Column: Student | Current Title | Previous Title | Previous Term | 
+  Improvement Note | Date
+
+═══════════════════════════════════════════════════════════════
+PART F: SUPER ADMIN — PROJECT OVERVIEW DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Add a summary dashboard to Super Admin Admin Panel:
+
+📊 PROJECTS OVERVIEW
+- Total projects (all schools): X
+- Projects completed (all 3 milestones approved): X
+- Projects in progress: X
+- Flagged duplicates: X
+- Repeat titles: X
+- Schools with most projects (top 5 list)
+- Subjects with most projects (top 5 list)
+
+Use cards with purple gradient matching existing analytics.
+
+═══════════════════════════════════════════════════════════════
+PART G: OFFLINE SUPPORT FOR ADMIN VIEWS
+═══════════════════════════════════════════════════════════════
+
+When admin is offline:
+- Show cached project list from IndexedDB (create offline cache)
+- Add "admin_offline_projects" object store to IndexedDB
+- Cache last 100 projects per school
+- Allow viewing but not modifying while offline
+- Show badge: "Offline — viewing cached data"
+
+═══════════════════════════════════════════════════════════════
+PART H: PRINT PROJECT REPORT (PDF)
+═══════════════════════════════════════════════════════════════
+
+Add generateProjectPdf(projectId) function:
+
+Uses jsPDF (already added in Task 3 Step 7).
+
+PDF contents:
+- Header: AppShule logo + school name + "Project Evidence Report"
+- Student section: name, class, LIN
+- Project section: title, subject, description
+- QR image
+- Milestones table:
+  | Milestone | Status | Date | GPS | Device | Verified By |
+  | M1        | ✅     | ...  | ...  | ...    | ...         |
+  | M2        | ✅     | ...  | ...  | ...    | ...         |
+  | M3        | ⏳     | ...  | ...  | ...    | ...         |
+- Teacher comments section
+- Duplication warnings (if any)
+- Footer: "Generated on {date} — AppShule Digital Learning Platform"
+
+Filename: {studentName}_{projectTitle}_report.pdf
+
+═══════════════════════════════════════════════════════════════
+PART I: SCHOOL ADMIN SUMMARY CARD
+═══════════════════════════════════════════════════════════════
+
+Add a small summary card at the TOP of the Evidence Folder:
+
+┌─────────────────────────────────────────┐
+│ 📊 THIS TERM (2026-T1)                  │
+│                                         │
+│ ✅ Fully approved: 45 projects          │
+│ ⏳ In progress: 12 projects             │
+│ 🚩 Flagged: 3 projects                  │
+│ ⚠️ Overdue: 5 projects                  │
+│    (milestone overdue by >2 weeks)      │
+│                                         │
+│ [Export summary as PDF]                 │
+└─────────────────────────────────────────┘
+
+Data source:
+- Query projects WHERE schoolId == school + term == currentTerm
+- Count by status
+- "Overdue" = milestone 2 expected after 5 weeks, milestone 3 after 9
+
+═══════════════════════════════════════════════════════════════
+PART J: NOTIFICATION ON FLAG CLEAR
+═══════════════════════════════════════════════════════════════
+
+When admin clears a similarity_flag:
+- Update project doc: similarity_flag = false
+- Add clearedBy, clearedAt fields
+- Notify both teachers (if applicable):
+  {
+    type: 'flag_cleared',
+    title: '✅ Duplication flag cleared',
+    body: 'Admin reviewed and cleared the flag on "{title}".',
+    targetUserId: teacherUid,
+    timestamp: serverTimestamp(),
+    author: currentUser.name
+  }
+
+═══════════════════════════════════════════════════════════════
+PART K: FULL END-TO-END TESTING (FORMERLY STEP 8)
+═══════════════════════════════════════════════════════════════
+
+Now run these comprehensive tests. Fix any issues.
+
+TEST 1: Complete student project flow
+1. Login as student
+2. Create project "Solar Cooker" — Science — P5
+3. Upload Milestone 1 photo → status pending
+4. Try to upload Milestone 2 → BLOCKED (M1 not approved)
+5. Verify student got warning message
+
+TEST 2: Teacher approval flow
+1. Login as teacher
+2. See pending project in "Project Verification" card
+3. Open review modal
+4. Verify QR, photo, metadata visible
+5. Check "I observed" tick
+6. Record 10-sec viva
+7. Approve
+8. Verify: ca_records entry created, student notified
+
+TEST 3: Student continues after M1 approved
+1. Login as student
+2. See notification "Milestone 1 approved"
+3. Open project → Milestone 2 now UNLOCKED
+4. Upload Milestone 2
+5. Verify status pending
+
+TEST 4: Duplicate detection
+1. Student B creates project with same title
+2. Verify flag raised on B's project
+3. Verify school admin got notification
+
+TEST 5: Repeat title block
+1. Manually set student's old project with term "2025-T3"
+2. Student tries to create new project with same title
+3. Verify modal appears
+4. Add improvement note → project saves with flag
+
+TEST 6: Evidence Folder
+1. Login as school admin
+2. Open Evidence Folder
+3. Verify all projects listed with correct statuses
+4. Filter by class → list updates
+5. Filter by subject → list updates
+6. Tap project → detail modal opens
+7. Verify QR, photos, viva audio all display
+8. Tap "Download bundle" → ZIP downloads
+
+TEST 7: Super Admin views
+1. Login as super admin
+2. Open Duplication Alerts → verify flagged projects appear
+3. Open Repeat Title Log → verify logs appear
+4. Open Projects Overview → verify stats
+5. Clear a flag → verify teacher notified
+
+TEST 8: Offline behavior
+1. Turn off WiFi + data
+2. Student uploads milestone → saved offline
+3. Turn on WiFi → auto-sync uploads
+4. Verify project doc updated
+
+TEST 9: Cross-device
+1. Upload on phone offline
+2. Sync at WiFi
+3. Open on laptop → verify milestone appears
+
+TEST 10: Regressions check
+1. Task 1 features still work:
+   - CBC & UNEB buttons appear
+   - Curriculum Linker search works
+   - NCDC 10 Modules visible
+2. Task 2 features still work:
+   - Offline badge shows
+   - Sync button works
+   - Offline login works
+3. Task 3 features still work:
+   - Offline earnings summary shows
+   - PDF earnings report downloads
+
+═══════════════════════════════════════════════════════════════
+PART L: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements added during development
+2. Verify no syntax errors (check DevTools Console)
+3. Verify app loads on:
+   - Chrome (Android + desktop)
+   - Firefox
+   - Edge
+   - Safari (if available)
+4. Confirm no regressions to Tasks 1, 2, 3
+5. Compress any new images/assets (keep app size <30MB)
+6. Ensure no unused imports or dead code
+
+═══════════════════════════════════════════════════════════════
+PART M: PERFORMANCE OPTIMIZATION
+═══════════════════════════════════════════════════════════════
+
+Verify these perform well:
+- Loading the Evidence Folder with 500+ projects → <3 seconds
+- Photo thumbnails render smoothly
+- Firestore queries use proper indexes
+- No memory leaks from unclosed modals/listeners
+
+If Evidence Folder is slow:
+- Add pagination (50 projects per page)
+- Lazy-load photos
+- Cache query results for 1 minute
+
+═══════════════════════════════════════════════════════════════
+PART N: FINAL FIREBASE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Ensure these Firestore composite indexes exist:
+1. projects: schoolId + className + subject
+2. projects: schoolId + similarity_flag
+3. projects: learnerId + term
+4. projects: schoolId + term + createdAt (desc)
+5. ca_records: schoolId + learnerId + subject
+
+Replit should check these in the console output.
+
+═══════════════════════════════════════════════════════════════
+PART O: SECURITY REVIEW
+═══════════════════════════════════════════════════════════════
+
+Verify these rules are respected:
+- Students can only read/write their own projects
+- Teachers can only read/write projects for their class/subject
+- School admins can only read/write projects for their school
+- Super admin has full access
+- viva_audio files require authenticated access
+- QR codes are publicly viewable but not editable
+
+If any rule is too permissive, add a warning comment (do not 
+change Firestore rules without super admin approval).
+
+═══════════════════════════════════════════════════════════════
+PART P: DOCUMENTATION UPDATE
+═══════════════════════════════════════════════════════════════
+
+Add code comments documenting:
+1. Task 4 feature flow (student → teacher → admin)
+2. Data structure of projects collection
+3. QR payload format
+4. Anti-cheating rules (LIN lock, similarity, repeat block)
+5. Offline sync flow for projects
+
+This helps future maintenance.
+
+═══════════════════════════════════════════════════════════════
+PART Q: FINAL REGRESSION CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Confirm ALL of these still work after Task 4:
+
+TASK 1 CHECKLIST:
+☐ Student CBC & UNEB section
+☐ Student My Projects button (now functional)
+☐ Student UNEB Practice (placeholder)
+☐ Student Competency Passport (placeholder)
+☐ Teacher CBC Teaching Tools card
+☐ Teacher NCDC 10 Modules
+☐ Teacher Lesson Plan Generator
+☐ Teacher Triangulation
+☐ Teacher Curriculum Linker
+☐ Super Admin NCDC/UNEB Control
+☐ School Admin NCDC/UNEB Compliance card
+☐ Export UNEB CA File button
+☐ Headteacher Dashboard
+☐ Learner Portfolio S1-S4
+
+TASK 2 CHECKLIST:
+☐ Service worker registered
+☐ Manifest loads
+☐ Offline badge shows
+☐ Offline login works
+☐ Sync button works
+☐ Offline slideshow videos
+☐ Connection detection (WiFi/mobile/offline)
+☐ Settings page with connection options
+
+TASK 3 CHECKLIST:
+☐ Teacher Offline Earnings Summary
+☐ Offline views tracked in IndexedDB
+☐ Sync views to Firestore
+☐ PDF earnings report
+☐ Super Admin Offline Views Overview
+☐ Duplicate protection
+
+TASK 4 CHECKLIST:
+☐ Student create project
+☐ Student upload 3 milestones
+☐ Milestone locking enforced
+☐ LIN generated + permanent
+☐ QR code generated + verified
+☐ Duplicate detection works
+☐ Repeat title block works
+☐ Teacher verification + viva
+☐ ca_records created on approve
+☐ Student sees teacher feedback
+☐ Evidence Folder for admin
+☐ Project bundle download
+☐ Super Admin duplication alerts
+☐ Super Admin repeat title log
+☐ Super Admin projects overview
+
+If ALL check out → Task 4 is complete.
+
+═══════════════════════════════════════════════════════════════
+PART R: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Test results:
+   - TEST 1 through TEST 10: pass or fail
+   - Any bugs found and how fixed
+
+2. Regression check:
+   - Task 1: all features work? yes/no
+   - Task 2: all features work? yes/no
+   - Task 3: all features work? yes/no
+   - Task 4: all features work? yes/no
+
+3. Performance:
+   - Evidence Folder load time
+   - Any slow queries
+
+4. Recommendations for Task 5:
+   - Any prerequisites to set up first
+   - Any technical debt to note
+
+If everything passes:
+"Task 4 fully complete — Project Integrity system with anti-cheating, 
+QR verification, teacher approval, and evidence folder all working. 
+Ready for Task 5."
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1, 2, 3, or Steps 1-6 of Task 4
+- Do NOT delete any Firestore data
+- Do NOT change Firestore security rules without warning
+- Do NOT skip any tests
+- Do NOT download YouTube videos (ToS)
+- Do NOT store large files in Firestore (use Firebase Storage)
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-J first (Evidence Folder and admin views), then run 
+Part K-R (full testing and cleanup).
+
+Confirm when done with:
+"Steps 7 & 8 complete — Task 4 fully built, tested, and verified. 
+Ready for Task 5."
+
+Report:
+- Which tests passed
+- Any bugs and their fixes
+- Screenshots of Evidence Folder, admin project view, super admin overviews
+- Confirmation of Task 4 completion

@@ -1,1 +1,3 @@
 - [PWA service-worker ownership](pwa-service-worker-ownership.md) — Keep one root worker; the offline worker imports the Firebase messaging worker so caching and push coexist.
+- [PWA preview asset routing](pwa-preview-asset-routing.md) — The API preview must explicitly serve root PWA scripts, manifest, and icons for offline initialization to work.
+- [Project integrity schema compatibility](project-integrity-schema.md) — Preserve legacy project column types; extend PostgreSQL with safe defaults and indexes.

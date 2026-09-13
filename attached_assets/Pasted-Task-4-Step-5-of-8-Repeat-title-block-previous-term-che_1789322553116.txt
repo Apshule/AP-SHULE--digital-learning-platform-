@@ -1,0 +1,258 @@
+Task 4 — Step 5 of 8: Repeat title block (previous term check)
+
+CONTEXT:
+- Step 1: projects collection verified with all integrity fields
+- Step 2: Student My Projects UI with 3-milestone uploads
+- Step 3: LIN-locked QR generation
+- Step 4: Duplicate detection (text + photo hash)
+- Project doc already has previous_title_check (string) and 
+  previous_title_match (boolean) fields, but they're not being used
+
+GOAL:
+Prevent students from submitting the exact same project title across 
+multiple terms. UNEB requires new work each term — students can 
+IMPROVE a previous project, but not simply repeat it.
+
+When a student tries to create a project with a title they already 
+used in a previous term:
+1. Detect the match
+2. Show a warning dialog explaining the rule
+3. Ask them to either:
+   a. Modify the title to reflect what's NEW this term, OR
+   b. Confirm the improvement (add "Improved" or "v2" and describe 
+      what's new)
+4. Block submission if they don't address it
+
+═══════════════════════════════════════════════════════════════
+PART A: DEFINE "PREVIOUS TERM"
+═══════════════════════════════════════════════════════════════
+
+Term logic (Uganda school calendar):
+- Term 1: February to May
+- Term 2: May to August
+- Term 3: September to December
+
+Compute current term:
+- currentYear = new Date().getFullYear()
+- currentMonth = new Date().getMonth() + 1 (1-12)
+- If month is 1-4: term = "T1"
+- If month is 5-8: term = "T2"
+- If month is 9-12: term = "T3"
+- currentTermLabel = "{year}-{term}" e.g. "2026-T1"
+
+Add helper function getCurrentTermLabel() returning this string.
+
+═══════════════════════════════════════════════════════════════
+PART B: TAG PROJECTS WITH TERM ON CREATION
+═══════════════════════════════════════════════════════════════
+
+Modify saveNewProject() from Step 2:
+
+Add these fields to the project document when written to Firestore:
+- term: getCurrentTermLabel() — e.g. "2026-T1"
+- titleNormalized: title.toLowerCase().trim().replace(/\s+/g, ' ')
+  (for easy comparison later)
+
+═══════════════════════════════════════════════════════════════
+PART C: CHECK FOR PREVIOUS TERM MATCH ON CREATE
+═══════════════════════════════════════════════════════════════
+
+Modify saveNewProject() — BEFORE writing to Firestore:
+
+1. Get current term from getCurrentTermLabel()
+
+2. Query student's own projects from PREVIOUS terms:
+   - WHERE learnerId == currentUser.uid
+   - WHERE term != currentTermLabel
+   - Order by createdAt DESC
+   - Limit 20
+
+3. For each previous project, compare titles:
+   - newTitle normalized (lowercase, trim, collapse spaces)
+   - previous title normalized
+   - If they match EXACTLY (100% identical after normalization):
+     → Set matchFound = true, matchedProject = the previous one
+     → Break
+
+4. If matchFound:
+   - Show a modal dialog (not just a toast) with:
+     * Title: "⚠️ Same Title as Previous Term"
+     * Body: 
+       "You submitted a project titled '{previousTitle}' in 
+        {previousTerm}. UNEB requires new or improved work each term.
+        Please modify the title to reflect what's new this term, OR 
+        explain below how this is an improvement."
+     * Text input: "What's new this term?" (required, min 20 chars)
+     * Two buttons:
+       - [Cancel — change title] → closes modal, allows editing title
+       - [Continue with improvement] → enables if input >= 20 chars
+   
+5. If student clicks "Continue with improvement":
+   - Add these fields to the project doc:
+     * previous_title_check = previousTitle
+     * previous_title_match = true
+     * improvement_note = (text from input)
+     * previous_project_id = matchedProject.id
+   - Continue with project creation
+   - Notify school admin:
+     {
+       type: 'repeat_title',
+       title: '📋 Student reusing project title',
+       body: '{studentName} reused "{title}" from {previousTerm}. Improvement note: "{note}".',
+       targetUserId: schoolAdminUid,
+       timestamp: serverTimestamp(),
+       author: 'System'
+     }
+
+6. If student clicks "Cancel":
+   - Return to create form, focus on title field
+   - Do NOT save project
+
+7. If no match found:
+   - Save project normally
+   - previous_title_check = "" (empty)
+   - previous_title_match = false
+
+═══════════════════════════════════════════════════════════════
+PART D: FUZZY MATCH FOR SIMILAR TITLES
+═══════════════════════════════════════════════════════════════
+
+Also detect NEAR-matches (not exact, but very close) using 
+computeTextSimilarity from Step 4:
+
+1. After the exact match check (Part C), also compute similarity 
+   score between new title and each previous project title
+
+2. If score >= 0.90 AND no exact match found:
+   - Show a SOFT warning banner in the create form:
+     "ℹ️ This title is close to '{previousTitle}' from 
+      {previousTerm}. Are you improving it?"
+   - This is informational only — student can proceed
+   - Set previous_title_check = previousTitle and 
+     previous_title_match = true, but do NOT block
+
+This catches cases like:
+- "Solar Cooker Project" vs "Solar Cooker Project v2"
+- "Volcano Model" vs "Volcano Model (Improved)"
+
+═══════════════════════════════════════════════════════════════
+PART E: DISPLAY PREVIOUS IMPROVEMENT IN DETAIL VIEW
+═══════════════════════════════════════════════════════════════
+
+In the project detail view (from Step 2), if previous_title_match is true:
+
+Add a small banner above the QR section:
+
+┌─────────────────────────────────────────┐
+│ 📋 IMPROVEMENT OF PREVIOUS PROJECT      │
+│ Previous: "{previousTitle}" ({previousTerm})  │
+│ What's new: "{improvementNote}"         │
+└─────────────────────────────────────────┘
+
+This helps teacher/admin understand the context.
+
+═══════════════════════════════════════════════════════════════
+PART F: SUPER ADMIN — REPEAT TITLE FLAGS
+═══════════════════════════════════════════════════════════════
+
+Add a small section to Super Admin Admin Panel (or extend the 
+Duplication Alerts section from Step 4):
+
+🔁 REPEAT TITLE LOG
+- Query projects WHERE previous_title_match == true
+- For each, show:
+  * Student name
+  * Current title
+  * Previous title
+  * Previous term
+  * Improvement note
+  * [View both projects] button
+
+For School Admin: show only from their school
+For Super Admin: show all
+
+═══════════════════════════════════════════════════════════════
+PART G: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 student account across 2 terms:
+
+Setup:
+- Manually create an old project in Firestore with:
+  * learnerId = test student's uid
+  * title = "Solar Cooker"
+  * term = "2025-T3"
+  * createdAt = 6 months ago
+
+A. Exact repeat test:
+   1. Student creates new project with title "Solar Cooker"
+   2. Modal appears: "Same Title as Previous Term"
+   3. Enter "Added reflectors and improved efficiency"
+   4. Click "Continue with improvement"
+   5. Verify project saved with:
+      - previous_title_check = "Solar Cooker"
+      - previous_title_match = true
+      - improvement_note = text entered
+      - previous_project_id = old project ID
+   6. Verify school admin got notification
+
+B. Cancel test:
+   1. Student creates "Solar Cooker" again
+   2. Modal appears
+   3. Click "Cancel — change title"
+   4. Verify form reopens, no project saved
+
+C. Fuzzy match test:
+   1. Student creates "Solar Cooker v2"
+   2. Soft warning banner appears (not modal)
+   3. Student can proceed without extra input
+   4. Verify previous_title_match = true but no improvement_note needed
+
+D. Different title test:
+   1. Student creates "Volcano Model"
+   2. No warning at all
+   3. Verify previous_title_check = ""
+   4. Verify previous_title_match = false
+
+E. Detail view display:
+   1. Open the project created in Test A
+   2. Verify improvement banner shows correctly
+   3. Banner shows previous title, previous term, improvement note
+
+═══════════════════════════════════════════════════════════════
+PART H: TERM BOUNDARY EDGE CASES
+═══════════════════════════════════════════════════════════════
+
+Handle these:
+
+1. Student creates project at end of term (last week)
+2. Next term starts — is that project still "previous term"?
+   - YES, if term label differs, it counts as previous
+
+3. Student creates 2 projects in same term
+   - Both allowed (no repeat check within same term)
+
+4. Year change (December → January)
+   - Previous year T3 → new year T1 = different terms
+   - Correctly detected as previous
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT block project creation for near-matches (soft warning only)
+- Do NOT delete previous projects
+- Do NOT check across different students (this is per-student)
+- Do NOT break Tasks 1, 2, 3 or Steps 1-4 of Task 4
+- Do NOT auto-approve improvements — admin reviews
+- Do NOT use complex ML — simple string comparison is enough
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Step 5 complete — Repeat title block with improvement tracking built and tested"
+
+Report:
+- Which tests A, B, C, D, E passed
+- Any bugs found
+- Screenshots recommended: warning modal, improvement banner, admin repeat log

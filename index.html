@@ -72,6 +72,8 @@
     <link rel="preload" href="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" as="script" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
     <style>
@@ -2945,7 +2947,20 @@
                 const ordered = [...items].sort((a,b) => (a.operation === 'create' ? -1 : 0) - (b.operation === 'create' ? -1 : 0));
                 const serverIds = new Map();
                 for(const item of ordered) {
-                    if(item.operation==='milestone') {
+                    if(item.operation==='review') {
+                        const projectId=serverIds.get(item.projectId)||item.projectId;
+                        await complianceApi(`/projects/${projectId}/review`,{
+                            method:'PATCH',
+                            body:JSON.stringify({
+                                milestone:item.milestone,
+                                status:item.status,
+                                comment:item.comment||'',
+                                observed:Boolean(item.observed),
+                                approveWithoutViva:Boolean(item.approveWithoutViva),
+                                vivaAudioPath:item.vivaAudioPath||''
+                            })
+                        });
+                    } else if(item.operation==='milestone') {
                         const projectId = serverIds.get(item.projectId) || item.projectId;
                         const project = _studentProjects.find(value => String(value.id) === String(projectId)) || {
                             id:projectId,
@@ -2959,6 +2974,7 @@
                             method:'PATCH',
                             body:JSON.stringify({
                                 photo,
+                                photoHash:item.photoHash || '',
                                 gpsLat:item.gpsLat ?? null,
                                 gpsLng:item.gpsLng ?? null,
                                 deviceType:item.deviceType || projectDeviceType(),
@@ -2969,7 +2985,17 @@
                         });
                     } else {
                         const result = await complianceApi('/projects',{method:'POST',body:JSON.stringify(item.payload||item)});
-                        if(item.localId && result.project?.id) serverIds.set(item.localId, result.project.id);
+                        if(item.localId && result.project?.id) {
+                            serverIds.set(item.localId, result.project.id);
+                            const qrImage = await qrDataUrl(result.project.qrPayload || item.payload?.qrPayload || '');
+                            if(qrImage) {
+                                const qrStorageUrl = await uploadProjectQrToStorage(result.project, qrImage).catch(()=> '');
+                                await complianceApi(`/projects/${result.project.id}/qr`, {
+                                    method:'PATCH',
+                                    body:JSON.stringify({qrDataUrl:qrImage,qrStorageUrl})
+                                }).catch(()=>{});
+                            }
+                        }
                     }
                 }
             },
@@ -2978,7 +3004,9 @@
             pullProjects: async () => {
                 if(!auth?.currentUser) return [];
                 const data=await complianceApi('/projects');
-                return (data.projects||[]).map(p=>({...p,localId:`server-${p.id}`,syncStatus:'synced'}));
+                const projects=data.projects||[];
+                if(Offline) await Promise.all(projects.slice(0,100).map(project=>Offline.cacheProject(project).catch(()=>null)));
+                return projects.map(p=>({...p,localId:`server-${p.id}`,syncStatus:'synced',cacheOnly:true}));
             },
             pullCARecords: async () => {
                 if(!auth?.currentUser) return [];
@@ -3660,6 +3688,27 @@
         });
     }
 
+    async function verifyQrPayload(payload) {
+        try {
+            const parsed=typeof payload==='string'?JSON.parse(payload):payload;
+            if(!parsed||!parsed.hash) return {valid:false,reason:'Missing QR hash',payload:parsed};
+            const unsigned={version:parsed.version,projectId:parsed.projectId,lin:parsed.lin,learnerId:parsed.learnerId,schoolId:parsed.schoolId,title:parsed.title,term:parsed.term,issuedAt:parsed.issuedAt};
+            const hash=await sha256Hex(JSON.stringify(unsigned));
+            return {valid:hash===parsed.hash,hash,expected:parsed.hash,payload:parsed};
+        } catch(error) {
+            return {valid:false,reason:'Unreadable QR payload',error};
+        }
+    }
+
+    function readableQrPayload(payload) {
+        try {
+            const parsed=typeof payload==='string'?JSON.parse(payload):payload;
+            return `APSHULE project ${parsed.title||'Untitled'} · LIN ${parsed.lin||'pending'} · ${parsed.term||'term unknown'}`;
+        } catch(_) {
+            return 'Unreadable APSHULE project QR';
+        }
+    }
+
     function compressCompliancePhoto(file) {
         return new Promise((resolve,reject)=>{
             if(!file || !file.type.startsWith('image/')) return reject(new Error('Choose a photo file'));
@@ -3747,9 +3796,112 @@
     }
     async function renderComplianceProjects() {
         const panel=document.getElementById('schoolCompliancePanel'); panel.innerHTML=`${complianceFilters('projects')}<div id="complianceProjectResults" class="compliance-note">Loading project evidence…</div>`;
-        const load=async()=>{ const result=document.getElementById('complianceProjectResults'); result.textContent='Loading project evidence…'; try { const c=document.getElementById('complianceClassFilter').value,s=document.getElementById('complianceSubjectFilter').value; const data=await complianceApi(`/projects?className=${encodeURIComponent(c)}&subject=${encodeURIComponent(s)}`), ps=data.projects||[]; if(!ps.length){result.textContent='No project evidence matches these filters.';return;} result.className=''; result.innerHTML=`<table class="compliance-table"><thead><tr><th>Project</th><th>Status</th><th>Milestones / QR</th></tr></thead><tbody>${ps.map(p=>{const ok=String(p.finalStatus||'').toLowerCase()==='approved'; const milestone=(label,date,status)=>`${label}: ${escHtml(status||'pending')} · ${date?new Date(date).toLocaleString():'not submitted'}`; const qr=encodeURIComponent(p.qrCode||p.lin||p.id); return `<tr><td><strong>${escHtml(p.title||'Untitled project')}</strong><br><span style="color:#63758a">${escHtml(p.className||'')} · ${escHtml(p.subject||'')}</span></td><td><span class="compliance-pill ${ok?'ok':'wait'}">${ok?'Approved':'Pending'}</span></td><td>${milestone('M1',p.milestone1Date,p.milestone1Status)}<br>${milestone('M2',p.milestone2Date,p.milestone2Status)}<br>${milestone('Final',p.finalDate,p.finalStatus)}<br><img alt="Project QR code" src="https://quickchart.io/qr?size=90&text=${qr}" width="72" height="72" loading="lazy"><br><small>${escHtml(p.qrCode||p.lin||'Not assigned')}</small></td></tr>`}).join('')}</tbody></table>`; } catch(e){result.textContent=complianceMessage(e);result.style.color='#c62828';} };
+        const load=async()=>{ const result=document.getElementById('complianceProjectResults'); result.textContent='Loading project evidence…'; try { const c=document.getElementById('complianceClassFilter').value,s=document.getElementById('complianceSubjectFilter').value; const data=await complianceApi(`/projects?className=${encodeURIComponent(c)}&subject=${encodeURIComponent(s)}`), ps=data.projects||[]; if(Offline) await Promise.all(ps.slice(0,100).map(p=>Offline.cacheProject(p).catch(()=>null))); if(!ps.length){result.textContent='No project evidence matches these filters.';return;} result.className=''; result.innerHTML=`<table class="compliance-table"><thead><tr><th>Project</th><th>Status</th><th>Milestones / QR</th></tr></thead><tbody>${ps.map(p=>{const ok=String(p.finalStatus||'').toLowerCase()==='approved'; const milestone=(label,date,status)=>`${label}: ${escHtml(status||'pending')} · ${date?new Date(date).toLocaleString():'not submitted'}`; const qr=encodeURIComponent(p.qrCode||p.lin||p.id); const qrImage=p.qrDataUrl||`https://quickchart.io/qr?size=90&text=${qr}`; return `<tr><td><button class="compliance-link" data-admin-project="${escHtml(p.id)}">${escHtml(p.title||'Untitled project')}</button><br><span style="color:#63758a">${escHtml(p.learnerName||p.learnerId||'')} · ${escHtml(p.className||'')} · ${escHtml(p.subject||'')}</span></td><td><span class="compliance-pill ${ok?'ok':'wait'}">${ok?'Approved':'Pending'}</span>${p.similarityFlag?'<br><span style="color:#c62828;font-size:11px;">Similarity flag</span>':''}</td><td>${milestone('M1',p.milestone1Date,p.milestone1Status)}<br>${milestone('M2',p.milestone2Date,p.milestone2Status)}<br>${milestone('Final',p.finalDate,p.finalStatus)}<br><img alt="Project QR code" src="${escHtml(qrImage)}" width="72" height="72" loading="lazy"><br><small>${escHtml(p.qrCode||p.lin||'Not assigned')}</small></td></tr>`}).join('')}</tbody></table>`; result.querySelectorAll('[data-admin-project]').forEach(button=>button.onclick=()=>openAdminProjectDetail(ps.find(p=>String(p.id)===button.dataset.adminProject))); } catch(e){ if(!navigator.onLine&&Offline){ const cached=(await Offline.listProjects()).map(offlineProjectToProject).filter(p=>!c||p.className===c).filter(p=>!s||p.subject===s); result.className=''; result.innerHTML=`<div class="compliance-note">Offline — viewing cached project evidence.</div>${cached.map(p=>`<button class="project-card" data-admin-project="${escHtml(p.id)}" style="width:100%;text-align:left;margin-top:8px;"><strong>${escHtml(p.title||'Untitled')}</strong><br><span class="project-card-meta">${escHtml(p.learnerName||p.learnerId||'')} · ${escHtml(p.className||'')} · ${escHtml(p.subject||'')}</span></button>`).join('')}`; result.querySelectorAll('[data-admin-project]').forEach(button=>button.onclick=()=>openAdminProjectDetail(cached.find(p=>String(p.id)===button.dataset.adminProject))); return; } result.textContent=complianceMessage(e);result.style.color='#c62828';} };
         panel.querySelectorAll('select,input').forEach(el=>el.addEventListener('change',load)); load();
     }
+
+    function openAdminProjectDetail(project) {
+        const modal=document.getElementById('projectDetailModal');
+        const body=document.getElementById('projectDetailBody');
+        if(!modal||!body) return;
+        document.getElementById('projectDetailTitle').textContent=project.title||'Project evidence';
+        const milestones=[['1','Milestone 1',project.milestone1Photo,project.milestone1Status,project.milestone1Comment],['2','Milestone 2',project.milestone2Photo,project.milestone2Status,project.milestone2Comment],['3','Final',project.finalPhoto,project.finalStatus,project.finalComment]];
+        body.innerHTML=`<div class="project-card-meta">${escHtml(project.learnerName||project.learnerId||'')} · ${escHtml(project.className||'')} · ${escHtml(project.subject||'')}</div>
+            <div class="project-helper">LIN ${escHtml(project.lin||'Pending')} · ${escHtml(project.term||'Term not recorded')} · Created ${escHtml(projectDate(project.createdAt))}</div>
+            ${project.description?`<p class="project-helper">${escHtml(project.description)}</p>`:''}
+            ${project.previousTitleMatch?`<div class="project-warning">Repeat title from ${escHtml(project.previousTerm||'previous term')}. Improvement: ${escHtml(project.improvementNote||'Not recorded')}</div>`:''}
+            ${project.similarityFlag?`<div class="project-warning">Similarity flag: ${escHtml(project.similarityReason||'Needs administrator review')} ${project.similarityScore?`(${Math.round(project.similarityScore*100)}%)`:''}</div>`:''}
+            <div class="project-helper">Upload metadata: ${project.schoolGpsLat!=null?`${Number(project.schoolGpsLat).toFixed(5)}, ${Number(project.schoolGpsLng).toFixed(5)}`:'GPS unavailable'} · ${escHtml(project.deviceType||'device unavailable')} · ${escHtml(project.uploadedFromConnection||'connection unavailable')}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                <button type="button" class="project-primary-btn" id="adminDownloadProjectPdf">Download PDF report</button>
+                <button type="button" class="project-secondary-btn" id="adminDownloadProjectZip">Download evidence ZIP</button>
+                ${project.similarityFlag?'<button type="button" class="project-secondary-btn" id="adminClearProjectFlag">Clear similarity flag</button>':''}
+            </div>
+            <div style="margin-top:14px;font-weight:800;color:#34206f;">Evidence</div>
+            ${milestones.map(([m,label,photo,status,comment])=>`<section class="project-milestone"><div class="project-milestone-title"><span>${label}</span>${projectStatusBadge(status)}</div>${photo?`<a href="${escHtml(photo)}" target="_blank" rel="noopener"><img class="project-milestone-photo" src="${escHtml(photo)}" alt="${label}"></a>`:'<div class="project-helper">Not submitted</div>'}${comment?`<div class="project-helper">Comment: ${escHtml(comment)}</div>`:''}</section>`).join('')}`;
+        modal.classList.add('show');
+        document.getElementById('adminDownloadProjectPdf')?.addEventListener('click',()=>downloadProjectReportPdf(project));
+        document.getElementById('adminDownloadProjectZip')?.addEventListener('click',()=>downloadProjectEvidenceZip(project));
+        document.getElementById('adminClearProjectFlag')?.addEventListener('click',async()=>{
+            await complianceApi(`/projects/${project.id}/clear-flag`,{method:'PATCH',body:JSON.stringify({reason:'Reviewed and cleared by administrator'})});
+            showNotification('Similarity flag cleared.','success');
+            closeProjectModal('projectDetailModal');
+            renderComplianceDuplicateAlerts();
+        });
+    }
+
+    function downloadProjectReportPdf(project) {
+        const pdfApi=window.jspdf;
+        if(!pdfApi?.jsPDF) return showNotification('PDF exporter is still loading. Please try again.','info');
+        const doc=new pdfApi.jsPDF();
+        doc.setFontSize(18); doc.text('APSHULE Project Evidence Report',14,18);
+        doc.setFontSize(11);
+        const lines=[
+            `Title: ${project.title||''}`,`Learner: ${project.learnerName||project.learnerId||''}`,
+            `School: ${project.schoolId||''}`,`Class / subject: ${project.className||''} / ${project.subject||''}`,
+            `LIN: ${project.lin||'Pending'}`,`Term: ${project.term||'Not recorded'}`,
+            `M1: ${project.milestone1Status||'not_started'} · M2: ${project.milestone2Status||'not_started'} · Final: ${project.finalStatus||'not_started'}`,
+            `Similarity flag: ${project.similarityFlag?'Yes':'No'}`,`Repeat-title record: ${project.previousTitleMatch?'Yes':'No'}`,
+        ];
+        doc.text(lines,14,32);
+        let y=92;
+        if(project.qrDataUrl) { try { doc.addImage(project.qrDataUrl,'PNG',145,28,45,45); } catch(_) {} }
+        [['Milestone 1',project.milestone1Comment],['Milestone 2',project.milestone2Comment],['Final',project.finalComment]].forEach(([label,comment])=>{doc.setFont(undefined,'bold');doc.text(label,14,y);doc.setFont(undefined,'normal');doc.text(comment||'No teacher comment',14,y+6);y+=16;});
+        doc.save(`APSHULE-${String(project.lin||project.id).replace(/[^a-z0-9_-]/gi,'_')}.pdf`);
+    }
+
+    async function downloadProjectEvidenceZip(project) {
+        if(!window.JSZip) return showNotification('ZIP exporter is still loading. Please try again.','info');
+        const zip=new JSZip();
+        zip.file('project.json',JSON.stringify(project,null,2));
+        if(project.qrDataUrl) zip.file('qr.png',project.qrDataUrl.split(',')[1]||project.qrDataUrl,{base64:true});
+        const photos=[['milestone-1.jpg',project.milestone1Photo],['milestone-2.jpg',project.milestone2Photo],['final.jpg',project.finalPhoto]];
+        for(const [name,url] of photos) if(url) {
+            try {
+                const response=await fetch(url);
+                if(response.ok) zip.file(name,await response.blob());
+            } catch(_) {}
+        }
+        const blob=await zip.generateAsync({type:'blob'});
+        const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`APSHULE-${String(project.lin||project.id).replace(/[^a-z0-9_-]/gi,'_')}-evidence.zip`; link.click();
+        setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    }
+
+    async function renderComplianceDuplicateAlerts() {
+        const panel=document.getElementById('schoolCompliancePanel');
+        if(!panel) return;
+        panel.innerHTML='<div class="compliance-note">Loading duplicate alerts…</div>';
+        try {
+            const data=await complianceApi('/duplicate-alerts');
+            const projects=data.projects||[];
+            panel.innerHTML=`<div class="compliance-note">${projects.length?'Similarity flags require a school administrator review.':'No active similarity flags.'}</div>${projects.map(project=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid #f0d6d6;border-radius:12px;padding:10px;margin-top:8px;background:#fffafa;"><div><strong>${escHtml(project.title||'Untitled')}</strong><div class="project-helper">${escHtml(project.learnerName||project.learnerId||'')} · ${escHtml(project.similarityReason||'Similarity detected')}</div></div><div style="display:flex;gap:6px;"><button class="compliance-action" data-admin-project="${escHtml(project.id)}">Review</button><button class="compliance-action" data-clear-project="${escHtml(project.id)}">Clear</button></div></div>`).join('')}`;
+            panel.querySelectorAll('[data-admin-project]').forEach(button=>button.onclick=()=>openAdminProjectDetail(projects.find(project=>String(project.id)===button.dataset.adminProject)));
+            panel.querySelectorAll('[data-clear-project]').forEach(button=>button.onclick=async()=>{await complianceApi(`/projects/${button.dataset.clearProject}/clear-flag`,{method:'PATCH',body:JSON.stringify({reason:'Reviewed in Duplicate Alerts'})});renderComplianceDuplicateAlerts();});
+        } catch(error) { panel.innerHTML=`<div class="compliance-note" style="color:#c62828;">${escHtml(complianceMessage(error))}</div>`; }
+    }
+
+    async function renderComplianceRepeatTitles() {
+        const panel=document.getElementById('schoolCompliancePanel');
+        if(!panel) return;
+        panel.innerHTML='<div class="compliance-note">Loading repeat-title log…</div>';
+        try {
+            const data=await complianceApi('/repeat-title-log');
+            const projects=data.projects||[];
+            panel.innerHTML=`<div class="compliance-note">${projects.length} project(s) used a title from a previous term. Each record includes the learner's improvement explanation.</div><table class="compliance-table"><thead><tr><th>Project</th><th>Previous record</th><th>Improvement note</th></tr></thead><tbody>${projects.map(project=>`<tr><td><button class="compliance-link" data-repeat-project="${escHtml(project.id)}">${escHtml(project.title||'Untitled')}</button><br><span class="project-card-meta">${escHtml(project.learnerName||project.learnerId||'')} · ${escHtml(project.term||'')}</span></td><td>${escHtml(project.previousTitle||project.title||'')}<br>${escHtml(project.previousTerm||'')}</td><td>${escHtml(project.improvementNote||'Not recorded')}</td></tr>`).join('')}</tbody></table>`;
+            panel.querySelectorAll('[data-repeat-project]').forEach(button=>button.onclick=()=>openAdminProjectDetail(projects.find(project=>String(project.id)===button.dataset.repeatProject)));
+        } catch(error) { panel.innerHTML=`<div class="compliance-note" style="color:#c62828;">${escHtml(complianceMessage(error))}</div>`; }
+    }
+
+    async function renderSuperProjectOverview() {
+        const container=document.getElementById('superProjectOverviewContent');
+        if(!container||currentUser?.role!=='superadmin') return;
+        try {
+            const data=await complianceApi('/superadmin-overview');
+            const summary=data.summary||{};
+            container.innerHTML=`<div class="compliance-metrics"><div class="compliance-metric"><strong>${summary.totalProjects||0}</strong><span>Total projects</span></div><div class="compliance-metric"><strong>${summary.completedProjects||0}</strong><span>Completed</span></div><div class="compliance-metric"><strong>${summary.pendingReviews||0}</strong><span>Pending reviews</span></div><div class="compliance-metric"><strong>${summary.flaggedProjects||0}</strong><span>Similarity flags</span></div></div><table class="compliance-table"><thead><tr><th>School</th><th>Projects</th><th>Completed</th><th>Flags</th></tr></thead><tbody>${(summary.schools||[]).map(school=>`<tr><td>${escHtml(school.schoolId)}</td><td>${school.projects}</td><td>${school.completed}</td><td>${school.flagged}</td></tr>`).join('')||'<tr><td colspan="4">No projects recorded.</td></tr>'}</tbody></table>`;
+        } catch(error) { container.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(complianceMessage(error))}</div>`; }
+    }
+
     async function renderCompliancePortfolio() {
         const panel=document.getElementById('schoolCompliancePanel'); panel.innerHTML=`<div class="compliance-filters"><select id="portfolioLearner"><option value="">Loading learners…</option></select></div><div id="portfolioResult" class="compliance-note">Choose a learner to view their cumulative portfolio.</div>`;
         try { const [ca,pr]=await Promise.all([complianceApi('/ca-records?className=&term='),complianceApi('/projects?className=&subject=')]); const records=ca.records||[], projects=pr.projects||[], ids=[...new Set(records.map(r=>r.learnerId).concat(projects.map(p=>p.learnerId)).filter(Boolean))]; const select=document.getElementById('portfolioLearner'); select.innerHTML='<option value="">Select learner</option>'+ids.map(id=>{const r=records.find(x=>x.learnerId===id);return `<option value="${escHtml(id)}">${escHtml(r?.learnerName||r?.name||id)}</option>`}).join(''); const show=()=>{const id=select.value,res=document.getElementById('portfolioResult'); if(!id){res.textContent='Choose a learner to view their cumulative portfolio.';return;} const rs=records.filter(r=>r.learnerId===id), ps=projects.filter(p=>p.learnerId===id); res.className='';res.innerHTML=`<div id="portfolioPrint"><strong style="color:#173b63;">Cumulative learner portfolio</strong><p style="font-size:11px;color:#63758a;">${escHtml(rs[0]?.learnerName||rs[0]?.name||id)} · S1-S4</p><table class="compliance-table"><thead><tr><th>Subject / competency</th><th>Level</th><th>Term</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${escHtml(r.subject)}<br>${escHtml(r.competency)}</td><td>${escHtml(r.finalLevel)}</td><td>${escHtml(r.term)}</td></tr>`).join('')||'<tr><td colspan="3">No CA records.</td></tr>'}</tbody></table><div style="font-weight:700;color:#173b63;font-size:12px;margin-top:10px;">Projects</div>${ps.map(p=>`<div style="font-size:11px;padding:6px 0;border-bottom:1px solid #edf0f4;">${escHtml(p.title)} · ${escHtml(p.subject)} · ${escHtml(p.status||p.finalStatus||'Pending')}</div>`).join('')||'<div class="compliance-note">No projects recorded.</div>'}</div><button class="compliance-action primary" id="printPortfolio" style="margin-top:10px;">Print / Save as PDF</button>`; document.getElementById('printPortfolio').onclick=()=>{const w=window.open('','_blank');w.document.write(`<html><head><title>APSHULE learner portfolio</title><style>body{font:13px system-ui;padding:28px;color:#173b63}table{width:100%;border-collapse:collapse}td,th{padding:8px;border:1px solid #d5dde7;text-align:left}</style></head><body>${document.getElementById('portfolioPrint').innerHTML}</body></html>`);w.document.close();w.focus();w.print();};}; select.onchange=show; } catch(e){document.getElementById('portfolioResult').textContent=complianceMessage(e);}
@@ -3774,13 +3926,21 @@
         document.getElementById('openLessonPlanBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('lesson-plan'));
         document.getElementById('openTriangulationBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('triangulation'));
         document.getElementById('openCurriculumLinkerBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('curriculum'));
+        document.getElementById('refreshTeacherProjectsBtn')?.addEventListener('click', loadTeacherProjectQueue);
+        if(teacher) loadTeacherProjectQueue();
         if(!student && studentSection) studentSection.style.display = 'none';
         if(!teacher) document.querySelector('.cbc-card[style*="FFB74D"]')?.remove();
         const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
+        const superProjectSection=document.getElementById('superProjectOverviewSection');
+        if(superProjectSection) superProjectSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
         document.getElementById('complianceDashboardBtn')?.addEventListener('click',renderComplianceDashboard);
         document.getElementById('complianceProjectsBtn')?.addEventListener('click',renderComplianceProjects);
         document.getElementById('compliancePortfolioBtn')?.addEventListener('click',renderCompliancePortfolio);
+        document.getElementById('complianceDuplicateBtn')?.addEventListener('click',renderComplianceDuplicateAlerts);
+        document.getElementById('complianceRepeatBtn')?.addEventListener('click',renderComplianceRepeatTitles);
+        document.getElementById('refreshSuperProjectOverviewBtn')?.addEventListener('click',renderSuperProjectOverview);
+        if(currentUser?.role==='superadmin') renderSuperProjectOverview();
     }
 
     async function renderStudentCbcPanel(mode) {
@@ -3856,6 +4016,12 @@
             ...payload,
             id: payload.id || item.localId,
             localId: item.localId,
+            qrDataUrl: payload.qrDataUrl || item.qrDataUrl || '',
+            qrPayload: payload.qrPayload || item.qrPayload || '',
+            term: payload.term || item.term || '',
+            previousTitle: payload.previousTitle || item.previousTitle || '',
+            previousTerm: payload.previousTerm || item.previousTerm || '',
+            improvementNote: payload.improvementNote || item.improvementNote || '',
             syncStatus: item.syncStatus || 'pending',
             title: payload.title || item.title || 'Untitled project',
             subject: payload.subject || item.subject || '',
@@ -3875,11 +4041,15 @@
         if(navigator.onLine) {
             const data = await complianceApi('/projects');
             serverProjects = data.projects || [];
+            if(Offline) {
+                await Promise.all(serverProjects.slice(0,100).map(project => Offline.cacheProject(project).catch(()=>null)));
+            }
         }
         let offlineProjects = [];
         if(Offline) {
             offlineProjects = (await Offline.listProjects()).filter(item =>
-                item.syncStatus !== 'synced' && (!item.learnerId || item.learnerId === currentUser?.uid)
+                (item.syncStatus !== 'synced' || item.cacheOnly) &&
+                (!item.learnerId || item.learnerId === currentUser?.uid)
             ).map(offlineProjectToProject);
         }
         const merged = [...serverProjects];
@@ -3903,7 +4073,8 @@
                 ${project.syncStatus === 'pending' ? '<span class="project-status-badge pending">Saved offline</span>' : ''}
             </div>
             <div class="project-status-summary">${statuses.map(escHtml).join(' · ')}</div>
-            <div class="project-card-meta">Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
+            <div class="project-card-meta">Term: ${escHtml(project.term || projectTermLabel(new Date(project.createdAt || Date.now())))} · Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
+            ${project.similarityFlag ? '<div class="project-warning" style="margin-top:8px;">⚠️ Similarity review required</div>' : ''}
         </button>`;
     }
 
@@ -3955,6 +4126,7 @@
         const subject = subjectInput.value.trim();
         const className = classInput.value.trim();
         const description = descriptionInput.value.trim();
+        const term = projectTermLabel();
         if(!title || title.length > 100) { status.textContent = 'Enter a project title of 1–100 characters.'; return; }
         if(!subject || !className) { status.textContent = 'Choose a subject and enter your class.'; return; }
         if(_studentProjects.some(project => String(project.title || '').trim().toLowerCase() === title.toLowerCase())) {
@@ -3969,11 +4141,38 @@
             subject,
             title,
             description,
+            term,
+            titleNormalized: projectTitleNormalized(title),
             lin: generateLin(currentUser?.schoolId, currentUser?.uid)
         };
         try {
             if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'), { code:'OFFLINE_QUEUE' });
-            const result = await complianceApi('/projects', { method:'POST', body:JSON.stringify(payload) });
+            let result;
+            try {
+                result = await complianceApi('/projects', { method:'POST', body:JSON.stringify(payload) });
+            } catch(error) {
+                if(error.code !== 'PREVIOUS_TERM_REPEAT') throw error;
+                const explanation = window.prompt(
+                    `This title was used in ${error.previousTerm || 'a previous term'}. Explain what is improved (at least 20 characters):`,
+                    ''
+                );
+                if(!explanation || explanation.trim().length < 20) {
+                    throw Object.assign(new Error('A 20-character improvement explanation is required before reusing this title.'), { code:'REPEAT_TITLE_EXPLANATION_REQUIRED' });
+                }
+                payload.improvementNote = explanation.trim();
+                result = await complianceApi('/projects', { method:'POST', body:JSON.stringify(payload) });
+            }
+            if(result.project?.qrPayload) {
+                const qrImage = await qrDataUrl(result.project.qrPayload);
+                if(qrImage) {
+                    result.project.qrDataUrl = qrImage;
+                    const qrStorageUrl = await uploadProjectQrToStorage(result.project, qrImage).catch(()=> '');
+                    await complianceApi(`/projects/${result.project.id}/qr`, {
+                        method:'PATCH',
+                        body:JSON.stringify({ qrDataUrl:qrImage, qrStorageUrl })
+                    }).catch(()=>{});
+                }
+            }
             status.style.color = '#2e7d32';
             status.textContent = '✅ Project created! Upload Week 2 Proposal.';
             showNotification('Project created! Upload Week 2 Proposal.','success');
@@ -3983,6 +4182,11 @@
         } catch(error) {
             if(error.code === 'OFFLINE_QUEUE' || !navigator.onLine) {
                 const localId = `local-project-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+                const localQrPayload = JSON.stringify({
+                    version:1, projectId:localId, lin:payload.lin, learnerId:currentUser?.uid,
+                    schoolId:payload.schoolId, title, term, issuedAt:new Date().toISOString()
+                });
+                const localQr = await qrDataUrl(localQrPayload);
                 await Offline.queueProject({
                     localId,
                     operation:'create',
@@ -3995,6 +4199,10 @@
                         milestone1Status:'not_started',
                         milestone2Status:'not_started',
                         finalStatus:'not_started',
+                         term,
+                         titleNormalized:projectTitleNormalized(title),
+                         qrPayload:localQrPayload,
+                         qrDataUrl:localQr,
                         previousTitleCheck:true,
                         previousTitleMatch:false,
                         createdAt:new Date().toISOString(),
@@ -4045,6 +4253,16 @@
         return getDownloadURL(reference);
     }
 
+    async function uploadProjectQrToStorage(project, dataUrl) {
+        if(!storage || !storageRef || !dataUrl) return '';
+        const path=`projects/${project.schoolId}/${project.learnerId||currentUser?.uid}/${project.id}/project-qr.png`;
+        const reference=storageRef(storage,path);
+        if(typeof reference.putString==='function') await reference.putString(dataUrl,'data_url',{contentType:'image/png'});
+        else if(typeof uploadBytesResumable==='function') await uploadBytesResumable(reference,dataUrl);
+        else return '';
+        return getDownloadURL(reference);
+    }
+
     function milestonePhoto(project, milestone) {
         return milestone === '1' ? project.milestone1Photo : milestone === '2' ? project.milestone2Photo : project.finalPhoto;
     }
@@ -4076,12 +4294,17 @@
         document.getElementById('projectDetailTitle').textContent = project.title || 'Project details';
         modal.classList.add('show');
         body.innerHTML = `<div class="cbc-status">Loading project details…</div>`;
+        const qrImage = project.qrDataUrl || await qrDataUrl(project.qrPayload || project.qrCode || project.lin || project.id);
         body.innerHTML = `<div class="project-card-meta">${escHtml(project.subject || '')} · ${escHtml(project.className || '')}</div>
-            <div class="project-helper" style="margin-top:5px;">LIN: <strong>${escHtml(project.lin || 'Pending')}</strong> · Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
+            <div class="project-helper" style="margin-top:5px;">LIN: <strong>${escHtml(project.lin || 'Pending')}</strong> · Term: ${escHtml(project.term || projectTermLabel())} · Last updated: ${escHtml(projectDate(project.updatedAt || project.createdAt))}</div>
             ${project.description ? `<p class="project-helper">${escHtml(project.description)}</p>` : ''}
-            ${project.previousTitleMatch ? '<div class="project-warning">⚠️ You used this title last term. Consider choosing a different approach or explaining what is new.</div>' : ''}
+            ${project.previousTitleMatch ? `<div class="project-warning">⚠️ Repeat-title record: ${escHtml(project.previousTitle || 'same title')} ${project.previousTerm ? `(${escHtml(project.previousTerm)})` : ''}.<br><strong>Improvement:</strong> ${escHtml(project.improvementNote || 'Not recorded')}</div>` : ''}
             ${project.similarityFlag ? '<div class="project-warning">⚠️ Similar to another student’s project. Your teacher will review it.</div>' : ''}
             ${project.syncStatus === 'pending' ? '<div class="project-warning">Saved offline. It will sync when your connection returns.</div>' : ''}
+            <div style="display:flex;align-items:center;gap:14px;margin-top:12px;padding:10px;border:1px solid #e6def7;border-radius:12px;background:#fbf9ff;">
+                ${qrImage ? `<img src="${escHtml(qrImage)}" alt="Permanent project QR code" width="120" height="120" style="image-rendering:auto;border-radius:8px;background:white;">` : '<div class="project-helper">QR will be generated when this device reconnects.</div>'}
+                <div><strong style="color:#34206f;">Permanent project QR</strong><div class="project-helper">${escHtml(project.qrCode || 'Pending server verification')}</div>${qrImage ? `<a class="project-secondary-btn" download="APSHULE-${escHtml(project.lin || project.id)}.png" href="${escHtml(qrImage)}" style="display:inline-block;margin-top:8px;">Download QR</a>` : ''}</div>
+            </div>
             <div style="margin-top:14px;font-weight:800;color:#34206f;">Milestone evidence</div>
             ${renderProjectMilestone(project,'1','📋 Milestone 1 — Proposal','Upload your Week 2 proposal photo',null)}
             ${renderProjectMilestone(project,'2','📊 Milestone 2 — Progress','Upload your Week 5 progress photo',project.milestone1Status)}
@@ -4107,6 +4330,7 @@
         if(milestone === '3' && project.milestone2Status !== 'approved') return showNotification('Complete Milestone 2 first.','info');
         try {
             const photo = await compressCompliancePhoto(file);
+            const photoHash = await projectPerceptualHash(photo);
             const location = await getProjectLocation();
             const connection = await resolveConnectionMode();
             const metadata = {
@@ -4115,17 +4339,18 @@
                 deviceType:projectDeviceType(),
                 uploadedFromConnection:connection === 'mobile' ? 'mobile_data' : connection
             };
-            if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'), { code:'OFFLINE_QUEUE', photo, metadata });
+            if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_QUEUE'), { code:'OFFLINE_QUEUE', photo, photoHash, metadata });
             const photoReference = await uploadProjectPhotoToStorage(project, milestone, photo);
             await complianceApi(`/projects/${project.id}/milestones/${milestone}`, {
                 method:'PATCH',
-                body:JSON.stringify({ photo:photoReference, ...metadata })
+                body:JSON.stringify({ photo:photoReference, photoHash, ...metadata })
             });
             showNotification(`Milestone ${milestone} uploaded — waiting for teacher approval`,'success');
             await openProjectDetail(project.id);
         } catch(error) {
             if(error.code === 'OFFLINE_QUEUE' || !navigator.onLine) {
                 const offlinePhoto = error.photo || await compressCompliancePhoto(file);
+                const photoHash = error.photoHash || await projectPerceptualHash(offlinePhoto);
                 const metadata = error.metadata || {};
                 await Offline.queueProject({
                     operation:'milestone',
@@ -4133,6 +4358,7 @@
                     learnerId:currentUser?.uid,
                     milestone,
                     photo:offlinePhoto,
+                    photoHash,
                     ...metadata,
                     size:Math.ceil(offlinePhoto.length * 0.75),
                     updatedAt:new Date().toISOString()
@@ -4167,6 +4393,153 @@
             ${milestone('final','Week 9 · Final',project.finalStatus,project.finalPhoto)}
         </div>`;
     }
+
+    const _projectVivaRecordings = {};
+
+    function startProjectVivaCapture(projectId, milestone) {
+        const key = `${projectId}:${milestone}`;
+        const button = document.querySelector(`[data-viva-record="${CSS.escape(key)}"]`);
+        if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+            showNotification('This browser cannot record viva audio. Use the upload override instead.','info');
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+            const recorder=new MediaRecorder(stream);
+            const chunks=[];
+            _projectVivaRecordings[key]={recorder,chunks,blob:null,startedAt:Date.now()};
+            recorder.ondataavailable=event=>{if(event.data.size) chunks.push(event.data);};
+            recorder.onstop=()=>{
+                stream.getTracks().forEach(track=>track.stop());
+                const blob=new Blob(chunks,{type:recorder.mimeType||'audio/webm'});
+                _projectVivaRecordings[key].blob=blob;
+                if(button) { button.textContent='▶️ Record again'; button.dataset.recording='false'; }
+                const preview=document.querySelector(`[data-viva-preview="${CSS.escape(key)}"]`);
+                if(preview) { preview.src=URL.createObjectURL(blob); preview.style.display='block'; }
+            };
+            recorder.start();
+            if(button) { button.textContent='⏹ Stop (max 30s)'; button.dataset.recording='true'; }
+            setTimeout(()=>{ if(recorder.state==='recording') recorder.stop(); },30000);
+        }).catch(()=>showNotification('Microphone permission is required for viva recording.','error'));
+    }
+
+    async function uploadVivaAudio(project,milestone,blob) {
+        if(!blob) return '';
+        if(!navigator.onLine || !storage || !storageRef) {
+            return await new Promise(resolve=>{
+                const reader=new FileReader();
+                reader.onload=()=>resolve(String(reader.result||''));
+                reader.onerror=()=>resolve('');
+                reader.readAsDataURL(blob);
+            });
+        }
+        const path=`projects/${project.schoolId}/${project.learnerId}/${project.id}/viva_${milestone}.webm`;
+        const reference=storageRef(storage,path);
+        if(typeof reference.put==='function') await reference.put(blob,{contentType:'audio/webm'});
+        else if(typeof uploadBytesResumable==='function') await uploadBytesResumable(reference,blob);
+        else return '';
+        return getDownloadURL(reference);
+    }
+
+    async function reviewTeacherProject(projectId,milestone,status) {
+        const project=(window._teacherProjects||[]).find(item=>String(item.id)===String(projectId));
+        if(!project) return;
+        const key=`${projectId}:${milestone}`;
+        const comment=document.querySelector(`[data-review-comment="${CSS.escape(key)}"]`)?.value.trim()||'';
+        const observed=Boolean(document.querySelector(`[data-review-observed="${CSS.escape(key)}"]`)?.checked);
+        const approveWithoutViva=Boolean(document.querySelector(`[data-review-override="${CSS.escape(key)}"]`)?.checked);
+        if(status==='rejected' && !comment) return showNotification('Add a rejection comment before rejecting evidence.','info');
+        if(status==='approved' && !observed && !approveWithoutViva) return showNotification('Tick observed student or approve without viva.','info');
+        try {
+            let vivaAudioPath='';
+            const recording=_projectVivaRecordings[key];
+            if(recording?.blob) vivaAudioPath=await uploadVivaAudio(project,milestone,recording.blob);
+            if(!navigator.onLine) throw Object.assign(new Error('OFFLINE_REVIEW_QUEUE'),{code:'OFFLINE_REVIEW_QUEUE',vivaAudioPath});
+            await complianceApi(`/projects/${project.id}/review`,{
+                method:'PATCH',
+                body:JSON.stringify({milestone,status,comment,observed,approveWithoutViva,vivaAudioPath,term:project.term||projectTermLabel()})
+            });
+            if(status==='approved' || status==='rejected') {
+                writeNotification(
+                    project.learnerId,
+                    `Project milestone ${status}`,
+                    `${project.title||'Your project'} · Milestone ${milestone} was ${status}${comment?`: ${comment}`:''}.`,
+                    'project-review'
+                ).catch(()=>{});
+            }
+            showNotification(`Milestone ${milestone} ${status}.`,'success');
+            delete _projectVivaRecordings[key];
+            await loadTeacherProjectQueue();
+        } catch(error) {
+            if(error.code==='OFFLINE_REVIEW_QUEUE' || !navigator.onLine) {
+                await Offline.queueProject({
+                    operation:'review', projectId:project.id, learnerId:currentUser?.uid,
+                    milestone,status,comment,observed,approveWithoutViva,
+                    vivaAudioPath:error.vivaAudioPath||'', updatedAt:new Date().toISOString()
+                });
+                showNotification('Review saved offline and will sync when connected.','info');
+            } else showNotification(complianceMessage(error),'error');
+        }
+    }
+
+    function renderTeacherProjectCard(project) {
+        const pendingMilestones=[['1','Milestone 1',project.milestone1Photo,project.milestone1Status,project.milestone1Comment],['2','Milestone 2',project.milestone2Photo,project.milestone2Status,project.milestone2Comment],['3','Final',project.finalPhoto,project.finalStatus,project.finalComment]].filter(item=>item[3]==='pending');
+        return `<article style="border:1px solid #e5e0f5;border-radius:14px;padding:12px;margin-top:10px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><strong>${escHtml(project.title||'Untitled')}</strong><span class="project-card-meta">${escHtml(project.learnerName||project.learnerId||'Learner')} · ${escHtml(project.className||'')} · ${escHtml(project.subject||'')}</span></div>
+            <div class="project-helper">LIN ${escHtml(project.lin||'Pending')} · ${escHtml(project.term||'Current term')} · ${project.similarityFlag?'⚠️ Similarity flagged':''}</div>
+            ${pendingMilestones.map(([milestone,label,photo,status,existingComment])=>{
+                const key=`${project.id}:${milestone}`;
+                return `<div style="margin-top:12px;padding:10px;border-radius:10px;background:#faf9ff;border:1px solid #eee7ff;">
+                    <strong>${label}</strong> ${projectStatusBadge(status)}
+                    ${photo?`<a href="${escHtml(photo)}" target="_blank" rel="noopener"><img src="${escHtml(photo)}" alt="${label} evidence" style="display:block;width:100%;max-height:220px;object-fit:contain;background:#fff;border-radius:8px;margin-top:8px;"></a>`:''}
+                    <div class="project-helper">Submitted ${escHtml(projectDate(milestone==='1'?project.milestone1UploadedAt:milestone==='2'?project.milestone2UploadedAt:project.finalUploadedAt))} · GPS ${project.schoolGpsLat!=null?`${Number(project.schoolGpsLat).toFixed(5)}, ${Number(project.schoolGpsLng).toFixed(5)}`:'not provided'} · ${escHtml(project.deviceType||'device unknown')} · ${escHtml(project.uploadedFromConnection||'connection unknown')}</div>
+                    ${existingComment?`<div class="project-helper">Previous teacher comment: ${escHtml(existingComment)}</div>`:''}
+                    <textarea data-review-comment="${escHtml(key)}" rows="2" maxlength="500" placeholder="Required for rejection; optional approval comment" style="width:100%;box-sizing:border-box;margin-top:8px;padding:8px;border:1px solid #ddd;border-radius:8px;">${escHtml(existingComment||'')}</textarea>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12px;">
+                        <label><input type="checkbox" data-review-observed="${escHtml(key)}"> Student observed</label>
+                        <label><input type="checkbox" data-review-override="${escHtml(key)}"> Approve without viva</label>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+                        <button type="button" class="project-secondary-btn" data-viva-record="${escHtml(key)}" onclick="startProjectVivaCapture('${escHtml(project.id)}','${milestone}')">🎙 Record viva (30s)</button>
+                        <audio controls preload="none" data-viva-preview="${escHtml(key)}" style="display:none;max-width:220px;"></audio>
+                        <button type="button" class="project-primary-btn" onclick="reviewTeacherProject('${escHtml(project.id)}','${milestone}','approved')">Approve</button>
+                        <button type="button" class="project-secondary-btn" onclick="reviewTeacherProject('${escHtml(project.id)}','${milestone}','rejected')">Reject</button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </article>`;
+    }
+
+    async function loadTeacherProjectQueue() {
+        const status=document.getElementById('teacherProjectsStatus');
+        const list=document.getElementById('teacherProjectsList');
+        if(!status||!list) return;
+        status.textContent='Loading project evidence…';
+        try {
+            let projects=[];
+            if(navigator.onLine) {
+                const data=await complianceApi('/teacher-projects');
+                projects=data.projects||[];
+                window._teacherProjects=projects;
+                if(Offline) await Promise.all(projects.slice(0,100).map(project=>Offline.cacheProject(project).catch(()=>null)));
+            } else if(Offline) {
+                projects=(await Offline.listProjects()).map(offlineProjectToProject).filter(project=>
+                    [project.milestone1Status,project.milestone2Status,project.finalStatus].includes('pending')
+                );
+                window._teacherProjects=projects;
+            }
+            status.textContent=navigator.onLine?'':'Offline — viewing cached project evidence. Review actions will queue.';
+            list.innerHTML=projects.length?projects.map(renderTeacherProjectCard).join(''):'<div class="cbc-status">No pending milestone reviews.</div>';
+        } catch(error) {
+            status.textContent=complianceMessage(error);
+            status.style.color='#c62828';
+            list.innerHTML='';
+        }
+    }
+
+    window.startProjectVivaCapture=startProjectVivaCapture;
+    window.reviewTeacherProject=reviewTeacherProject;
+    window.verifyQrPayload=verifyQrPayload;
+    window.readableQrPayload=readableQrPayload;
 
     async function renderTeacherCbcPanel(mode) {
         const panel=document.getElementById('teacherCbcPanel');

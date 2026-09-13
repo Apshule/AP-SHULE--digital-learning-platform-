@@ -1,0 +1,233 @@
+Task 4 — Step 4 of 8: Duplicate detection — text similarity + photo hash
+
+CONTEXT:
+- Step 1 verified projects collection
+- Step 2 built Student My Projects UI with 3-milestone uploads
+- Step 3 added LIN-locked QR generation
+- Project doc already has similarity_flag (boolean) and similarity_match_id 
+  and similarity_reason fields, but they are not being used yet
+
+GOAL:
+Automatically detect when a student's project looks too similar to another 
+student's project in the same school. This is UNEB's anti-cheating requirement.
+Detection runs in two ways:
+1. Text similarity on title + description (>= 80% match)
+2. Photo hash comparison on milestone photos (identical or near-identical)
+
+When a duplicate is suspected:
+- Set similarity_flag = true on the new project
+- Set similarity_match_id = the doc ID of the matching project
+- Set similarity_reason = 'text_match' or 'photo_hash_match'
+- Notify the school admin (in-app notification)
+- Show banner in student's project detail view (already built in Step 2)
+
+PART A: TEXT SIMILARITY ALGORITHM
+Add a helper function computeTextSimilarity(text1, text2):
+
+1. Normalize both texts:
+   - Lowercase
+   - Trim whitespace
+   - Replace multiple spaces with single space
+   - Remove punctuation
+
+2. Tokenize into words (split by space)
+
+3. Build a word frequency map for each text
+
+4. Compute cosine similarity:
+   - Dot product of the two frequency vectors
+   - Divided by (magnitude of vector 1 * magnitude of vector 2)
+   - Return value between 0 and 1
+
+Return the similarity score (0 to 1).
+
+Do NOT use external NLP libraries. Pure JavaScript is enough.
+
+PART B: TEXT SIMILARITY CHECK ON PROJECT CREATE
+Modify saveNewProject() from Step 2:
+
+After the project doc is written to Firestore:
+
+1. Query all projects in the same school (schoolId == currentUser.schoolId)
+   excluding the current project
+
+2. For each existing project, compute similarity:
+   - combinedText1 = newProject.title + " " + (newProject.description || "")
+   - combinedText2 = existingProject.title + " " + (existingProject.description || "")
+   - score = computeTextSimilarity(combinedText1, combinedText2)
+
+3. Find the highest matching score
+
+4. If score >= 0.80 (80% match):
+   - Update new project doc:
+     - similarity_flag = true
+     - similarity_match_id = highestMatchId
+     - similarity_reason = 'text_match'
+     - similarity_score = score
+   - Notify school admin via notifications collection:
+     {
+       type: 'duplicate_project',
+       title: '⚠️ Possible duplicate project detected',
+       body: '"{newTitle}" by {studentName} looks similar to "{existingTitle}" by {existingStudentName}. Review in Admin Panel.',
+       timestamp: serverTimestamp(),
+       author: 'System',
+       targetUserId: schoolAdminUid (from appConfig)
+     }
+   - Show toast to student: "⚠️ Similar to another project — teacher will review"
+
+5. If score < 0.80:
+   - No action (project is unique)
+
+PART C: PHOTO HASH COMPARISON
+Add a helper function computeImageHash(imageDataUrl):
+
+1. Load the image into a temporary <img> element
+2. Draw it onto a small canvas (8x8 pixels) using drawImage
+3. Get pixel data via canvas.getContext('2d').getImageData(0, 0, 8, 8)
+4. Compute average brightness across all 64 pixels
+5. Build a 64-bit hash string: for each pixel, if brightness >= avg 
+   then '1', else '0'
+6. Return the 64-character binary string
+
+This is a perceptual hash (aHash) — two photos that look visually 
+similar will produce hashes with small Hamming distance.
+
+Add another helper hammingDistance(hash1, hash2):
+1. Both hashes must be same length (64 chars)
+2. Count positions where characters differ
+3. Return the count (0 to 64)
+
+Interpretation:
+- distance == 0 → identical photos
+- distance <= 5 → very similar (likely same photo)
+- distance <= 10 → similar enough to flag for review
+- distance > 10 → different photos
+
+PART D: PHOTO HASH CHECK ON MILESTONE UPLOAD
+Modify uploadMilestone() from Step 2:
+
+After photo is compressed and before uploading to Firebase Storage:
+
+1. Compute image hash from compressed photo:
+   hash = computeImageHash(photoDataUrl)
+
+2. Add this hash to project doc's photo_hashes array:
+   - Use arrayUnion (Firebase) to append
+   - Store as: { milestone: 1, hash: hash, uploadedAt: timestamp }
+
+3. Query all other projects in the same school
+
+4. For each project, compare new hash against every hash in their 
+   photo_hashes array
+
+5. If any match has distance <= 10:
+   - Update current project doc:
+     - similarity_flag = true
+     - similarity_match_id = matchingProjectId
+     - similarity_reason = 'photo_hash_match'
+     - similarity_score = 1 - (distance / 64)
+   - Notify school admin:
+     {
+       type: 'duplicate_photo',
+       title: '⚠️ Possible duplicate photo detected',
+       body: 'Photo uploaded by {studentName} for "{projectTitle}" matches a photo from another project. Review in Admin Panel.',
+       targetUserId: schoolAdminUid,
+       timestamp: serverTimestamp(),
+       author: 'System'
+     }
+   - Show toast to student: "⚠️ Photo similar to another project"
+
+PART E: SUPER ADMIN DUPLICATION ALERTS
+Add a section to Super Admin Admin Panel:
+
+🚨 DUPLICATION ALERTS
+- Query projects WHERE similarity_flag == true
+- For each flagged project, show:
+  - Student name + project title
+  - Matching project (link + student name)
+  - Reason: text_match / photo_hash_match
+  - Score (percentage)
+  - [Review] button → opens both projects side-by-side
+  - [Clear Flag] button → sets similarity_flag = false (after manual review)
+
+Place this section in the Admin Panel.
+For School Admin: show only flagged projects from that school.
+For Super Admin: show all flagged projects.
+
+PART F: PERFORMANCE OPTIMIZATION
+Text similarity check must not slow down project creation:
+
+1. Run similarity check AFTER writing project to Firestore 
+   (async, don't block the UI)
+
+2. Show the toast "Project created!" first, then run check in background
+
+3. If check finds a match, show a second toast after: 
+   "⚠️ Similarity check found a possible match"
+
+4. Photo hash check must complete BEFORE uploading to Firebase Storage
+   (because we need the hash to compare), but do NOT block the upload 
+   on the comparison query — compare in parallel
+
+PART G: TESTING
+Test with 2 student accounts from same school:
+
+A. Text similarity test:
+   1. Student 1 creates project: "Solar Cooker Science Project"
+   2. Student 2 creates project: "Solar Cooker Science Project"
+   3. Verify:
+      - Student 2's project has similarity_flag = true
+      - similarity_match_id points to Student 1's project
+      - similarity_reason = 'text_match'
+      - similarity_score >= 0.80
+      - School admin got notification
+
+B. Different projects:
+   1. Student 1 creates: "Solar Cooker Project"
+   2. Student 2 creates: "Volcano Eruption Model"
+   3. Verify NO similarity flag (score should be < 0.80)
+
+C. Photo hash test:
+   1. Student 1 uploads Milestone 1 with photo A
+   2. Student 2 uploads Milestone 1 with SAME photo A
+   3. Verify:
+      - Student 2's project similarity_flag = true
+      - similarity_reason = 'photo_hash_match'
+      - distance <= 10
+
+D. Different photos:
+   1. Student 1 uploads photo A
+   2. Student 2 uploads photo B (clearly different)
+   3. Verify NO flag triggered
+
+E. Super admin view:
+   1. Login as super admin
+   2. Open Admin Panel → Duplication Alerts
+   3. Verify flagged projects appear with correct details
+   4. Test [Clear Flag] button works
+
+PART H: LIMITATIONS TO NOTE
+- Text similarity only works on title + description, NOT on actual 
+  project body (we don't have that field)
+- Photo hash detects VISUAL similarity, not metadata — same photo 
+  taken with different EXIF data still matches
+- This is a WARNING system, not a hard block — teacher/admin still 
+  decides
+- Report clearly in comments: this is a heuristic, not a guarantee
+
+DO NOT
+- Do NOT block project creation if similarity is detected
+- Do NOT block milestone upload if photo hash matches
+- Do NOT delete the matching project
+- Do NOT use external API for hash (Web Crypto only)
+- Do NOT break Tasks 1, 2, 3 or Steps 1, 2, 3 of Task 4
+- Do NOT scan more than 500 projects per check (limit query)
+
+Confirm when done with:
+"Step 4 complete — Duplicate detection (text + photo hash) built and tested"
+
+Report:
+- Which tests A, B, C, D, E passed
+- Any bugs found
+- Screenshots recommended: duplication alerts section, 
+  notification on admin side, warning banner on student side

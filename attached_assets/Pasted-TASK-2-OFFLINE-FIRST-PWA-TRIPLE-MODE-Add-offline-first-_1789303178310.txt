@@ -1,0 +1,312 @@
+TASK 2: OFFLINE-FIRST PWA + TRIPLE MODE
+
+Add offline-first PWA capability to existing Ap shule.
+DO NOT rebuild. DO NOT break existing features.
+
+CONTEXT:
+- Existing app is a single index.html using Firebase Compat SDK
+- Firebase Auth, Firestore, Firebase Storage already configured
+- firebase-messaging-sw.js service worker already exists for push notifications
+- Served on GitHub Pages at appshule.com
+- Videos are currently hosted on YouTube (unlisted) and played via IFrame API
+
+GOAL:
+User opens appshule.com on ANY device with NO data and everything works.
+App auto-detects connection type (offline / mobile data / WiFi) and adjusts.
+
+⚠️ IMPORTANT — YOUTUBE TERMS OF SERVICE:
+- DO NOT download YouTube videos — this violates YouTube ToS
+- Online playback: stream from YouTube (existing behaviour)
+- Offline playback: use the Light (slideshow) version only — this is Ap shule's own content
+- Optional future: if videoMappings has a field 'customMp4Url', allow that URL for HD offline download (not YouTube)
+
+PART A: SERVICE WORKER & CACHE
+
+1. Create a new file: sw.js (main service worker, separate from firebase-messaging-sw.js)
+
+2. Cache strategy:
+   - App shell (HTML/CSS/JS + CDN assets): 5MB
+   - Module texts and PDFs (from Firebase Storage): 10MB
+   - Quizzes and uneb_items: 2MB
+
+3. Use Workbox-style caching:
+   - CacheFirst for static assets (fonts, images, CSS)
+   - NetworkFirst for Firestore reads with cache fallback
+   - StaleWhileRevalidate for Firebase Storage PDFs
+
+4. Register service worker in index.html:
+   - Must coexist with existing firebase-messaging-sw.js
+   - Register at scope: '/' (root)
+
+5. Update manifest.json:
+   - name: "AppShule"
+   - short_name: "AppShule"
+   - display: "standalone"
+   - start_url: "/"
+   - theme_color: "#4B2E9E"
+   - background_color: "#4B2E9E"
+   - icons: 192x192, 512x512
+   - orientation: "any"
+   - categories: ["education", "productivity"]
+
+6. Add to index.html <head>:
+   <link rel="manifest" href="/manifest.json">
+   <meta name="theme-color" content="#4B2E9E">
+
+PART B: CONNECTION DETECTION (TRIPLE MODE)
+
+Add a global connection manager that detects:
+
+A. OFFLINE MODE (0 MB data):
+   - navigator.onLine === false
+   - Show green badge: "Offline Mode - Working, will sync at school"
+   - All features work from cache
+   - Videos: Play cached cartoon slideshow (2MB version) only
+   - Projects: Save locally as "Pending Sync"
+   - Lesson plans: Use cached NCDC template
+   - No Gemini API calls
+
+B. MOBILE DATA MODE (Data Saver):
+   - navigator.onLine === true && navigator.connection.type === 'cellular'
+   - OR navigator.connection.effectiveType includes '2g'/'3g'
+   - Show yellow badge: "Mobile data - Data saver mode"
+   - Before big downloads: Show confirm dialog
+   - Default: Only download slideshow versions (2MB)
+   - Setting "Download HD videos only on WiFi" = ON by default
+
+C. WIFI MODE (Full HD):
+   - navigator.onLine === true && navigator.connection.type === 'wifi'
+   - OR connection.effectiveType includes '4g'
+   - Show green badge: "WiFi connected - Full HD mode"
+   - Auto sync all pending items
+   - Full Gemini API access
+
+Fallback for browsers without navigator.connection:
+   - Ask user on first launch: "What is your internet? [WiFi] [Mobile Data] [No internet]"
+   - Save preference in IndexedDB
+PART C: INDEXEDDB TABLES FOR OFFLINE
+
+Create an IndexedDB database "appshule-offline" with these object stores:
+
+1. offline_videos
+   Keys: videoId
+   Fields: videoId, moduleId, title, youtubeUrl, 
+           slideshowImages (array of 6 URLs), slideshowAudioUrl,
+           captionsText, cached (boolean), size,
+           versionType ('slideshow' | 'custom-mp4'),
+           customMp4Url (optional, only if available)
+
+2. offline_ca_records
+   Keys: recordId (Firestore doc ID)
+   Fields: all fields from ca_records collection
+
+3. offline_projects
+   Keys: localId (temporary ID)
+   Fields: all fields from projects collection + syncStatus ('pending' | 'syncing' | 'synced')
+
+4. offline_auth
+   Keys: userId
+   Fields: userId, role, schoolId, token, lastSync, email
+
+5. offline_views
+   Keys: viewId
+   Fields: videoId, teacherId, studentId, watchedSeconds,
+           completed (boolean), synced (boolean), schoolId,
+           deviceType, watchedAt, connectionMode
+
+6. offline_settings
+   Keys: userId
+   Fields: userId, dataSaverMode, autoDownloadWifi,
+           languagePreference, autoSyncWifi, autoSyncMobile
+
+PART D: OFFLINE LOGIN
+
+Modify the login flow:
+
+1. On successful ONLINE login:
+   - Save user credentials + role + schoolId to offline_auth table
+   - Set lastSync = current timestamp
+
+2. On login attempt while OFFLINE:
+   - Check offline_auth table
+   - If credentials match, allow login
+   - Load user data from IndexedDB
+   - Show badge: "Logged in offline - will sync when connected"
+
+3. Never show a "No internet connection" error screen.
+   Show instead: "Offline Mode - Working, will sync at school"
+PART E: OFFLINE VIDEO (TRIPLE MODE — YOUTUBE-SAFE)
+
+PLAYBACK BEHAVIOUR:
+
+Online (WiFi or Mobile Data):
+   - Play video via existing YouTube IFrame player
+   - No download
+
+Offline (no internet):
+   - If offline_videos has a cached slideshow for this video → play slideshow + audio + captions
+   - If offline_videos has a cached custom MP4 → play MP4 from IndexedDB blob
+   - If neither is cached → show message: "Video not available offline. Download the offline version at school WiFi."
+
+DOWNLOAD BUTTONS (per video):
+
+BUTTON 1: "Download Offline (Light) — ~2MB"
+   - Always enabled on WiFi, warned on mobile data
+   - Downloads 6 cartoon images + audio + captions
+   - Stores in IndexedDB offline_videos with versionType='slideshow'
+   - This is AppShule's own content — no ToS issue
+
+BUTTON 2: "Download HD Offline (if available)"
+   - ONLY visible if videoMappings[k].customMp4Url exists
+   - Do NOT show this button if only a YouTube URL exists
+   - Downloads the custom MP4 from the provided URL (not YouTube)
+   - Stores as blob in IndexedDB with versionType='custom-mp4'
+   - Only enabled on WiFi
+
+DO NOT:
+- ❌ Attempt to download YouTube video files
+- ❌ Scrape YouTube URLs
+- ❌ Extract YouTube video streams
+- ❌ Cache YouTube CDN URLs (they expire and violate ToS)
+
+VIDEO VIEW TRACKING:
+- Save video views to offline_views table
+- Mark synced=false initially
+- Sync when connection restored
+
+PART F: OFFLINE PROJECTS
+
+Modify the "My Projects" milestone upload flow:
+
+1. When student uploads a milestone while OFFLINE:
+   - Compress photo to <500KB
+   - Save to IndexedDB offline_projects
+   - Generate localId
+   - Set syncStatus = 'pending'
+   - Show status: "Saved offline - will sync at school"
+
+2. When connection restored:
+   - Auto-upload all pending projects to Firestore
+   - Update syncStatus = 'synced'
+   - Save to actual projects collection
+
+PART G: OFFLINE LESSON PLAN GENERATOR
+
+Modify the Auto Lesson Plan Generator:
+
+1. If ONLINE:
+   - Call Gemini API (existing behaviour)
+
+2. If OFFLINE:
+   - Use cached NCDC template from curriculum_links
+   - Show badge: "Offline - using saved template"
+   - Result may be less detailed but functional
+
+PART H: SYNC BUTTON
+
+Add a "Sync Now" button visible in:
+- Header (top right)
+- Account page
+
+Button behaviour:
+- On WiFi: "Sync Now (3 items - 2MB)" → auto syncs all
+- On Mobile Data: "Sync Now (3 items - 2MB). Uses data. Continue?"
+- On Offline: "Sync Now (3 items) - Connect to internet"
+
+After successful sync:
+- Show: "Sync complete! 3 items uploaded"
+- Update pending counts everywhere
+
+Auto-sync triggers:
+- App opens while online
+- Connection switches from offline → online
+- WiFi detected while pending items exist
+
+PART I: CROSS-DEVICE SYNCING
+
+When user logs in on a different device:
+1. Sync offline_projects to Firestore
+2. Sync offline_ca_records to Firestore
+3. Sync offline_views to Firestore
+4. Pull latest data from Firestore to IndexedDB
+
+Merge strategy:
+- Firestore wins for total counts
+- Keep latest timestamp for conflict resolution
+- Never lose offline data — always push before pull
+
+PART J: SETTINGS PAGE
+
+Add "Connection Settings" to Account page:
+
+- "Download HD videos only on WiFi" (toggle, default ON)
+- "Auto-sync on WiFi" (toggle, default ON)
+- "Auto-sync on mobile data" (toggle, default OFF)
+- "Preferred language" (dropdown: English, Luganda, Lusoga,
+   Runyankore, Runyoro, Acholi, Swahili)
+- "Data usage" (display: Last sync size, Total cached size)
+
+Save preferences to offline_settings IndexedDB + Firestore.
+
+PART K: TEST REQUIREMENTS
+
+A. Offline Test:
+   1. Open appshule.com on WiFi
+   2. Login as student
+   3. Turn OFF data + WiFi
+   4. Kill app, reopen in Chrome
+   5. Must still login (from IndexedDB)
+   6. Navigate to Home, Resources, Live
+   7. Upload a project milestone → saved as "Pending Sync"
+   8. Generate lesson plan → uses cached template
+   9. Play cached video → slideshow + audio + captions play
+
+B. Mobile Data Test:
+   1. Turn on mobile data only
+   2. Open app
+   3. Try to download offline video
+   4. Must show warning before downloading
+
+C. WiFi Test:
+   1. Connect to WiFi
+   2. App auto-detects
+   3. Badge changes to "WiFi - Full HD mode"
+   4. Pending items auto-sync
+
+D. Cross-Device Test:
+   1. Upload project on phone offline
+   2. Sync at school WiFi
+   3. Open app on laptop
+   4. Login
+   5. Project appears
+
+PART L: BROWSER COMPATIBILITY
+
+Must work on:
+- Chrome 80+ (Android, Windows, Mac)
+- Firefox 75+ (Android, Windows, Mac)
+- Safari 14+ (iOS, Mac)
+- Edge 80+ (Windows, Mac)
+- Opera 60+ (Android, Windows)
+
+For Safari: Use service worker fallback
+For older browsers: Show message: "Please update your browser to use Ap shule offline
+PART M: PERFORMANCE
+
+- App must load within 3 seconds on 3G
+- Must work on 1GB RAM devices (Tecno Pop)
+- Initial app shell cache: <5MB
+- Offline slideshow: 2MB per video
+- Offline custom MP4: only if available and user consents
+
+DO NOT:
+
+- Do NOT rebuild the app
+- Do NOT break the existing firebase-messaging-sw.js
+- Do NOT break Firebase Auth flow
+- Do NOT delete existing Firestore data
+- Do NOT break existing login system
+- Do NOT download YouTube video files (ToS violation)
+- Do NOT scrape YouTube URLs or streams
+- Do NOT host videos in Firebase Storage without consideration of cost
+- Do NOT show "No internet" error screens

@@ -39,5 +39,10 @@ app.use("/api", router);
 // Serve the standalone index.html at root for preview
 const indexPath = resolve(__dirname, "../../../index.html");
 app.get("/", (req, res) => res.sendFile(indexPath));
+app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
+app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
+app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));
+app.get("/manifest.json", (req, res) => res.sendFile(resolve(__dirname, "../../../manifest.json")));
+app.use("/icons", express.static(resolve(__dirname, "../../../icons")));
 
 export default app;

@@ -1,0 +1,72 @@
+Task 3 — Step 7 of 8: Add PDF earnings report download for teachers
+
+Add a "Download Offline Earnings Report" button to the Teacher Dashboard,
+below the Offline Earnings Summary card built in Step 4.
+
+Library needed:
+- Add jsPDF via CDN in index.html <head>:
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+- Add jsPDF-AutoTable for the table layout:
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+
+Button behavior:
+1. Button id: "downloadOfflineEarningsPdfBtn"
+2. Text: "📥 Download Offline Earnings Report"
+3. Style: match existing teacher card buttons (purple gradient, rounded, full width)
+
+When clicked, generate a PDF with:
+
+HEADER:
+- Title: "Offline Earnings Report"
+- Teacher name: {currentUser.name}
+- Teacher email: {currentUser.email}
+- Date range: From earliest offline view date to today
+- Generated on: {today's date}
+
+TABLE (use jspdf-autotable):
+Columns: Date | Student | Video | Device | Connection | Amount (UGX)
+
+Rows: All offline_views records WHERE:
+- teacherId == currentUser.uid
+- completed == true
+- Sort by watchedAt ascending
+
+Data per row:
+- Date: formatted watchedAt (e.g. "12 Sep 2026")
+- Student: studentName
+- Video: videoId (or look up title from videoMappings if available)
+- Device: deviceType
+- Connection: connectionMode
+- Amount: earningsAmount (or 0 if not synced yet)
+
+FOOTER SUMMARY (below the table):
+- Total offline earnings: UGX {sum of earningsAmount}
+- Total paid: UGX {sum where matching teacherEarnings.paid == true}
+- Total pending: UGX {sum where matching teacherEarnings.paid == false}
+
+FILE:
+- Save as: offline_earnings_{teacherId}_{YYYY-MM-DD}.pdf
+- Use doc.save() to trigger download
+
+Implementation notes:
+- Function name: generateOfflineEarningsPdf()
+- Fetch data from Firestore offline_views collection
+- Use existing currentUser object for teacher info
+- Handle case where there are no records: show a message
+  "No offline earnings yet" instead of an empty table
+- Format numbers with .toLocaleString() for readability (e.g. "1,500")
+
+Do NOT touch other teacher dashboard sections.
+Do NOT break existing buttons.
+
+Testing after implementation:
+1. Login as teacher with existing offline views
+2. Click "Download Offline Earnings Report" button
+3. Verify PDF downloads with correct filename
+4. Open PDF and check:
+   - Header shows teacher name and date range
+   - Table lists all offline views correctly
+   - Footer totals match the Offline Earnings Summary card
+5. Also test: teacher with NO offline views → friendly message shown
+
+Confirm when done with: "Step 7 complete — PDF report added and tested"

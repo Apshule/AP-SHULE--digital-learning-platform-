@@ -1,15 +1,22 @@
 import { Router, type Request, type Response } from "express";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { and, desc, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import {
   caRecordsTable,
+  computeTextSimilarity,
+  createProjectRecord,
+  generateProjectLin,
+  getCurrentTermLabel,
+  getProjectMilestoneUploadError,
   curriculumLinksTable,
   db,
+  normalizeProjectTitle,
   projectsTable,
   teacherRetoolingProgressTable,
   unebItemsTable,
+  validateProjectFields,
 } from "@workspace/db";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 const router = Router();
 const FIREBASE_PROJECT_ID = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
@@ -26,6 +33,8 @@ type Caller = {
   schoolId?: string;
   subject?: string;
   classes?: string[];
+  name?: string;
+  lin?: string;
 };
 
 function firestoreValue(fields: Record<string, unknown> | undefined, key: string): unknown {
@@ -56,9 +65,15 @@ async function getCaller(req: Request): Promise<Caller | null> {
     return {
       uid,
       role,
+      name: String(
+        firestoreValue(document.fields, "name") ??
+        firestoreValue(document.fields, "displayName") ??
+        "",
+      ) || undefined,
       schoolId: String(firestoreValue(document.fields, "schoolId") ?? "") || undefined,
       subject: String(firestoreValue(document.fields, "subject") ?? "") || undefined,
       classes,
+      lin: String(firestoreValue(document.fields, "lin") ?? firestoreValue(document.fields, "learnerId") ?? "") || undefined,
     };
   } catch {
     return null;
@@ -90,6 +105,130 @@ function decodedDataUrlBytes(value: string): number {
   const base64 = value.slice(comma + 1).replace(/\s/g, "");
   const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
   return Math.floor((base64.length * 3) / 4) - padding;
+}
+
+function isAllowedProjectPhoto(value: string): boolean {
+  if (value.startsWith("data:image/")) return decodedDataUrlBytes(value) <= 500 * 1024;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (
+      url.hostname === "firebasestorage.googleapis.com" ||
+      url.hostname === "storage.googleapis.com" ||
+      url.hostname.endsWith(".firebasestorage.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedProjectAudio(value: string): boolean {
+  if (value.startsWith("data:audio/")) return decodedDataUrlBytes(value) <= 2 * 1024 * 1024;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (
+      url.hostname === "firebasestorage.googleapis.com" ||
+      url.hostname === "storage.googleapis.com" ||
+      url.hostname.endsWith(".firebasestorage.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function buildQrPayload(input: {
+  projectId: string;
+  lin: string;
+  learnerId: string;
+  schoolId: string;
+  title: string;
+  term: string;
+  issuedAt: Date;
+}) {
+  const unsigned = {
+    version: 1,
+    projectId: input.projectId,
+    lin: input.lin,
+    learnerId: input.learnerId,
+    schoolId: input.schoolId,
+    title: input.title,
+    term: input.term,
+    issuedAt: input.issuedAt.toISOString(),
+  };
+  const hash = createHash("sha256").update(JSON.stringify(unsigned)).digest("hex");
+  return {
+    payload: JSON.stringify({ ...unsigned, hash }),
+    code: `APSHULE-QR-${hash.slice(0, 20).toUpperCase()}`,
+    hash,
+  };
+}
+
+function parsePhotoHash(value: unknown): { milestone: string; hash: string } | null {
+  if (typeof value !== "string") return null;
+  const hash = value.trim().toLowerCase();
+  if (/^[a-f0-9]{16,128}$/.test(hash)) return { milestone: "unknown", hash };
+  try {
+    const parsed = JSON.parse(value) as { milestone?: string; hash?: string };
+    if (parsed && typeof parsed.hash === "string" && /^[a-f0-9]{16,128}$/.test(parsed.hash)) {
+      return { milestone: String(parsed.milestone ?? "unknown"), hash: parsed.hash.toLowerCase() };
+    }
+  } catch {
+    // Legacy photo hash entries were plain strings.
+  }
+  return null;
+}
+
+function hammingDistance(left: string, right: string): number {
+  if (left.length !== right.length) return Number.POSITIVE_INFINITY;
+  let distance = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    let value = parseInt(left[index], 16) ^ parseInt(right[index], 16);
+    while (value) {
+      distance += value & 1;
+      value >>= 1;
+    }
+  }
+  return distance;
+}
+
+function milestoneFields(milestone: string) {
+  return {
+    "1": {
+      date: projectsTable.milestone1Date,
+      photo: projectsTable.milestone1Photo,
+      status: projectsTable.milestone1Status,
+      uploadedAt: projectsTable.milestone1UploadedAt,
+      approvedAt: projectsTable.milestone1ApprovedAt,
+      rejectedAt: projectsTable.milestone1RejectedAt,
+      comment: projectsTable.milestone1Comment,
+    },
+    "2": {
+      date: projectsTable.milestone2Date,
+      photo: projectsTable.milestone2Photo,
+      status: projectsTable.milestone2Status,
+      uploadedAt: projectsTable.milestone2UploadedAt,
+      approvedAt: projectsTable.milestone2ApprovedAt,
+      rejectedAt: projectsTable.milestone2RejectedAt,
+      comment: projectsTable.milestone2Comment,
+    },
+    "3": {
+      date: projectsTable.finalDate,
+      photo: projectsTable.finalPhoto,
+      status: projectsTable.finalStatus,
+      uploadedAt: projectsTable.finalUploadedAt,
+      approvedAt: projectsTable.finalApprovedAt,
+      rejectedAt: projectsTable.finalRejectedAt,
+      comment: projectsTable.finalComment,
+    },
+    final: {
+      date: projectsTable.finalDate,
+      photo: projectsTable.finalPhoto,
+      status: projectsTable.finalStatus,
+      uploadedAt: projectsTable.finalUploadedAt,
+      approvedAt: projectsTable.finalApprovedAt,
+      rejectedAt: projectsTable.finalRejectedAt,
+      comment: projectsTable.finalComment,
+    },
+  }[milestone] ?? null;
 }
 
 async function generateWithGemini(prompt: string): Promise<string> {
@@ -140,32 +279,148 @@ router.post("/compliance/projects", async (req, res) => {
     className?: string;
     subject?: string;
     title?: string;
+    description?: string;
+    lin?: string;
+    term?: string;
+    improvementNote?: string;
+    qrDataUrl?: string;
   };
   const title = String(body.title ?? "").trim();
-  if (!title || !body.schoolId || !body.className || !body.subject) {
+  const schoolId = String(body.schoolId ?? "").trim();
+  const className = String(body.className ?? "").trim();
+  const subject = String(body.subject ?? "").trim();
+  const description = String(body.description ?? "").trim().slice(0, 300);
+  const term = String(body.term ?? getCurrentTermLabel()).trim().slice(0, 20);
+  const improvementNote = String(body.improvementNote ?? "").trim().slice(0, 500);
+  const titleNormalized = normalizeProjectTitle(title);
+  const requestedLin = String(body.lin ?? "").trim();
+  if (!title || title.length > 100 || !schoolId || !className || !subject) {
     res.status(400).json({ ok: false, error: "schoolId, className, subject and title are required" });
     return;
   }
   const previous = await db
     .select({ id: projectsTable.id })
     .from(projectsTable)
-    .where(and(eq(projectsTable.learnerId, caller.uid), eq(projectsTable.title, title)));
+    .where(and(
+      eq(projectsTable.learnerId, caller.uid),
+      sql`coalesce(${projectsTable.titleNormalized}, lower(trim(${projectsTable.title}))) = ${titleNormalized}`,
+      eq(projectsTable.term, term),
+    ));
   if (previous.length) {
-    res.status(409).json({ ok: false, error: "This project title has already been used" });
+    res.status(409).json({
+      ok: false,
+      code: "DUPLICATE_CURRENT_TERM",
+      error: "This project title has already been used this term",
+    });
+    return;
+  }
+  const [previousProject] = await db
+    .select({
+      id: projectsTable.id,
+      title: projectsTable.title,
+      term: projectsTable.term,
+    })
+    .from(projectsTable)
+    .where(and(
+      eq(projectsTable.learnerId, caller.uid),
+      sql`coalesce(${projectsTable.titleNormalized}, lower(trim(${projectsTable.title}))) = ${titleNormalized}`,
+    ))
+    .orderBy(desc(projectsTable.createdAt))
+    .limit(1);
+  if (previousProject && previousProject.term !== term && improvementNote.length < 20) {
+    res.status(409).json({
+      ok: false,
+      code: "PREVIOUS_TERM_REPEAT",
+      error: "This title was used in a previous term. Add at least 20 characters explaining what is improved.",
+      previousProjectId: previousProject.id,
+      previousTitle: previousProject.title,
+      previousTerm: previousProject.term,
+      improvementRequired: true,
+    });
+    return;
+  }
+  if (caller.schoolId && caller.schoolId !== schoolId) {
+    res.status(403).json({ ok: false, error: "The project school must match your school account" });
     return;
   }
   const id = randomUUID();
-  const project = {
+  const now = new Date();
+  const existingLearnerProject = await db
+    .select({ lin: projectsTable.lin })
+    .from(projectsTable)
+    .where(and(eq(projectsTable.learnerId, caller.uid), sql`${projectsTable.lin} is not null`))
+    .orderBy(projectsTable.createdAt)
+    .limit(1);
+  let chosenLin = String(existingLearnerProject[0]?.lin ?? caller.lin ?? requestedLin ?? "").trim();
+  if (!chosenLin) chosenLin = generateProjectLin(schoolId, caller.uid, now.getUTCFullYear());
+  const [linCollision] = await db.select({ id: projectsTable.id, learnerId: projectsTable.learnerId })
+    .from(projectsTable)
+    .where(eq(projectsTable.lin, chosenLin))
+    .limit(1);
+  if (linCollision && linCollision.learnerId !== caller.uid) {
+    chosenLin = `${chosenLin}-${caller.uid.slice(-6).toUpperCase()}`;
+  }
+  const qr = buildQrPayload({
+    projectId: id,
+    lin: chosenLin,
+    learnerId: caller.uid,
+    schoolId,
+    title,
+    term,
+    issuedAt: now,
+  });
+  const similarityCandidates = await db
+    .select({
+      id: projectsTable.id,
+      title: projectsTable.title,
+      description: projectsTable.description,
+      learnerName: projectsTable.learnerName,
+    })
+    .from(projectsTable)
+    .where(eq(projectsTable.schoolId, schoolId));
+  const similarityMatch = similarityCandidates
+    .map((candidate) => ({
+      ...candidate,
+      score: computeTextSimilarity(`${title} ${description}`, `${candidate.title} ${candidate.description ?? ""}`),
+    }))
+    .sort((left, right) => right.score - left.score)[0];
+  const similarityFlag = Boolean(similarityMatch && similarityMatch.score >= 0.82);
+  const project = createProjectRecord({
     id,
     learnerId: caller.uid,
-    schoolId: body.schoolId,
-    className: body.className,
-    subject: body.subject,
+    learnerName: caller.name || caller.uid,
+    schoolId,
+    className,
+    subject,
     title,
-    lin: `APSHULE-${body.schoolId}-${id.slice(0, 8).toUpperCase()}`,
-    qrCode: `APSHULE-PROJECT-${id}`,
+    description: description || null,
+    lin: chosenLin,
+    qrCode: qr.code,
+    qrPayload: qr.payload,
+    qrDataUrl: typeof body.qrDataUrl === "string" && body.qrDataUrl.startsWith("data:image/") ? body.qrDataUrl : null,
+    qrGeneratedAt: now,
+    term,
+    titleNormalized,
     previousTitleCheck: true,
-  };
+    previousTitleMatch: Boolean(previousProject),
+    createdAt: now,
+    updatedAt: now,
+  });
+  project.previousTitle = previousProject?.title ?? null;
+  project.previousTerm = previousProject?.term ?? null;
+  project.improvementNote = improvementNote || null;
+  project.previousProjectId = previousProject?.id ?? null;
+  project.similarityFlag = similarityFlag;
+  project.similarityMatchId = similarityFlag ? similarityMatch?.id ?? null : null;
+  project.similarityReason = similarityFlag
+    ? `Project text is ${(similarityMatch!.score * 100).toFixed(0)}% similar to ${similarityMatch!.learnerName || "another learner"}'s project`
+    : null;
+  project.similarityScore = similarityFlag ? similarityMatch?.score ?? null : null;
+  const missingFields = validateProjectFields(project);
+  if (missingFields.length) {
+    res.status(400).json({ ok: false, error: "Project is missing required fields", missingFields });
+    return;
+  }
   await db.insert(projectsTable).values(project);
   res.status(201).json({ ok: true, project });
 });
@@ -178,13 +433,9 @@ router.patch("/compliance/projects/:id/milestones/:milestone", async (req, res) 
     return;
   }
   const milestone = req.params.milestone;
-  const fields = {
-    "1": { date: projectsTable.milestone1Date, photo: projectsTable.milestone1Photo, status: projectsTable.milestone1Status },
-    "2": { date: projectsTable.milestone2Date, photo: projectsTable.milestone2Photo, status: projectsTable.milestone2Status },
-    final: { date: projectsTable.finalDate, photo: projectsTable.finalPhoto, status: projectsTable.finalStatus },
-  }[milestone];
+  const fields = milestoneFields(milestone);
   const photo = typeof req.body?.photo === "string" ? req.body.photo : "";
-  if (!fields || !photo || decodedDataUrlBytes(photo) > 500 * 1024) {
+  if (!fields || !photo || !isAllowedProjectPhoto(photo)) {
     res.status(400).json({ ok: false, error: "Choose a milestone and a compressed photo under 500KB" });
     return;
   }
@@ -193,11 +444,69 @@ router.patch("/compliance/projects/:id/milestones/:milestone", async (req, res) 
     res.status(404).json({ ok: false, error: "Project not found" });
     return;
   }
+  const uploadError = getProjectMilestoneUploadError(project, milestone);
+  if (uploadError) {
+    res.status(409).json({ ok: false, error: uploadError });
+    return;
+  }
+  const gpsLat = Number(req.body?.gpsLat);
+  const gpsLng = Number(req.body?.gpsLng);
+  const requestedDeviceType = String(req.body?.deviceType ?? "");
+  const requestedConnection = String(req.body?.uploadedFromConnection ?? "");
+  const photoHash = parsePhotoHash(req.body?.photoHash);
+  const schoolProjects = photoHash
+    ? await db.select({
+      id: projectsTable.id,
+      learnerName: projectsTable.learnerName,
+      photoHashes: projectsTable.photoHashes,
+    }).from(projectsTable).where(eq(projectsTable.schoolId, project.schoolId))
+    : [];
+  const matchingPhoto = photoHash
+    ? schoolProjects
+      .filter((candidate) => candidate.id !== project.id)
+      .flatMap((candidate) => (candidate.photoHashes ?? [])
+        .map((value) => ({ candidate, parsed: parsePhotoHash(value) }))
+        .filter((entry): entry is { candidate: typeof candidate; parsed: { milestone: string; hash: string } } => Boolean(entry.parsed)))
+      .map((entry) => ({ ...entry, distance: hammingDistance(entry.parsed.hash, photoHash.hash) }))
+      .filter((entry) => entry.distance <= 6)
+      .sort((left, right) => left.distance - right.distance)[0]
+    : undefined;
+  const now = new Date();
+  const nextHashes = [...(project.photoHashes ?? [])];
+  if (photoHash) {
+    nextHashes.push(JSON.stringify({ milestone, hash: photoHash.hash, uploadedAt: now.toISOString() }));
+  }
   await db
     .update(projectsTable)
-    .set({ [fields.date.name]: new Date(), [fields.photo.name]: photo, [fields.status.name]: "pending" })
+    .set({
+      [fields.date.name]: now,
+      [fields.photo.name]: photo,
+      [fields.status.name]: "pending",
+      [fields.uploadedAt.name]: now,
+      [fields.rejectedAt.name]: null,
+      photoHashes: nextHashes,
+      similarityFlag: Boolean(project.similarityFlag || matchingPhoto),
+      similarityMatchId: matchingPhoto?.candidate.id ?? project.similarityMatchId,
+      similarityReason: matchingPhoto
+        ? `Milestone ${milestone} photo is visually similar to ${matchingPhoto.candidate.learnerName || "another learner"}'s evidence`
+        : project.similarityReason,
+      similarityScore: matchingPhoto
+        ? Math.max(project.similarityScore ?? 0, 1 - matchingPhoto.distance / 64)
+        : project.similarityScore,
+      schoolGpsLat: Number.isFinite(gpsLat) ? gpsLat : null,
+      schoolGpsLng: Number.isFinite(gpsLng) ? gpsLng : null,
+      deviceType: ["phone", "tablet", "laptop", "desktop"].includes(requestedDeviceType) ? requestedDeviceType : null,
+      uploadedFromConnection: ["offline", "mobile_data", "wifi"].includes(requestedConnection)
+        ? requestedConnection
+        : null,
+      updatedAt: new Date(),
+    })
     .where(eq(projectsTable.id, project.id));
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    similarityFlag: Boolean(project.similarityFlag || matchingPhoto),
+    similarityMatchId: matchingPhoto?.candidate.id ?? project.similarityMatchId ?? null,
+  });
 });
 
 router.patch("/compliance/projects/:id/review", async (req, res) => {
@@ -208,31 +517,213 @@ router.patch("/compliance/projects/:id/review", async (req, res) => {
     return;
   }
   const status = req.body?.status === "approved" ? "approved" : "rejected";
+  const milestone = String(req.body?.milestone ?? "final");
+  const fields = milestoneFields(milestone);
+  if (!fields) {
+    res.status(400).json({ ok: false, error: "milestone must be 1, 2 or 3" });
+    return;
+  }
+  const comment = String(req.body?.comment ?? "").trim().slice(0, 500);
+  const observed = Boolean(req.body?.observed);
+  const approveWithoutViva = Boolean(req.body?.approveWithoutViva);
+  const vivaAudioPath = typeof req.body?.vivaAudioPath === "string" ? req.body.vivaAudioPath : "";
+  if (status === "rejected" && !comment) {
+    res.status(400).json({ ok: false, error: "A rejection comment is required" });
+    return;
+  }
+  if (status === "approved" && !observed && !approveWithoutViva) {
+    res.status(400).json({ ok: false, error: "Confirm that the student was observed or use the approve-without-viva override" });
+    return;
+  }
+  if (vivaAudioPath && !isAllowedProjectAudio(vivaAudioPath)) {
+    res.status(400).json({ ok: false, error: "Viva audio must be an approved Firebase Storage URL or a small audio data URL" });
+    return;
+  }
   const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, req.params.id));
   if (!project || !canSeeProject(caller, project)) {
     res.status(404).json({ ok: false, error: "Project not found" });
     return;
   }
+  const now = new Date();
+  const updateValues = {
+    [fields.status.name]: status,
+    [fields.comment.name]: comment || null,
+    [fields.approvedAt.name]: status === "approved" ? now : null,
+    [fields.rejectedAt.name]: status === "rejected" ? now : null,
+    teacherObservedTick: observed || project.teacherObservedTick,
+    vivaAudioPath: vivaAudioPath || project.vivaAudioPath,
+    vivaAudioUploadedAt: vivaAudioPath ? now : project.vivaAudioUploadedAt,
+    vivaAudioMilestone: vivaAudioPath ? milestone : project.vivaAudioMilestone,
+    verifiedBy: caller.uid,
+    verifiedAt: now,
+    completedAt: status === "approved" && milestone === "3" ? now : project.completedAt,
+    updatedAt: now,
+  };
   await db
     .update(projectsTable)
-    .set({ finalStatus: status, teacherObservedTick: Boolean(req.body?.observed) })
+    .set(updateValues)
     .where(eq(projectsTable.id, project.id));
   if (status === "approved") {
     await db.insert(caRecordsTable).values({
       id: randomUUID(),
+      projectId: project.id,
+      milestone,
       learnerId: project.learnerId,
       schoolId: project.schoolId,
       subject: project.subject,
       competency: "Project work and communication",
       evidence1: "Project milestone evidence",
-      evidence2: req.body?.observed ? "Teacher observed" : "Teacher review",
-      evidence3: "Final project photo",
+      evidence2: observed ? "Teacher observed" : "Teacher review override",
+      evidence3: `${milestone === "3" ? "Final" : `Milestone ${milestone}`} project photo`,
       finalLevel: "Meets",
-      term: String(req.body?.term ?? "Current term"),
+      term: String(req.body?.term ?? project.term ?? getCurrentTermLabel()),
       teacherId: caller.uid,
     });
   }
+  res.json({ ok: true, projectId: project.id, milestone, status });
+});
+
+router.patch("/compliance/projects/:id/qr", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, req.params.id));
+  if (!project || (project.learnerId !== caller.uid && !canSeeProject(caller, project))) {
+    res.status(404).json({ ok: false, error: "Project not found" });
+    return;
+  }
+  const qrDataUrl = typeof req.body?.qrDataUrl === "string" ? req.body.qrDataUrl : "";
+  const qrStorageUrl = typeof req.body?.qrStorageUrl === "string" ? req.body.qrStorageUrl : "";
+  const validStorageUrl = (() => {
+    if (!qrStorageUrl) return true;
+    try {
+      const url = new URL(qrStorageUrl);
+      return url.protocol === "https:" && (
+        url.hostname === "firebasestorage.googleapis.com" ||
+        url.hostname === "storage.googleapis.com" ||
+        url.hostname.endsWith(".firebasestorage.app")
+      );
+    } catch {
+      return false;
+    }
+  })();
+  if ((!qrDataUrl.startsWith("data:image/") || decodedDataUrlBytes(qrDataUrl) > 350 * 1024) && !qrStorageUrl) {
+    res.status(400).json({ ok: false, error: "A QR PNG data URL under 350KB or Firebase Storage URL is required" });
+    return;
+  }
+  if (!validStorageUrl) {
+    res.status(400).json({ ok: false, error: "QR storage URL is not an approved Firebase Storage URL" });
+    return;
+  }
+  await db.update(projectsTable).set({
+    qrDataUrl: qrDataUrl.startsWith("data:image/") ? qrDataUrl : project.qrDataUrl,
+    qrStorageUrl: qrStorageUrl || project.qrStorageUrl,
+    qrGeneratedAt: project.qrGeneratedAt ?? new Date(),
+    updatedAt: new Date(),
+  })
+    .where(eq(projectsTable.id, project.id));
+  res.json({ ok: true, qrDataUrl: qrDataUrl.startsWith("data:image/") ? qrDataUrl : project.qrDataUrl, qrStorageUrl: qrStorageUrl || project.qrStorageUrl });
+});
+
+router.get("/compliance/teacher-projects", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "teacher") {
+    res.status(403).json({ ok: false, error: "Only teachers can view the project verification queue" });
+    return;
+  }
+  const rows = await db.select().from(projectsTable).orderBy(desc(projectsTable.updatedAt));
+  res.json({
+    ok: true,
+    projects: rows.filter((project) =>
+      canSeeProject(caller, project) &&
+      [project.milestone1Status, project.milestone2Status, project.finalStatus].some((status) => status === "pending"),
+    ),
+  });
+});
+
+router.get("/compliance/duplicate-alerts", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "school" && caller.role !== "superadmin") {
+    res.status(403).json({ ok: false, error: "Only school administrators can view duplicate alerts" });
+    return;
+  }
+  const rows = await db.select().from(projectsTable)
+    .where(eq(projectsTable.similarityFlag, true))
+    .orderBy(desc(projectsTable.updatedAt));
+  const visible = rows.filter((project) => canSeeProject(caller, project));
+  res.json({ ok: true, projects: visible });
+});
+
+router.patch("/compliance/projects/:id/clear-flag", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "school" && caller.role !== "superadmin") {
+    res.status(403).json({ ok: false, error: "Only school administrators can clear flags" });
+    return;
+  }
+  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, req.params.id));
+  if (!project || !canSeeProject(caller, project)) {
+    res.status(404).json({ ok: false, error: "Project not found" });
+    return;
+  }
+  await db.update(projectsTable).set({
+    similarityFlag: false,
+    similarityReason: String(req.body?.reason ?? "Reviewed by administrator").trim().slice(0, 500),
+    clearedBy: caller.uid,
+    clearedAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(projectsTable.id, project.id));
   res.json({ ok: true });
+});
+
+router.get("/compliance/repeat-title-log", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "school" && caller.role !== "superadmin") {
+    res.status(403).json({ ok: false, error: "Only school administrators can view repeat-title logs" });
+    return;
+  }
+  const rows = await db.select().from(projectsTable).orderBy(desc(projectsTable.createdAt));
+  res.json({
+    ok: true,
+    projects: rows.filter((project) =>
+      project.previousTitleMatch && canSeeProject(caller, project),
+    ),
+  });
+});
+
+router.get("/compliance/superadmin-overview", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "superadmin") {
+    res.status(403).json({ ok: false, error: "Only super administrators can view this dashboard" });
+    return;
+  }
+  const projects = await db.select().from(projectsTable).orderBy(desc(projectsTable.createdAt));
+  const records = await db.select().from(caRecordsTable);
+  const schools = new Map<string, { projects: number; flagged: number; completed: number }>();
+  for (const project of projects) {
+    const current = schools.get(project.schoolId) ?? { projects: 0, flagged: 0, completed: 0 };
+    current.projects += 1;
+    if (project.similarityFlag) current.flagged += 1;
+    if (project.finalStatus === "approved") current.completed += 1;
+    schools.set(project.schoolId, current);
+  }
+  res.json({
+    ok: true,
+    projects,
+    records,
+    summary: {
+      totalProjects: projects.length,
+      flaggedProjects: projects.filter((project) => project.similarityFlag).length,
+      pendingReviews: projects.filter((project) =>
+        [project.milestone1Status, project.milestone2Status, project.finalStatus].includes("pending"),
+      ).length,
+      completedProjects: projects.filter((project) => project.finalStatus === "approved").length,
+      schools: [...schools.entries()].map(([schoolId, values]) => ({ schoolId, ...values })),
+    },
+  });
 });
 
 router.get("/compliance/retooling", async (req, res) => {

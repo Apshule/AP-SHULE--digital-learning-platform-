@@ -1,0 +1,208 @@
+Task 4 — Step 3 of 8: LIN-locked QR code generation and UNEB evidence
+
+CONTEXT:
+- Step 1 verified the projects collection has all required fields
+- Step 2 built the student "My Projects" UI with 3-milestone uploads
+- Each project currently stores qrCode: "" (empty)
+- Now we generate a unique, tamper-proof QR code tied to the student's LIN
+
+GOAL:
+Every project gets a QR code that:
+- Is unique to that specific project
+- Is locked to the learner's LIN (Learner Identification Number)
+- Cannot be reused by another student
+- Contains data UNEB moderators can scan to verify authenticity
+
+PART A: ADD QR CODE LIBRARY
+Add QR code generation library to index.html <head>:
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+This library generates QR codes as canvas or image elements 
+which can be saved as data URLs and uploaded to Firebase Storage.
+
+PART B: QR CODE CONTENT STRUCTURE
+
+The QR code should encode this JSON payload (compact format):
+
+{
+  "v": "1",
+  "lin": "{student LIN}",
+  "pid": "{project doc ID}",
+  "sid": "{school ID}",
+  "cid": "{class name}",
+  "s": "{subject}",
+  "t": "{project title}",
+  "ts": "{ISO timestamp of project creation}",
+  "hash": "{SHA-256 hash of the above fields}"
+}
+
+The hash field is a tamper-proof checksum:
+- Concatenate: lin + pid + sid + cid + s + t + ts
+- Compute SHA-256 using Web Crypto API (crypto.subtle.digest)
+- Convert to hex string
+- This ensures QR data cannot be modified without detection
+
+PART C: GENERATE QR ON PROJECT CREATION
+
+Modify the saveNewProject() function from Step 2:
+
+After the project document is written to Firestore and gets a doc ID:
+
+1. Compute the payload JSON (Part B)
+2. Generate SHA-256 hash (async)
+3. Generate QR code using qrcodejs:
+   - Create a temporary div
+   - new QRCode(div, { text: JSON.stringify(payload), width: 300, height: 300 })
+   - Wait for canvas to render
+   - Get canvas.toDataURL('image/png')
+4. Upload QR PNG to Firebase Storage:
+   - Path: projects/{schoolId}/{learnerId}/{projectId}/qr.png
+5. Get download URL
+6. Update Firestore project doc:
+   - qrCode = download URL
+   - qrDataUrl = canvas.toDataURL (for offline display)
+   - qrGeneratedAt = serverTimestamp()
+7. Show toast: "✅ QR code generated for {project title}"
+
+PART D: LIN LOCK ENFORCEMENT
+
+The LIN must be PERMANENT for each student:
+
+1. When generating LIN (in Step 2's generateLin function):
+   - Check if user doc already has a "lin" field
+   - If yes: use existing LIN
+   - If no: generate new LIN and save to user doc
+
+2. LIN format (permanent, never changes):
+   - APSH-{schoolId prefix 4 chars}-{year first joined}-{uid last 6}
+   - Example: APSH-ROSE-2026-A1B2C3
+
+3. LIN uniqueness check:
+   - Before saving a new LIN, query users collection WHERE lin == newLin
+   - If exists → regenerate with different suffix
+   - This prevents accidental collisions
+
+4. Once a project has a LIN, it NEVER changes — even if user's 
+   name or school changes.
+
+PART E: DISPLAY QR IN STUDENT VIEW
+In the project detail view (from Step 2), add a QR section 
+above the milestones:
+
+┌─────────────────────────────────────────┐
+│ 📱 PROJECT QR CODE                       │
+│ [QR IMAGE 200x200]                      │
+│ LIN: APSH-ROSE-2026-A1B2C3              │
+│ [📥 Download QR]                        │
+└─────────────────────────────────────────┘
+
+Behavior:
+- Show QR image from qrDataUrl (cached, works offline)
+- If qrDataUrl is not set yet, generate it on-the-fly when the 
+  detail view opens (self-healing)
+- "Download QR" button: saves the PNG to student's device
+
+PART F: QR SCANNING FOR VERIFICATION (Teacher side prep)
+
+Add a helper function verifyQrPayload(qrString):
+
+1. Parse JSON from QR string
+2. Recompute the SHA-256 hash from the payload fields
+3. Compare to the hash field in the payload
+4. If they match → return { valid: true, payload: {...} }
+5. If they don't match → return { valid: false, reason: 'hash_mismatch' }
+6. If JSON is malformed → return { valid: false, reason: 'invalid_json' }
+
+This function will be used in Step 6 (teacher verification flow) 
+when teacher scans student's QR code.
+
+Also add a helper qrPayloadToReadable(payload) that returns:
+- Student LIN
+- Project title
+- Subject
+- Class
+- School
+- Created date
+
+PART G: OFFLINE BEHAVIOR
+
+QR generation must work offline too:
+
+1. If OFFLINE when creating a project:
+   - Generate QR locally (qrcodejs works offline)
+   - Compute SHA-256 hash (Web Crypto works offline)
+   - Save qrDataUrl to the offline_projects IndexedDB record
+   - Do NOT upload QR to Firebase Storage yet
+   - When connection restored: upload QR PNG to Storage + 
+     update Firestore with URL
+
+2. If QR image can't be uploaded yet, the QR still displays from 
+   qrDataUrl stored locally.
+
+PART H: SUPER ADMIN QR AUDIT
+
+Add a small section to Super Admin Admin Panel:
+
+📱 QR CODE AUDIT
+- Total projects with QR: X
+- Total projects missing QR: X
+- List of any projects missing QR (title + student + link)
+
+If any project is missing a QR, show a "Regenerate" button 
+that calls the QR generation flow for that project.
+
+Place this section AFTER "Offline Views Overview" (from Task 3).
+
+PART I: TESTING
+
+Test with 1 student account:
+
+A. QR generation on project creation:
+   1. Student creates new project
+   2. Wait 2 seconds for QR generation
+   3. Verify project doc has qrCode URL and qrDataUrl
+   4. Verify Firebase Storage has QR PNG at expected path
+
+B. QR display:
+   1. Open project detail
+   2. QR image renders above milestones
+   3. LIN displayed clearly
+   4. "Download QR" saves PNG
+
+C. QR verification (using console):
+   1. In DevTools console, run: verifyQrPayload(qrString)
+   2. Should return { valid: true }
+   3. Manually modify one field in the JSON string
+   4. verifyQrPayload should return { valid: false, reason: 'hash_mismatch' }
+
+D. Offline QR:
+   1. Turn off WiFi + data
+   2. Create new project
+   3. Verify QR is generated and displays (from qrDataUrl)
+   4. Verify project saved to IndexedDB with QR
+   5. Turn on WiFi
+   6. Verify auto-sync uploads QR PNG to Storage
+
+E. LIN permanence:
+   1. Check user doc has lin field after first project
+   2. Create second project
+   3. Verify both projects share the same LIN
+
+DO NOT
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1, 2, 3
+- Do NOT break Student My Projects UI from Step 2
+- Do NOT allow the same LIN on two different students
+- Do NOT generate QR without a valid LIN
+- Do NOT block project creation if QR generation fails — show 
+  warning but save the project anyway
+
+Confirm when done with:
+"Step 3 complete — LIN-locked QR code generation built and tested"
+
+Report:
+- Which tests A, B, C, D, E passed
+- Any bugs found and how they were fixed
+- Screenshots recommended: QR in project detail, QR audit in admin panel

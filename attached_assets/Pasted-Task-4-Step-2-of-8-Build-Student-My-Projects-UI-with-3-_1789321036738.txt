@@ -1,0 +1,231 @@
+Task 4 — Step 2 of 8: Build Student "My Projects" UI with 3 milestone uploads
+
+CONTEXT:
+Step 1 verified the "projects" Firestore collection has all required fields.
+Now we build the student-facing UI for uploading milestones.
+
+GOAL:
+Student can:
+- See their list of projects
+- Create a new project with title + subject
+- Upload 3 forced milestone photos (Week 2 Proposal, Week 5 Progress, Week 9 Final)
+- See status for each milestone (pending/approved/rejected)
+
+PART A: ADD "My Projects" SECTION TO STUDENT UI
+LOCATION:
+In the existing Student Home screen, find the "CBC & UNEB" section 
+(added in Task 1, sits between "Learning Materials (PDFs)" and 
+"Subscription Plans").
+
+The "My Projects" button already exists — but it currently shows 
+a placeholder toast. Replace it with real functionality.
+
+When student taps "My Projects":
+- Open a full-screen modal (id="myProjectsModal") 
+- Show a list of the student's existing projects (query projects 
+  collection WHERE learnerId == currentUser.uid)
+- Each project card shows:
+  * Title + Subject
+  * Class name
+  * Status summary: "Milestone 1: pending | Milestone 2: not started | Final: not started"
+  * Last updated date
+- At the bottom: big button "➕ Create New Project"
+- Close button (X) top-right
+PART B: CREATE NEW PROJECT FLOW
+When student taps "Create New Project":
+- Open a new modal (id="createProjectModal")
+- Form fields:
+  * Project Title (text input, required, max 100 chars)
+  * Subject (dropdown from existing subjects list — primarySubjects 
+    or secondarySubjects depending on student's level)
+  * Class (auto-filled from student's current class if known, 
+    or dropdown)
+  * Short Description (textarea, optional, max 300 chars)
+- Buttons: "Cancel" | "Save Project"
+
+On Save:
+1. Validate title is not empty and not duplicated in student's own projects
+2. Generate a LIN (Learner Identification Number):
+   - Format: APSH-{schoolId short}-{year}-{studentUID last 6 chars}
+   - Example: APSH-ROSE-2026-A1B2C3
+   - If student doesn't have a lin yet, save it to their user doc so 
+     it stays the same for all future projects
+3. Write to Firestore "projects" collection:
+   {
+     learnerId, learnerName, schoolId, className, subject, title,
+     description: (from form),
+     lin: (generated),
+     qrCode: "" (generated in Step 3),
+     milestone_1_status: "not_started",
+     milestone_2_status: "not_started",
+     final_status: "not_started",
+     similarity_flag: false,
+     previous_title_match: false,
+     teacher_observed_tick: false,
+     createdAt: serverTimestamp(),
+     updatedAt: serverTimestamp()
+   }
+4. Close createProjectModal
+5. Refresh the project list
+6. Show toast: "✅ Project created! Upload Week 2 Proposal."
+
+PART C: MILESTONE UPLOAD FLOW
+When student taps an existing project card:
+- Open project detail view (id="projectDetailModal")
+- Show:
+  * Project title, subject, class
+  * LIN (display for reference)
+  * Three milestone sections (stacked vertically):
+
+  ┌─────────────────────────────────────────┐
+  │ 📋 MILESTONE 1 — PROPOSAL      │
+  │ Status: [not_started / pending /        │
+  │          approved / rejected]           │
+  │ [Upload Photo] or [View Photo]          │
+  │ Teacher comment: (if any)               │
+  └─────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────┐
+  │ 📊 MILESTONE 2 — PROGRESS (Week 5)      │
+  │ Status: [...]                            │
+  │ LOCKED until Milestone 1 approved       │
+  └─────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────┐
+  │ 🎯 MILESTONE 3 — FINAL (Week 9)         │
+  │ Status: [...]                            │
+  │ LOCKED until Milestone 2 approved       │
+MILESTONE RULES (enforce strictly):
+- Milestone 1 can be uploaded anytime after project creation
+- Milestone 2 is LOCKED until Milestone 1 is approved by teacher
+- Milestone 3 is LOCKED until Milestone 2 is approved by teacher
+- Once uploaded and approved, milestone CANNOT be edited (read-only)
+
+UPLOAD FLOW:
+1. Student taps "Upload Photo" for Milestone 1
+2. Opens file picker OR camera (if mobile)
+3. Student selects/takes photo
+4. Compress photo to <500KB (reuse Task 2 compression)
+5. Upload photo to Firebase Storage:
+   - Path: projects/{schoolId}/{learnerId}/{projectId}/milestone_1.jpg
+6. Save photo download URL to project doc:
+   - milestone_1_photo = URL
+   - milestone_1_status = "pending"
+   - milestone_1_uploadedAt = serverTimestamp()
+   - milestone_1_date = serverTimestamp()
+7. Capture GPS (if permission granted):
+   - school_gps_lat, school_gps_lng
+8. Capture device type (from Task 2 detection):
+   - device_type = 'phone' | 'tablet' | 'laptop'
+9. Show toast: "✅ Milestone 1 uploaded — waiting for teacher approval"
+
+OFFLINE BEHAVIOR (integrate with Task 2):
+- If offline: save to IndexedDB offline_projects with syncStatus='pending'
+- Show toast: "Saved offline — will sync at school WiFi"
+- When connection restored: auto-upload to Firestore + Storage
+
+PART D: DISPLAY DUPLICATE / REPEAT WARNINGS
+In the project detail view, if any of these flags are true:
+- previous_title_match == true → show warning banner:
+  "⚠️ You used this title last term. Consider choosing a 
+  different approach or explaining what's new."
+- similarity_flag == true → show warning banner:
+  "⚠️ Similar to another student's project. Teacher will review."
+
+Banners are informational only — student can still proceed 
+(full enforcement happens in Step 4).
+
+PART E: DATA STRUCTURE
+Add these helper functions:
+
+1. openMyProjects()
+   - Opens the myProjectsModal
+   - Loads student's projects
+   - Renders project cards
+
+2. openCreateProject()
+   - Opens createProjectModal
+   - Populates subject dropdown from existing subjects
+
+3. saveNewProject()
+   - Validates form
+   - Generates LIN if missing
+   - Writes to Firestore
+   - Closes modal, refreshes list
+
+4. openProjectDetail(projectId)
+   - Opens projectDetailModal
+   - Loads full project document
+   - Renders 3 milestone sections with correct lock states
+
+5. uploadMilestone(projectId, milestoneNumber)
+   - milestoneNumber is 1, 2, or 3
+   - Handles file picker/camera
+   - Compresses photo
+   - Uploads to Storage
+   - Updates Firestore doc
+
+6. generateLin(schoolId, studentUid)
+   - Returns formatted LIN string
+   - Also saves to user doc if not present
+
+PART F: UI STYLING
+Match existing AppShule design:
+- Primary color: #4B2E9E (purple)
+- Accent color: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Cards: white background, 16px border-radius, soft shadow
+- Buttons: rounded (20-25px), bold text
+
+Status badges:
+- not_started: grey badge "Not Started"
+- pending: yellow badge "⏳ Pending Review"
+- approved: green badge "✅ Approved"
+- rejected: red badge "❌ Rejected — see comment"
+PART G: TESTING
+Test with 1 student account:
+
+A. Create project:
+   1. Login as student
+   2. Tap CBC & UNEB → My Projects
+   3. Tap "Create New Project"
+   4. Fill: Title="Solar Cooker", Subject="Science", Class="P5"
+   5. Save
+   6. Verify project appears in list
+   7. Check Firestore: project doc has all required fields
+
+B. Upload milestone 1:
+   1. Tap the project card
+   2. Tap "Upload Photo" on Milestone 1
+   3. Select a photo
+   4. Verify photo uploads to Firebase Storage
+   5. Verify project doc updated:
+      - milestone_1_photo = URL
+      - milestone_1_status = "pending"
+   6. Verify Milestone 2 is LOCKED
+
+C. Test lock rules:
+   1. Try to upload Milestone 2 → should be blocked
+   2. Verify message: "Complete Milestone 1 first"
+
+D. Test offline:
+   1. Turn off WiFi + data
+   2. Try to upload milestone
+   3. Verify it saves to IndexedDB with syncStatus='pending'
+   4. Turn on WiFi
+   5. Verify auto-sync pushes it to Firestore
+DO NOT
+- Do NOT rebuild the app
+- Do NOT break Tasks 1, 2, or 3
+- Do NOT allow multiple simultaneous uploads of same milestone
+- Do NOT break offline sync
+- Do NOT touch teacher or admin sections in this step
+- Do NOT add QR code generation yet (that's Step 3)
+Confirm when done with:
+"Step 2 complete — Student My Projects UI with 3-milestone upload built and tested"
+
+Report:
+- Which tests A, B, C, D passed
+- Any bugs found
+- Screenshots recommended: project list, create form, milestone view
