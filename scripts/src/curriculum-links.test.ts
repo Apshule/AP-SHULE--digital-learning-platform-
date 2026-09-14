@@ -182,3 +182,59 @@ describe("curriculum linker UI contract", () => {
     expect(indexHtml).toContain("activitySuggestion");
   });
 });
+
+describe("Tasks 1-4 regression contract", () => {
+  it("keeps Task 1 CBC and NCDC/UNEB teaching tools present", () => {
+    for (const marker of [
+      "NCDC / UNEB PHASE 1 TOOLS",
+      "teacherCbcPanel",
+      "openLessonPlanBtn",
+      "lessonPlanForm",
+      "openTriangulationBtn",
+      "triangulationForm",
+    ]) {
+      expect(indexHtml).toContain(marker);
+    }
+  });
+
+  it("keeps Task 2 offline login, connection mode, and sync controls present", () => {
+    for (const marker of [
+      "offline-manager.js",
+      "accountSyncNowBtn",
+      "headerSyncNowBtn",
+      "autoSyncMobileToggle",
+      "autoSyncWifiToggle",
+      "offlineVideoStatus",
+    ]) {
+      expect(indexHtml).toContain(marker);
+    }
+  });
+
+  it("keeps Task 3 teacher earnings and super-admin offline views present", () => {
+    for (const marker of [
+      "teacherOfflineEarningsCard",
+      "teacherOfflineEarningsSummary",
+      "downloadOfflineEarningsPdfBtn",
+      "teacherOfflineSyncNowBtn",
+      "offlineViewsOverviewSection",
+      "offlineViewsRefreshBtn",
+    ]) {
+      expect(indexHtml).toContain(marker);
+    }
+  });
+
+  it("keeps Task 4 project, QR, evidence, viva, and duplicate-review flows present", () => {
+    for (const marker of [
+      "myProjectsModal",
+      "openCreateProjectBtn",
+      "projectDetailModal",
+      "teacherProjectVerificationCard",
+      "complianceDuplicateBtn",
+      "adminDownloadProjectZip",
+      "vivaAudioPath",
+      "qrDataUrl",
+    ]) {
+      expect(indexHtml).toContain(marker);
+    }
+  });
+});

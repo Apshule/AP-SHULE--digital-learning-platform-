@@ -7,6 +7,7 @@
     "hello": "tsx ./src/hello.ts",
     "push-to-github": "tsx ./src/push-to-github.ts",
     "push-watch": "tsx ./src/push-watch.ts",
+    "benchmark": "tsx ./src/curriculum-links.benchmark.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
