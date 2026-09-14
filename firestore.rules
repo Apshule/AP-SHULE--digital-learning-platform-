@@ -13,6 +13,15 @@ service cloud.firestore {
       return signedIn() && role() == 'superadmin';
     }
 
+    function isMfiUser() {
+      return signedIn() && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
+    }
+
+    function sameMfiInstitution(institutionId) {
+      return isMfiUser()
+        && institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId;
+    }
+
     match /liveLessons/{lessonId} {
       allow read: if signedIn();
       allow create, update, delete: if signedIn()
@@ -123,10 +132,41 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read, write: if signedIn() && (isSuperAdmin() || settingId == 'about');
     }
+    match /mfi_collateral_types/{typeId} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin();
+    }
+    match /mfi_customers/{customerId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+    }
+    match /mfi_collateral/{collateralId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+    }
+    match /mfi_collateral_scoring/{scoringId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager'];
+      allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+    }
+    match /mfi_collateral_documents/{documentId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+    }
+    match /mfi_branches/{branchId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow write: if isSuperAdmin();
+    }
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status))(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches)(/.*)?$');
     }
   }
 }

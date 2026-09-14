@@ -42,6 +42,7 @@ const FILES = [
   "scripts/src/video-studio.test.ts",
   "scripts/src/settings.test.ts",
   "scripts/src/command-center.test.ts",
+  "scripts/src/mfi.test.ts",
   "scripts/src/push-to-github.ts",
   "firestore.rules",
   "firestore.indexes.json",

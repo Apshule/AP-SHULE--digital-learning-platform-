@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 12;
+  var DB_VERSION = 13;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -24,7 +24,9 @@
     'offline_pdfs',
     'offline_sync_history',
     'offline_branding',
-    'offline_command_stats'
+    'offline_command_stats',
+    'offline_mfi_customers',
+    'offline_mfi_collateral'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -166,7 +168,9 @@
                 offline_pdfs: 'pdfId',
                  offline_sync_history: 'historyId',
                  offline_branding: 'institutionId',
-                 offline_command_stats: 'statsKey'
+                 offline_command_stats: 'statsKey',
+                 offline_mfi_customers: 'localId',
+                 offline_mfi_collateral: 'localId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -234,6 +238,18 @@
         if (oldVersion < 12 && !db.objectStoreNames.contains('offline_command_stats')) {
           var commandStatsStore = db.createObjectStore('offline_command_stats', { keyPath: 'statsKey' });
           commandStatsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+        }
+        if (oldVersion < 13) {
+          var mfiCustomerStore = db.objectStoreNames.contains('offline_mfi_customers')
+            ? event.target.transaction.objectStore('offline_mfi_customers')
+            : db.createObjectStore('offline_mfi_customers', { keyPath: 'localId' });
+          if (!mfiCustomerStore.indexNames.contains('institutionId')) mfiCustomerStore.createIndex('institutionId', 'institutionId', { unique: false });
+          if (!mfiCustomerStore.indexNames.contains('syncStatus')) mfiCustomerStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+          var mfiCollateralStore = db.objectStoreNames.contains('offline_mfi_collateral')
+            ? event.target.transaction.objectStore('offline_mfi_collateral')
+            : db.createObjectStore('offline_mfi_collateral', { keyPath: 'localId' });
+          if (!mfiCollateralStore.indexNames.contains('institutionId')) mfiCollateralStore.createIndex('institutionId', 'institutionId', { unique: false });
+          if (!mfiCollateralStore.indexNames.contains('syncStatus')) mfiCollateralStore.createIndex('syncStatus', 'syncStatus', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -694,6 +710,8 @@
       allRecords('offline_views'),
       allRecords('offline_teacher_progress'),
       allRecords('offline_favorites'),
+      allRecords('offline_mfi_customers'),
+      allRecords('offline_mfi_collateral'),
       Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
     ])
       .then(function (records) {
@@ -702,8 +720,10 @@
         var views = records[2].filter(function (item) { return item.synced === false && isCompletedView(item); });
         var teacherProgress = records[3].filter(function (item) { return item.syncStatus === 'pending'; });
         var favorites = records[4].filter(function (item) { return item.syncStatus === 'pending'; });
-        var pending = projects.concat(caRecords, views, teacherProgress, favorites);
-        var cachedSize = records[5].reduce(function (total, items) {
+        var mfiCustomers = records[5].filter(function (item) { return item.syncStatus === 'pending'; });
+        var mfiCollateral = records[6].filter(function (item) { return item.syncStatus === 'pending'; });
+        var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral);
+        var cachedSize = records[7].reduce(function (total, items) {
           return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         }, 0);
         return {
@@ -712,6 +732,8 @@
           views: views.length,
           teacherProgress: teacherProgress.length,
           favorites: favorites.length,
+          mfiCustomers: mfiCustomers.length,
+          mfiCollateral: mfiCollateral.length,
           total: pending.length,
           size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
           cachedSize: cachedSize
@@ -725,19 +747,23 @@
       return Promise.all([
         allRecords('offline_projects'),
         allRecords('offline_ca_records'),
-        allRecords('offline_views')
+        allRecords('offline_views'),
+        allRecords('offline_mfi_customers'),
+        allRecords('offline_mfi_collateral')
       ]).then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
         var views = records[2].filter(function (item) { return item.synced === false && isCompletedView(item); });
-        var total = projects.length + caRecords.length + views.length;
+        var mfiCustomers = records[3].filter(function (item) { return item.syncStatus === 'pending'; });
+        var mfiCollateral = records[4].filter(function (item) { return item.syncStatus === 'pending'; });
+        var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length;
         if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
         if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
           return { status: 'mobile-paused', mode: mode, uploaded: 0, pending: total };
         }
         var context = { mode: mode, api: API };
         /* Every push completes before any pull begins. */
-        var pushed = { projects: false, caRecords: false, views: false };
+        var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false };
         return Promise.resolve()
           .then(function () {
             if (!syncHooks.pushProjects || !projects.length) return null;
@@ -755,9 +781,21 @@
           })
           .then(function (result) { if (syncHooks.pushViews && views.length) pushed.views = true; return result; })
           .then(function () {
+            if (!syncHooks.pushMfiCustomers || !mfiCustomers.length) return null;
+            return syncHooks.pushMfiCustomers(mfiCustomers, context);
+          })
+          .then(function (result) { if (syncHooks.pushMfiCustomers && mfiCustomers.length) pushed.mfiCustomers = true; return result; })
+          .then(function () {
+            if (!syncHooks.pushMfiCollateral || !mfiCollateral.length) return null;
+            return syncHooks.pushMfiCollateral(mfiCollateral, context);
+          })
+          .then(function (result) { if (syncHooks.pushMfiCollateral && mfiCollateral.length) pushed.mfiCollateral = true; return result; })
+          .then(function () {
             return Promise.all((pushed.projects ? projects.map(function (item) { return putRecord('offline_projects', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.caRecords ? caRecords.map(function (item) { return putRecord('offline_ca_records', Object.assign({}, item, { synced: true, syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-              .concat(pushed.views ? views.map(function (item) { return putRecord('offline_views', Object.assign({}, item, { synced: true, syncedAt: Date.now() })); }) : []));
+              .concat(pushed.views ? views.map(function (item) { return putRecord('offline_views', Object.assign({}, item, { synced: true, syncedAt: Date.now() })); }) : [])
+              .concat(pushed.mfiCustomers ? mfiCustomers.map(function (item) { return putRecord('offline_mfi_customers', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+              .concat(pushed.mfiCollateral ? mfiCollateral.map(function (item) { return putRecord('offline_mfi_collateral', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
           })
           .then(function () {
             var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};
@@ -797,7 +835,7 @@
             });
           })
           .then(function () {
-            var uploaded = (pushed.projects ? projects.length : 0) + (pushed.caRecords ? caRecords.length : 0) + (pushed.views ? views.length : 0);
+            var uploaded = (pushed.projects ? projects.length : 0) + (pushed.caRecords ? caRecords.length : 0) + (pushed.views ? views.length : 0) + (pushed.mfiCustomers ? mfiCustomers.length : 0) + (pushed.mfiCollateral ? mfiCollateral.length : 0);
             return pendingSummary().then(function (remaining) {
               return { status: 'complete', mode: mode, uploaded: uploaded, pending: remaining.total };
             });
@@ -907,7 +945,7 @@
       return getRecord('offline_command_stats', 'superadmin');
     },
     getPendingSummary: pendingSummary,
-    getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, total: summary.total }; }); },
+    getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, mfiCustomers: summary.mfiCustomers, mfiCollateral: summary.mfiCollateral, total: summary.total }; }); },
     getPendingSize: function () { return pendingSummary().then(function (summary) { return summary.size; }); },
     getStorageSummary: pendingSummary,
     queueProject: function (project) {
@@ -1075,6 +1113,47 @@
     markTeacherProgressSynced: function (progressKey) {
       return getRecord('offline_teacher_progress', progressKey).then(function (item) {
         return item ? putRecord('offline_teacher_progress', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueMfiCustomer: function (customer) {
+      customer = customer || {};
+      if (!customer.firstName || !customer.lastName || !customer.phone) return fail('A customer name and phone are required');
+      var value = Object.assign({}, customer, {
+        localId: customer.localId || randomId('mfi-customer-'),
+        syncStatus: customer.syncStatus || 'pending',
+        queuedAt: customer.queuedAt || Date.now()
+      });
+      return putRecord('offline_mfi_customers', value).then(function () { return value; });
+    },
+    listMfiCustomers: function (institutionId) {
+      return allRecords('offline_mfi_customers').then(function (items) {
+        return items.filter(function (item) { return !institutionId || item.institutionId === institutionId; });
+      });
+    },
+    markMfiCustomerSynced: function (localId, extra) {
+      return getRecord('offline_mfi_customers', localId).then(function (item) {
+        return item ? putRecord('offline_mfi_customers', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueMfiCollateral: function (collateral) {
+      collateral = collateral || {};
+      if (!collateral.customerId || !collateral.typeId || !collateral.description) return fail('A customer, collateral type, and description are required');
+      var value = Object.assign({}, collateral, {
+        localId: collateral.localId || randomId('mfi-collateral-'),
+        syncStatus: collateral.syncStatus || 'pending',
+        queuedAt: collateral.queuedAt || Date.now(),
+        status: collateral.status || 'draft'
+      });
+      return putRecord('offline_mfi_collateral', value).then(function () { return value; });
+    },
+    listMfiCollateral: function (institutionId) {
+      return allRecords('offline_mfi_collateral').then(function (items) {
+        return items.filter(function (item) { return !institutionId || item.institutionId === institutionId; });
+      });
+    },
+    markMfiCollateralSynced: function (localId, extra) {
+      return getRecord('offline_mfi_collateral', localId).then(function (item) {
+        return item ? putRecord('offline_mfi_collateral', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
       });
     },
     listCARecords: function () { return allRecords('offline_ca_records'); },
