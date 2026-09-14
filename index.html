@@ -1686,6 +1686,42 @@
                     </div>
                 </div>
 
+                <div class="admin-section" id="superCurriculumLinksSection" style="display:none;background:#f0f8ff;border:1.5px solid #8bc7ee;border-radius:16px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <h4 style="margin:0;color:#145a86;">📚 Bulk Import Curriculum Topics</h4>
+                        <span id="curriculumLinksCount" style="font-size:12px;color:#4d7894;">Loading…</span>
+                    </div>
+                    <p style="font-size:12px;color:#5d7482;margin:6px 0 12px;">Upload a CSV or paste JSON to import multiple topics at once. Existing documents are preserved.</p>
+                    <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+                        <div style="background:white;border:1px solid #c9e5f5;border-radius:12px;padding:12px;">
+                            <strong style="font-size:13px;color:#145a86;">CSV Upload</strong>
+                            <input type="file" id="curriculumCsvInput" accept=".csv,text/csv" style="display:block;margin:8px 0;font-size:12px;">
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <button type="button" id="downloadCurriculumTemplateBtn" class="admin-toggle">📥 Download CSV Template</button>
+                                <button type="button" id="validateCurriculumCsvBtn" class="admin-toggle">Validate CSV</button>
+                            </div>
+                        </div>
+                        <div style="background:white;border:1px solid #c9e5f5;border-radius:12px;padding:12px;">
+                            <strong style="font-size:13px;color:#145a86;">JSON Paste</strong>
+                            <textarea id="curriculumJsonInput" rows="6" placeholder='[{"subject":"Mathematics","classLevel":"P5","topic":"Fractions","syllabusRef":"","learnerBookPage":"","teacherGuidePage":"","summaryText":"","activitySuggestion":""}]' style="width:100%;box-sizing:border-box;margin:8px 0;padding:9px;border:1px solid #c9e5f5;border-radius:10px;font:12px/1.4 monospace;resize:vertical;"></textarea>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <button type="button" id="validateCurriculumJsonBtn" class="admin-toggle">Validate JSON</button>
+                                <button type="button" id="importCurriculumJsonBtn" class="admin-toggle" style="background:#145a86;color:white;">Import JSON</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="curriculumImportStatus" style="font-size:12px;color:#145a86;margin-top:10px;min-height:16px;"></div>
+                    <div id="curriculumImportProgress" style="display:none;margin-top:8px;">
+                        <div style="height:8px;background:#dceff8;border-radius:99px;overflow:hidden;"><div id="curriculumImportProgressBar" style="height:100%;width:0;background:#1686ba;transition:width .2s;"></div></div>
+                        <div id="curriculumImportProgressText" style="font-size:11px;color:#5d7482;margin-top:3px;"></div>
+                    </div>
+                    <div id="curriculumImportPreview" style="margin-top:10px;"></div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+                        <button type="button" id="importCurriculumPreviewBtn" class="admin-toggle" style="background:#1686ba;color:white;display:none;">⬆ Import Valid Preview Rows</button>
+                        <button type="button" id="seedCurriculumSamplesBtn" class="admin-toggle">🌱 Seed Sample Topics</button>
+                    </div>
+                </div>
+
                 <div class="admin-section" id="superProjectOverviewSection" style="display:none;background:#f7f2ff;border:1.5px solid #cdbdf8;border-radius:16px;padding:16px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                         <h4 style="margin:0;color:#4B2E9E;">📚 Project Integrity Overview</h4>
@@ -3012,7 +3048,8 @@
                 if(!auth?.currentUser) return [];
                 const data=await complianceApi('/ca-records');
                 return (data.records||[]).map(r=>({...r,recordId:String(r.id),synced:true,syncStatus:'synced'}));
-            }
+             },
+             pullCurriculumLinks: async () => pullCurriculumLinksOffline()
         });
     }
     async function initOfflineFeatures() {
@@ -3592,6 +3629,288 @@
             .replace(/'/g,'&#39;').replace(/"/g,'&quot;');
     }
 
+    // ===== CURRICULUM LINKS DATA FOUNDATION =====
+    const CURRICULUM_REQUIRED_FIELDS=['subject','classLevel','topic','syllabusRef','learnerBookPage','teacherGuidePage','summaryText','activitySuggestion'];
+    const CURRICULUM_CSV_HEADERS=CURRICULUM_REQUIRED_FIELDS.slice();
+    const CURRICULUM_STOP_WORDS=new Set(['the','a','an','of','and','or','in','on','at','to','for']);
+    let _curriculumLinks=[];
+    let _curriculumLinksUnsub=null;
+    let _curriculumImportPreview={valid:[],invalid:[],source:''};
+    let _curriculumRepairStarted=false;
+    let _curriculumAdminReady=false;
+
+    function generateSearchKeywords(topic,subject,classLevel) {
+        const combined=`${topic||''} ${subject||''} ${classLevel||''}`.toLowerCase();
+        const words=combined.match(/[a-z0-9]+/g)||[];
+        const expanded=[];
+        words.forEach(word=>{
+            if(word==='photosynthesis') expanded.push('photo','synthesis');
+            const camel=String(topic||'').match(/[A-Z]?[a-z]+|[A-Z]+(?![a-z])/g)||[];
+            if(camel.length>1 && camel.join('').toLowerCase()===word) expanded.push(...camel.map(part=>part.toLowerCase()));
+        });
+        return [...new Set([...words,...expanded].filter(word=>word&&!CURRICULUM_STOP_WORDS.has(word)))];
+    }
+
+    function validateCurriculumRecord(record) {
+        const value=record||{}, errors=[];
+        ['subject','classLevel','topic','learnerBookPage','teacherGuidePage'].forEach(field=>{
+            if(!Object.prototype.hasOwnProperty.call(value,field)) errors.push(`${field} field is required`);
+            else if(typeof value[field]!=='string'||(['subject','classLevel','topic'].includes(field)&&!value[field].trim())) errors.push(`${field} is required`);
+        });
+        if(!Object.prototype.hasOwnProperty.call(value,'syllabusRef')) errors.push('syllabusRef field is required');
+        if(!Object.prototype.hasOwnProperty.call(value,'summaryText')) errors.push('summaryText field is required');
+        else if(typeof value.summaryText!=='string') errors.push('summaryText must be a string');
+        else if(value.summaryText.length>2000) errors.push('summaryText must be 2000 characters or less');
+        if(!Object.prototype.hasOwnProperty.call(value,'activitySuggestion')) errors.push('activitySuggestion field is required');
+        else if(typeof value.activitySuggestion!=='string') errors.push('activitySuggestion must be a string');
+        else if(value.activitySuggestion.length>1000) errors.push('activitySuggestion must be 1000 characters or less');
+        if(value.classLevel && !/^(?:P[1-7]|S[1-6])$/i.test(String(value.classLevel).trim())) errors.push('classLevel must match P1-P7 or S1-S6');
+        return {valid:errors.length===0,errors};
+    }
+
+    function normalizeCurriculumRecord(record) {
+        const value=record||{};
+        const normalized={};
+        CURRICULUM_REQUIRED_FIELDS.forEach(field=>normalized[field]=String(value[field]??'').trim());
+        normalized.classLevel=normalized.classLevel.toUpperCase();
+        ['competencies','genericSkills','values'].forEach(field=>{
+            normalized[field]=Array.isArray(value[field]) ? value[field].map(item=>String(item).trim()).filter(Boolean) :
+                String(value[field]||'').split(',').map(item=>item.trim()).filter(Boolean);
+        });
+        ['syllabusUrl','learnerBookUrl','teacherGuideUrl','createdBy'].forEach(field=>{
+            if(value[field]!==undefined&&value[field]!==null) normalized[field]=String(value[field]).trim();
+        });
+        normalized.searchKeywords=generateSearchKeywords(normalized.topic,normalized.subject,normalized.classLevel);
+        return normalized;
+    }
+
+    function parseCurriculumCsv(text) {
+        const rows=[], current=[]; let cell='', quoted=false;
+        const flushCell=()=>{current.push(cell);cell='';};
+        const flushRow=()=>{flushCell();if(current.some(value=>String(value).trim())) rows.push(current.splice(0,current.length));};
+        for(let i=0;i<String(text||'').length;i++){
+            const char=text[i], next=text[i+1];
+            if(char==='"'&&quoted&&next==='"'){cell+='"';i++;continue;}
+            if(char==='"'){quoted=!quoted;continue;}
+            if(!quoted&&char===','){flushCell();continue;}
+            if(!quoted&&(char==='\n'||char==='\r')){if(char==='\r'&&next==='\n') i++;flushRow();continue;}
+            cell+=char;
+        }
+        if(cell||current.length) flushRow();
+        if(!rows.length) return [];
+        const headers=rows.shift().map(header=>String(header||'').trim());
+        return rows.map(row=>headers.reduce((record,header,index)=>{
+            if(header) record[header]=String(row[index]??'').trim();
+            return record;
+        },{}));
+    }
+
+    function readTextFile(file) {
+        return new Promise((resolve,reject)=>{
+            const reader=new FileReader();
+            reader.onload=()=>resolve(String(reader.result||''));
+            reader.onerror=()=>reject(new Error('Could not read the selected file'));
+            reader.readAsText(file);
+        });
+    }
+
+    function setCurriculumImportStatus(message,error=false) {
+        const el=document.getElementById('curriculumImportStatus');
+        if(el){el.textContent=message;el.style.color=error?'#c62828':'#145a86';}
+    }
+
+    function renderCurriculumImportPreview(valid,invalid,source='') {
+        _curriculumImportPreview={valid:valid||[],invalid:invalid||[],source};
+        const container=document.getElementById('curriculumImportPreview');
+        const importButton=document.getElementById('importCurriculumPreviewBtn');
+        if(importButton) importButton.style.display=valid?.length?'inline-block':'none';
+        if(!container) return;
+        if(!valid.length&&!invalid.length){container.innerHTML='';return;}
+        const rows=[...valid.slice(0,30).map(record=>`<tr><td>✅</td><td>${escHtml(record.subject)}</td><td>${escHtml(record.classLevel)}</td><td>${escHtml(record.topic)}</td></tr>`),
+            ...invalid.slice(0,30).map(item=>`<tr><td>⚠️</td><td colspan="3">${escHtml(item.record?.subject||'')} ${escHtml(item.record?.topic||'')} — ${escHtml(item.errors.join('; '))}</td></tr>`)];
+        container.innerHTML=`<div style="font-size:12px;color:#5d7482;margin-bottom:5px;">${valid.length} valid, ${invalid.length} skipped${valid.length+invalid.length>60?' (preview limited to 60 rows)':''}</div><div style="max-height:220px;overflow:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr><th>Check</th><th>Subject</th><th>Class</th><th>Topic / reason</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    }
+
+    function validateCurriculumRows(records,source) {
+        const valid=[],invalid=[];
+        (Array.isArray(records)?records:[]).forEach(record=>{
+            const result=validateCurriculumRecord(record);
+            const normalized=normalizeCurriculumRecord(record);
+            if(result.valid) valid.push(normalized); else invalid.push({record:normalized,errors:result.errors});
+        });
+        renderCurriculumImportPreview(valid,invalid,source);
+        setCurriculumImportStatus(`${source}: ${valid.length} valid row${valid.length===1?'':'s'}, ${invalid.length} skipped row${invalid.length===1?'':'s'}.`);
+        return {valid,invalid};
+    }
+
+    async function importCurriculumRecords(records,label='Curriculum import',options={}) {
+        if(currentUser?.role!=='superadmin') throw new Error('Only superadmins can import curriculum links');
+        const valid=[],invalid=[];
+        (Array.isArray(records)?records:[]).forEach(record=>{
+            const result=validateCurriculumRecord(record), normalized=normalizeCurriculumRecord(record);
+            if(result.valid) valid.push(normalized); else invalid.push({record:normalized,errors:result.errors});
+        });
+        renderCurriculumImportPreview(valid,invalid,label);
+        if(!valid.length){setCurriculumImportStatus('No valid curriculum records to import.',true);return {imported:0,skipped:invalid.length};}
+        const progress=document.getElementById('curriculumImportProgress'), bar=document.getElementById('curriculumImportProgressBar'), text=document.getElementById('curriculumImportProgressText');
+        if(progress) progress.style.display='block';
+        let imported=0;
+        for(let start=0;start<valid.length;start+=450){
+            const chunk=valid.slice(start,start+450), batch=db.batch(), now=new Date().toISOString();
+            chunk.forEach((record,index)=>{
+                const absoluteIndex=start+index;
+                const customId=typeof options.idForRecord==='function' ? options.idForRecord(record,absoluteIndex) : '';
+                const reference=customId ? doc(db,'curriculum_links',String(customId)) : doc(collection(db,'curriculum_links'));
+                batch.set(reference,{...record,createdBy:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),importedAt:now},{merge:true});
+            });
+            await batch.commit();
+            imported+=chunk.length;
+            const percent=Math.round(imported/valid.length*100);
+            if(bar) bar.style.width=`${percent}%`;
+            if(text) text.textContent=`Writing ${imported} of ${valid.length} records…`;
+        }
+        let total=imported;
+        try{total=(await getDocs(collection(db,'curriculum_links'))).size;}catch(_){}
+        if(progress) progress.style.display='none';
+        setCurriculumImportStatus(`Imported: ${imported} · Skipped: ${invalid.length} · Total in collection: ${total}.`);
+        showNotification(`Imported ${imported} curriculum topic${imported===1?'':'s'}.`,'success');
+        return {imported,skipped:invalid.length,total};
+    }
+
+    async function repairCurriculumLinksDocuments(docs) {
+        if(_curriculumRepairStarted||currentUser?.role!=='superadmin') return;
+        _curriculumRepairStarted=true;
+        try {
+            const repairs=(docs||[]).map(document=>{
+                const data=document.data(), patch={};
+                CURRICULUM_REQUIRED_FIELDS.forEach(field=>{if(!Object.prototype.hasOwnProperty.call(data,field)) patch[field]='';});
+                if(!Object.prototype.hasOwnProperty.call(data,'searchKeywords')) patch.searchKeywords=generateSearchKeywords(data.topic,data.subject,data.classLevel);
+                ['competencies','genericSkills','values'].forEach(field=>{if(!Object.prototype.hasOwnProperty.call(data,field)) patch[field]=[];});
+                if(!Object.prototype.hasOwnProperty.call(data,'createdAt')) patch.createdAt=serverTimestamp();
+                if(!Object.prototype.hasOwnProperty.call(data,'updatedAt')) patch.updatedAt=serverTimestamp();
+                return Object.keys(patch).length?{ref:document.ref,patch}:null;
+            }).filter(Boolean);
+            for(let start=0;start<repairs.length;start+=450){
+                const batch=db.batch();
+                repairs.slice(start,start+450).forEach(item=>batch.set(item.ref,item.patch,{merge:true}));
+                await batch.commit();
+            }
+            if(repairs.length) setCurriculumImportStatus(`Verified collection structure and added missing fields to ${repairs.length} existing document${repairs.length===1?'':'s'}.`);
+        }catch(error){console.error('Curriculum structure repair failed:',error);setCurriculumImportStatus('Could not repair missing curriculum fields.',true);}
+    }
+
+    function renderCurriculumLinksCount() {
+        const el=document.getElementById('curriculumLinksCount');
+        if(el) el.textContent=`${_curriculumLinks.length} topic${_curriculumLinks.length===1?'':'s'} cached`;
+    }
+
+    function listenToCurriculumLinks() {
+        if(_curriculumLinksUnsub||!db) return;
+        _curriculumLinksUnsub=onSnapshot(collection(db,'curriculum_links'),async snap=>{
+            _curriculumLinks=snap.docs.map(item=>({docId:item.id,id:item.id,...item.data()}));
+            window._curriculumLinks=_curriculumLinks;
+            renderCurriculumLinksCount();
+            if(Offline&&_curriculumLinks.length<=2000) await Offline.cacheCurriculumLinks(_curriculumLinks).catch(()=>{});
+            repairCurriculumLinksDocuments(snap.docs).catch(()=>{});
+        },async()=>{
+            if(Offline) _curriculumLinks=await Offline.listCurriculumLinks().catch(()=>[]);
+            window._curriculumLinks=_curriculumLinks;
+            renderCurriculumLinksCount();
+        });
+    }
+
+    async function pullCurriculumLinksOffline() {
+        if(!auth?.currentUser) return [];
+        const snap=await getDocs(collection(db,'curriculum_links'));
+        const links=snap.docs.map(item=>({docId:item.id,id:item.id,...item.data()}));
+        if(links.length>2000) return [];
+        if(Offline) await Offline.cacheCurriculumLinks(links);
+        return links;
+    }
+
+    async function searchCurriculumLinks(searchTerm='',options={}) {
+        let records=_curriculumLinks;
+        if(!records.length&&Offline) records=await Offline.listCurriculumLinks().catch(()=>[]);
+        const queryText=String(searchTerm||'').toLowerCase().trim();
+        return records.filter(record=>{
+            if(options.subject&&String(record.subject).toLowerCase()!==String(options.subject).toLowerCase()) return false;
+            if(options.classLevel&&String(record.classLevel).toLowerCase()!==String(options.classLevel).toLowerCase()) return false;
+            if(!queryText) return true;
+            const haystack=(record.searchKeywords||generateSearchKeywords(record.topic,record.subject,record.classLevel)).join(' ');
+            return haystack.includes(queryText)||String(record.topic||'').toLowerCase().includes(queryText);
+        });
+    }
+
+    const CURRICULUM_SAMPLE_TOPICS=[
+        ['Mathematics','P5','Fractions','Mathematics Syllabus P5, p.34','Learner Book P5, p.56-60','Teacher Guide P5, p.42-45','Fractions represent equal parts of a whole and can be compared, added, and subtracted using common denominators.','Use mangoes, bottle tops, or paper circles to demonstrate halves and quarters.'],
+        ['Mathematics','P5','Decimals','Mathematics Syllabus P5, p.38','Learner Book P5, p.68-72','Teacher Guide P5, p.50-53','Decimals show parts of one and connect place value to fractions and money.','Let learners price classroom items and calculate change using decimal notation.'],
+        ['Mathematics','S1','Algebra Basics','Mathematics Syllabus S1, p.21','Learner Book S1, p.30-35','Teacher Guide S1, p.24-28','Algebra uses letters and symbols to represent unknown numbers and simple relationships.','Build equations from balance-scale examples and everyday number puzzles.'],
+        ['English','P5','Reading Comprehension','English Syllabus P5, p.18','Learner Book P5, p.24-29','Teacher Guide P5, p.20-25','Reading comprehension involves finding main ideas, details, sequence, and meaning from context.','Use a short local story and ask groups to create a beginning-middle-end chart.'],
+        ['English','S1','Essay Writing','English Syllabus S1, p.32','Learner Book S1, p.44-50','Teacher Guide S1, p.36-41','A clear essay has a focused introduction, connected paragraphs, evidence, and a conclusion.','Have learners turn a community issue into a three-paragraph opinion essay.'],
+        ['Science','P5','Photosynthesis (basic)','Science Syllabus P5, p.47','Learner Book P5, p.72-76','Teacher Guide P5, p.55-59','Green plants make food using sunlight, water, and carbon dioxide, releasing oxygen.','Place a leafy plant in light and discuss what it needs to grow.'],
+        ['Biology','S2','Photosynthesis (advanced)','Biology Syllabus S2, p.61','Learner Book S2, p.88-94','Teacher Guide S2, p.65-70','Photosynthesis converts light energy into chemical energy in chloroplasts through light and carbon-fixing reactions.','Use a labelled leaf diagram to trace reactants, products, and energy changes.'],
+        ['Biology','S2','Cell Structure','Biology Syllabus S2, p.24','Learner Book S2, p.32-39','Teacher Guide S2, p.27-33','Cells contain specialised structures that work together to support life.','Build a cell model with locally available materials and explain each organelle.'],
+        ['Chemistry','S3','Periodic Table','Chemistry Syllabus S3, p.12','Learner Book S3, p.18-25','Teacher Guide S3, p.15-21','The periodic table organises elements by atomic number and repeating chemical properties.','Ask groups to classify familiar elements by symbol, use, and periodic group.'],
+        ['Physics','S3','Newton’s Laws','Physics Syllabus S3, p.41','Learner Book S3, p.58-65','Teacher Guide S3, p.45-52','Newton’s laws describe how forces affect motion and explain everyday interactions.','Use a trolley or football to investigate inertia, force, and action-reaction pairs.']
+    ].map(row=>normalizeCurriculumRecord({subject:row[0],classLevel:row[1],topic:row[2],syllabusRef:row[3],learnerBookPage:row[4],teacherGuidePage:row[5],summaryText:row[6],activitySuggestion:row[7]}));
+
+    function downloadCurriculumTemplate() {
+        const sample='Mathematics,P5,Fractions,"Mathematics Syllabus P5, p.34","Learner Book P5, p.56-60","Teacher Guide P5, p.42-45","Fractions represent parts of a whole.","Use mangoes to demonstrate halves and quarters in class."';
+        const blob=new Blob([CURRICULUM_CSV_HEADERS.join(',')+'\n'+sample+'\n'],{type:'text/csv;charset=utf-8'});
+        const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='curriculum_links_template.csv';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    }
+
+    function initCurriculumLinksAdmin() {
+        if(_curriculumAdminReady) return;
+        _curriculumAdminReady=true;
+        document.getElementById('downloadCurriculumTemplateBtn')?.addEventListener('click',downloadCurriculumTemplate);
+        document.getElementById('curriculumCsvInput')?.addEventListener('change',async event=>{
+            const file=event.target.files?.[0];if(!file)return;
+            try{const records=parseCurriculumCsv(await readTextFile(file));validateCurriculumRows(records,'CSV preview');}catch(error){setCurriculumImportStatus(error.message,true);}
+        });
+        document.getElementById('validateCurriculumCsvBtn')?.addEventListener('click',async()=>{
+            const file=document.getElementById('curriculumCsvInput')?.files?.[0];
+            if(!file){setCurriculumImportStatus('Choose a CSV file first.',true);return;}
+            try{validateCurriculumRows(parseCurriculumCsv(await readTextFile(file)),'CSV validation');}catch(error){setCurriculumImportStatus(error.message,true);}
+        });
+        document.getElementById('validateCurriculumJsonBtn')?.addEventListener('click',()=>{
+            try{
+                const records=JSON.parse(document.getElementById('curriculumJsonInput')?.value||'');
+                if(!Array.isArray(records)) throw new Error('JSON must be an array of curriculum records');
+                validateCurriculumRows(records,'JSON validation');
+            }catch(error){setCurriculumImportStatus(error.message,true);}
+        });
+        document.getElementById('importCurriculumJsonBtn')?.addEventListener('click',async()=>{
+            try{
+                const records=JSON.parse(document.getElementById('curriculumJsonInput')?.value||'');
+                if(!Array.isArray(records)) throw new Error('JSON must be an array of curriculum records');
+                await importCurriculumRecords(records,'JSON import');
+            }catch(error){console.error(error);setCurriculumImportStatus(error.message,true);}
+        });
+        document.getElementById('importCurriculumPreviewBtn')?.addEventListener('click',async()=>{
+            try{await importCurriculumRecords(_curriculumImportPreview.valid,`${_curriculumImportPreview.source||'Preview'} import`);}catch(error){console.error(error);setCurriculumImportStatus(error.message,true);}
+        });
+        document.getElementById('seedCurriculumSamplesBtn')?.addEventListener('click',async()=>{
+            try{
+                await importCurriculumRecords(CURRICULUM_SAMPLE_TOPICS,'Sample seed',{
+                    idForRecord:(record,index)=>`sample-${String(record.subject).toLowerCase().replace(/[^a-z0-9]+/g,'-')}-${String(record.classLevel).toLowerCase()}-${index+1}`
+                });
+            }catch(error){console.error(error);setCurriculumImportStatus(error.message,true);}
+        });
+    }
+
+    function loadCurriculumLinksAdmin() {
+        if(currentUser?.role!=='superadmin') return;
+        initCurriculumLinksAdmin();
+        listenToCurriculumLinks();
+        renderCurriculumLinksCount();
+    }
+    window.generateSearchKeywords=generateSearchKeywords;
+    window.validateCurriculumRecord=validateCurriculumRecord;
+    window.searchCurriculumLinks=searchCurriculumLinks;
+    window.parseCurriculumCsv=parseCurriculumCsv;
+    window.curriculumSampleTopics=CURRICULUM_SAMPLE_TOPICS;
+
     // ===== NCDC / UNEB PHASE 1 TOOLS =====
     const CBC_MODULES = [
         'Familiarisation','Curriculum Documents','Learner-Centred Methods','Assessment in CBC',
@@ -3930,7 +4249,9 @@
         if(teacher) loadTeacherProjectQueue();
         if(!student && studentSection) studentSection.style.display = 'none';
         if(!teacher) document.querySelector('.cbc-card[style*="FFB74D"]')?.remove();
-        const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
+         const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
+         const curriculumSection=document.getElementById('superCurriculumLinksSection');
+         if(curriculumSection) curriculumSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         const superProjectSection=document.getElementById('superProjectOverviewSection');
         if(superProjectSection) superProjectSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
@@ -3939,7 +4260,8 @@
         document.getElementById('compliancePortfolioBtn')?.addEventListener('click',renderCompliancePortfolio);
         document.getElementById('complianceDuplicateBtn')?.addEventListener('click',renderComplianceDuplicateAlerts);
         document.getElementById('complianceRepeatBtn')?.addEventListener('click',renderComplianceRepeatTitles);
-        document.getElementById('refreshSuperProjectOverviewBtn')?.addEventListener('click',renderSuperProjectOverview);
+         document.getElementById('refreshSuperProjectOverviewBtn')?.addEventListener('click',renderSuperProjectOverview);
+         if(currentUser?.role==='superadmin') loadCurriculumLinksAdmin();
         if(currentUser?.role==='superadmin') renderSuperProjectOverview();
     }
 
@@ -4603,7 +4925,14 @@
             panel.innerHTML=`<strong style="color:#E67E00;">Curriculum Linker Search</strong><form class="cbc-form" id="curriculumForm"><input name="q" placeholder="Search a topic, for example Photosynthesis" required><button class="cbc-action primary">Search curriculum links</button></form><div id="curriculumResults" class="cbc-status"></div>`;
             document.getElementById('curriculumForm').addEventListener('submit',async e=>{
                 e.preventDefault(); const q=new FormData(e.target).get('q'); const results=document.getElementById('curriculumResults'); results.textContent='Searching…';
-                try { const data=await complianceApi('/curriculum-links?q='+encodeURIComponent(q)); results.innerHTML=(data.links||[]).map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.'; (data.links||[]).forEach(l=>Offline?.cacheNcdcTemplate(`${l.subject||''}|${l.classLevel||''}|${l.topic||''}`.toLowerCase(),l,currentUser.uid).catch(()=>{})); }
+                try {
+                    let links=await searchCurriculumLinks(q);
+                    if(!links.length&&navigator.onLine) {
+                        await pullCurriculumLinksOffline().catch(()=>{});
+                        links=await searchCurriculumLinks(q);
+                    }
+                    results.innerHTML=links.map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br><small>${escHtml(l.subject)} · ${escHtml(l.classLevel)}</small><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.';
+                }
                 catch(err){ results.textContent=err.message; }
             });
         }
@@ -7923,6 +8252,7 @@
         if(isSuper) renderAccPdfList();
         // Referral / invite card (all roles except superadmin)
         if(!isSuper) loadReferralCard();
+         listenToCurriculumLinks();
         setupComplianceTools();
         loadConnectionSettings().catch(console.error);
         // School logo / dual branding

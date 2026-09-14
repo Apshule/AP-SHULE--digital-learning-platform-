@@ -7,14 +7,17 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 4;
+  var DB_VERSION = 6;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
     'offline_projects',
     'offline_auth',
     'offline_views',
-    'offline_settings'
+    'offline_settings',
+    'offline_curriculum_links',
+    'offline_favorites',
+    'offline_recent_curriculum'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -103,6 +106,8 @@
     if (name === 'offline_views' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
     if (name === 'offline_ca_records' && !store.indexNames.contains('synced')) store.createIndex('synced', 'synced', { unique: false });
     if (name === 'offline_videos' && !store.indexNames.contains('cached')) store.createIndex('cached', 'cached', { unique: false });
+    if (name === 'offline_curriculum_links' && !store.indexNames.contains('subject')) store.createIndex('subject', 'subject', { unique: false });
+    if (name === 'offline_curriculum_links' && !store.indexNames.contains('classLevel')) store.createIndex('classLevel', 'classLevel', { unique: false });
   }
 
   function migrateOfflineViewsStore(store) {
@@ -138,7 +143,10 @@
               offline_projects: 'localId',
               offline_auth: 'userId',
               offline_views: 'viewId',
-              offline_settings: 'userId'
+              offline_settings: 'userId',
+               offline_curriculum_links: 'docId',
+               offline_favorites: 'favoriteKey',
+               offline_recent_curriculum: 'docId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -150,6 +158,26 @@
           var viewsStore = event.target.transaction.objectStore('offline_views');
           ensureStoreIndexes('offline_views', viewsStore);
           migrateOfflineViewsStore(viewsStore);
+        }
+        if (oldVersion < 5) {
+          var curriculumStore;
+          if (!db.objectStoreNames.contains('offline_curriculum_links')) {
+            curriculumStore = db.createObjectStore('offline_curriculum_links', { keyPath: 'docId' });
+          } else {
+            curriculumStore = event.target.transaction.objectStore('offline_curriculum_links');
+          }
+          ensureStoreIndexes('offline_curriculum_links', curriculumStore);
+        }
+        if (oldVersion < 6) {
+          var favoritesStore = db.objectStoreNames.contains('offline_favorites')
+            ? event.target.transaction.objectStore('offline_favorites')
+            : db.createObjectStore('offline_favorites', { keyPath: 'favoriteKey' });
+          if (!favoritesStore.indexNames.contains('userId')) favoritesStore.createIndex('userId', 'userId', { unique: false });
+          if (!favoritesStore.indexNames.contains('syncStatus')) favoritesStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+          var recentStore = db.objectStoreNames.contains('offline_recent_curriculum')
+            ? event.target.transaction.objectStore('offline_recent_curriculum')
+            : db.createObjectStore('offline_recent_curriculum', { keyPath: 'docId' });
+          if (!recentStore.indexNames.contains('viewedAt')) recentStore.createIndex('viewedAt', 'viewedAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -552,13 +580,15 @@
               var individualPulls = [
                 syncHooks.pullProjects ? syncHooks.pullProjects(context) : null,
                 syncHooks.pullCARecords ? syncHooks.pullCARecords(context) : null,
-                syncHooks.pullViews ? syncHooks.pullViews(context) : null
+                 syncHooks.pullViews ? syncHooks.pullViews(context) : null,
+                 syncHooks.pullCurriculumLinks ? syncHooks.pullCurriculumLinks(context) : null
               ];
               return Promise.all(individualPulls).then(function (individual) {
                 pulled = Object.assign({}, pulled, {
                   projects: pulled.projects || individual[0] || [],
                   caRecords: pulled.caRecords || individual[1] || [],
-                  views: pulled.views || individual[2] || []
+                  views: pulled.views || individual[2] || [],
+                  curriculumLinks: pulled.curriculumLinks || individual[3] || []
                 });
                 return pulled;
               });
@@ -573,6 +603,9 @@
                 }, Promise.resolve()),
                 (pulled.views || []).reduce(function (p, item) {
                   return p.then(function () { return getRecord('offline_views', item.viewId).then(function (old) { return putRecord('offline_views', mergeLatest(old, item)); }); });
+                 }, Promise.resolve()),
+                 (pulled.curriculumLinks || []).reduce(function (p, item) {
+                   return p.then(function () { return getRecord('offline_curriculum_links', item.docId).then(function (old) { return putRecord('offline_curriculum_links', mergeLatest(old, item)); }); });
                 }, Promise.resolve())
               ]);
             });
@@ -709,6 +742,55 @@
       return putRecord('offline_views', value).then(function () { return value; });
     },
     listProjects: function () { return allRecords('offline_projects'); },
+    cacheCurriculumLinks: function (links) {
+      links = Array.isArray(links) ? links : [];
+      if (links.length > 2000) return fail('Curriculum cache is limited to 2000 records');
+      return transaction('offline_curriculum_links', 'readwrite', function (tx) {
+        var store = tx.objectStore('offline_curriculum_links');
+        store.clear();
+        links.forEach(function (link) {
+          if (!link) return;
+          var value = Object.assign({}, link, {
+            docId: String(link.docId || link.id || ''),
+            lastSyncedAt: Date.now()
+          });
+          if (value.docId) store.put(value);
+        });
+        return links.length;
+      }).then(function () { return links; });
+    },
+    listCurriculumLinks: function () { return allRecords('offline_curriculum_links'); },
+    queueFavorite: function (favorite) {
+      favorite = favorite || {};
+      if (!favorite.userId || !favorite.curriculumDocId) return fail('A user and curriculum document are required for favorites');
+      var value = Object.assign({}, favorite, {
+        favoriteKey: String(favorite.userId) + '|' + String(favorite.curriculumDocId),
+        saved: favorite.saved !== false,
+        syncStatus: 'pending',
+        savedAt: favorite.savedAt || new Date().toISOString()
+      });
+      return putRecord('offline_favorites', value).then(function () { return value; });
+    },
+    listFavorites: function (userId) {
+      return allRecords('offline_favorites').then(function (items) {
+        return items.filter(function (item) { return !userId || item.userId === userId; });
+      });
+    },
+    markFavoriteSynced: function (favoriteKey) {
+      return getRecord('offline_favorites', favoriteKey).then(function (item) {
+        return item ? putRecord('offline_favorites', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    recordRecentCurriculum: function (record) {
+      record = record || {};
+      if (!record.docId) return fail('A curriculum document id is required');
+      return putRecord('offline_recent_curriculum', Object.assign({}, record, { viewedAt: record.viewedAt || Date.now() }));
+    },
+    listRecentCurriculum: function () {
+      return allRecords('offline_recent_curriculum').then(function (items) {
+        return items.sort(function (left, right) { return Number(right.viewedAt || 0) - Number(left.viewedAt || 0); }).slice(0, 5);
+      });
+    },
     listCARecords: function () { return allRecords('offline_ca_records'); },
     listViews: function () { return allRecords('offline_views'); },
     markViewSynced: function (viewId, extra) {
