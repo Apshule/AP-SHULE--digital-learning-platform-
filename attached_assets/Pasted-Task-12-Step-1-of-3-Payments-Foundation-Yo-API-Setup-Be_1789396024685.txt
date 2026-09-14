@@ -1,0 +1,639 @@
+Task 12 — Step 1 of 3: Payments Foundation + Yo! API Setup + Beneficiary Management + Collection Flow
+
+CONTEXT:
+- Tasks 1-11 complete. AppShule serves Education + MFI + Clinic sectors
+- Task 12 introduces AUTOMATED PAYMENTS via Yo! Payments
+- This task handles COLLECTION (clients paying institutions) and 
+  DISBURSEMENT (institutions receiving funds)
+- AppShule acts as the master aggregator — its own Yo! account 
+  receives payments, then auto-disburses to institutions
+
+CRITICAL NOTES:
+- Yo! Payments uses XML, NOT JSON
+- Use Asynchronous mode (NonBlocking=TRUE) for all collections
+- Verify all webhooks with RSA signature
+- Do NOT download YouTube videos (ToS)
+- Do NOT expose API credentials in frontend code
+
+GOAL OF STEP 1:
+- Yo! API configuration panel (Super Admin only)
+- Institution beneficiary management
+- Client payment initiation flow
+- IPN (Instant Payment Notification) webhook handler
+- Full audit trail of all transactions
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. payment_transactions
+   Fields:
+   - transactionId (auto)
+   - reference (auto — "PAY-{year}-{sequence}")
+   - clientId (Firebase uid of payer)
+   - clientName
+   - clientPhone
+   - institutionId (payee institution)
+   - sector (Education / MFI / Clinic / Farm)
+   - billReference (link to bill/invoice/loan ID)
+   - totalAmount (number — bill total)
+   - amountPaid (number — this transaction)
+   - balanceRemaining (number — after this payment)
+   - fee (number — AppShule service fee)
+   - netAmount (number — amount disbursed to institution)
+   - paymentType (Full Payment / Partial Payment / Overpayment)
+   - paymentMethod (MTN / Airtel)
+   - status (pending / completed / failed / disbursed)
+   - yoTransactionId (string)
+   - yoNetworkRef (string)
+   - yoMsisdn (string)
+   - yoWebhookData (object — full IPN payload)
+   - paymentDate (timestamp)
+   - disbursementDate (timestamp)
+   - createdAt
+   - createdBy
+
+2. institution_beneficiaries
+   Fields:
+   - beneficiaryId (auto)
+   - institutionId
+   - institutionName
+   - contactPerson
+   - contactPhone
+   - contactEmail
+   - beneficiaryType (Yo Account / MobileMoney / Bank)
+   - beneficiaryAccount (Yo account number or phone)
+   - bankName (if Bank)
+   - bankAccountNumber (if Bank)
+   - bankAccountName (if Bank)
+   - bankBranch
+   - apiBankIdentifier (from Yo! after registration)
+   - isActive (boolean, default true)
+   - createdBy (Super Admin uid)
+   - createdAt
+   - updatedAt
+
+3. payment_disbursements
+   Fields:
+   - disbursementId (auto)
+   - transactionId (reference)
+   - institutionId
+   - beneficiaryAccount
+   - amount
+   - fee
+   - netAmount
+   - status (pending / completed / failed)
+   - yoTransactionId
+   - yoWebhookData
+   - disbursedAt
+   - createdAt
+
+4. payment_notifications
+   Fields:
+   - notificationId (auto)
+   - transactionId
+   - recipientType (Client / Institution / SuperAdmin)
+   - recipientId (uid)
+   - notificationType (In-App / SMS / Email)
+   - message
+   - sentAt
+   - readAt
+   - status (pending / sent / failed)
+
+5. payment_settings
+   Fields:
+   - settingsId (auto)
+   - institutionId
+   - autoDisburse (boolean, default true)
+   - serviceFeePercentage (number, default 5)
+   - serviceFeeFixed (number, default 0)
+   - minDisbursementAmount (number, default 1000)
+   - maxDisbursementAmount (number, default 10000000)
+   - notificationPreference (object)
+   - updatedAt
+
+6. yo_webhook_logs
+   Fields:
+   - logId (auto)
+   - webhookType (IPN / Failure)
+   - payload (object)
+   - signature (string)
+   - isVerified (boolean)
+   - processed (boolean)
+   - errorMessage (string)
+   - receivedAt (timestamp)
+   - processedAt (timestamp)
+
+7. payment_audit_log (permanent record)
+   Fields:
+   - auditId (auto)
+   - action (payment_initiated / ipn_received / disbursed / 
+     notification_sent / failed)
+   - actorId
+   - transactionId
+   - details (object)
+   - ipAddress
+   - timestamp
+
+═══════════════════════════════════════════════════════════════
+PART B: YO! API CONFIGURATION PANEL
+═══════════════════════════════════════════════════════════════
+
+Add to Super Admin Command Center → Settings tab:
+
+Section: "💳 YO! PAYMENTS CONFIGURATION"
+
+┌─────────────────────────────────────────┐
+│ 💳 YO! PAYMENTS SETUP                    │
+├─────────────────────────────────────────┤
+│ Status: ⚠️ Not configured                │
+│                                          │
+│ API Credentials:                         │
+│ Username: [_______________]              │
+│ Password: [••••••••••••••••••]          │
+│                                          │
+│ API URLs:                                │
+│ Production: [https://paymentsapi1.yo.co.ug/ybs/task.php] │
+│ Sandbox:    [https://sandbox.yo.co.ug/services/yopaymentsdev/task.php] │
+│                                          │
+│ Mode:                                    │
+│ ○ Sandbox (testing)                      │
+│ ● Production (live)                      │
+│                                          │
+│ RSA Keys:                                │
+│ Public Key:  [📁 Upload]                 │
+│ Private Key: [📁 Upload - stored securely]│
+│                                          │
+│ Webhook URLs (provide to Yo!):          │
+│ IPN Callback:   [read-only URL shown]   │
+│ Failure Callback: [read-only URL shown] │
+│                                          │
+│ Service Fee: [5] % per transaction      │
+│                                          │
+│ [🔌 Test Connection]                    │
+│ [💾 Save Configuration]                 │
+│                                          │
+│ API Rate Limit Status:                   │
+│ • Requests today: 0 / 10000             │
+│ • Requests this minute: 0 / 15          │
+└─────────────────────────────────────────┘
+
+Security notes:
+- Store keys in Firebase Functions environment variables OR
+  a secure Firestore doc with strict rules (super admin only)
+- NEVER expose keys to client-side code
+- Webhook URLs are generated after first config save
+
+Add button [🌱 Enable Yo! Sandbox Mode] for testing without real money.
+
+═══════════════════════════════════════════════════════════════
+PART C: INSTITUTION BENEFICIARY MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Super Admin must register each institution's payout account:
+
+When Super Admin opens Command Center → Payments → Beneficiaries tab:
+
+Full-screen modal (id="beneficiariesModal"):
+
+┌─────────────────────────────────────────┐
+│ 🏦 INSTITUTION BENEFICIARIES             │
+├─────────────────────────────────────────┤
+│ Search: [_______________]                │
+│ Filter by type: [All] [MFI] [Clinic]... │
+│                                          │
+│ [+ Add Beneficiary]                      │
+│                                          │
+│ List:                                    │
+│ ┌─────────────────────────────────────┐ │
+│ │ 🏫 Rose Junior School                │ │
+│ │ Beneficiary: MTN 0771234567          │ │
+│ │ Status: ✅ Active                    │ │
+│ │ [✏️ Edit] [🗑️]                     │ │
+│ └─────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+
+Add Beneficiary form:
+- Institution (dropdown, required)
+- Contact Person (text)
+- Contact Phone (required)
+- Contact Email
+- Beneficiary Type (dropdown):
+  * Yo! Payments Account
+  * Mobile Money (MTN/Airtel)
+  * Bank Account
+- Beneficiary Account Number (required)
+- If Bank:
+  * Bank Name (dropdown of Ugandan banks)
+  * Bank Account Number
+  * Account Name
+  * Branch
+  * API Bank Identifier (auto-filled after Yo! registration)
+- Service Fee (% override — default from global)
+
+On Save:
+- Create institution_beneficiaries doc
+- Test connection with Yo! (optional — validate account)
+- Show success
+
+Testing flow:
+- Click [🔌 Test Connection]
+- Call acverifyaccountvalidity (Yo! API)
+- Show: ✅ Account valid / ❌ Invalid
+
+═══════════════════════════════════════════════════════════════
+PART D: CLIENT PAYMENT INITIATION FLOW
+═══════════════════════════════════════════════════════════════
+
+When a client (student, borrower, patient) wants to pay:
+
+From Student Home / MFI Loan / Clinic Bill:
+
+Client sees a "Pay Now" button:
+
+Full-screen modal (id="clientPaymentModal"):
+
+┌─────────────────────────────────────────┐
+│ 💳 MAKE PAYMENT                          │
+├─────────────────────────────────────────┤
+│ Payment To: {Institution Name}           │
+│ Reference: {bill/loan ID}                │
+│                                          │
+│ Total Bill: UGX 300,000                  │
+│ Already Paid: UGX 123,000                │
+│ Balance: UGX 177,000                     │
+│                                          │
+│ Amount to Pay:                           │
+│ [___________________] UGX                │
+│ Quick: [Full Balance] [Half] [Custom]   │
+│                                          │
+│ Payment Method:                          │
+│ ● MTN Mobile Money (UGX +2%)            │
+│ ○ Airtel Money (UGX +2%)                │
+│                                          │
+│ Your Phone Number:                       │
+│ [+256705732540]                          │
+│                                          │
+│ Service Fee (5%): UGX 8,850             │
+│ TOTAL to pay: UGX 185,850                │
+│                                          │
+│ [💳 Pay Now]  [Cancel]                   │
+└─────────────────────────────────────────┘
+
+On [💳 Pay Now]:
+1. Validate amount > 0 and <= balance
+2. Create payment_transactions doc with:
+   - status = "pending"
+   - reference = auto-generated
+   - all relevant fields
+3. Call backend API (Firebase Function) that:
+   a. Reads Yo! credentials from secure storage
+   b. Builds XML request:
+      <?xml version="1.0" encoding="UTF-8"?>
+      <AutoCreate>
+        <Request>
+          <APIUsername>{YO_API_USERNAME}</APIUsername>
+          <APIpassword>{YO_API_PASSWORD}</APIPassword>
+          <Method>acdepositfunds</Method>
+          <NonBlocking>TRUE</NonBlocking>
+          <Amount>{amount}</Amount>
+          <Account>{clientPhone}</Account>
+          <Narrative>{billReference} payment</Narrative>
+          <ExternalReference>{reference}</ExternalReference>
+          <InstantNotificationUrl>{IPN_URL}</InstantNotificationUrl>
+          <FailureNotificationUrl>{FAILURE_URL}</FailureNotificationUrl>
+        </Request>
+      </AutoCreate>
+   c. Sends request to Yo! API
+   d. Returns response to client
+4. Client sees:
+   "📱 Check your phone for PIN prompt.
+    Amount: UGX 185,850
+    Reference: {reference}
+    [Waiting for confirmation...]"
+5. Client enters PIN on their phone
+6. Yo! sends IPN webhook to AppShule (see Part E)
+7. Client's UI updates to "✅ Payment Confirmed" when IPN received
+
+If failed (timeout, cancel, insufficient funds):
+- Show "❌ Payment failed. Try again?"
+- Log failure
+- Keep transaction with status = "failed"
+
+═══════════════════════════════════════════════════════════════
+PART E: IPN WEBHOOK HANDLER (CRITICAL)
+═══════════════════════════════════════════════════════════════
+
+The IPN webhook is where Yo! calls AppShule back when payment succeeds.
+
+Setup:
+1. Create Firebase Cloud Function (or Replit server endpoint):
+   POST /api/webhooks/yo/ipn
+2. Same for failure:
+   POST /api/webhooks/yo/failure
+
+IPN HANDLER LOGIC (pseudocode):
+1. Receive POST from Yo! with form-urlencoded data:
+   - date_time
+   - amount
+   - narrative
+   - network_ref
+   - external_ref
+   - msisdn
+   - payer_names
+   - payer_email
+   - signature
+
+2. Verify signature:
+   - Decode base64 signature
+   - Verify using Yo!'s public key + SHA1
+   - If invalid → log + return 401
+
+3. Check for duplicate:
+   - Query yo_webhook_logs WHERE network_ref + msisdn matches
+   - If duplicate → return 200 OK (skip processing)
+
+4. Find transaction:
+   - Query payment_transactions WHERE reference == external_ref
+   - If not found → log + return 200 OK
+
+5. Update transaction:
+   - status = "completed"
+   - yoTransactionId = reference
+   - yoNetworkRef = network_ref
+   - yoMsisdn = msisdn
+   - yoWebhookData = full payload
+   - paymentDate = serverTimestamp()
+
+6. Process balance:
+   - Update bill/loan in respective sector:
+     * clinic_billing: amount_paid += amount, 
+       balance_remaining -= amount
+     * microfinance_loans: same pattern
+     * school_fees: same pattern
+   - Compute new status: Fully Paid / Partially Paid / Overpaid
+   - If overpaid: create credit_note (see Task 12 Step 2)
+
+7. Trigger auto-disbursement (if enabled):
+   - Call backend function disburseToInstitution()
+   - Creates payment_disbursements doc
+
+8. Send notifications:
+   - Client: "✅ Payment confirmed. Balance: UGX X"
+   - Institution: "New payment received"
+   - Super Admin: "Transaction processed"
+
+9. Respond to Yo! with HTTP 200 OK
+   - Optionally include SMS text in response body:
+     narrative=Thank+you%2C+your+payment+is+confirmed.
+
+FAILURE HANDLER (similar):
+1. Verify signature
+2. Find transaction by failed_transaction_reference
+3. Update status = "failed"
+4. Notify client: "❌ Payment failed"
+5. Return 200 OK
+
+Webhook logs:
+- Log ALL incoming webhooks (success or fail)
+- Store raw payload for audit
+- Log verification result
+
+═══════════════════════════════════════════════════════════════
+PART F: PAYMENT STATUS TRACKING
+═══════════════════════════════════════════════════════════════
+
+Clients see their payment status in real-time:
+
+In payment_transactions, status transitions:
+- pending → user initiated, waiting for PIN
+- completed → IPN received, payment confirmed
+- failed → failure webhook received or timeout
+- disbursed → funds sent to institution
+
+Show in client's account:
+┌─────────────────────────────────────────┐
+│ 💳 MY PAYMENTS                           │
+│                                          │
+│ Last 30 days:                            │
+│ • 12 Sep 2026 — UGX 50,000 — ✅ Completed│
+│ • 10 Sep 2026 — UGX 30,000 — ✅ Completed│
+│ • 08 Sep 2026 — UGX 25,000 — ❌ Failed  │
+│                                          │
+│ Total paid this month: UGX 80,000       │
+└─────────────────────────────────────────┘
+
+Real-time updates:
+- Listen to payment_transactions doc
+- Update UI when status changes
+
+═══════════════════════════════════════════════════════════════
+PART G: SUPER ADMIN — PAYMENTS DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Command Center → Payments section:
+
+New tab: "💳 LIVE PAYMENTS"
+
+┌─────────────────────────────────────────┐
+│ 💳 PAYMENTS OVERVIEW                     │
+├─────────────────────────────────────────┤
+│ Today:                                   │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Payments │ │ Total    │ │ Fees     │ │
+│ │ Today    │ │ Collected│ │ Earned   │ │
+│ │ 45       │ │ UGX 890K │ │ UGX 44K  │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Pending  │ │ Failed   │              │
+│ │ 3        │ │ 1        │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ [📊 View All Transactions]              │
+│ [📥 Export Today's Transactions]        │
+│ [🔍 Search by Reference]                │
+│                                          │
+│ Recent transactions:                     │
+│ • UGX 50,000 — John Doe — MFI — ✅       │
+│ • UGX 30,000 — Mary N — Clinic — ⏳     │
+│ • UGX 100,000 — Peter K — School — ✅   │
+└─────────────────────────────────────────┘
+
+Live updates via Firestore listener.
+
+═══════════════════════════════════════════════════════════════
+PART H: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Payment accent: #00A86B (green for money)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Payment UI:
+- Amounts in bold monospace font
+- Status badges (pending=yellow, completed=green, failed=red)
+- Progress bar during payment processing
+- Receipt-style card after success
+
+═══════════════════════════════════════════════════════════════
+PART I: OFFLINE BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+Payments REQUIRE internet (Yo! API + webhook).
+
+Show clear message when offline:
+"⚠️ Payment requires internet connection"
+
+BUT:
+- Pending payments can be viewed offline (cached)
+- Payment history cached for offline review
+- QR codes for payment can be generated offline (they just reference 
+  a URL)
+
+═══════════════════════════════════════════════════════════════
+PART J: SECURITY
+═══════════════════════════════════════════════════════════════
+
+Critical security measures:
+
+1. API credentials:
+   - Stored in Firebase Functions env variables OR
+   - Encrypted Firestore doc accessible only to super admin
+   - NEVER sent to client
+   - Rotate keys periodically
+
+2. Webhook verification:
+   - Verify every IPN with Yo!'s public key
+   - Reject unverified webhooks
+   - Log all attempts
+
+3. Idempotency:
+   - Check network_ref + msisdn for duplicates
+   - Never process same webhook twice
+   - Store processed webhook IDs
+
+4. Rate limiting:
+   - Limit payment attempts per user (5 per hour)
+   - Show "Too many attempts. Wait 1 hour."
+   - Log suspicious patterns
+
+5. Audit log:
+   - Every action logged with user, timestamp, IP
+   - Immutable — no deletion allowed
+
+═══════════════════════════════════════════════════════════════
+PART K: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. payment_transactions: clientId (asc) + paymentDate (desc)
+2. payment_transactions: institutionId (asc) + paymentDate (desc)
+3. payment_transactions: status (asc) + createdAt (desc)
+4. payment_transactions: reference (asc) — unique
+5. institution_beneficiaries: institutionId (asc) + isActive (asc)
+6. payment_disbursements: institutionId (asc) + disbursedAt (desc)
+7. yo_webhook_logs: webhookType (asc) + receivedAt (desc)
+8. payment_audit_log: transactionId (asc) + timestamp (asc)
+
+═══════════════════════════════════════════════════════════════
+PART L: TESTING (SANDBOX MODE)
+═══════════════════════════════════════════════════════════════
+
+Test in Yo! Sandbox first:
+
+A. Yo! configuration:
+   1. Login as Super Admin
+   2. Command Center → Settings → Yo! Payments
+   3. Enter sandbox credentials
+   4. Set Mode = Sandbox
+   5. Save
+   6. Verify: webhook URLs generated
+
+B. Beneficiary registration:
+   1. Open Command Center → Payments → Beneficiaries
+   2. Add beneficiary for a test school
+   3. Type: MTN Mobile Money, number: 256705732540
+   4. Save
+   5. Verify: appears in list
+
+C. Client payment initiation:
+   1. Login as student with an unpaid bill
+   2. Tap "Pay Now"
+   3. Enter amount UGX 10,000
+   4. Select MTN
+   5. Tap [💳 Pay Now]
+   6. Verify: payment_transactions doc created (status=pending)
+
+D. Sandbox special values test:
+   - Amount = 2944 → triggers FAILED response
+   - Amount = 8390 → triggers INDETERMINATE response
+   - Any other amount → SUCCESS
+
+E. IPN webhook test:
+   1. Trigger sandbox success
+   2. Verify: IPN received
+   3. Verify: signature verified
+   4. Verify: transaction status = "completed"
+   5. Verify: bill updated
+   6. Verify: notifications sent
+
+F. Duplicate webhook test:
+   1. Manually send same IPN twice
+   2. Verify: second is skipped (no duplicate processing)
+
+G. Failure webhook test:
+   1. Trigger sandbox failure
+   2. Verify: transaction status = "failed"
+   3. Verify: client notified
+
+H. Super Admin view:
+   1. Open Command Center → Payments → Live
+   2. Verify: today's stats
+   3. Verify: recent transactions list
+   4. Test search by reference
+
+I. Audit log:
+   1. Check payment_audit_log
+   2. Verify: all actions logged
+
+J. Offline check:
+   1. Turn off WiFi
+   2. Try to pay → "requires internet" message
+   3. View payment history → cached
+
+K. Regression:
+   1. Tasks 1-11 all still work
+   2. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART M: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-11
+- Do NOT expose API credentials in frontend
+- Do NOT skip signature verification
+- Do NOT process duplicate IPNs
+- Do NOT allow payments without valid bill reference
+- Do NOT allow negative or zero payment amounts
+- Do NOT use JSON (Yo! uses XML)
+- Do NOT use synchronous mode (use NonBlocking=TRUE)
+- Do NOT lose audit logs
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 12 Step 1 complete — Payments Foundation + Yo! Setup + 
+Beneficiary Management + Collection Flow built"
+
+Report:
+- Which tests A through K passed
+- Any bugs found
+- Screenshots recommended: Yo! config panel, beneficiary management, 
+  client payment modal, payment status tracking, Super Admin view
