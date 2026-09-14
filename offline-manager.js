@@ -1010,10 +1010,10 @@
                .concat(pushed.clinicScans ? clinicScans.map(function (item) { return putRecord('offline_clinic_product_scans', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                .concat(pushed.clinicDispensing ? clinicDispensing.map(function (item) { return putRecord('offline_clinic_dispensing', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                .concat(pushed.clinicBilling ? clinicBilling.map(function (item) { return putRecord('offline_clinic_billing', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-               .concat(pushed.clinicPayments ? clinicPayments.map(function (item) { return putRecord('offline_clinic_payments', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-                .concat(pushed.clinicClaims ? clinicClaims.map(function (item) { return putRecord('offline_clinic_claims', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
-               .concat(pushed.farmMovements ? farmMovements.map(function (item) { return putRecord('offline_farm_movements', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-               .concat(pushed.farmAttendance ? farmAttendance.map(function (item) { return putRecord('offline_farm_attendance', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
+                .concat(pushed.clinicPayments ? clinicPayments.map(function (item) { return putRecord('offline_clinic_payments', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                .concat(pushed.clinicClaims ? clinicClaims.map(function (item) { return putRecord('offline_clinic_claims', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                .concat(pushed.farmMovements ? farmMovements.map(function (item) { return putRecord('offline_farm_movements', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                .concat(pushed.farmAttendance ? farmAttendance.map(function (item) { return putRecord('offline_farm_attendance', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
           })
           .then(function () {
             var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};
@@ -1393,6 +1393,70 @@
     markMfiVerificationSynced: function (localId, extra) {
       return getRecord('offline_mfi_verification', localId).then(function (item) {
         return item ? putRecord('offline_mfi_verification', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueFarmMovement: function (movement) {
+      movement = movement || {};
+      if (!movement.farmId || !movement.direction || !movement.animalTypeId) return fail('A farm, animal type, and direction are required');
+      var direction = String(movement.direction).toUpperCase();
+      if (direction !== 'IN' && direction !== 'OUT') return fail('Movement direction must be IN or OUT');
+      var value = Object.assign({}, movement, {
+        localId: movement.localId || randomId('farm-movement-'),
+        direction: direction,
+        confidenceScore: Math.max(0, Math.min(100, Number(movement.confidenceScore == null ? 0 : movement.confidenceScore))),
+        syncStatus: movement.syncStatus || 'pending',
+        queuedAt: movement.queuedAt || Date.now(),
+        detectedAt: movement.detectedAt || new Date().toISOString()
+      });
+      return putRecord('offline_farm_movements', value).then(function () { return value; });
+    },
+    listFarmMovements: function (farmId) {
+      return allRecords('offline_farm_movements').then(function (items) {
+        return items.filter(function (item) { return !farmId || item.farmId === farmId; })
+          .sort(function (left, right) { return new Date(right.detectedAt || 0) - new Date(left.detectedAt || 0); });
+      });
+    },
+    markFarmMovementSynced: function (localId, extra) {
+      return getRecord('offline_farm_movements', localId).then(function (item) {
+        return item ? putRecord('offline_farm_movements', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueFarmAttendance: function (attendance) {
+      attendance = attendance || {};
+      if (!attendance.farmId || !attendance.workerId || !attendance.attendanceDate) return fail('A farm, worker, and attendance date are required');
+      var value = Object.assign({}, attendance, {
+        localId: attendance.localId || randomId('farm-attendance-'),
+        syncStatus: attendance.syncStatus || 'pending',
+        queuedAt: attendance.queuedAt || Date.now(),
+        recordedAt: attendance.recordedAt || new Date().toISOString()
+      });
+      return putRecord('offline_farm_attendance', value).then(function () { return value; });
+    },
+    listFarmAttendance: function (farmId, attendanceDate) {
+      return allRecords('offline_farm_attendance').then(function (items) {
+        return items.filter(function (item) { return (!farmId || item.farmId === farmId) && (!attendanceDate || item.attendanceDate === attendanceDate); });
+      });
+    },
+    markFarmAttendanceSynced: function (localId, extra) {
+      return getRecord('offline_farm_attendance', localId).then(function (item) {
+        return item ? putRecord('offline_farm_attendance', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    cacheFarmReport: function (report) {
+      report = report || {};
+      if (!report.farmId || !report.summaryDate) return fail('A farm and summary date are required for report caching');
+      return putRecord('offline_farm_reports', Object.assign({}, report, {
+        reportKey: String(report.farmId) + '|' + String(report.summaryDate),
+        cachedAt: Date.now()
+      }));
+    },
+    getFarmReport: function (farmId, summaryDate) {
+      return farmId && summaryDate ? getRecord('offline_farm_reports', String(farmId) + '|' + String(summaryDate)) : Promise.resolve(null);
+    },
+    listFarmReports: function (farmId) {
+      return allRecords('offline_farm_reports').then(function (items) {
+        return items.filter(function (item) { return !farmId || item.farmId === farmId; })
+          .sort(function (left, right) { return String(right.summaryDate || '').localeCompare(String(left.summaryDate || '')); });
       });
     },
     queueClinicVisit: function (visit) {
