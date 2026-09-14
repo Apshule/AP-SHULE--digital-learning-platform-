@@ -1,0 +1,532 @@
+Task 7 — Step 2 of 4: AI Auto-Video + Series Mode (Tab 2)
+
+CONTEXT:
+- Step 1 built Video Studio foundation + Cartoon Studio (Tab 1)
+- Collections: video_studio_projects, cartoon_assets, 
+  video_generation_queue, video_library
+- Now we build Tab 2 (AI Auto-Video) which generates a complete 
+  lesson from a topic — no script needed
+
+GOAL:
+Super Admin enters only a TOPIC (e.g. "Photosynthesis for S2 Biology")
+→ system generates full lesson video with:
+- AI-generated script (Gemini)
+- AI voiceover (Google TTS)
+- Auto-selected visuals (cartoon library or Pixabay)
+- Auto-generated captions
+- Single video OR Series Mode (45-min lesson split into segments)
+
+COST:
+- Gemini API: FREE tier
+- Google TTS: FREE tier  
+- No paid APIs required
+
+═══════════════════════════════════════════════════════════════
+PART A: AI AUTO-VIDEO TAB (Tab 2)
+═══════════════════════════════════════════════════════════════
+
+Update the "AI Auto-Video" tab in Video Studio modal 
+(currently shows "Coming in Step 2"):
+
+Replace placeholder with real form.
+
+FORM FIELDS:
+
+1. Topic (text input, required)
+   - Placeholder: "e.g. Photosynthesis for S2 Biology"
+   - Helper text: "Enter just the topic — AI will generate everything."
+
+2. Subject (dropdown, required)
+   - Load from existing subjects
+
+3. Class Level (dropdown, required)
+   - P1-P7, S1-S6
+
+4. Language (dropdown, required)
+   - English, Luganda, Lusoga, Runyankore, Runyoro, Acholi, Swahili
+   - Default: English
+
+5. Duration Mode (radio buttons, required):
+   ○ Single Video
+   ● Series Mode (recommended for full lessons)
+
+6. If Single Video — Duration (dropdown):
+   - 5 min, 10 min, 15 min
+   - Default: 10 min
+
+7. If Series Mode — Total Lesson Time (dropdown):
+   - 30 min, 45 min, 60 min
+   - Default: 45 min
+
+8. If Series Mode — Segment Length (dropdown):
+   - 5 min, 8 min, 10 min
+   - Default: 8 min
+
+9. Visual Style (radio buttons):
+   ○ Cartoon (from cartoon_assets)
+   ○ Stock images (Pixabay free tier)
+   ● Slideshow (simplest, fastest)
+
+10. Difficulty Level (radio buttons):
+    ● Standard
+    ○ Beginner-friendly
+    ○ Advanced
+
+BUTTON: "🤖 Generate AI Video"
+
+═══════════════════════════════════════════════════════════════
+PART B: AI VIDEO GENERATION PIPELINE (Single Video)
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks "Generate AI Video" (Single mode):
+
+Show progress modal with steps:
+
+STEP 1/6: Generating lesson script...    [progress bar]
+STEP 2/6: Translating (if needed)...     [progress bar]
+STEP 3/6: Generating voiceover...        [progress bar]
+STEP 4/6: Selecting visuals...           [progress bar]
+STEP 5/6: Adding captions...             [progress bar]
+STEP 6/6: Compiling video...             [progress bar]
+
+IMPLEMENTATION:
+
+Step 1 — Generate Lesson Script:
+Call Gemini API with this prompt:
+"You are Ugandan CBC expert. Generate a {duration}-minute video 
+lesson script for the topic: {topic}.
+Subject: {subject}. Class: {classLevel}. Difficulty: {difficulty}.
+
+Include in the script:
+- Introduction (30 sec) — hook with real-life Ugandan scenario
+- Main content (multiple sections) with:
+  * Clear explanations
+  * Ugandan examples (mangoes, matooke, market, boda boda, etc.)
+  * CBC values demonstrated
+  * Generic skills practiced
+- Summary (30 sec)
+- 3 quiz questions at the end
+
+Format with timestamps in [MM:SS] format at the start of each 
+section. Total duration must be approximately {duration} minutes.
+Script should be read aloud by a teacher voiceover — keep sentences 
+short (under 20 words)."
+
+Save to project doc as scriptText.
+Show loading spinner (5-15 seconds typical).
+
+Step 2 — Translate (if language != English):
+Same as Task 7 Step 1 Cartoon pipeline — reuse translateScript().
+
+Step 3 — Generate Voiceover:
+- Split translatedScript into chunks of 300 chars
+- Use browser SpeechSynthesis API (works offline!)
+- Select voice matching language:
+  * English: en-US or en-GB voice
+  * Swahili: sw-KE if available
+  * Other Ugandan languages: fallback to en-US voice reading 
+    phonetic text
+- Playback optimization:
+  * Reduce speech rate to 0.9 (slightly slower for students)
+  * Pitch 1.0
+- Save audio as WebM blob to Firebase Storage:
+  projects/{projectId}/voiceover.webm
+
+Step 4 — Select Visuals:
+Based on visualStyle:
+A. Cartoon:
+   - Query cartoon_assets
+   - Select images matching subject keywords
+   - Default: 1 image per 30 seconds of video
+   - Rotate through poses to keep interest
+
+B. Stock images (Pixabay):
+   - Call Pixabay API (free, no key needed for basic)
+   - URL: https://pixabay.com/api/?key=demo&q={topic}&image_type=photo&per_page=20
+   - Download top 20 images
+   - Rotate through them
+   - Cache locally
+
+C. Slideshow (simplest):
+   - Extract keywords from script
+   - Generate simple colored text slides using Canvas API
+   - Each slide: title + key point + simple icon (emoji)
+
+Save image URLs/array to project doc.
+
+Step 5 — Add Captions:
+Split translatedScript into segments:
+- Calculate duration per segment = totalDuration / segmentCount
+- Generate SRT:
+  1
+  00:00:00,000 --> 00:00:30,000
+  {text for segment 1}
+
+  2
+  00:00:30,000 --> 00:01:00,000
+  {text for segment 2}
+  ...
+
+Save as captionsSrt field.
+
+Step 6 — Compile:
+For Single Video:
+- Store: 6-12 images + audio + captions
+- Total size: ~5-10MB (audio-heavy)
+- Save to videoPathOffline
+- HD version: skip for now (see Step 4 for optional upload)
+
+Update project doc:
+{
+  status: "ready",
+  durationMinutes: {duration},
+  ...
+}
+
+═══════════════════════════════════════════════════════════════
+PART C: SERIES MODE (45-min lesson → 6 segments)
+═══════════════════════════════════════════════════════════════
+
+When Super Admin selects Series Mode:
+
+The system splits the lesson into N segments 
+(totalTime / segmentLength = N):
+- 45 min / 8 min = ~6 segments
+
+IMPLEMENTATION:
+
+Step 1 — Generate Master Script:
+Call Gemini API with prompt:
+"You are Ugandan CBC expert. Generate a complete {totalTime}-minute 
+lesson on {topic} for {subject} {classLevel}.
+
+Split the lesson into {segmentCount} segments of approximately 
+{segmentLength} minutes each. Each segment should be a 
+self-contained mini-lesson.
+
+For each segment provide:
+- Segment number and title
+- 3 learning objectives
+- Content (2-3 paragraphs)
+- One Ugandan real-life example
+- One activity for learners
+- One assessment question
+
+Segments should build on each other logically:
+Segment 1: Introduction & overview
+Segments 2-{N-1}: Main concepts
+Segment {N}: Summary & quiz
+
+Return as a JSON array:
+[
+  { "number": 1, "title": "...", "script": "...", "objectives": [...], ... },
+  ...
+]"
+
+Step 2 — Translate each segment (if needed)
+
+Step 3 — Generate voiceover for each segment separately
+Save as audio_1.webm, audio_2.webm, etc.
+
+Step 4 — Select visuals per segment
+
+Step 5 — Generate captions per segment
+
+Step 6 — Create 6 separate video_studio_projects:
+- Each with seriesParentId = masterProjectId
+- Each with seriesSegmentNumber = 1-6
+- Each segment is a separate video file
+- All share the same topic, subject, classLevel
+
+Update masterProject:
+{
+  isSeries: true,
+  seriesTotalTime: 45,
+  seriesSegmentCount: 6,
+  status: "ready"
+}
+
+═══════════════════════════════════════════════════════════════
+PART D: SERIES MODE UI IN LIBRARY
+═══════════════════════════════════════════════════════════════
+
+In Video Library tab, series projects display as a playlist:
+
+┌─────────────────────────────────────────┐
+│ 🎬 Photosynthesis for S2                 │
+│ Series: 6 parts · 45 min total          │
+│ [▶ Play all] [▶ Part 1 only]            │
+│                                          │
+│ ▸ Part 1: Introduction (8 min) ✅       │
+│ ▸ Part 2: Light Reactions (8 min) ✅    │
+│ ▸ Part 3: Calvin Cycle (8 min) ✅       │
+│ ▸ Part 4: Real-life Application (8 min) ✅ │
+│ ▸ Part 5: Practice Problems (8 min) ✅  │
+│ ▸ Part 6: Summary & Quiz (5 min) ✅     │
+└─────────────────────────────────────────┘
+
+[▶ Play all] → plays segments in sequence
+
+For students:
+- Series shows as playlist in Video Tutorials
+- Each segment plays separately
+- Progress tracked per segment
+- Download all button caches whole series offline
+
+═══════════════════════════════════════════════════════════════
+PART E: VISUAL SELECTION - CARTOON ASSETS
+═══════════════════════════════════════════════════════════════
+
+Intelligent image selection from cartoon_assets:
+
+Add function selectBestImages(topic, subject, count):
+
+1. Extract keywords from topic + subject
+   - "Photosynthesis Biology S2" → ["photosynthesis", "biology", "s2"]
+
+2. Query cartoon_assets WHERE tags array-contains-any keywords
+   - If results found: use those
+   
+3. If no matches: fall back to random selection from all assets
+
+4. Ensure variety:
+   - Pick different poses
+   - Pick different characters
+   - Order: standing → pointing → talking → writing → smiling → talking
+
+5. If count > available assets:
+   - Rotate through assets multiple times
+   - Add slight variation (different captions)
+
+═══════════════════════════════════════════════════════════════
+PART F: VISUAL SELECTION - PIXABAY STOCK IMAGES
+═══════════════════════════════════════════════════════════════
+
+If visualStyle == "Stock images":
+
+Add function fetchPixabayImages(keywords, count):
+
+1. Fetch from Pixabay free API:
+   https://pixabay.com/api/?key=demo&q={keywords}&image_type=photo&per_page=20&safesearch=true
+
+2. Filter results:
+   - imageWidth >= 640
+   - imageHeight >= 360
+   - Avoid explicit content (safesearch=true)
+
+3. Download top `count` images to Firebase Storage:
+   projects/{projectId}/visual_{index}.jpg
+
+4. Store URLs in project doc.
+
+Fallback: if Pixabay fails, use cartoon_assets.
+
+═══════════════════════════════════════════════════════════════
+PART G: CAPTION GENERATION IMPROVEMENTS
+═══════════════════════════════════════════════════════════════
+
+Improve captions for AI Auto-Video:
+
+1. Parse script for natural breakpoints:
+   - Sentence boundaries (periods, question marks, exclamations)
+   - Paragraph breaks
+   - Timestamp markers [MM:SS]
+
+2. Auto-fit captions to 2 lines max:
+   - Split long sentences at commas
+   - Max 42 chars per line
+   - Max 2 lines per caption
+
+3. Align captions with audio:
+   - Calculate timing based on character count
+   - Average reading speed: 15 chars per second
+   - Distribute timings proportionally
+
+4. Format as SRT with proper timestamps
+
+═══════════════════════════════════════════════════════════════
+PART H: PREVIEW AI VIDEO
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [▶ Preview]:
+
+For Single Video:
+- Open preview modal (reuse from Step 1)
+- Show slideshow of images
+- Play audio
+- Show captions
+
+For Series:
+- Show all 6 segments as a playlist
+- Preview each segment separately
+- [▶ Play All] plays segments in sequence
+- Progress bar across all segments
+
+═══════════════════════════════════════════════════════════════
+PART I: AI VIDEO LIBRARY MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+In Video Library tab:
+
+Add filters specific to AI videos:
+- Mode filter: Cartoon / AI Auto / Series / All
+- Language filter
+- Subject filter
+- Status filter: Draft / Ready / Published
+
+Add bulk actions:
+- Select multiple → Publish all / Delete all
+
+Video card for AI Auto shows:
+- Mode badge: "🤖 AI Generated"
+- If series: "📚 Series (6 parts)"
+- Play count
+- Status
+
+═══════════════════════════════════════════════════════════════
+PART J: COST TRACKING (For transparency)
+═══════════════════════════════════════════════════════════════
+
+Add a small cost tracker to Video Studio:
+
+In the header, show:
+"💰 This month: X videos generated · Approx UGX X"
+
+Calculation:
+- Single video: ~UGX 2,000
+- Series (6 parts): ~UGX 8,000
+- Cartoon: Free (just Gemini translation)
+
+Track in Firestore:
+collection: video_generation_stats
+{ 
+  month: "2026-09",
+  videosGenerated: 12,
+  estimatedCostUgx: 24000
+}
+
+Update after each generation.
+
+═══════════════════════════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+AI Auto videos work offline via Task 2 cache:
+
+1. When published, schools can download for offline
+2. Series Mode: download all segments in one action
+3. Audio-only fallback (for slow connections):
+   - If video too big, offer audio + captions only
+   - Save as "audio_lesson" version
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design.
+
+Special styling for AI Auto tab:
+- "AI" badge in purple gradient
+- Loading states use pulsing animation
+- Progress steps have checkmarks when complete
+- Cost tracker: small, subtle, in header
+
+Series playlist:
+- Indented list with segment numbers
+- Green checkmarks for completed segments
+- Play buttons on each row
+
+═══════════════════════════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Super Admin account:
+
+A. AI Auto-Video form:
+   1. Login as super admin
+   2. Admin Panel → Video Studio → AI Auto-Video tab
+   3. Verify: form appears (not "Coming in Step 2")
+   4. Verify: all fields render correctly
+
+B. Single video generation:
+   1. Fill form:
+      - Topic: "Photosynthesis for S2 Biology"
+      - Subject: Biology
+      - Class: S2
+      - Language: English
+      - Mode: Single Video
+      - Duration: 10 min
+      - Visual Style: Cartoon
+      - Difficulty: Standard
+   2. Click "Generate AI Video"
+   3. Verify: progress modal with 6 steps
+   4. Wait for completion
+   5. Verify: success modal
+   6. Check video_studio_projects: new doc with:
+      - scriptText (Gemini generated)
+      - audioPath (Firebase Storage URL)
+      - images (array)
+      - captionsSrt
+      - status = "ready"
+
+C. Preview:
+   1. Click [▶ Preview]
+   2. Verify: slideshow plays with audio + captions
+
+D. Series Mode generation:
+   1. Change form to Series Mode
+   2. Total time: 45 min
+   3. Segment length: 8 min
+   4. Click "Generate"
+   5. Verify: 6 segments created
+   6. Check master project has seriesSegmentCount: 6
+   7. Check 6 child projects exist with seriesParentId set
+
+E. Series playback:
+   1. Open Library tab
+   2. Find series project
+   3. Verify: shows as playlist with 6 segments
+   4. Click [▶ Play All]
+   5. Verify: segments play in sequence
+
+F. Visual styles:
+   1. Generate with Cartoon style → verify cartoon images
+   2. Generate with Pixabay style → verify stock images
+   3. Generate with Slideshow style → verify colored slides
+
+G. Cost tracking:
+   1. After generating 3 videos, check video_generation_stats
+   2. Verify estimatedCostUgx is calculated
+
+H. Non-superadmin check:
+   1. Login as teacher → verify no Video Studio access
+   2. Login as school admin → same
+
+I. Offline check:
+   1. Publish a video
+   2. Login as student
+   3. Download video for offline (via Task 2)
+   4. Turn off WiFi → verify video plays
+
+═══════════════════════════════════════════════════════════════
+PART N: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-6 or Step 1 of Task 7
+- Do NOT download YouTube videos
+- Do NOT require paid APIs (Gemini + Google TTS are free)
+- Do NOT exceed Gemini free tier (15 req/min, 1500 req/day)
+- Do NOT exceed Pixabay free tier (100 req/hour)
+- Do NOT allow non-superadmin access
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 7 Step 2 complete — AI Auto-Video + Series Mode built"
+
+Report:
+- Which tests A through I passed
+- Any bugs found
+- Screenshots recommended: AI Auto form, progress modal, 
+  generated video preview, series playlist, library with AI videos
