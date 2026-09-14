@@ -833,6 +833,51 @@
         .connection-usage-item strong { display:block; margin-top:3px; color:#4B2E9E; font-size:14px; }
         .connection-status { display:flex; align-items:flex-start; gap:8px; min-height:18px; margin-top:13px; padding:9px 10px; border-radius:10px; color:#41614D; background:#EFF9F2; font-size:11px; line-height:1.35; }
         .connection-status i { margin-top:2px; color:#2E8B57; }
+         .settings-preferences-card { margin-top:16px; background:#fff; border-radius:20px; padding:20px; border:1px solid rgba(75,46,158,.1); box-shadow:0 5px 18px rgba(38,25,91,.1); }
+         .settings-preferences-head { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+         .settings-preferences-head h3 { margin:0; color:#4B2E9E; font-size:17px; }
+         .settings-preferences-head p { margin:4px 0 0; color:#747474; font-size:12px; line-height:1.4; }
+         .settings-preferences-head i { color:#FF8C42; font-size:20px; }
+         .settings-accordion { display:grid; gap:8px; }
+         .settings-panel { border:1px solid #eee9f8; border-radius:14px; overflow:hidden; background:#fff; }
+         .settings-panel > summary { min-height:48px; box-sizing:border-box; display:flex; align-items:center; gap:9px; padding:13px 14px; color:#4B2E9E; font-weight:800; font-size:13px; cursor:pointer; list-style:none; }
+         .settings-panel > summary::-webkit-details-marker { display:none; }
+         .settings-panel > summary::after { content:'›'; margin-left:auto; font-size:22px; line-height:1; color:#9a8bc7; transform:rotate(90deg); transition:transform .2s ease; }
+         .settings-panel:not([open]) > summary::after { transform:rotate(0deg); }
+         .settings-panel-body { padding:0 14px 14px; border-top:1px solid #f0edf8; }
+         .settings-mode-line { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 0 4px; }
+         .settings-mode-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 9px; border-radius:16px; background:#eff9f2; color:#2e7d32; font-size:11px; font-weight:800; }
+         .settings-mode-badge[data-mode="mobile"] { background:#fff8e8; color:#8a5b00; }
+         .settings-mode-badge[data-mode="offline"] { background:#f3f0fb; color:#4B2E9E; }
+         .settings-refresh-btn,.settings-secondary-btn { border:1px solid #d8ccf4; background:#fff; color:#4B2E9E; border-radius:18px; padding:8px 11px; font-size:11px; font-weight:800; cursor:pointer; }
+         .settings-danger-btn { border:1px solid #f1b8bd; background:#fff7f7; color:#b4232d; border-radius:18px; padding:8px 11px; font-size:11px; font-weight:800; cursor:pointer; width:100%; text-align:left; }
+         .settings-inline-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+         .settings-usage-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+         .settings-usage-item { padding:10px; border-radius:11px; background:#f7f4fd; min-width:0; }
+         .settings-usage-item span { display:block; color:#888; font-size:10px; }
+         .settings-usage-item strong { display:block; margin-top:3px; color:#4B2E9E; font-size:13px; overflow:hidden; text-overflow:ellipsis; }
+         .settings-progress { height:8px; background:#eeeaf7; border-radius:8px; overflow:hidden; margin:9px 0 5px; }
+         .settings-progress span { display:block; height:100%; width:0; background:linear-gradient(90deg,#4B2E9E,#FF8C42); border-radius:8px; transition:width .25s ease; }
+         .settings-breakdown-row,.settings-pending-row,.settings-history-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid #f4f1f8; color:#555; font-size:12px; }
+         .settings-breakdown-row:last-child,.settings-pending-row:last-child,.settings-history-row:last-child { border-bottom:0; }
+         .settings-breakdown-row strong,.settings-pending-row strong { color:#4B2E9E; font-size:11px; }
+         .settings-radio-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; margin-top:10px; }
+         .settings-radio-option { display:flex; align-items:center; gap:7px; padding:9px 10px; border:1px solid #e4def2; border-radius:10px; font-size:12px; cursor:pointer; }
+         .settings-radio-option:has(input:checked) { border-color:#4B2E9E; background:#f7f4ff; color:#4B2E9E; font-weight:700; }
+         .settings-radio-option input { accent-color:#4B2E9E; }
+         .settings-help-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+         .settings-help-grid button { border:1px solid #e3ddf1; background:#fbfaff; color:#4B2E9E; border-radius:11px; padding:10px 8px; font-size:11px; font-weight:700; cursor:pointer; }
+         .settings-modal { position:fixed; inset:0; z-index:9600; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,13,48,.7); }
+         .settings-modal.show { display:flex; }
+         .settings-modal-card { width:100%; max-width:520px; max-height:90vh; overflow:auto; background:#fff; border-radius:20px; padding:20px; box-shadow:0 12px 45px rgba(20,10,50,.3); }
+         .settings-modal-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+         .settings-modal-head h3 { margin:0; color:#4B2E9E; font-size:18px; }
+         .settings-modal-close { border:0; background:#f3f0fb; color:#4B2E9E; border-radius:50%; width:32px; height:32px; font-size:20px; cursor:pointer; }
+         .settings-modal-copy { color:#4e4e4e; font-size:13px; line-height:1.55; }
+         .settings-modal-copy h4 { color:#4B2E9E; margin:15px 0 5px; }
+         .settings-form-field { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #ded8ec; border-radius:11px; font:inherit; font-size:13px; margin-bottom:9px; }
+         .settings-form-field:focus { outline:3px solid rgba(255,140,66,.2); border-color:#FF8C42; }
+         @media (max-width:420px) { .settings-usage-grid { grid-template-columns:1fr 1fr; } .settings-usage-item:last-child { grid-column:span 2; } }
         @media (max-width:420px) { .connection-mode-badge { max-width:32px; padding:8px; } .connection-mode-badge .connection-label { display:none; } .header-right { gap:7px; } .sync-now-btn { padding:8px 10px; } }
         @media (max-width:350px) { .sync-now-btn .sync-label { display:none; } .sync-now-btn { width:36px; padding:8px; } }
         /* ===== VIDEO STUDIO ===== */
@@ -2695,31 +2740,124 @@
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
-            <section id="connectionSettingsCard" class="connection-settings-card" aria-labelledby="connectionSettingsTitle">
-                <div class="connection-settings-head">
-                    <div><h3 id="connectionSettingsTitle">Connection Settings</h3><p>Choose how APSHULE uses data on this phone.</p></div>
-                    <i class="fas fa-signal" aria-hidden="true"></i>
+            <section id="connectionSettingsCard" class="settings-preferences-card" aria-labelledby="connectionSettingsTitle">
+                <div class="settings-preferences-head">
+                    <div><h3 id="connectionSettingsTitle">⚙️ Settings &amp; Preferences</h3><p>Control your connection, language, storage, sync, and support options.</p></div>
+                    <i class="fas fa-sliders-h" aria-hidden="true"></i>
                 </div>
-                <div class="connection-setting-row">
-                    <div class="connection-setting-copy"><strong>Download HD videos only on WiFi</strong><span>Keep mobile data light by waiting for WiFi.</span></div>
-                    <label class="connection-switch" for="downloadHdWifiToggle"><input id="downloadHdWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Download HD videos only on WiFi</span></label>
+                <div class="settings-accordion">
+                    <details class="settings-panel" open>
+                        <summary>🌐 Connection &amp; Data</summary>
+                        <div class="settings-panel-body">
+                            <div class="settings-mode-line">
+                                <span style="font-size:12px;color:#555;">Current mode</span>
+                                <span id="settingsConnectionMode" class="settings-mode-badge" data-mode="offline">● Offline mode</span>
+                            </div>
+                            <div class="connection-setting-row">
+                                <div class="connection-setting-copy"><strong>Download HD videos only on WiFi</strong><span>Keep mobile data light by waiting for WiFi.</span></div>
+                                <label class="connection-switch" for="downloadHdWifiToggle"><input id="downloadHdWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Download HD videos only on WiFi</span></label>
+                            </div>
+                            <div class="connection-setting-row">
+                                <div class="connection-setting-copy"><strong>Auto-sync on WiFi</strong><span>Send saved work when WiFi is available.</span></div>
+                                <label class="connection-switch" for="autoSyncWifiToggle"><input id="autoSyncWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on WiFi</span></label>
+                            </div>
+                            <div class="connection-setting-row">
+                                <div class="connection-setting-copy"><strong>Auto-sync on mobile data</strong><span>Uses mobile data to send pending work.</span></div>
+                                <label class="connection-switch" for="autoSyncMobileToggle"><input id="autoSyncMobileToggle" type="checkbox"><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on mobile data</span></label>
+                            </div>
+                            <div class="settings-usage-grid" aria-label="Data usage this month">
+                                <div class="settings-usage-item"><span>Downloaded</span><strong id="settingsDownloadedBytes">0 B</strong></div>
+                                <div class="settings-usage-item"><span>Uploaded</span><strong id="settingsUploadedBytes">0 B</strong></div>
+                                <div class="settings-usage-item"><span>Total cached</span><strong id="totalCachedSize">0 B</strong></div>
+                            </div>
+                            <div class="settings-inline-actions"><button id="refreshSettingsUsageBtn" class="settings-refresh-btn" type="button">🔄 Refresh data usage</button></div>
+                            <div id="connectionStatusFeedback" class="connection-status" role="status" aria-live="polite"><i class="fas fa-check-circle" aria-hidden="true"></i><span id="connectionStatusText">Working offline. Saved work will sync when you connect.</span></div>
+                        </div>
+                    </details>
+                    <details class="settings-panel">
+                        <summary>🌍 Language</summary>
+                        <div class="settings-panel-body">
+                            <div class="connection-setting-copy"><strong>App language</strong><span>Choose the language used by available interface translations.</span></div>
+                            <div class="settings-radio-grid" role="radiogroup" aria-label="App language">
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="English"> English</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Luganda"> Luganda</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Lusoga"> Lusoga</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Runyankore"> Runyankore</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Runyoro"> Runyoro</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Acholi"> Acholi</label>
+                                <label class="settings-radio-option"><input type="radio" name="appLanguage" value="Swahili"> Swahili</label>
+                            </div>
+                            <label class="connection-setting-copy" for="videoLanguage" style="display:block;margin-top:13px;"><strong>Preferred video language</strong><span>Used when a lesson has more than one language version.</span><select id="videoLanguage" class="connection-language" aria-label="Preferred video language"><option>English</option><option>Luganda</option><option>Lusoga</option><option>Runyankore</option><option>Runyoro</option><option>Acholi</option><option>Swahili</option></select></label>
+                            <button id="saveLanguageSettingsBtn" class="settings-secondary-btn" type="button" style="margin-top:10px;">💾 Save Language Settings</button>
+                        </div>
+                    </details>
+                    <details class="settings-panel">
+                        <summary>💾 Storage</summary>
+                        <div class="settings-panel-body">
+                            <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#555;"><span>Storage used</span><strong id="settingsStorageLabel" style="color:#4B2E9E;">0 B of 500 MB</strong></div>
+                            <div class="settings-progress" aria-label="Storage used"><span id="settingsStorageProgress"></span></div>
+                            <div id="settingsStorageBreakdown">
+                                <div class="settings-breakdown-row"><span>🎬 Cartoon videos</span><strong>0 B (0)</strong></div>
+                                <div class="settings-breakdown-row"><span>🤖 AI videos</span><strong>0 B (0)</strong></div>
+                                <div class="settings-breakdown-row"><span>📄 PDFs</span><strong>0 B (0)</strong></div>
+                                <div class="settings-breakdown-row"><span>📁 Projects</span><strong>0 B (0)</strong></div>
+                                <div class="settings-breakdown-row"><span>📦 Other</span><strong>0 B (0)</strong></div>
+                            </div>
+                            <div class="settings-inline-actions" style="display:grid;">
+                                <button class="settings-danger-btn" data-clear-category="cartoonVideos" type="button">🧹 Clear Cartoon Videos <span id="clearCartoonVideosSize"></span></button>
+                                <button class="settings-danger-btn" data-clear-category="aiVideos" type="button">🧹 Clear AI Videos <span id="clearAiVideosSize"></span></button>
+                                <button class="settings-danger-btn" data-clear-category="pdfs" type="button">🧹 Clear PDFs <span id="clearPdfsSize"></span></button>
+                                <button class="settings-danger-btn" data-clear-category="all" type="button">🗑️ Clear All Cached Data</button>
+                            </div>
+                            <p style="font-size:11px;color:#9a6a35;margin:9px 0 0;">⚠️ Clearing cached data means these items will need to be downloaded again over WiFi.</p>
+                        </div>
+                    </details>
+                    <details class="settings-panel">
+                        <summary>🔄 Sync</summary>
+                        <div class="settings-panel-body">
+                            <div class="settings-pending-row"><span>Last sync</span><strong id="settingsLastSync">Not synced yet</strong></div>
+                            <div class="settings-pending-row"><span>Pending projects</span><strong id="settingsPendingProjects">0</strong></div>
+                            <div class="settings-pending-row"><span>Pending video views</span><strong id="settingsPendingViews">0</strong></div>
+                            <div class="settings-pending-row"><span>Pending CA / other records</span><strong id="settingsPendingOther">0</strong></div>
+                            <button id="accountSyncNowBtn" class="sync-now-btn" type="button" aria-busy="false" style="width:100%;margin-top:12px;background:#4B2E9E;color:#fff;border-color:#4B2E9E;"><i class="fas fa-sync-alt" aria-hidden="true"></i><span>🔄 Sync Now</span></button>
+                            <div style="font-size:11px;color:#777;line-height:1.6;margin-top:10px;">✓ On app open<br>✓ On WiFi connect<br>✓ Every 30 minutes while online</div>
+                            <div style="font-weight:800;color:#4B2E9E;font-size:12px;margin-top:12px;">Sync history</div>
+                            <div id="settingsSyncHistory"><div style="font-size:11px;color:#999;padding:8px 0;">No sync history yet.</div></div>
+                        </div>
+                    </details>
+                    <details class="settings-panel">
+                        <summary>ℹ️ About &amp; Help</summary>
+                        <div class="settings-panel-body">
+                            <div class="settings-pending-row"><span>App version</span><strong>1.0.0</strong></div>
+                            <div class="settings-pending-row"><span>Build</span><strong>2026-09-14</strong></div>
+                            <div class="settings-help-grid">
+                                <button type="button" data-settings-help="guide">📖 User Guide</button>
+                                <button type="button" data-settings-help="faqs">❓ FAQs</button>
+                                <button type="button" data-settings-help="bug">🐛 Report a Bug</button>
+                                <button type="button" data-settings-help="feature">💡 Request a Feature</button>
+                                <button type="button" data-settings-help="support">📞 Contact Support</button>
+                                <button type="button" data-settings-help="privacy">📄 Privacy Policy</button>
+                                <button type="button" data-settings-help="terms">📜 Terms of Service</button>
+                            </div>
+                            <div style="text-align:center;color:#777;font-size:11px;margin-top:14px;">Made with ❤️ in Uganda 🇺🇬</div>
+                        </div>
+                    </details>
                 </div>
-                <div class="connection-setting-row">
-                    <div class="connection-setting-copy"><strong>Auto-sync on WiFi</strong><span>Send saved work when WiFi is available.</span></div>
-                    <label class="connection-switch" for="autoSyncWifiToggle"><input id="autoSyncWifiToggle" type="checkbox" checked><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on WiFi</span></label>
-                </div>
-                <div class="connection-setting-row">
-                    <div class="connection-setting-copy"><strong>Auto-sync on mobile data</strong><span>Uses mobile data to send pending work.</span></div>
-                    <label class="connection-switch" for="autoSyncMobileToggle"><input id="autoSyncMobileToggle" type="checkbox"><span class="connection-switch-track" aria-hidden="true"></span><span class="hidden">Auto-sync on mobile data</span></label>
-                </div>
-                <label class="connection-setting-copy" for="preferredLanguage"><strong>Preferred language</strong><select id="preferredLanguage" class="connection-language" aria-label="Preferred language"><option value="en">English</option><option value="lg">Luganda</option><option value="lus">Lusoga</option><option value="nyn">Runyankore</option><option value="nyo">Runyoro</option><option value="ach">Acholi</option><option value="sw">Swahili</option></select></label>
-                <div class="connection-usage" aria-label="Data usage">
-                    <div class="connection-usage-item"><span>Last sync size</span><strong id="lastSyncSize">Not synced yet</strong></div>
-                    <div class="connection-usage-item"><span>Total cached size</span><strong id="totalCachedSize">0 MB</strong></div>
-                </div>
-                <div id="connectionStatusFeedback" class="connection-status" role="status" aria-live="polite"><i class="fas fa-check-circle" aria-hidden="true"></i><span id="connectionStatusText">Working offline. Saved work will sync when you connect.</span></div>
-                <button id="accountSyncNowBtn" class="sync-now-btn" type="button" aria-busy="false" style="width:100%;margin-top:12px;background:#4B2E9E;color:#fff;border-color:#4B2E9E;"><i class="fas fa-sync-alt" aria-hidden="true"></i><span>Sync Now</span></button>
             </section>
+            <div id="settingsInfoModal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsInfoTitle">
+                <div class="settings-modal-card">
+                    <div class="settings-modal-head"><h3 id="settingsInfoTitle">APSHULE Help</h3><button class="settings-modal-close" type="button" data-close-settings-modal>&times;</button></div>
+                    <div id="settingsInfoBody" class="settings-modal-copy"></div>
+                </div>
+            </div>
+            <div id="settingsFeedbackModal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsFeedbackTitle">
+                <div class="settings-modal-card">
+                    <div class="settings-modal-head"><h3 id="settingsFeedbackTitle">Send feedback</h3><button class="settings-modal-close" type="button" data-close-settings-modal>&times;</button></div>
+                    <input id="settingsFeedbackSubject" class="settings-form-field" type="text" placeholder="Subject">
+                    <textarea id="settingsFeedbackDescription" class="settings-form-field" rows="5" placeholder="Tell us what happened or what you would like to see."></textarea>
+                    <button id="settingsFeedbackSubmitBtn" type="button" class="settings-secondary-btn" style="width:100%;background:#4B2E9E;color:#fff;">Submit</button>
+                </div>
+            </div>
             <div id="profilePicUploadSection" class="profile-pic-upload" style="display:none;">
                 <h4>Profile Picture</h4>
                 <img id="profilePicPreview" class="profile-pic-preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Profile preview">
@@ -3415,37 +3553,89 @@
         const summary=await Offline.getPendingSummary();
         const syncText=mode==='offline' ? `Sync Now (${summary.total} items) - Connect to internet` : `Sync Now (${summary.total} items - ${formatOfflineBytes(summary.size)})`;
         [document.getElementById('headerSyncNowBtn'),document.getElementById('accountSyncNowBtn')].forEach(btn=>{if(btn){const span=btn.querySelector('.sync-label');if(span)span.textContent=syncText;else btn.textContent=syncText;}});
-        const last=document.getElementById('lastSyncSize'), total=document.getElementById('totalCachedSize');
-        if(last) last.textContent=formatOfflineBytes(summary.size);
+        const total=document.getElementById('totalCachedSize');
         if(total) total.textContent=formatOfflineBytes(summary.cachedSize);
+        const modeBadge=document.getElementById('settingsConnectionMode');
+        const modeLabel={offline:'● Offline mode',mobile:'🟡 Mobile data · Data saver',wifi:'🟢 WiFi · Full HD'}[mode]||'● Connection unknown';
+        if(modeBadge) { modeBadge.dataset.mode=mode; modeBadge.textContent=modeLabel; }
+        const pendingProjects=document.getElementById('settingsPendingProjects');
+        const pendingViews=document.getElementById('settingsPendingViews');
+        const pendingOther=document.getElementById('settingsPendingOther');
+        if(pendingProjects) pendingProjects.textContent=summary.projects||0;
+        if(pendingViews) pendingViews.textContent=summary.views||0;
+        if(pendingOther) pendingOther.textContent=(summary.caRecords||0)+(summary.teacherProgress||0)+(summary.favorites||0);
     }
     async function loadConnectionSettings() {
         if(!Offline) return;
         const settings=await Offline.getSettings(currentUser?.uid);
-        const hd=document.getElementById('downloadHdWifiToggle'), wifi=document.getElementById('autoSyncWifiToggle'), mobile=document.getElementById('autoSyncMobileToggle'), language=document.getElementById('preferredLanguage');
+        const hd=document.getElementById('downloadHdWifiToggle'), wifi=document.getElementById('autoSyncWifiToggle'), mobile=document.getElementById('autoSyncMobileToggle');
         if(hd) hd.checked=settings.downloadHdWifiOnly!==false;
         if(wifi) wifi.checked=settings.autoSyncWifi!==false;
         if(mobile) mobile.checked=settings.autoSyncMobile===true;
-        if(language) language.value=settings.languagePreference||'English';
-        await refreshOfflineUi();
+        document.querySelectorAll('input[name="appLanguage"]').forEach(input=>{ input.checked=input.value===(settings.languagePreference||'English'); });
+        const videoLanguage=document.getElementById('videoLanguage');
+        if(videoLanguage) videoLanguage.value=settings.videoLanguage||'English';
+        await refreshSettingsDashboard(settings);
+    }
+    async function refreshSettingsDashboard(settings) {
+        if(!Offline) return;
+        settings=settings||await Offline.getSettings(currentUser?.uid);
+        const [mode, breakdown, history]=await Promise.all([
+            resolveConnectionMode(),
+            Offline.getStorageBreakdown(),
+            Offline.listSyncHistory(currentUser?.uid)
+        ]);
+        await refreshOfflineUi(mode);
+        const downloaded=document.getElementById('settingsDownloadedBytes'), uploaded=document.getElementById('settingsUploadedBytes');
+        if(downloaded) downloaded.textContent=formatOfflineBytes(settings.downloadedBytes);
+        if(uploaded) uploaded.textContent=formatOfflineBytes(settings.uploadedBytes);
+        const label=document.getElementById('settingsLastSync');
+        if(label) label.textContent=settings.lastSyncAt ? new Date(settings.lastSyncAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})+' · '+formatOfflineBytes(settings.lastSyncBytes) : 'Not synced yet';
+        const storageLabel=document.getElementById('settingsStorageLabel'), progress=document.getElementById('settingsStorageProgress');
+        const percent=Math.min(100, (breakdown.totalBytes/breakdown.availableBytes)*100);
+        if(storageLabel) storageLabel.textContent=`${formatOfflineBytes(breakdown.totalBytes)} of ${formatOfflineBytes(breakdown.availableBytes)} available`;
+        if(progress) progress.style.width=`${percent}%`;
+        const rows=[
+            ['🎬 Cartoon videos','cartoonVideos','clearCartoonVideosSize'],
+            ['🤖 AI videos','aiVideos','clearAiVideosSize'],
+            ['📄 PDFs','pdfs','clearPdfsSize'],
+            ['📁 Projects','projects',null],
+            ['📦 Other','other',null]
+        ];
+        const breakdownEl=document.getElementById('settingsStorageBreakdown');
+        if(breakdownEl) breakdownEl.innerHTML=rows.map(([name,key])=>`<div class="settings-breakdown-row"><span>${name}</span><strong>${formatOfflineBytes(breakdown[key].bytes)} (${breakdown[key].count})</strong></div>`).join('');
+        rows.slice(0,3).forEach(([,key,id])=>{ if(id) { const el=document.getElementById(id); if(el) el.textContent=`(${formatOfflineBytes(breakdown[key].bytes)})`; }});
+        const historyEl=document.getElementById('settingsSyncHistory');
+        if(historyEl) historyEl.innerHTML=history.length ? history.slice(0,5).map(item=>`<div class="settings-history-row"><span>${new Date(item.completedAt).toLocaleDateString([], {day:'2-digit',month:'short'})} · ${item.status==='offline'?'Offline':`${item.uploaded||0} synced`}</span><strong>${formatOfflineBytes(item.bytes||0)}</strong></div>`).join('') : '<div style="font-size:11px;color:#999;padding:8px 0;">No sync history yet.</div>';
     }
     async function saveConnectionSettings() {
         if(!Offline || !currentUser) return;
+        const appLanguage=document.querySelector('input[name="appLanguage"]:checked')?.value||'English';
+        const videoLanguage=document.getElementById('videoLanguage')?.value||'English';
         const settings=await Offline.saveSettings(currentUser.uid,{
             downloadHdWifiOnly:document.getElementById('downloadHdWifiToggle')?.checked!==false,
             autoDownloadWifi:document.getElementById('downloadHdWifiToggle')?.checked!==false,
             autoSyncWifi:document.getElementById('autoSyncWifiToggle')?.checked!==false,
             autoSyncMobile:document.getElementById('autoSyncMobileToggle')?.checked===true,
-            languagePreference:document.getElementById('preferredLanguage')?.value||'English'
+            languagePreference:appLanguage,
+            videoLanguage
         });
-        if(navigator.onLine && auth?.currentUser) updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:settings}).catch(()=>{});
+        if(navigator.onLine && auth?.currentUser) updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:settings,'preferences.language':appLanguage,'preferences.videoLanguage':videoLanguage}).catch(()=>{});
         const status=document.getElementById('connectionStatusText'); if(status) status.textContent='Connection settings saved';
+        await refreshSettingsDashboard(settings);
     }
     async function runOfflineSync(manual=false) {
         if(!Offline) return;
         const mode=await resolveConnectionMode(), settings=await Offline.getSettings(currentUser?.uid);
         if(mode==='mobile' && manual && !confirm('Sync pending work using mobile data? Continue?')) return;
-        const result=await Offline.syncNow({force:manual||mode==='wifi',auto:!manual,allowMobile:settings.autoSyncMobile,confirm:true});
+        const before=await Offline.getPendingSummary();
+        const result=await Offline.syncNow({force:manual||mode==='wifi',auto:!manual,allowMobile:settings.autoSyncMobile,confirm:true,userId:currentUser?.uid});
+        const syncedBytes=result.status==='complete' ? before.size : 0;
+        if(currentUser?.uid) {
+            if(syncedBytes) await Offline.recordDataUsage(currentUser.uid,'uploadedBytes',syncedBytes);
+            await Offline.saveSettings(currentUser.uid,{lastSyncBytes:syncedBytes,lastSyncAt:new Date().toISOString()});
+            await Offline.recordSyncHistory(currentUser.uid,{status:result.status,mode,uploaded:result.uploaded||0,pending:result.pending||0,bytes:syncedBytes});
+        }
         if(result.status==='complete' && auth?.currentUser && currentUser) {
             const savedSettings=await Offline.getSettings(currentUser.uid);
             await updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:savedSettings}).catch(()=>{});
@@ -3454,7 +3644,85 @@
         else if(result.status==='mobile-paused') showNotification('Pending work will sync on WiFi','info');
         else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
         if(currentUser?.role==='teacher') await loadOfflineEarningsSummary();
-        await refreshOfflineUi(mode);
+        await refreshSettingsDashboard();
+    }
+    function openSettingsInfo(kind) {
+        const modal=document.getElementById('settingsInfoModal'), title=document.getElementById('settingsInfoTitle'), body=document.getElementById('settingsInfoBody');
+        if(!modal || !title || !body) return;
+        const content={
+            guide:{
+                title:'APSHULE User Guide',
+                body:`<h4>Getting Started</h4><p>Log in, complete your profile, and choose your class or subject from Home.</p><h4>Watching Videos</h4><p>Open a lesson while online, then use its offline download option when you are on WiFi.</p><h4>Projects</h4><p>Open My Projects to record milestones, attach evidence, and keep working when disconnected.</p><h4>NCDC Course</h4><p>Teachers can open the NCDC course from the Teacher area and continue progress offline.</p><h4>Offline Mode</h4><p>APSHULE saves supported work on this device and syncs it when a connection is available. Use Sync Now to check manually.</p>`
+            },
+            faqs:{
+                title:'Frequently Asked Questions',
+                body:`<details><summary><strong>Can I use APSHULE without internet?</strong></summary><p>Yes. Cached lessons and supported work remain available offline. New online content needs a connection first.</p></details><details><summary><strong>Will my work be lost if I close the app?</strong></summary><p>No. Offline work is stored on this device until it synchronises.</p></details><details><summary><strong>Why are HD downloads limited to WiFi?</strong></summary><p>HD files use more data. You can change the preference, but WiFi is recommended.</p></details><details><summary><strong>How do I free storage?</strong></summary><p>Open Storage in Settings and clear a category or all cached data. Your profile and preferences are kept.</p></details>`
+            }
+        }[kind];
+        if(!content) return;
+        title.textContent=content.title;
+        body.innerHTML=content.body;
+        modal.classList.add('show');
+    }
+    function openSettingsFeedback(kind) {
+        const modal=document.getElementById('settingsFeedbackModal'), title=document.getElementById('settingsFeedbackTitle'), subject=document.getElementById('settingsFeedbackSubject');
+        if(!modal || !title || !subject) return;
+        modal.dataset.feedbackType=kind;
+        title.textContent=kind==='bug'?'Report a Bug':'Request a Feature';
+        subject.placeholder=kind==='bug'?'What went wrong?':'What feature would help you?';
+        subject.value='';
+        const description=document.getElementById('settingsFeedbackDescription'); if(description) description.value='';
+        modal.classList.add('show');
+    }
+    async function submitSettingsFeedback() {
+        const modal=document.getElementById('settingsFeedbackModal');
+        const subject=document.getElementById('settingsFeedbackSubject')?.value.trim();
+        const description=document.getElementById('settingsFeedbackDescription')?.value.trim();
+        if(!subject || !description) { showNotification('Add a subject and description first','error'); return; }
+        if(!auth?.currentUser || !navigator.onLine) { showNotification('Connect to the internet to send feedback','info'); return; }
+        const type=modal?.dataset.feedbackType==='feature'?'feature_requests':'bug_reports';
+        const btn=document.getElementById('settingsFeedbackSubmitBtn');
+        if(btn) btn.disabled=true;
+        try {
+            await addDoc(collection(db,type),{subject,description,userId:currentUser?.uid||auth.currentUser.uid,userName:currentUser?.name||'',createdAt:new Date().toISOString(),source:'account-settings'});
+            if(modal) modal.classList.remove('show');
+            showNotification(type==='bug_reports'?'Bug report sent':'Feature request sent','success');
+        } catch(error) {
+            console.error('Settings feedback failed:',error);
+            showNotification('Unable to send feedback right now','error');
+        } finally { if(btn) btn.disabled=false; }
+    }
+    function initSettingsInteractions() {
+        document.querySelectorAll('.settings-panel').forEach(panel=>panel.addEventListener('toggle',()=>{
+            if(panel.open) document.querySelectorAll('.settings-panel').forEach(other=>{ if(other!==panel) other.open=false; });
+        }));
+        document.querySelectorAll('[data-clear-category]').forEach(button=>button.addEventListener('click',async()=>{
+            const category=button.dataset.clearCategory;
+            const message=category==='all'?'Clear all cached lessons, projects, PDFs, and offline activity?':'Clear this cached category?';
+            if(!confirm(`${message} Items will need to be downloaded again.`)) return;
+            button.disabled=true;
+            try {
+                await Offline.clearStorageCategory(category);
+                await refreshSettingsDashboard();
+                showNotification('Cached data cleared','success');
+            } catch(error) { console.error('Cache clear failed:',error); showNotification('Unable to clear cached data','error'); }
+            finally { button.disabled=false; }
+        }));
+        document.querySelectorAll('[data-settings-help]').forEach(button=>button.addEventListener('click',()=>{
+            const kind=button.dataset.settingsHelp;
+            if(kind==='guide'||kind==='faqs') openSettingsInfo(kind);
+            else if(kind==='bug'||kind==='feature') openSettingsFeedback(kind);
+            else if(kind==='support') window.open('https://wa.me/256705732540','_blank','noopener');
+            else window.open('https://apshule.com/legal','_blank','noopener');
+        }));
+        document.querySelectorAll('[data-close-settings-modal]').forEach(button=>button.addEventListener('click',()=>button.closest('.settings-modal')?.classList.remove('show')));
+        document.querySelectorAll('.settings-modal').forEach(modal=>modal.addEventListener('click',event=>{ if(event.target===modal) modal.classList.remove('show'); }));
+        document.getElementById('settingsFeedbackSubmitBtn')?.addEventListener('click',submitSettingsFeedback);
+        document.getElementById('saveLanguageSettingsBtn')?.addEventListener('click',async()=>{
+            try { await saveConnectionSettings(); showNotification('✅ Language updated','success'); }
+            catch(error) { console.error('Language save failed:',error); showNotification('Unable to save language settings','error'); }
+        });
+        document.getElementById('refreshSettingsUsageBtn')?.addEventListener('click',()=>refreshSettingsDashboard().catch(()=>showNotification('Unable to refresh storage data','error')));
     }
     async function syncOfflineViews(items) {
         if(!Offline || !navigator.onLine || !auth?.currentUser) return {synced:0,failed:0};
@@ -3845,10 +4113,15 @@
                 syncNcdcProgressQueue().catch(console.error);
             }
         });
-        ['downloadHdWifiToggle','autoSyncWifiToggle','autoSyncMobileToggle','preferredLanguage'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>saveConnectionSettings().catch(console.error)));
+        ['downloadHdWifiToggle','autoSyncWifiToggle','autoSyncMobileToggle'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>saveConnectionSettings().catch(console.error)));
+        initSettingsInteractions();
         document.getElementById('headerSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
         document.getElementById('accountSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
         document.getElementById('teacherOfflineSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
+        clearInterval(window._appShuleAutoSyncTimer);
+        window._appShuleAutoSyncTimer=setInterval(()=>{
+            if(navigator.onLine && currentUser) runOfflineSync(false).catch(console.error);
+        },30*60*1000);
     }
 
     window.togglePassword = function(id) {
@@ -4132,10 +4405,10 @@
         if(light) light.onclick=async()=>{
             if(!mapping?.slideshowImages?.length){status.textContent='The light offline version has not been published yet.';return;}
             status.textContent='Downloading light version…';
-            try { const result=await Offline.downloadLightVideo({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,youtubeUrl:mapping.youtubeId,slideshowImages:mapping.slideshowImages,slideshowAudioUrl:mapping.slideshowAudioUrl,captionsText:mapping.captionsText||''}); status.textContent=`Offline version saved (${formatOfflineBytes(result.size)})`;refreshOfflineUi(); }
+            try { const result=await Offline.downloadLightVideo({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,youtubeUrl:mapping.youtubeId,slideshowImages:mapping.slideshowImages,slideshowAudioUrl:mapping.slideshowAudioUrl,captionsText:mapping.captionsText||''},{userId:currentUser?.uid}); status.textContent=`Offline version saved (${formatOfflineBytes(result.size)})`;refreshSettingsDashboard().catch(()=>{}); }
             catch(e){status.textContent=e.message;}
         };
-        if(hd) hd.onclick=async()=>{status.textContent='Downloading HD version…';try{const result=await Offline.downloadCustomMp4({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,customMp4Url:mapping.customMp4Url});status.textContent=`HD version saved (${formatOfflineBytes(result.size)})`;refreshOfflineUi();}catch(e){status.textContent=e.message;}};
+        if(hd) hd.onclick=async()=>{status.textContent='Downloading HD version…';try{const result=await Offline.downloadCustomMp4({videoId:videoKey,moduleId:videoKey,title:currentLessonSubject,customMp4Url:mapping.customMp4Url},{userId:currentUser?.uid});status.textContent=`HD version saved (${formatOfflineBytes(result.size)})`;refreshSettingsDashboard().catch(()=>{});}catch(e){status.textContent=e.message;}};
     }
 
     // ===== VIDEO CONTROLS =====
@@ -4265,12 +4538,25 @@
     }
 
     // ===== PDF INLINE VIEWER (NEW) =====
+    let _settingsPdfObjectUrl = null;
     window.openPdfInline = function(url, title, pdfDocId) {
         document.getElementById('pdfModalTitle').innerHTML = `<i class="fas fa-file-pdf"></i> ${title}`;
-        // Use Google Docs viewer for cross-browser PDF display
-        const viewerUrl = `https://docs.google.com/gviewer?embedded=true&url=${encodeURIComponent(url)}`;
-        document.getElementById('pdfViewerIframe').src = viewerUrl;
         document.getElementById('pdfViewModal').classList.add('show');
+        const viewer=document.getElementById('pdfViewerIframe');
+        if(_settingsPdfObjectUrl) { URL.revokeObjectURL(_settingsPdfObjectUrl); _settingsPdfObjectUrl=null; }
+        // Use a locally cached PDF when offline; otherwise use the existing Google Docs viewer.
+        if(!navigator.onLine && Offline && pdfDocId) {
+            Offline.getCachedPdf(pdfDocId).then(record=>{
+                if(record?.pdfBlob) {
+                    _settingsPdfObjectUrl=URL.createObjectURL(record.pdfBlob);
+                    viewer.src=_settingsPdfObjectUrl;
+                } else viewer.src='';
+            }).catch(()=>{ viewer.src=''; });
+        } else {
+            const viewerUrl = `https://docs.google.com/gviewer?embedded=true&url=${encodeURIComponent(url)}`;
+            viewer.src = viewerUrl;
+            if(Offline && currentUser && url) Offline.cachePdf({pdfId:pdfDocId||url,url,title},{userId:currentUser.uid}).catch(()=>{});
+        }
         // Track view in Firestore
         if(pdfDocId) {
             updateDoc(doc(db,"pdfs",pdfDocId), { views: increment(1) }).catch(()=>{});
@@ -4284,6 +4570,7 @@
     document.getElementById('closePdfModal')?.addEventListener('click', () => {
         document.getElementById('pdfViewModal').classList.remove('show');
         document.getElementById('pdfViewerIframe').src = '';
+        if(_settingsPdfObjectUrl) { URL.revokeObjectURL(_settingsPdfObjectUrl); _settingsPdfObjectUrl=null; }
     });
 
     // ===== RENDER FUNCTIONS =====
@@ -11333,6 +11620,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             let newAddr = prompt("Enter your physical address:", address);
             if(newAddr) saveUserAddress(newAddr);
         });
+        const settingsCard=document.getElementById('connectionSettingsCard');
+        const questionsCard=document.getElementById('myVideoQList')?.closest('.account-card');
+        if(settingsCard && questionsCard && questionsCard.parentNode) questionsCard.parentNode.insertBefore(settingsCard,questionsCard);
         const isSuper = currentUser.role === 'superadmin';
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';

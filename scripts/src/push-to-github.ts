@@ -14,6 +14,8 @@ import { resolvePager } from "./push-config.js";
 import { runPrompt } from "./push-prompt.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "../..");
+process.chdir(REPO_ROOT);
 const LAST_MESSAGE_FILE = path.join(__dirname, "..", ".last-push-message");
 
 function readLastMessage(): string | null {
@@ -35,6 +37,11 @@ function saveLastMessage(msg: string): void {
 
 const FILES = [
   "index.html",
+  "offline-manager.js",
+  "scripts/src/ncdc-course.test.ts",
+  "scripts/src/video-studio.test.ts",
+  "scripts/src/settings.test.ts",
+  "scripts/src/push-to-github.ts",
   "CNAME",
   "firebase-messaging-sw.js",
   "manifest.json",
@@ -129,6 +136,7 @@ function suggestMessage(): string | null {
 
 const lastMessage = readLastMessage();
 const suggested = suggestMessage();
+const nonInteractivePush = process.env["PUSH_CONFIRM"]?.trim().toLowerCase() === "y";
 
 function openDiffInPager(): void {
   const pager = resolvePager();
@@ -150,20 +158,22 @@ function openDiffInPager(): void {
 const rl = readline.createInterface({ input: stdin, output: stdout });
 let answer = "";
 try {
-  const result = await runPrompt(
-    (p) => rl.question(p),
-    () => {
-      rl.pause();
-      openDiffInPager();
-      rl.resume();
-    }
-  );
+  if (!nonInteractivePush) {
+    const result = await runPrompt(
+      (p) => rl.question(p),
+      () => {
+        rl.pause();
+        openDiffInPager();
+        rl.resume();
+      }
+    );
 
-  if (result === "aborted") {
-    console.log("Push aborted.");
-    execSync(`git restore --staged ${FILES.join(" ")}`);
-    rl.close();
-    process.exit(0);
+    if (result === "aborted") {
+      console.log("Push aborted.");
+      execSync(`git restore --staged ${FILES.join(" ")}`);
+      rl.close();
+      process.exit(0);
+    }
   }
 
   let prompt: string;
@@ -179,7 +189,9 @@ try {
     prompt = "Describe your changes (or press Enter to skip): ";
   }
 
-  answer = await rl.question(prompt);
+  answer = nonInteractivePush
+    ? process.env["PUSH_MESSAGE"]?.trim() ?? ""
+    : await rl.question(prompt);
 } finally {
   rl.close();
 }

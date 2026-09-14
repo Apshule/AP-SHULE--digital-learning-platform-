@@ -214,6 +214,15 @@
           if (!videoStudioStore.indexNames.contains('language')) videoStudioStore.createIndex('language', 'language', { unique: false });
           if (!videoStudioStore.indexNames.contains('publishedAt')) videoStudioStore.createIndex('publishedAt', 'publishedAt', { unique: false });
         }
+        if (oldVersion < 9 && !db.objectStoreNames.contains('offline_pdfs')) {
+          var pdfStore = db.createObjectStore('offline_pdfs', { keyPath: 'pdfId' });
+          pdfStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+        }
+        if (oldVersion < 10 && !db.objectStoreNames.contains('offline_sync_history')) {
+          var syncHistoryStore = db.createObjectStore('offline_sync_history', { keyPath: 'historyId' });
+          syncHistoryStore.createIndex('userId', 'userId', { unique: false });
+          syncHistoryStore.createIndex('completedAt', 'completedAt', { unique: false });
+        }
       };
       request.onsuccess = function () {
         var db = request.result;
@@ -545,22 +554,152 @@
   function getSettings(userId) {
     if (!userId) return Promise.resolve(Object.assign({}, DEFAULT_SETTINGS));
     return getRecord('offline_settings', userId).then(function (record) {
-      return Object.assign({}, DEFAULT_SETTINGS, record || {}, { userId: userId });
+      var settings = Object.assign({}, DEFAULT_SETTINGS, record || {}, { userId: userId });
+      var currentMonth = new Date().toISOString().slice(0, 7);
+      if (settings.usageMonth !== currentMonth) {
+        settings.usageMonth = currentMonth;
+        settings.downloadedBytes = 0;
+        settings.uploadedBytes = 0;
+        return putRecord('offline_settings', settings).then(function () { return settings; });
+      }
+      return settings;
+    });
+  }
+
+  function recordDataUsage(userId, direction, bytes) {
+    if (!userId || (direction !== 'downloadedBytes' && direction !== 'uploadedBytes')) return Promise.resolve(null);
+    bytes = Math.max(0, Number(bytes) || 0);
+    if (!bytes) return getSettings(userId);
+    return getSettings(userId).then(function (settings) {
+      settings[direction] = Number(settings[direction] || 0) + bytes;
+      settings.usageMonth = new Date().toISOString().slice(0, 7);
+      return putRecord('offline_settings', settings);
+    });
+  }
+
+  var STORAGE_CONTENT_STORES = [
+    'offline_videos',
+    'offline_video_studio',
+    'offline_pdfs',
+    'offline_projects',
+    'offline_ca_records',
+    'offline_views',
+    'offline_curriculum_links',
+    'offline_favorites',
+    'offline_recent_curriculum',
+    'offline_ncdc_modules',
+    'offline_teacher_progress'
+  ];
+
+  function isAiVideo(record) {
+    var mode = String(record && (record.mode || record.videoMode || record.generationMode || '')).toLowerCase();
+    return mode === 'ai_auto' || mode === 'teacher_twin' || mode === 'twin' || mode === 'ai';
+  }
+
+  function storageCategoryFor(store, record) {
+    if (store === 'offline_pdfs') return 'pdfs';
+    if (store === 'offline_projects') return 'projects';
+    if (store === 'offline_video_studio' && isAiVideo(record)) return 'aiVideos';
+    if (store === 'offline_videos' || store === 'offline_video_studio') return 'cartoonVideos';
+    return 'other';
+  }
+
+  function getStorageBreakdown() {
+    return Promise.all(STORAGE_CONTENT_STORES.map(function (store) {
+      return allRecords(store).then(function (items) { return { store: store, items: items }; });
+    })).then(function (groups) {
+      var result = {
+        cartoonVideos: { bytes: 0, count: 0 },
+        aiVideos: { bytes: 0, count: 0 },
+        pdfs: { bytes: 0, count: 0 },
+        projects: { bytes: 0, count: 0 },
+        other: { bytes: 0, count: 0 }
+      };
+      groups.forEach(function (group) {
+        group.items.forEach(function (item) {
+          var category = storageCategoryFor(group.store, item);
+          var bytes = Number(item && item.size) || sizeOf(item);
+          result[category].bytes += bytes;
+          result[category].count += 1;
+        });
+      });
+      result.totalBytes = Object.keys(result).reduce(function (sum, key) {
+        return key === 'totalBytes' ? sum : sum + result[key].bytes;
+      }, 0);
+      result.availableBytes = 500 * 1024 * 1024;
+      return result;
+    });
+  }
+
+  function clearWhere(store, predicate) {
+    return transaction(store, 'readwrite', function (tx) {
+      var request = tx.objectStore(store).openCursor();
+      request.onsuccess = function (event) {
+        var cursor = event.target.result;
+        if (!cursor) return;
+        if (!predicate || predicate(cursor.value)) cursor.delete();
+        cursor.continue();
+      };
+    });
+  }
+
+  function clearStorageCategory(category) {
+    var jobs;
+    if (category === 'all') jobs = STORAGE_CONTENT_STORES.map(function (store) { return clearWhere(store); });
+    else if (category === 'cartoonVideos') jobs = [
+      clearWhere('offline_videos'),
+      clearWhere('offline_video_studio', function (record) { return !isAiVideo(record); })
+    ];
+    else if (category === 'aiVideos') jobs = [clearWhere('offline_video_studio', isAiVideo)];
+    else if (category === 'pdfs') jobs = [clearWhere('offline_pdfs')];
+    else if (category === 'projects') jobs = [clearWhere('offline_projects')];
+    else return fail('Unknown storage category');
+    return Promise.all(jobs).then(function () { return getStorageBreakdown(); });
+  }
+
+  function recordSyncHistory(userId, entry) {
+    if (!userId) return Promise.resolve(null);
+    var value = Object.assign({}, entry || {}, {
+      historyId: randomId('sync-'),
+      userId: userId,
+      completedAt: new Date().toISOString()
+    });
+    return putRecord('offline_sync_history', value).then(function () { return value; });
+  }
+
+  function listSyncHistory(userId) {
+    return allRecords('offline_sync_history').then(function (items) {
+      return items.filter(function (item) { return !userId || item.userId === userId; })
+        .sort(function (left, right) { return new Date(right.completedAt || 0) - new Date(left.completedAt || 0); })
+        .slice(0, 10);
     });
   }
 
   function pendingSummary() {
-    return Promise.all([allRecords('offline_projects'), allRecords('offline_ca_records'), allRecords('offline_views'), allRecords('offline_videos')])
+    return Promise.all([
+      allRecords('offline_projects'),
+      allRecords('offline_ca_records'),
+      allRecords('offline_views'),
+      allRecords('offline_teacher_progress'),
+      allRecords('offline_favorites'),
+      Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
+    ])
       .then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
         var views = records[2].filter(function (item) { return item.synced === false && isCompletedView(item); });
-        var pending = projects.concat(caRecords, views);
-        var cachedSize = records[3].reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
+        var teacherProgress = records[3].filter(function (item) { return item.syncStatus === 'pending'; });
+        var favorites = records[4].filter(function (item) { return item.syncStatus === 'pending'; });
+        var pending = projects.concat(caRecords, views, teacherProgress, favorites);
+        var cachedSize = records[5].reduce(function (total, items) {
+          return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
+        }, 0);
         return {
           projects: projects.length,
           caRecords: caRecords.length,
           views: views.length,
+          teacherProgress: teacherProgress.length,
+          favorites: favorites.length,
           total: pending.length,
           size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
           cachedSize: cachedSize
@@ -734,6 +873,11 @@
     },
     saveSettings: saveSettings,
     getSettings: getSettings,
+    recordDataUsage: recordDataUsage,
+    getStorageBreakdown: getStorageBreakdown,
+    clearStorageCategory: clearStorageCategory,
+    recordSyncHistory: recordSyncHistory,
+    listSyncHistory: listSyncHistory,
     getPendingSummary: pendingSummary,
     getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, total: summary.total }; }); },
     getPendingSize: function () { return pendingSummary().then(function (summary) { return summary.size; }); },
@@ -870,6 +1014,27 @@
       });
       return putRecord('offline_video_studio', record).then(function () { return record; });
     },
+    cachePdf: function (pdf, options) {
+      pdf = pdf || {};
+      options = options || {};
+      if (!pdf.pdfId || !pdf.url) return fail('A PDF id and URL are required');
+      if (!isCacheEligibleUrl(pdf.url)) return fail('This PDF URL is not eligible for offline caching');
+      return fetchBlob(pdf.url).then(function (blob) {
+        var record = Object.assign({}, pdf, {
+          pdfId: String(pdf.pdfId),
+          pdfBlob: blob,
+          cached: true,
+          cachedAt: Date.now(),
+          size: blob.size
+        });
+        return putRecord('offline_pdfs', record).then(function () {
+          return recordDataUsage(options.userId, 'downloadedBytes', record.size).then(function () { return record; });
+        });
+      });
+    },
+    getCachedPdf: function (pdfId) {
+      return getRecord('offline_pdfs', String(pdfId));
+    },
     getVideoStudio: function (libraryId) {
       return getRecord('offline_video_studio', String(libraryId));
     },
@@ -921,7 +1086,9 @@
               size: imageBlobs.reduce(function (sum, blob) { return sum + sizeOf(blob); }, 0) + sizeOf(audioBlob) + sizeOf(video.captionsText)
             });
             if (record.size > 2 * 1024 * 1024) throw new Error('The light offline lesson is larger than the 2MB limit');
-            return putRecord('offline_videos', record).then(function () { return record; });
+            return putRecord('offline_videos', record).then(function () {
+              return recordDataUsage(options.userId, 'downloadedBytes', record.size).then(function () { return record; });
+            });
           });
         });
       });
@@ -934,7 +1101,9 @@
         if (mode !== 'wifi') throw new Error('HD offline downloads are available on WiFi only');
         return fetchBlob(video.customMp4Url).then(function (blob) {
           var record = Object.assign({}, video, { customMp4Blob: blob, cached: true, versionType: 'custom-mp4', size: blob.size });
-          return putRecord('offline_videos', record).then(function () { return record; });
+          return putRecord('offline_videos', record).then(function () {
+            return recordDataUsage(options.userId, 'downloadedBytes', record.size).then(function () { return record; });
+          });
         });
       });
     },
