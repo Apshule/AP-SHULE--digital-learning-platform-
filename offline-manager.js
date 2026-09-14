@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 7;
+  var DB_VERSION = 8;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -19,7 +19,8 @@
     'offline_favorites',
     'offline_recent_curriculum',
     'offline_ncdc_modules',
-    'offline_teacher_progress'
+    'offline_teacher_progress',
+    'offline_video_studio'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -150,7 +151,8 @@
                offline_favorites: 'favoriteKey',
                offline_recent_curriculum: 'docId',
                offline_ncdc_modules: 'moduleNumber',
-               offline_teacher_progress: 'progressKey'
+                offline_teacher_progress: 'progressKey',
+                offline_video_studio: 'libraryId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -193,6 +195,14 @@
             : db.createObjectStore('offline_teacher_progress', { keyPath: 'progressKey' });
           if (!progressStore.indexNames.contains('teacherId')) progressStore.createIndex('teacherId', 'teacherId', { unique: false });
           if (!progressStore.indexNames.contains('moduleNumber')) progressStore.createIndex('moduleNumber', 'moduleNumber', { unique: false });
+        }
+        if (oldVersion < 8) {
+          var videoStudioStore = db.objectStoreNames.contains('offline_video_studio')
+            ? event.target.transaction.objectStore('offline_video_studio')
+            : db.createObjectStore('offline_video_studio', { keyPath: 'libraryId' });
+          if (!videoStudioStore.indexNames.contains('subject')) videoStudioStore.createIndex('subject', 'subject', { unique: false });
+          if (!videoStudioStore.indexNames.contains('language')) videoStudioStore.createIndex('language', 'language', { unique: false });
+          if (!videoStudioStore.indexNames.contains('publishedAt')) videoStudioStore.createIndex('publishedAt', 'publishedAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -835,6 +845,29 @@
       return allRecords('offline_teacher_progress').then(function (items) {
         return items.filter(function (item) { return !teacherId || item.teacherId === teacherId; });
       });
+    },
+    cacheVideoStudio: function (video) {
+      video = video || {};
+      if (!video.libraryId) return fail('A published libraryId is required');
+      var record = Object.assign({}, video, {
+        libraryId: String(video.libraryId),
+        cached: true,
+        cachedAt: Date.now(),
+        versionType: 'cartoon-slideshow',
+        size: sizeOf(video.slideshowImages || video.images || []) +
+          sizeOf(video.captions || video.captionsText || '') +
+          sizeOf(video.audioMetadata || {})
+      });
+      return putRecord('offline_video_studio', record).then(function () { return record; });
+    },
+    getVideoStudio: function (libraryId) {
+      return getRecord('offline_video_studio', String(libraryId));
+    },
+    listVideoStudio: function () {
+      return allRecords('offline_video_studio');
+    },
+    deleteVideoStudio: function (libraryId) {
+      return deleteRecord('offline_video_studio', String(libraryId));
     },
     markTeacherProgressSynced: function (progressKey) {
       return getRecord('offline_teacher_progress', progressKey).then(function (item) {
