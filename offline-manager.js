@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 10;
+  var DB_VERSION = 12;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -22,7 +22,9 @@
     'offline_teacher_progress',
     'offline_video_studio',
     'offline_pdfs',
-    'offline_sync_history'
+    'offline_sync_history',
+    'offline_branding',
+    'offline_command_stats'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -162,7 +164,9 @@
                 offline_teacher_progress: 'progressKey',
                 offline_video_studio: 'libraryId',
                 offline_pdfs: 'pdfId',
-                offline_sync_history: 'historyId'
+                 offline_sync_history: 'historyId',
+                 offline_branding: 'institutionId',
+                 offline_command_stats: 'statsKey'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -222,6 +226,14 @@
           var syncHistoryStore = db.createObjectStore('offline_sync_history', { keyPath: 'historyId' });
           syncHistoryStore.createIndex('userId', 'userId', { unique: false });
           syncHistoryStore.createIndex('completedAt', 'completedAt', { unique: false });
+        }
+        if (oldVersion < 11 && !db.objectStoreNames.contains('offline_branding')) {
+          var brandingStore = db.createObjectStore('offline_branding', { keyPath: 'institutionId' });
+          brandingStore.createIndex('cachedAt', 'cachedAt', { unique: false });
+        }
+        if (oldVersion < 12 && !db.objectStoreNames.contains('offline_command_stats')) {
+          var commandStatsStore = db.createObjectStore('offline_command_stats', { keyPath: 'statsKey' });
+          commandStatsStore.createIndex('cachedAt', 'cachedAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -878,6 +890,22 @@
     clearStorageCategory: clearStorageCategory,
     recordSyncHistory: recordSyncHistory,
     listSyncHistory: listSyncHistory,
+    cacheInstitutionBranding: function (branding) {
+      if (!branding || !branding.institutionId) return fail('institutionId is required for branding cache');
+      return putRecord('offline_branding', Object.assign({}, branding, { cachedAt: Date.now() }));
+    },
+    getInstitutionBranding: function (institutionId) {
+      return institutionId ? getRecord('offline_branding', institutionId) : Promise.resolve(null);
+    },
+    clearInstitutionBranding: function (institutionId) {
+      return institutionId ? deleteRecord('offline_branding', institutionId) : transaction('offline_branding', 'readwrite', function (tx) { tx.objectStore('offline_branding').clear(); });
+    },
+    cacheCommandStats: function (stats) {
+      return putRecord('offline_command_stats', Object.assign({}, stats || {}, { statsKey: 'superadmin', cachedAt: Date.now() }));
+    },
+    getCommandStats: function () {
+      return getRecord('offline_command_stats', 'superadmin');
+    },
     getPendingSummary: pendingSummary,
     getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, total: summary.total }; }); },
     getPendingSize: function () { return pendingSummary().then(function (summary) { return summary.size; }); },

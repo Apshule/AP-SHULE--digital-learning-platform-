@@ -191,6 +191,8 @@
         .superadmin-bottom-nav { justify-content:space-around; }
         .superadmin-bottom-nav .nav-item { min-width:60px; }
         .superadmin-bottom-nav .nav-item i { font-size:20px; }
+        .header-institution-name { color:#FF8C42; font-size:11px; font-weight:800; margin-top:2px; }
+        .login-institution-logo { display:none; width:44px; height:44px; border-radius:10px; object-fit:cover; margin:-2px auto 8px; border:2px solid #eee9ff; }
         @media (min-width:600px) { .command-stats-grid { grid-template-columns:repeat(5,minmax(0,1fr)); } .command-actions-grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
         @media (max-width:520px) { .global-settings-modal { padding:0; align-items:stretch; } .global-settings-shell { max-height:100vh; border-radius:0; } .global-settings-modal-head { padding-top:calc(14px + env(safe-area-inset-top)); } .global-sync-popover { right:54px; } .header-right { gap:5px; } }
         .more-dropdown { position: absolute; top: 60px; right: 0; background: white; border-radius: 16px; min-width: 200px; z-index: 1000; display: none; overflow: hidden; }
@@ -1262,6 +1264,7 @@
         <img class="login-logo-img logo--responsive logo--desktop logo--tablet logo--mobile"
              src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg"
              alt="APSHULE Logo" id="loginLogoImg">
+        <img class="login-institution-logo" id="loginInstitutionLogoImg" src="" alt="Institution logo">
         <div class="login-title">APSHULE</div>
         <div class="login-subtitle">Let's Learn With Ease From Anywhere at Anytime</div><!-- r -->
         <div class="login-tabs">
@@ -1303,7 +1306,7 @@
         <div class="header-left">
             <img id="headerLogoImg" class="header-logo-img logo--responsive" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="Logo">
             <img id="headerSchoolLogoImg" src="" alt="School Logo" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);margin-left:6px;flex-shrink:0;">
-            <div><div class="app-title">APSHULE</div><div class="tagline" data-i18n="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
+            <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div class="tagline" data-i18n="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
             <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" role="status" aria-live="polite" aria-label="Connection mode: Offline mode">
@@ -3449,6 +3452,7 @@
                 <div class="two-col"><label>Email *<input id="commandInstitutionEmail" type="email" required></label><label>Website<input id="commandInstitutionWebsite" type="url"></label></div>
                 <label>Physical Address<input id="commandInstitutionAddress"></label>
                 <div class="two-col"><label>Primary Contact Name *<input id="commandInstitutionContact" required></label><label>Contact Role<select id="commandInstitutionContactRole"><option>Headteacher</option><option>Director</option><option>Manager</option><option>Owner</option></select></label></div>
+                <div class="two-col"><label>Admin Login Email *<input id="commandInstitutionAdminEmail" type="email" required></label><label>Initial Admin Password *<input id="commandInstitutionAdminPassword" type="text" minlength="6" required></label></div>
                 <label style="display:flex;align-items:center;gap:8px;"><input id="commandInstitutionWelcome" type="checkbox" checked style="width:auto;"> Create a welcome notification</label>
                 <div id="commandInstitutionFormStatus" style="font-size:12px;min-height:18px;"></div><button class="command-primary-btn" type="submit">✅ Save Institution</button>
             </form>
@@ -11942,8 +11946,244 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!('ontouchstart' in window)) inp.focus();
     }
 
+    // ===== TASK 9 COMMAND CENTER =====
+    let commandUsers = [], commandInstitutions = [], commandUserPage = 1, commandBrandingFile = null, commandCsvRows = [];
+    const commandPageIds = { dashboard:'superAdminCommandCenterPage', users:'superAdminUsersPage', institutions:'superAdminInstitutionsPage', analytics:'superAdminAnalyticsPage', settings:'superAdminSettingsPage' };
+    function commandRequiresOnline(message='⚠️ This action requires internet connection') {
+        if(!navigator.onLine) { showNotification(message,'info'); return false; }
+        if(currentUser?.role!=='superadmin') { showNotification('Only Super Admins can use this action','error'); return false; }
+        return true;
+    }
+    function closeCommandModal(id) { document.getElementById(id)?.classList.remove('show'); }
+    function openCommandModal(id) { document.getElementById(id)?.classList.add('show'); }
+    function navigateSuperAdmin(section) {
+        if(currentUser?.role!=='superadmin') return;
+        const pageId=commandPageIds[section]||commandPageIds.dashboard;
+        document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
+        document.getElementById(pageId)?.classList.add('active-page');
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(item=>item.classList.toggle('active',item.dataset.commandSection===section));
+        if(section==='dashboard') loadCommandDashboard();
+        if(section==='users') loadCommandUsers();
+        if(section==='institutions') loadCommandInstitutions();
+        if(section==='analytics') loadCommandAnalytics();
+        if(section==='settings') document.getElementById('commandOpenSettingsBtn')?.focus({preventScroll:true});
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function commandFormatMoney(value) { return `UGX ${Number(value||0).toLocaleString()}`; }
+    function renderCommandStats(stats) {
+        const values=stats||{}, els={users:document.getElementById('commandTotalUsers'),institutions:document.getElementById('commandActiveInstitutions'),revenue:document.getElementById('commandMonthlyRevenue'),videos:document.getElementById('commandPublishedVideos'),pending:document.getElementById('commandPendingApprovals')};
+        if(els.users) els.users.textContent=values.users??'—';
+        if(els.institutions) els.institutions.textContent=values.institutions??'—';
+        if(els.revenue) els.revenue.textContent=values.revenueLabel||commandFormatMoney(values.revenue);
+        if(els.videos) els.videos.textContent=values.videos??'—';
+        if(els.pending) els.pending.textContent=values.pending??'—';
+    }
+    async function loadCommandDashboard() {
+        if(currentUser?.role!=='superadmin'||!db) return;
+        const els={users:document.getElementById('commandTotalUsers'),institutions:document.getElementById('commandActiveInstitutions'),revenue:document.getElementById('commandMonthlyRevenue'),videos:document.getElementById('commandPublishedVideos'),pending:document.getElementById('commandPendingApprovals')};
+        try {
+            const [users,schools,institutions,videos,payments,liveRequests]=await Promise.all([
+                getDocs(query(collection(db,'users'),limit(500))).catch(()=>({docs:[]})),
+                getDocs(query(collection(db,'schools'),limit(200))).catch(()=>({docs:[]})),
+                getDocs(query(collection(db,'institutions'),limit(200))).catch(()=>({docs:[]})),
+                getDocs(query(collection(db,'video_library'),limit(500))).catch(()=>({docs:[]})),
+                getDocs(query(collection(db,'payments'),limit(500))).catch(()=>({docs:[]})),
+                getDocs(query(collection(db,'liveLessons'),limit(200))).catch(()=>({docs:[]}))
+            ]);
+            const institutionRows=[...schools.docs.map(item=>item.data()),...institutions.docs.map(item=>item.data())];
+            const month=new Date().toISOString().slice(0,7);
+            const revenue=payments.docs.map(item=>item.data()).filter(item=>String(item.status||'').toLowerCase()==='approved'&&String(item.createdAt||item.approvedAt||'').slice(0,7)===month).reduce((sum,item)=>sum+Number(item.amount||item.total||0),0);
+            const pending=liveRequests.docs.map(item=>item.data()).filter(item=>String(item.status||'').toLowerCase()==='pending').length;
+            const stats={users:users.docs.length,institutions:institutionRows.filter(item=>item.status!=='suspended'&&item.status!=='inactive').length,revenue,revenueLabel:commandFormatMoney(revenue),videos:videos.docs.map(item=>item.data()).filter(item=>item.status==='published'||item.published===true).length,pending};
+            renderCommandStats(stats);
+            if(Offline?.cacheCommandStats) Offline.cacheCommandStats(stats).catch(()=>{});
+            const activity=[...users.docs.map(item=>({kind:'New user',name:item.data().name||item.data().email,date:item.data().createdAt})),...institutionRows.map(item=>({kind:'Institution registered',name:item.name,date:item.createdAt}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,5);
+            const target=document.getElementById('commandRecentActivity');
+            if(target) target.innerHTML=activity.length?activity.map(item=>`<div class="command-activity-item">• ${escHtml(item.kind)}: <strong>${escHtml(item.name||'—')}</strong> <span style="color:#999;">${item.date?new Date(item.date).toLocaleDateString():''}</span></div>`).join(''):'<div class="command-activity-item">No recent activity yet.</div>';
+        } catch(error) {
+            console.error('Command dashboard failed:',error);
+            const cached=Offline?.getCommandStats ? await Offline.getCommandStats().catch(()=>null) : null;
+            if(cached) { renderCommandStats(cached); showNotification('Showing cached dashboard stats while offline','info'); }
+            else showNotification('Dashboard stats are temporarily unavailable','error');
+        }
+    }
+    function renderCommandUsers() {
+        const list=document.getElementById('commandUsersList'), search=(document.getElementById('commandUserSearch')?.value||'').toLowerCase(), role=document.getElementById('commandUserRoleFilter')?.value||'', status=document.getElementById('commandUserStatusFilter')?.value||'';
+        const rows=commandUsers.filter(user=>(!role||user.role===role)&&(!status||(user.status||'active')===status)&&(!search||`${user.name||''} ${user.email||''} ${user.phone||''}`.toLowerCase().includes(search)));
+        if(!list) return;
+        list.innerHTML=rows.slice(0,commandUserPage*20).map(user=>`<div class="command-list-card"><div><h4>👤 ${escHtml(user.name||'Unnamed user')}</h4><p>${escHtml(user.email||'No email')} · ${escHtml(user.role||'individual')} · <strong>${escHtml(user.status||'active')}</strong><br>Institution: ${escHtml(user.institutionId||user.schoolId||'Not assigned')} · Last login: ${user.lastLoginAt?new Date(user.lastLoginAt).toLocaleString():'Not recorded'}</p></div><div class="command-list-actions"><button data-user-action="view" data-user-id="${user.id}">👁 View</button><button data-user-action="edit" data-user-id="${user.id}">✏️ Edit</button><button data-user-action="more" data-user-id="${user.id}">⋮ More</button></div></div>`).join('')||'<div class="command-activity-item">No users match these filters.</div>';
+        const more=document.getElementById('commandLoadMoreUsersBtn'); if(more) more.style.display=rows.length>commandUserPage*20?'block':'none';
+    }
+    async function loadCommandUsers() {
+        if(currentUser?.role!=='superadmin'||!db) return;
+        try { const snap=await getDocs(query(collection(db,'users'),limit(500))); commandUsers=snap.docs.map(item=>({id:item.id,...item.data()})); commandUserPage=1; renderCommandUsers(); }
+        catch(error) { console.error('Command users failed:',error); showNotification('Unable to load users','error'); }
+    }
+    function showCommandUserDetails(user) {
+        const body=document.getElementById('commandDetailBody'); if(!body) return;
+        body.innerHTML=`<div class="command-panel-card"><h4 style="color:#4B2E9E;margin-top:0;">${escHtml(user.name||'Unnamed user')}</h4>${Object.entries(user).filter(([key])=>!['password','id'].includes(key)).map(([key,value])=>`<div class="settings-pending-row"><span>${escHtml(key)}</span><strong style="max-width:60%;text-align:right;word-break:break-word;">${escHtml(typeof value==='object'?JSON.stringify(value):String(value??'—'))}</strong></div>`).join('')}</div>`;
+        document.getElementById('commandDetailTitle').textContent='User details'; openCommandModal('commandDetailModal');
+    }
+    async function handleCommandUserAction(action,user) {
+        if(action==='view') return showCommandUserDetails(user);
+        if(action==='edit') {
+            const name=prompt('Full name',user.name||''); if(!name||name===user.name) return;
+            try { await updateDoc(doc(db,'users',user.id),{name:name.trim(),updatedAt:new Date().toISOString()}); showNotification('User updated','success'); await loadCommandUsers(); } catch(error) { showNotification('Unable to update user','error'); }
+            return;
+        }
+        if(action==='more') {
+            const choice=prompt('Type: reset, suspend, activate, delete, or impersonate'); if(!choice) return;
+            if(choice==='reset') { if(!commandRequiresOnline()) return; try { await sendPasswordResetEmail(auth,user.email); showNotification('Password reset email sent','success'); } catch(error) { showNotification('Unable to send reset email','error'); } }
+            else if(choice==='suspend'||choice==='activate') { try { await updateDoc(doc(db,'users',user.id),{status:choice==='suspend'?'suspended':'active',updatedAt:new Date().toISOString()}); showNotification(`Account ${choice}d`,'success'); await loadCommandUsers(); } catch(error) { showNotification('Unable to update account status','error'); } }
+            else if(choice==='delete'&&confirm('Delete this user profile? Firebase Auth access must be revoked server-side separately.')) { try { await deleteDoc(doc(db,'users',user.id)); showNotification('User profile deleted','success'); await loadCommandUsers(); } catch(error) { showNotification('Unable to delete user profile','error'); } }
+            else if(choice==='impersonate') showCommandUserDetails(user);
+        }
+    }
+    function generateCommandPassword() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#'; let result=''; for(let i=0;i<12;i++) result+=chars[Math.floor(Math.random()*chars.length)]; const input=document.getElementById('commandUserPassword'); if(input) input.value=result; }
+    async function createManagedAuthUser(email,password) {
+        if(!firebase?.initializeApp||!firebaseConfig) return null;
+        const appName='apshule-command-admin';
+        let app=firebase.apps.find(item=>item.name===appName);
+        if(!app) app=firebase.initializeApp(firebaseConfig,appName);
+        const managedAuth=app.auth(), credential=await managedAuth.createUserWithEmailAndPassword(email,password);
+        await managedAuth.signOut().catch(()=>{});
+        return credential.user;
+    }
+    async function submitCommandUser(event) {
+        event.preventDefault(); if(!commandRequiresOnline()) return;
+        const status=document.getElementById('commandUserFormStatus'), name=document.getElementById('commandUserName').value.trim(), email=document.getElementById('commandUserEmail').value.trim(), phone=document.getElementById('commandUserPhone').value.trim(), role=document.getElementById('commandUserRole').value, institutionId=document.getElementById('commandUserInstitution').value, password=document.getElementById('commandUserPassword').value;
+        if(role!=='superadmin'&&!institutionId) { if(status) status.textContent='Select an institution for this role.'; return; }
+        if(status) status.textContent='Creating account…';
+        try {
+            const credential=await createManagedAuthUser(email,password); const uid=credential?.uid||`profile-${Date.now()}`;
+            await setDoc(doc(db,'users',uid),{uid,name,email,phone,role,institutionId:institutionId||null,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid},{merge:true});
+            if(document.getElementById('commandUserWelcome').checked) await addDoc(collection(db,'notifications'),{targetUserId:uid,title:'Welcome to APSHULE',body:`Your ${role} account has been created. Please sign in with the password provided by your administrator.`,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
+            if(status) status.textContent='✅ User created'; showNotification('✅ User created','success'); document.getElementById('commandUserForm').reset(); closeCommandModal('commandUserModal'); await loadCommandUsers(); await loadCommandDashboard();
+        } catch(error) { console.error('Create user failed:',error); if(status) status.textContent=error?.message||'Unable to create user'; }
+    }
+    async function importCommandUsers() {
+        if(!commandCsvRows.length||!commandRequiresOnline()) return;
+        const preview=document.getElementById('commandUserImportPreview'), results=[];
+        if(preview) preview.innerHTML='<div class="command-panel-card">Importing users…</div>';
+        for(const row of commandCsvRows) {
+            if(!row.name||!row.email||!row.phone||!row.role) { results.push(`Skipped ${row.email||'row'}: name, email, phone, and role are required`); continue; }
+            try {
+                const password=row.password||`Aps${Math.random().toString(36).slice(2,10)}!`;
+                const credential=await createManagedAuthUser(row.email,password);
+                const uid=credential?.uid||`profile-${Date.now()}-${results.length}`;
+                await setDoc(doc(db,'users',uid),{uid,name:row.name,email:row.email,phone:row.phone,role:row.role,institutionId:row.institutionId||null,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid},{merge:true});
+                results.push(`Imported ${row.email}`);
+            } catch(error) { results.push(`Skipped ${row.email}: ${error?.message||'creation failed'}`); }
+        }
+        if(preview) preview.innerHTML=`<div class="command-panel-card"><strong>Import finished</strong>${results.map(item=>`<div class="command-activity-item">${escHtml(item)}</div>`).join('')}</div>`;
+        await loadCommandUsers(); await loadCommandDashboard();
+    }
+    function commandCsvTemplate() { const blob=new Blob(['name,email,phone,role,institutionId\\nExample Student,student@example.com,+256700000000,individual,\\n'],{type:'text/csv'}); const url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download='apshule-users-template.csv'; a.click(); URL.revokeObjectURL(url); }
+    function parseCommandCsv(text) { const lines=text.split(/\r?\n/).filter(Boolean), headers=(lines.shift()||'').split(',').map(item=>item.trim()); return lines.map(line=>{const values=line.split(','); return Object.fromEntries(headers.map((header,index)=>[header,(values[index]||'').trim()]));}); }
+    function renderCommandInstitutions() {
+        const filter=document.getElementById('commandInstitutionTypeFilter')?.value||'', list=document.getElementById('commandInstitutionsList'); if(!list) return;
+        const rows=commandInstitutions.filter(item=>!filter||item.type===filter);
+        list.innerHTML=rows.map(item=>`<div class="command-list-card"><div><h4>${item.type==='school'?'🏫':item.type==='mfi'?'🏦':item.type==='clinic'?'🏥':'🌾'} ${escHtml(item.name||'Unnamed institution')}</h4><p>Type: ${escHtml(item.type||'school')} · Status: <strong>${escHtml(item.status||'active')}</strong><br>${escHtml(item.region||item.location||'Region not set')} · ${escHtml(item.phone||item.contact||'No phone')}</p></div><div class="command-list-actions"><button data-institution-action="view" data-institution-id="${item.id}">👁 View</button><button data-institution-action="branding" data-institution-id="${item.id}">🎨 Branding</button><button data-institution-action="toggle" data-institution-id="${item.id}">${item.status==='suspended'?'Activate':'Suspend'}</button></div></div>`).join('')||'<div class="command-activity-item">No institutions match this filter.</div>';
+    }
+    async function loadCommandInstitutions() {
+        if(currentUser?.role!=='superadmin'||!db) return;
+        try {
+            const [institutionSnap,schoolSnap]=await Promise.all([getDocs(query(collection(db,'institutions'),limit(300))).catch(()=>({docs:[]})),getDocs(query(collection(db,'schools'),limit(300))).catch(()=>({docs:[]}))]);
+            commandInstitutions=[...institutionSnap.docs.map(item=>({id:item.id,...item.data(),source:'institutions'})),...schoolSnap.docs.map(item=>({id:item.id,...item.data(),type:'school',source:'schools'}))]; renderCommandInstitutions();
+            const select=document.getElementById('commandUserInstitution'); if(select) select.innerHTML='<option value="">— Select institution —</option>'+commandInstitutions.map(item=>`<option value="${escHtml(item.id)}">${escHtml(item.name||item.id)} (${escHtml(item.type||'school')})</option>`).join('');
+        } catch(error) { console.error('Command institutions failed:',error); showNotification('Unable to load institutions','error'); }
+    }
+    async function submitCommandInstitution(event) {
+        event.preventDefault(); if(!commandRequiresOnline()) return;
+        const status=document.getElementById('commandInstitutionFormStatus'); if(status) status.textContent='Saving institution…';
+        const adminEmail=document.getElementById('commandInstitutionAdminEmail').value.trim(), adminPassword=document.getElementById('commandInstitutionAdminPassword').value;
+        const values={name:document.getElementById('commandInstitutionName').value.trim(),type:document.getElementById('commandInstitutionType').value,region:document.getElementById('commandInstitutionRegion').value.trim(),phone:document.getElementById('commandInstitutionPhone').value.trim(),email:document.getElementById('commandInstitutionEmail').value.trim(),website:document.getElementById('commandInstitutionWebsite').value.trim(),address:document.getElementById('commandInstitutionAddress').value.trim(),contactPerson:document.getElementById('commandInstitutionContact').value.trim(),contactRole:document.getElementById('commandInstitutionContactRole').value,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid};
+        try { const admin=await createManagedAuthUser(adminEmail,adminPassword), ref=await addDoc(collection(db,'institutions'),{...values,adminUid:admin?.uid||null}); if(admin?.uid) await setDoc(doc(db,'users',admin.uid),{uid:admin.uid,name:values.contactPerson,email:adminEmail,phone:values.phone,role:values.type==='school'?'school':values.type==='mfi'?'loan_officer':values.type==='clinic'?'clinic_staff':'farmer',institutionId:ref.id,status:'active',createdAt:values.createdAt,createdBy:currentUser.uid},{merge:true}); if(values.type==='school') await addDoc(collection(db,'schools'),{name:values.name,contact:values.phone,location:values.address,logo:'',institutionId:ref.id,createdAt:values.createdAt,status:'active'}); if(status) status.textContent='✅ Institution created'; showNotification('✅ Institution created','success'); document.getElementById('commandInstitutionForm').reset(); closeCommandModal('commandInstitutionModal'); await loadCommandInstitutions(); await loadCommandDashboard(); }
+        catch(error) { console.error('Create institution failed:',error); if(status) status.textContent=error?.message||'Unable to create institution'; }
+    }
+    function showInstitutionDetails(item) { const body=document.getElementById('commandDetailBody'); document.getElementById('commandDetailTitle').textContent='Institution details'; if(body) body.innerHTML=`<div class="command-panel-card">${Object.entries(item).filter(([key])=>key!=='id').map(([key,value])=>`<div class="settings-pending-row"><span>${escHtml(key)}</span><strong style="max-width:60%;text-align:right;word-break:break-word;">${escHtml(typeof value==='object'?JSON.stringify(value):String(value??'—'))}</strong></div>`).join('')}</div>`; openCommandModal('commandDetailModal'); }
+    async function toggleCommandInstitution(item) { if(!commandRequiresOnline()) return; const next=item.status==='suspended'?'active':'suspended'; try { await updateDoc(doc(db,item.source==='schools'?'schools':'institutions',item.id),{status:next,updatedAt:new Date().toISOString()}); showNotification(`Institution ${next}`,'success'); await loadCommandInstitutions(); } catch(error) { showNotification('Unable to update institution','error'); } }
+    function loadCommandAnalytics() {
+        const body=document.getElementById('commandAnalyticsSummary'); if(body) body.innerHTML=`<div class="command-activity-item">Existing analytics remain available in the legacy Admin Panel.</div><div class="command-activity-item">Use the Settings tab for preference analytics and platform controls.</div>`;
+    }
+    function openCommandSubModal(kind) {
+        const titles={content:'📚 Content Management',payments:'💰 Payments',announce:'📢 Communication',reports:'📊 Reports'}, body={content:'Open the legacy Admin Panel to manage PDFs, curriculum, NCDC/UNEB content, and Video Studio.',payments:'Open the legacy Admin Panel to review payment requests and subscription plans.',announce:'Open the legacy Admin Panel to schedule announcements and notifications.',reports:'Open the legacy Admin Panel to review analytics, attendance, feedback, and exports.'};
+        document.getElementById('commandSubModalTitle').textContent=titles[kind]||'Command Center';
+        document.getElementById('commandSubModalBody').innerHTML=`<div class="command-panel-card"><p class="command-tabs-note">${body[kind]||'Choose an action.'}</p><button id="commandSubModalLegacyBtn" class="command-primary-btn" type="button">Open legacy Admin Panel</button></div>`;
+        document.getElementById('commandSubModalLegacyBtn').onclick=()=>{ closeCommandModal('commandSubModal'); document.getElementById('adminMenuItem')?.click(); };
+        openCommandModal('commandSubModal');
+    }
+    async function loadInstitutionBranding(institutionId) {
+        if(!institutionId||!db||currentUser?.role==='superadmin') return;
+        try {
+            const cached=Offline?.getInstitutionBranding ? await Offline.getInstitutionBranding(institutionId).catch(()=>null) : null;
+            if(cached) applyInstitutionBranding(cached);
+            const snap=await getDoc(doc(db,'institution_branding',institutionId));
+            if(snap.exists()) {
+                const branding={institutionId,...snap.data()};
+                applyInstitutionBranding(branding);
+                if(Offline?.cacheInstitutionBranding) await Offline.cacheInstitutionBranding(branding).catch(()=>{});
+            }
+        } catch(error) { console.warn('Institution branding unavailable:',error); }
+    }
+    function applyInstitutionBranding(branding) {
+        if(!branding) return;
+        try { localStorage.setItem('apshule_last_institution_branding',JSON.stringify(branding)); } catch(e) {}
+        const appLogo=document.getElementById('headerLogoImg'), institutionLogo=document.getElementById('headerSchoolLogoImg'), name=document.getElementById('headerInstitutionName');
+        if(branding.showAppshuleLogo===false&&appLogo) appLogo.style.display='none'; else if(appLogo) appLogo.style.display='';
+        if(institutionLogo) { institutionLogo.src=branding.institutionLogoPath||''; institutionLogo.alt=branding.institutionLogoAlt||branding.institutionDisplayName||'Institution logo'; institutionLogo.style.display=branding.showInstitutionLogo!==false&&branding.institutionLogoPath?'block':'none'; }
+        if(name) { name.textContent=branding.institutionDisplayName||''; name.style.display=branding.institutionDisplayName?'block':'none'; }
+        const loginInstitutionLogo=document.getElementById('loginInstitutionLogoImg');
+        if(loginInstitutionLogo) { loginInstitutionLogo.src=branding.institutionLogoPath||''; loginInstitutionLogo.style.display=branding.showInstitutionLogo!==false&&branding.institutionLogoPath?'block':'none'; }
+        const splashLogo=document.getElementById('splashLogoImg');
+        if(splashLogo&&branding.showInstitutionLogo!==false&&branding.institutionLogoPath) splashLogo.src=branding.institutionLogoPath;
+        if(branding.primaryColor) document.documentElement.style.setProperty('--institution-primary',branding.primaryColor);
+    }
+    function applyRememberedInstitutionBranding() {
+        try { const saved=JSON.parse(localStorage.getItem('apshule_last_institution_branding')||'null'); if(saved) applyInstitutionBranding(saved); } catch(e) {}
+    }
+    async function openInstitutionBranding(item) {
+        if(!commandRequiresOnline()) return;
+        const existing=await getDoc(doc(db,'institution_branding',item.id)).catch(()=>null), branding=existing?.exists()?existing.data():{};
+        document.getElementById('brandingInstitutionId').value=item.id; document.getElementById('brandingInstitutionLabel').textContent=item.name||item.id;
+        document.getElementById('brandingDisplayName').value=branding.institutionDisplayName||item.name||''; document.getElementById('brandingTagline').value=branding.institutionTagline||''; document.getElementById('brandingPrimaryColor').value=branding.primaryColor||'#4B2E9E'; document.getElementById('brandingSecondaryColor').value=branding.secondaryColor||'#FF8C42'; document.getElementById('brandingShowAppshule').checked=branding.showAppshuleLogo!==false; document.getElementById('brandingShowInstitution').checked=branding.showInstitutionLogo!==false; commandBrandingFile=null;
+        updateBrandingPreview(); openCommandModal('institutionBrandingModal');
+    }
+    function updateBrandingPreview() { const name=document.getElementById('brandingDisplayName')?.value||'Institution name', tagline=document.getElementById('brandingTagline')?.value||'Institution tagline', preview=document.getElementById('brandingDisplayPreview'), taglinePreview=document.getElementById('brandingTaglinePreview'); if(preview) preview.textContent=name; if(taglinePreview) taglinePreview.textContent=tagline; document.getElementById('brandingAppLogoPreview')?.toggleAttribute('hidden',document.getElementById('brandingShowAppshule')?.checked===false); document.getElementById('brandingInstitutionLogoPreview')?.style.setProperty('display',document.getElementById('brandingShowInstitution')?.checked?'block':'none'); }
+    async function saveInstitutionBranding(event) {
+        event.preventDefault(); if(!commandRequiresOnline()) return;
+        const status=document.getElementById('brandingFormStatus'), institutionId=document.getElementById('brandingInstitutionId').value; if(status) status.textContent='Saving branding…';
+        try {
+            let logoPath='';
+            if(commandBrandingFile) { if(commandBrandingFile.size>500*1024) throw new Error('Logo must be 500KB or smaller'); const allowed=['image/png','image/jpeg','image/svg+xml']; if(!allowed.includes(commandBrandingFile.type)) throw new Error('Use PNG, JPG, or SVG'); const ref=storage.ref().child(`institution_branding/${institutionId}/${Date.now()}-${commandBrandingFile.name.replace(/[^a-z0-9._-]/gi,'_')}`); await ref.put(commandBrandingFile); logoPath=await ref.getDownloadURL(); }
+            const current=(await getDoc(doc(db,'institution_branding',institutionId))).data()||{};
+            const data={institutionId,appshuleLogoPath:'https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg',institutionLogoPath:logoPath||current.institutionLogoPath||'',institutionLogoAlt:document.getElementById('brandingDisplayName').value.trim(),institutionDisplayName:document.getElementById('brandingDisplayName').value.trim(),institutionTagline:document.getElementById('brandingTagline').value.trim(),primaryColor:document.getElementById('brandingPrimaryColor').value,secondaryColor:document.getElementById('brandingSecondaryColor').value,showAppshuleLogo:document.getElementById('brandingShowAppshule').checked,showInstitutionLogo:document.getElementById('brandingShowInstitution').checked,createdBy:currentUser.uid,updatedAt:new Date().toISOString()};
+            await setDoc(doc(db,'institution_branding',institutionId),data,{merge:true}); if(status) status.textContent='✅ Branding saved'; showNotification('✅ Branding saved','success'); closeCommandModal('institutionBrandingModal');
+        } catch(error) { console.error('Branding save failed:',error); if(status) status.textContent=error?.message||'Unable to save branding'; }
+    }
+    function resetInstitutionBranding() { if(!confirm('Reset this institution branding to the AppShule default?')) return; document.getElementById('brandingDisplayName').value=''; document.getElementById('brandingTagline').value=''; document.getElementById('brandingShowAppshule').checked=true; document.getElementById('brandingShowInstitution').checked=true; updateBrandingPreview(); }
+    function restoreStandardNavigation() {
+        const bottom=document.querySelector('.bottom-nav');
+        if(!bottom||!bottom.classList.contains('superadmin-bottom-nav')) return;
+        window._commandCenterInitialized=false;
+        bottom.classList.remove('superadmin-bottom-nav');
+        bottom.innerHTML='<div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-page="resources"><i class="fas fa-book-open"></i><span>Resources</span></div><div class="nav-item" id="teacherNavItem" data-page="teacher" style="display:none;"><i class="fas fa-chalkboard-user"></i><span>Dashboard</span></div><div class="nav-item" id="liveNavItem" data-page="live" style="display:none;"><i class="fas fa-satellite-dish" style="color:#FF8C42;font-size:20px;"></i><span style="color:#FF8C42;font-weight:700;">Live</span></div><div class="nav-item" data-page="notifications" style="position:relative;"><i class="fas fa-bell"></i><span id="notifBadge" class="notif-badge" style="display:none;">0</span><span>Alerts</span></div><div class="nav-item" data-page="account"><i class="fas fa-user"></i><span>Account</span></div><div class="nav-item" data-page="about"><i class="fas fa-info-circle"></i><span>About</span></div>';
+        bottom.querySelectorAll('.nav-item').forEach(item=>item.addEventListener('click',()=>navigateTo(item.dataset.page)));
+    }
+    function initCommandCenter() {
+        if(window._commandCenterInitialized||currentUser?.role!=='superadmin') return; window._commandCenterInitialized=true;
+        const bottom=document.querySelector('.bottom-nav'); if(bottom) { bottom.classList.add('superadmin-bottom-nav'); bottom.innerHTML=`<div class="nav-item active" data-command-section="dashboard"><i class="fas fa-chart-pie"></i><span>Dashboard</span></div><div class="nav-item" data-command-section="users"><i class="fas fa-users"></i><span>Users</span></div><div class="nav-item" data-command-section="institutions"><i class="fas fa-building"></i><span>Institutions</span></div><div class="nav-item" data-command-section="analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></div><div class="nav-item" data-command-section="settings"><i class="fas fa-cog"></i><span>Settings</span></div>`; bottom.querySelectorAll('[data-command-section]').forEach(item=>item.addEventListener('click',()=>navigateSuperAdmin(item.dataset.commandSection))); }
+        document.querySelectorAll('[data-command-action]').forEach(button=>button.addEventListener('click',()=>{const action=button.dataset.commandAction; if(['dashboard','users','institutions','analytics','settings'].includes(action)) navigateSuperAdmin(action); else openCommandSubModal(action);}));
+        document.getElementById('commandRefreshStatsBtn')?.addEventListener('click',loadCommandDashboard); document.getElementById('commandAddUserBtn')?.addEventListener('click',()=>{document.getElementById('commandUserForm').reset(); generateCommandPassword(); openCommandModal('commandUserModal');}); document.getElementById('commandAddInstitutionBtn')?.addEventListener('click',()=>{document.getElementById('commandInstitutionForm').reset();document.getElementById('commandInstitutionAdminPassword').value=`Aps${Math.random().toString(36).slice(2,10)}!`;openCommandModal('commandInstitutionModal');}); document.getElementById('commandUserForm')?.addEventListener('submit',submitCommandUser); document.getElementById('commandInstitutionForm')?.addEventListener('submit',submitCommandInstitution); document.getElementById('commandGeneratePasswordBtn')?.addEventListener('click',generateCommandPassword); document.getElementById('commandDownloadUserTemplateBtn')?.addEventListener('click',commandCsvTemplate); document.getElementById('commandImportUsersBtn')?.addEventListener('click',()=>document.getElementById('commandUserCsvInput')?.click()); document.getElementById('commandExportUsersBtn')?.addEventListener('click',()=>{const csv=['name,email,phone,role,institutionId',...commandUsers.map(user=>[user.name,user.email,user.phone,user.role,user.institutionId||user.schoolId||''].map(value=>`"${String(value||'').replace(/"/g,'""')}"`).join(','))].join('\\n'); const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=url;a.download='apshule-users.csv';a.click();URL.revokeObjectURL(url);}); document.getElementById('commandUserCsvInput')?.addEventListener('change',event=>{const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{commandCsvRows=parseCommandCsv(String(reader.result||''));const rows=commandCsvRows,preview=document.getElementById('commandUserImportPreview');if(preview){preview.style.display='block';preview.innerHTML=`<div class="command-panel-card"><strong>${rows.length} rows parsed</strong><p class="command-tabs-note">Review the preview, then import valid rows. Passwords may be provided in the CSV or generated automatically.</p><button id="commandImportAllBtn" class="command-primary-btn" type="button">Import all valid rows</button>${rows.slice(0,5).map(row=>`<div class="command-activity-item">${escHtml(row.name||'Unnamed')} · ${escHtml(row.email||'No email')} · ${escHtml(row.role||'individual')}</div>`).join('')}</div>`;}};reader.readAsText(file);}); document.getElementById('commandUserImportPreview')?.addEventListener('click',event=>{if(event.target.closest('#commandImportAllBtn'))importCommandUsers();}); document.getElementById('commandUserSearch')?.addEventListener('input',renderCommandUsers); document.getElementById('commandUserRoleFilter')?.addEventListener('change',renderCommandUsers); document.getElementById('commandUserStatusFilter')?.addEventListener('change',renderCommandUsers); document.getElementById('commandLoadMoreUsersBtn')?.addEventListener('click',()=>{commandUserPage++;renderCommandUsers();}); document.getElementById('commandInstitutionTypeFilter')?.addEventListener('change',renderCommandInstitutions); document.getElementById('institutionBrandingForm')?.addEventListener('submit',saveInstitutionBranding); document.getElementById('brandingResetBtn')?.addEventListener('click',resetInstitutionBranding); ['brandingDisplayName','brandingTagline','brandingShowAppshule','brandingShowInstitution'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateBrandingPreview)); document.getElementById('brandingLogoFile')?.addEventListener('change',event=>{commandBrandingFile=event.target.files?.[0]||null;if(commandBrandingFile){const reader=new FileReader();reader.onload=()=>{const img=document.getElementById('brandingInstitutionLogoPreview');if(img){img.src=String(reader.result);img.style.display='block';}};reader.readAsDataURL(commandBrandingFile);}}); document.querySelectorAll('[data-command-close]').forEach(button=>button.addEventListener('click',()=>closeCommandModal(button.dataset.commandClose))); document.querySelectorAll('.command-fullscreen-modal').forEach(modal=>modal.addEventListener('click',event=>{if(event.target===modal)closeCommandModal(modal.id);})); document.getElementById('commandOpenLegacyAdminBtn')?.addEventListener('click',()=>document.getElementById('adminMenuItem')?.click()); document.getElementById('commandOpenLegacySettingsBtn')?.addEventListener('click',()=>document.getElementById('adminMenuItem')?.click()); document.getElementById('commandOpenSettingsBtn')?.addEventListener('click',openGlobalSettings);
+        document.getElementById('commandUsersList')?.addEventListener('click',event=>{const button=event.target.closest('[data-user-action]');if(button){const user=commandUsers.find(item=>item.id===button.dataset.userId);if(user)handleCommandUserAction(button.dataset.userAction,user);}}); document.getElementById('commandInstitutionsList')?.addEventListener('click',event=>{const button=event.target.closest('[data-institution-action]');if(button){const item=commandInstitutions.find(row=>row.id===button.dataset.institutionId);if(item){if(button.dataset.institutionAction==='view')showInstitutionDetails(item);if(button.dataset.institutionAction==='branding')openInstitutionBranding(item);if(button.dataset.institutionAction==='toggle')toggleCommandInstitution(item);}}});
+        loadCommandInstitutions(); loadCommandDashboard();
+    }
     // ===== NAVIGATION =====
     function navigateTo(pageId) {
+        if(currentUser?.role==='superadmin' && !['superAdminCommandCenter','superAdminUsers','superAdminInstitutions','superAdminAnalytics','superAdminSettings'].includes(`${pageId}Page`)) {
+            navigateSuperAdmin('dashboard');
+            return;
+        }
         closeVideoModal();
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page'));
         let tp = document.getElementById(`${pageId}Page`);
@@ -12006,6 +12246,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const isSuper = currentUser.role === 'superadmin';
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';
+        if(isSuper) initCommandCenter(); else restoreStandardNavigation();
         // Store superadmin UID so students/teachers can send targeted notifications
         if(isSuper) {
             setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});
@@ -12050,9 +12291,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(s?.logo) { document.getElementById('headerLogoImg').src = s.logo; document.getElementById('loginLogoImg').src = s.logo; }
         }
         // Dual branding for students linked to a school
-        if(!isSchool && !isSuper && !isTeacher && currentUser.schoolId) {
+        if(!isSuper && (currentUser.institutionId || currentUser.schoolId)) {
             let s = schools.find(sch => sch.id === currentUser.schoolId);
             if(s?.logo) applySchoolBranding(s.logo);
+            loadInstitutionBranding(currentUser.institutionId || currentUser.schoolId).catch(()=>{});
         }
         loadProfilePicPreview();
         if(isSuper) {
@@ -12093,7 +12335,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         renderForYouSection();
         renderMyWeakAreasTags();
         checkAndPromptWeakAreas();
-        navigateTo('home');
+        if(isSuper) navigateSuperAdmin('dashboard'); else navigateTo('home');
     }
 
     // ===== FIRESTORE LISTENERS =====
@@ -13552,6 +13794,7 @@ function loadMyStudents() {
 
 // Create student button handler
 document.addEventListener('DOMContentLoaded', () => {
+    applyRememberedInstitutionBranding();
     document.getElementById('createStudentBtn')?.addEventListener('click', async () => {
         const name = document.getElementById('newStudentName')?.value.trim();
         const email = document.getElementById('newStudentEmail')?.value.trim();
