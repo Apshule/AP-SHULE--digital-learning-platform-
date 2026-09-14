@@ -2422,7 +2422,7 @@
             <div class="mfi-hero"><h2>👤 <span id="mfiBorrowerName">Borrower Portal</span></h2><p>View your collateral records and download your statement.</p></div>
             <div id="mfiBorrowerOfflineNotice" class="mfi-offline-note mfi-hidden">Offline mode: showing your last synchronized collateral records.</div>
             <div class="mfi-section">📋 My Collateral</div><div id="mfiBorrowerCollateralList" class="mfi-panel-card"><div class="mfi-activity-item">Loading collateral…</div></div>
-            <div class="mfi-form-actions" style="justify-content:flex-start;"><button id="mfiBorrowerStatementBtn" class="mfi-primary-btn" type="button">📥 Download Statement</button></div>
+            <div id="mfiBorrowerPaymentEntry" class="mfi-panel-card" style="margin-top:14px;"><h3>💳 Loan payment</h3><p class="mfi-form-help">Pay an outstanding MFI balance securely through mobile money when your loan reference and amount are available.</p><div class="mfi-form-actions" style="justify-content:flex-start;"><button id="mfiBorrowerPayBtn" class="mfi-primary-btn" type="button">Pay loan balance</button><button id="mfiBorrowerStatementBtn" class="mfi-secondary-btn" type="button">📥 Download Statement</button></div><div id="mfiBorrowerPaymentStatus" class="mfi-form-help" aria-live="polite"></div></div>
         </div>
         <div id="clinicPatientModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicPatientModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicPatientModalTitle">Register patient</h3><button class="command-close" data-command-close="clinicPatientModal" type="button" aria-label="Close patient form">&times;</button></div><div class="command-modal-body"><div class="clinic-offline-note">Patient registration is online-only because it creates a secure account.</div><form id="clinicPatientForm" class="clinic-form"><div class="clinic-form-grid"><label>First name *<input id="clinicPatientFirstName" required></label><label>Last name *<input id="clinicPatientLastName" required></label><label>Date of birth *<input id="clinicPatientDob" type="date" required></label><label>Sex *<select id="clinicPatientSex" required><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></label><label>Phone *<input id="clinicPatientPhone" type="tel" required></label><label>Email<input id="clinicPatientEmail" type="email"></label><label>National ID<input id="clinicPatientNationalId"></label><label>Emergency contact<input id="clinicPatientEmergency"></label><label class="full">Address<textarea id="clinicPatientAddress"></textarea></label></div><div id="clinicPatientFormStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clinicPatientModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Register patient</button></div></form></div></div></div>
         <div id="clinicAppointmentModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicAppointmentModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicAppointmentModalTitle">Schedule appointment</h3><button class="command-close" data-command-close="clinicAppointmentModal" type="button" aria-label="Close appointment form">&times;</button></div><div class="command-modal-body"><form id="clinicAppointmentForm" class="clinic-form"><div class="clinic-form-grid"><label>Patient *<select id="clinicAppointmentPatient" required></select></label><label>Doctor *<select id="clinicAppointmentDoctor" required></select></label><label>Date *<input id="clinicAppointmentDateForm" type="date" required></label><label>Time *<input id="clinicAppointmentTime" type="time" required></label><label>Reason *<input id="clinicAppointmentReason" required></label><label>Branch<input id="clinicAppointmentBranch" placeholder="Main branch"></label></div><div id="clinicAppointmentFormStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clinicAppointmentModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save appointment</button></div></form></div></div></div>
@@ -2431,6 +2431,7 @@
         <div id="inventoryItemFormModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="inventoryItemFormTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="inventoryItemFormTitle">Add inventory item</h3><button class="command-close" data-command-close="inventoryItemFormModal" type="button" aria-label="Close inventory item form">&times;</button></div><div class="command-modal-body"><form id="inventoryItemForm" class="clinic-form"><input id="inventoryItemId" type="hidden"><div class="clinic-form-grid"><label>Item name *<input id="inventoryItemName" required placeholder="Panadol 500mg"></label><label>Generic name<input id="inventoryGenericName" placeholder="Paracetamol"></label><label>Category *<select id="inventoryCategory" required><option value="">Select category</option><option>Medicines</option><option>Medical Supplies</option><option>Equipment</option><option>First Aid</option><option>Vaccines</option><option>Other</option></select></label><label>Brand<input id="inventoryBrand"></label><label>Barcode<input id="inventoryBarcode"></label><label>Unit *<select id="inventoryUnit" required><option>Tablet</option><option>Bottle</option><option>Box</option><option>Piece</option><option>Tube</option><option>Sachet</option></select></label><label>Pack size<input id="inventoryPackSize" type="number" min="1" value="1"></label><label>Location<input id="inventoryLocation" placeholder="Shelf A2"></label><label>Purchase price (UGX) *<input id="inventoryUnitPrice" type="number" min="0" required></label><label>Selling price (UGX) *<input id="inventorySellingPrice" type="number" min="0" required></label><label>Quantity in stock *<input id="inventoryQuantity" type="number" min="0" required></label><label>Reorder level *<input id="inventoryReorderLevel" type="number" min="0" value="10" required></label><label>Batch number<input id="inventoryBatchNumber"></label><label>Expiry date *<input id="inventoryExpiryDate" type="date" required></label><label>Supplier name<input id="inventorySupplierName"></label><label>Supplier contact<input id="inventorySupplierContact"></label><label class="full">Product image<input id="inventoryProductImage" type="file" accept="image/*" capture="environment"><small class="clinic-form-help">A 16-bin RGB histogram is stored for offline product matching.</small></label></div><div id="inventoryMarginPreview" class="clinic-vital-result">Margin will appear when prices are entered.</div><div id="inventoryItemStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="inventoryItemFormModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save item</button></div></form></div></div></div>
         <div id="productScannerModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="productScannerTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="productScannerTitle">📷 Product scanner</h3><button class="command-close" data-command-close="productScannerModal" type="button" aria-label="Close scanner">&times;</button></div><div class="command-modal-body"><div class="clinic-scanner-shell"><video id="productScannerVideo" class="clinic-scanner-video" autoplay playsinline muted></video><canvas id="productScannerCanvas" class="clinic-scanner-canvas"></canvas><p class="clinic-form-help">Point the camera at product packaging. Matching runs locally using stored 48-number RGB histograms.</p><div class="clinic-form-actions" style="justify-content:flex-start;"><button id="scannerFlashBtn" class="clinic-secondary-btn" type="button">🔦 Flash</button><button id="scannerSwitchBtn" class="clinic-secondary-btn" type="button">🎥 Switch camera</button><button id="scannerCaptureBtn" class="clinic-primary-btn" type="button">📸 Capture</button><label class="clinic-secondary-btn" style="display:inline-flex;align-items:center;">📁 Upload image<input id="scannerUploadInput" type="file" accept="image/*" style="display:none"></label><button id="scannerManualBtn" class="clinic-secondary-btn" type="button">⌨️ Enter manually</button></div><div id="scannerManualSearchWrap" class="clinic-filter-row" hidden><input id="scannerManualSearch" type="search" placeholder="Search item name, brand, barcode"><button id="scannerManualSearchBtn" class="clinic-primary-btn" type="button">Search</button></div><div id="scannerResults" class="clinic-scanner-results"><div class="clinic-empty">Capture or upload a product image to see matches.</div></div><div id="scannerCart" class="clinic-cart"></div><div class="clinic-form-actions"><button id="scannerCheckoutBtn" class="clinic-primary-btn" type="button">🧾 Checkout cart</button></div></div></div></div></div>
         <div id="billingModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="billingModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="billingModalTitle">🧾 Billing &amp; payments</h3><button class="command-close" data-command-close="billingModal" type="button" aria-label="Close billing">&times;</button></div><div class="command-modal-body"><div id="billingTabs" class="clinic-tab-row"></div><div id="billingTabBody" class="clinic-panel"><div class="clinic-empty">Loading billing…</div></div></div></div></div>
+        <div id="clientPaymentModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clientPaymentTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clientPaymentTitle">💳 Make payment</h3><button class="command-close" data-command-close="clientPaymentModal" type="button" aria-label="Close payment form">&times;</button></div><div class="command-modal-body"><div id="clientPaymentSummary" class="clinic-patient-banner"></div><form id="clientPaymentForm" class="clinic-form"><input id="clientPaymentInstitutionId" type="hidden"><input id="clientPaymentSector" type="hidden"><input id="clientPaymentBillReference" type="hidden"><input id="clientPaymentTotalAmount" type="hidden"><input id="clientPaymentExistingPaid" type="hidden"><div class="clinic-form-grid"><label>Amount to pay (UGX) *<input id="clientPaymentAmount" type="number" min="1" step="1" required></label><label>Payment method *<select id="clientPaymentMethod" required><option value="MTN">MTN Mobile Money (+2%)</option><option value="Airtel">Airtel Money (+2%)</option></select></label><label>Your phone number *<input id="clientPaymentPhone" type="tel" inputmode="tel" placeholder="+256700000000" required></label><div id="clientPaymentQuickActions" class="clinic-form-actions" style="justify-content:flex-start;align-items:end;"><button class="clinic-chip" data-payment-quick="full" type="button">Full balance</button><button class="clinic-chip" data-payment-quick="half" type="button">Half</button><button class="clinic-chip" data-payment-quick="custom" type="button">Custom</button></div></div><div id="clientPaymentFeeSummary" class="clinic-billing-summary"></div><div class="clinic-offline-note" id="clientPaymentOfflineNote" hidden>⚠️ Payment requires internet connection.</div><div id="clientPaymentStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clientPaymentModal" type="button">Cancel</button><button id="clientPaymentSubmit" class="clinic-primary-btn" type="submit">💳 Pay now</button></div></form><div id="clientPaymentReceipt" class="clinic-report-card" hidden></div></div></div></div>
         <div id="billDetailModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="billDetailTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="billDetailTitle">Bill detail</h3><button class="command-close" data-command-close="billDetailModal" type="button" aria-label="Close bill detail">&times;</button></div><div id="billDetailBody" class="command-modal-body"></div></div></div>
         <div id="recordPaymentModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="recordPaymentTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="recordPaymentTitle">💳 Record payment</h3><button class="command-close" data-command-close="recordPaymentModal" type="button" aria-label="Close payment form">&times;</button></div><div class="command-modal-body"><form id="recordPaymentForm" class="clinic-form"><input id="paymentBillId" type="hidden"><label>Amount (UGX) *<input id="paymentAmount" type="number" min="1" required></label><label>Payment date *<input id="paymentDate" type="date" required></label><label>Payment method *<select id="paymentMethod" required><option>Cash</option><option>MTN Mobile Money</option><option>Airtel Money</option><option>Bank Transfer</option><option>Card</option><option>Insurance</option></select></label><label>Transaction ID<input id="paymentTransactionId"></label><label>Reference number<input id="paymentReferenceNumber"></label><label>Notes<textarea id="paymentNotes"></textarea></label><div id="recordPaymentStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="recordPaymentModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save payment</button></div></form></div></div></div>
         <div id="insuranceClaimModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="insuranceClaimTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="insuranceClaimTitle">🏥 Insurance claim</h3><button class="command-close" data-command-close="insuranceClaimModal" type="button" aria-label="Close claim form">&times;</button></div><div class="command-modal-body"><form id="insuranceClaimForm" class="clinic-form"><input id="claimBillId" type="hidden"><input id="claimId" type="hidden"><div class="clinic-form-grid"><label>Insurance provider *<input id="claimProvider" required placeholder="NHIF, AAR, Jubilee"></label><label>Policy number *<input id="claimPolicyNumber" required></label><label>Coverage % *<input id="claimCoveragePercent" type="number" min="0" max="100" value="80" required></label><label>Patient copay %<input id="claimCopayPercent" type="number" min="0" max="100" value="20" required></label><label>Claim amount (UGX) *<input id="claimAmount" type="number" min="0" required></label><label>Patient portion (UGX)<input id="claimPatientPortion" type="number" min="0" readonly></label><label>Status<select id="claimStatus"><option>Draft</option><option>Submitted</option><option>Under Review</option><option>Approved</option><option>Partially Approved</option><option>Rejected</option><option>Paid</option></select></label><label>Approved amount<input id="claimApprovedAmount" type="number" min="0" value="0"></label><label class="full">Rejection reason / notes<textarea id="claimNotes"></textarea></label><label class="full">Claim documents<input id="claimDocuments" type="file" accept="image/*,application/pdf" multiple></label></div><div id="insuranceClaimStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="insuranceClaimModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save claim</button></div></form></div></div></div>
@@ -2544,7 +2545,7 @@
             <div class="clinic-hero"><div><p class="clinic-eyebrow">MY HEALTH</p><h2>My patient record</h2><p>Read-only access to your visits and prescriptions.</p></div></div><div id="clinicPatientSummary" class="clinic-panel"></div><div class="clinic-section-title">Visit history</div><div id="clinicPatientHistory" class="clinic-panel"><div class="clinic-empty">Loading history…</div></div>
         </div>
         <div id="clinicPatientBillingPage" class="page clinic-page">
-            <div class="clinic-hero"><div><p class="clinic-eyebrow">MY PAYMENTS</p><h2>My bills</h2><p>Review outstanding bills and payment history.</p></div></div><div id="patientBillingList" class="clinic-panel"><div class="clinic-empty">Loading bills…</div></div>
+            <div class="clinic-hero"><div><p class="clinic-eyebrow">MY PAYMENTS</p><h2>My bills</h2><p>Review outstanding bills and payment history.</p></div></div><div id="patientBillingList" class="clinic-panel"><div class="clinic-empty">Loading bills…</div></div><div id="patientOnlinePaymentHistory" class="clinic-panel" style="margin-top:14px;"><div class="clinic-empty">Loading online payment history…</div></div>
         </div>
         <div id="clinicReportsModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicReportsTitle">
             <div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicReportsTitle">📊 Clinic reports</h3><button class="command-close" data-command-close="clinicReportsModal" type="button" aria-label="Close clinic reports">&times;</button></div>
@@ -14128,7 +14129,18 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
      async function clinicSavePayment(event){event.preventDefault();const billId=document.getElementById('paymentBillId').value,bill=clinicBillingRows.find(item=>String(item.id)===String(billId)),amount=Number(document.getElementById('paymentAmount').value),status=document.getElementById('recordPaymentStatus');if(!bill||amount<=0||amount>Number(bill.balanceAmount||0)){status.textContent='Enter an amount no greater than the outstanding balance.';return;}const payment={institutionId:clinicInstitutionId(),billId, billNumber:bill.billNumber,patientId:bill.patientId||null,patientName:bill.patientName||'',amount,paymentDate:document.getElementById('paymentDate').value,paymentMethod:document.getElementById('paymentMethod').value,transactionId:document.getElementById('paymentTransactionId').value.trim(),referenceNumber:document.getElementById('paymentReferenceNumber').value.trim(),notes:document.getElementById('paymentNotes').value.trim(),receivedBy:currentUser.uid,createdAt:new Date().toISOString()};status.textContent='Saving payment…';try{const paid=Number(bill.paidAmount||0)+amount,balance=Math.max(0,Number(bill.totalAmount||0)-paid),nextStatus=balance===0?'paid':paid>0?'partial':'unpaid';if(!navigator.onLine){await Offline.queueClinicPayment(payment);bill.paidAmount=paid;bill.balanceAmount=balance;bill.status=nextStatus;}else{const paymentRef=await addDoc(collection(db,'clinic_payments'),payment);await updateDoc(doc(db,'clinic_billing',billId),{paidAmount:paid,balanceAmount:balance,status:nextStatus,updatedAt:new Date().toISOString()});clinicPaymentRows.unshift({...payment,id:paymentRef.id});Object.assign(bill,{paidAmount:paid,balanceAmount:balance,status:nextStatus});}closeCommandModal('recordPaymentModal');showNotification(navigator.onLine?'Payment recorded':'Payment queued offline','success');}catch(error){status.textContent=error.message||'Unable to save payment.';}}
      async function openInsuranceClaim(billOrClaimId){let claim=clinicClaimRows.find(item=>String(item.id)===String(billOrClaimId)),bill=clinicBillingRows.find(item=>String(item.id)===String(billOrClaimId));if(claim)bill=clinicBillingRows.find(item=>String(item.id)===String(claim.billId))||bill;if(!bill&&claim)return;document.getElementById('insuranceClaimForm').reset();document.getElementById('claimId').value=claim?.id||'';document.getElementById('claimBillId').value=bill?.id||claim?.billId||'';document.getElementById('claimAmount').value=claim?.claimAmount||bill?.totalAmount||0;document.getElementById('claimApprovedAmount').value=claim?.approvedAmount||0;document.getElementById('claimStatus').value=claim?.status||'Draft';const amount=Number(document.getElementById('claimAmount').value||0),coverage=Number(document.getElementById('claimCoveragePercent').value||80);document.getElementById('claimPatientPortion').value=Math.round(amount*(1-coverage/100));openCommandModal('insuranceClaimModal');}
      async function clinicSaveClaim(event){event.preventDefault();const status=document.getElementById('insuranceClaimStatus'),claimId=document.getElementById('claimId').value,billId=document.getElementById('claimBillId').value,bill=clinicBillingRows.find(item=>String(item.id)===String(billId)),files=Array.from(document.getElementById('claimDocuments').files||[]),claim={institutionId:clinicInstitutionId(),billId,patientId:bill?.patientId||null,patientName:bill?.patientName||'',claimNumber:`CLM-${Date.now().toString().slice(-8)}`,provider:document.getElementById('claimProvider').value.trim(),policyNumber:document.getElementById('claimPolicyNumber').value.trim(),coveragePercent:Number(document.getElementById('claimCoveragePercent').value||0),copayPercent:Number(document.getElementById('claimCopayPercent').value||0),claimAmount:Number(document.getElementById('claimAmount').value||0),patientPortion:Number(document.getElementById('claimPatientPortion').value||0),approvedAmount:Number(document.getElementById('claimApprovedAmount').value||0),status:document.getElementById('claimStatus').value,notes:document.getElementById('claimNotes').value.trim(),documents:files.map(file=>file.name),updatedAt:new Date().toISOString(),createdAt:new Date().toISOString(),createdBy:currentUser.uid};if(!claim.provider||!claim.policyNumber){status.textContent='Provider and policy number are required.';return;}try{if(navigator.onLine&&storage){claim.documents=[];for(const file of files){const ref=storageRef(storage,`clinic-claims/${claim.institutionId}/${Date.now()}-${file.name.replace(/[^a-z0-9._-]/gi,'_')}`);await uploadBytesResumable(ref,file);claim.documents.push(await getDownloadURL(ref));}}if(!navigator.onLine)await Offline.queueClinicClaim({...claim,localId:claimId||undefined});else if(claimId){delete claim.createdAt;await updateDoc(doc(db,'clinic_insurance_claims',claimId),claim);}else{const ref=await addDoc(collection(db,'clinic_insurance_claims'),claim);claim.id=ref.id;}closeCommandModal('insuranceClaimModal');await clinicLoadBillingData();showNotification(navigator.onLine?'Insurance claim saved':'Insurance claim queued offline','success');if(document.getElementById('billingModal').classList.contains('show')){clinicBillingTab='claims';clinicRenderBillingTab();}}catch(error){status.textContent=error.message||'Unable to save claim.';}}
-     async function loadPatientBilling(){const list=document.getElementById('patientBillingList');if(!list)return;const patientId=currentUser.uid;const rows=navigator.onLine?await getDocs(query(collection(db,'clinic_billing'),where('patientId','==',patientId),limit(100))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]):(await Offline?.listClinicBilling?.(clinicInstitutionId())||[]).filter(item=>item.patientId===patientId);clinicBillingRows=rows;list.innerHTML=clinicBillsTable(rows,'No bills are available.');clinicWireBillActions(list);}
+      async function loadPatientBilling(){
+          const list=document.getElementById('patientBillingList');if(!list)return;
+          const patientId=currentUser.uid;
+          const rows=navigator.onLine?await getDocs(query(collection(db,'clinic_billing'),where('patientId','==',patientId),limit(100))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]):(await Offline?.listClinicBilling?.(clinicInstitutionId())||[]).filter(item=>item.patientId===patientId);
+          clinicBillingRows=rows;list.innerHTML=clinicBillsTable(rows,'No bills are available.');clinicWireBillActions(list);
+          const cacheKey=`apshule-payment-history-${patientId}`;let history=[];
+          if(navigator.onLine)history=await getDocs(query(collection(db,'payment_transactions'),where('clientId','==',patientId),limit(100))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]);
+          else{try{history=JSON.parse(localStorage.getItem(cacheKey)||'[]');}catch(_){history=[];}}
+          if(navigator.onLine&&history.length)try{localStorage.setItem(cacheKey,JSON.stringify(history.slice(0,100)));}catch(_){}
+          const historyHtml=history.length?history.sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||''))).map(row=>`<div class="clinic-list-card"><span>${clinicStep2Esc(row.reference||row.id)} · ${clinicStep2Esc(row.sector||'Payment')}<br><small>${clinicStep2Date(row.createdAt)} · ${clinicStep2Esc(row.status||'pending')}</small></span><strong>${clinicStep2Money(row.amountPaid||0)}</strong></div>`).join(''):'<div class="clinic-empty">No online payments recorded.</div>';
+          const target=document.getElementById('patientOnlinePaymentHistory');if(target)target.innerHTML=`<h3>Online payment history${navigator.onLine?'':' (cached)'}</h3>${historyHtml}`;
+      }
      /* TASK 11 STEP 3: clinic admin dashboard, reports, analytics, staff, settings */
      let clinicStep3Data={patients:[],appointments:[],visits:[],prescriptions:[],inventory:[],bills:[],payments:[],claims:[],staff:[],accessAudit:[],branches:[]},clinicStep3ReportTab='financial',clinicStep3CurrentReport=null,clinicStep3Charts={};
      const clinicAdminOnly=()=>currentUser?.role==='clinic_admin';
@@ -15929,6 +15941,353 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+/* TASK 12 STEP 1: Yo! payment foundation, beneficiary management, and client collection flow */
+(function initTask12Payments() {
+    const state = { feePercentage: 5, feeFixed: 0, unsubscribe: null, wrapped: false };
+    const money = value => `UGX ${Number(value || 0).toLocaleString()}`;
+    const dateText = value => value ? new Date(value).toLocaleString() : '—';
+    const task12Error = error => error?.message || 'Payment service unavailable. Try again when connected.';
+
+    async function api(path, options = {}) {
+        if (!auth?.currentUser) throw new Error('Please sign in before making a payment.');
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch(path, {
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...(options.headers || {}), Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false && data.error) throw new Error(data.error || `Request failed (${response.status})`);
+        return data;
+    }
+
+    function feeFor(amount) {
+        return Math.max(0, Math.round(Number(amount || 0) * Number(state.feePercentage || 0) / 100 + Number(state.feeFixed || 0)));
+    }
+
+    function renderFeeSummary() {
+        const amount = Number(document.getElementById('clientPaymentAmount')?.value || 0);
+        const fee = feeFor(amount), total = amount + fee, target = document.getElementById('clientPaymentFeeSummary');
+        if (target) target.innerHTML = `<div><strong>${money(fee)}</strong><span>Service fee (${Number(state.feePercentage || 0)}%)</span></div><div><strong>${money(total)}</strong><span>Total to pay</span></div>`;
+    }
+
+    async function loadPublicPaymentSettings() {
+        try {
+            const snap = await getDoc(doc(db, 'payment_settings', 'global'));
+            if (snap.exists()) {
+                const values = snap.data() || {};
+                state.feePercentage = Number(values.serviceFeePercentage ?? state.feePercentage);
+                state.feeFixed = Number(values.serviceFeeFixed ?? state.feeFixed);
+            }
+        } catch (_) {
+            // The default fee remains visible when settings are unavailable.
+        }
+        renderFeeSummary();
+    }
+
+    function closePaymentListener() {
+        if (typeof state.unsubscribe === 'function') state.unsubscribe();
+        state.unsubscribe = null;
+    }
+
+    function renderPaymentStatus(transaction) {
+        const status = document.getElementById('clientPaymentStatus');
+        const receipt = document.getElementById('clientPaymentReceipt');
+        const submit = document.getElementById('clientPaymentSubmit');
+        if (!transaction) return;
+        const key = String(transaction.status || 'pending').toLowerCase();
+        const messages = {
+            pending: '📱 Check your phone for the PIN prompt. Waiting for confirmation…',
+            completed: '✅ Payment confirmed. Your balance is being updated.',
+            disbursed: '✅ Payment confirmed and disbursement queued.',
+            failed: '❌ Payment failed. Check your balance and try again.'
+        };
+        if (status) status.textContent = messages[key] || `Payment status: ${transaction.status}`;
+        if (submit) submit.disabled = ['pending', 'completed', 'disbursed'].includes(key);
+        if (receipt && ['completed', 'disbursed', 'failed'].includes(key)) {
+            receipt.hidden = false;
+            receipt.innerHTML = `<strong>${messages[key] || 'Payment updated'}</strong><p>Reference: ${escHtml(transaction.reference || transaction.id || '—')}<br>Amount: ${escHtml(money(transaction.amountPaid || transaction.amount || 0))}<br>Updated: ${escHtml(dateText(transaction.paymentDate || transaction.updatedAt || transaction.createdAt))}</p>`;
+        }
+    }
+
+    async function openClientPayment(options = {}) {
+        if (!currentUser?.uid) {
+            showNotification('Sign in to make a payment.', 'error');
+            return;
+        }
+        closePaymentListener();
+        const total = Math.max(0, Number(options.totalAmount || 0));
+        const paid = Math.max(0, Number(options.alreadyPaid || 0));
+        const balance = Math.max(0, total - paid);
+        if (!options.institutionId || !options.billReference || !total || !balance) {
+            showNotification('A valid outstanding bill, loan, or invoice is required before payment.', 'error');
+            return;
+        }
+        document.getElementById('clientPaymentInstitutionId').value = options.institutionId;
+        document.getElementById('clientPaymentSector').value = options.sector || 'Clinic';
+        document.getElementById('clientPaymentBillReference').value = options.billReference;
+        document.getElementById('clientPaymentTotalAmount').value = total;
+        document.getElementById('clientPaymentExistingPaid').value = paid;
+        document.getElementById('clientPaymentAmount').value = balance;
+        document.getElementById('clientPaymentPhone').value = options.clientPhone || currentUser.phone || '';
+        document.getElementById('clientPaymentSummary').innerHTML = `<strong>Payment to: ${escHtml(options.institutionName || options.institutionId)}</strong><br>Reference: ${escHtml(options.billReference)} · Total: ${escHtml(money(total))} · Already paid: ${escHtml(money(paid))} · Balance: ${escHtml(money(balance))}`;
+        document.getElementById('clientPaymentStatus').textContent = '';
+        document.getElementById('clientPaymentReceipt').hidden = true;
+        document.getElementById('clientPaymentSubmit').disabled = !navigator.onLine;
+        document.getElementById('clientPaymentOfflineNote').hidden = navigator.onLine;
+        document.querySelectorAll('[data-payment-quick]').forEach(button => button.onclick = () => {
+            const value = button.dataset.paymentQuick === 'half' ? Math.max(1, Math.ceil(balance / 2)) : button.dataset.paymentQuick === 'full' ? balance : '';
+            document.getElementById('clientPaymentAmount').value = value;
+            renderFeeSummary();
+        });
+        document.getElementById('clientPaymentAmount').oninput = renderFeeSummary;
+        document.getElementById('clientPaymentMethod').onchange = renderFeeSummary;
+        await loadPublicPaymentSettings();
+        openCommandModal('clientPaymentModal');
+    }
+
+    async function submitClientPayment(event) {
+        event.preventDefault();
+        const status = document.getElementById('clientPaymentStatus');
+        if (!navigator.onLine) {
+            if (status) status.textContent = '⚠️ Payment requires internet connection.';
+            return;
+        }
+        const amount = Number(document.getElementById('clientPaymentAmount').value || 0);
+        const totalAmount = Number(document.getElementById('clientPaymentTotalAmount').value || 0);
+        const alreadyPaid = Number(document.getElementById('clientPaymentExistingPaid').value || 0);
+        const balance = Math.max(0, totalAmount - alreadyPaid);
+        const clientPhone = document.getElementById('clientPaymentPhone').value.trim();
+        if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
+            if (status) status.textContent = 'Enter an amount greater than zero and no more than the outstanding balance.';
+            return;
+        }
+        if (!clientPhone) {
+            if (status) status.textContent = 'Enter the mobile-money phone number.';
+            return;
+        }
+        const button = document.getElementById('clientPaymentSubmit');
+        if (button) button.disabled = true;
+        if (status) status.textContent = 'Starting payment…';
+        try {
+            const result = await api('/api/payments/initiate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    clientId: currentUser.uid,
+                    clientName: currentUser.name || currentUser.email || 'Client',
+                    clientPhone,
+                    institutionId: document.getElementById('clientPaymentInstitutionId').value,
+                    sector: document.getElementById('clientPaymentSector').value,
+                    billReference: document.getElementById('clientPaymentBillReference').value,
+                    totalAmount,
+                    amountPaid: amount,
+                    paymentMethod: document.getElementById('clientPaymentMethod').value
+                })
+            });
+            renderPaymentStatus(result.transaction || { status: 'pending', reference: result.reference, amountPaid: amount });
+            if (result.transactionId && db) {
+                state.unsubscribe = onSnapshot(doc(db, 'payment_transactions', result.transactionId), snap => {
+                    if (snap.exists()) renderPaymentStatus({ id: snap.id, ...snap.data() });
+                });
+            }
+        } catch (error) {
+            if (button) button.disabled = false;
+            if (status) status.textContent = task12Error(error);
+        }
+    }
+
+    function addClinicOnlinePayButton() {
+        if (typeof clinicBillRow !== 'function' || window._task12ClinicBillWrapped) return;
+        window._task12ClinicBillWrapped = true;
+        const originalRow = clinicBillRow;
+        clinicBillRow = function (bill, actions = true) {
+            const html = originalRow(bill, actions);
+            if (!actions || !bill.patientId || Number(bill.balanceAmount || 0) <= 0) return html;
+            return html.replace('</td></tr>', `<button class="clinic-chip" data-bill-online-pay="${clinicStep2Esc(bill.id)}">Pay online</button></td></tr>`);
+        };
+        const originalWire = clinicWireBillActions;
+        clinicWireBillActions = function (container) {
+            originalWire(container);
+            container.querySelectorAll('[data-bill-online-pay]').forEach(button => button.onclick = async () => {
+                const bill = clinicBillingRows.find(row => String(row.id) === String(button.dataset.billOnlinePay));
+                if (!bill) return;
+                const institution = await getDoc(doc(db, 'institutions', bill.institutionId)).catch(() => null);
+                openClientPayment({ institutionId: bill.institutionId, institutionName: institution?.exists() ? institution.data().name : bill.institutionId, sector: 'Clinic', billReference: bill.id, totalAmount: bill.totalAmount, alreadyPaid: bill.paidAmount, clientPhone: currentUser.phone });
+            });
+        };
+    }
+
+    function yoSettingsMarkup() {
+        if (document.getElementById('task12YoPaymentsSection')) return;
+        const body = document.getElementById('commandPlatformSettingsBody');
+        if (!body) return;
+        body.insertAdjacentHTML('beforeend', `<section id="task12YoPaymentsSection" class="command-settings-section"><h3>💳 Yo! Payments setup</h3><p class="command-tabs-note">Credentials and RSA keys are managed as server secrets. They are never rendered or saved in this browser form.</p><div class="command-security-row"><span>Status</span><strong id="task12YoStatus">Checking…</strong></div><div class="two-col"><label>Mode<select id="task12YoMode"><option value="sandbox">Sandbox (testing)</option><option value="production">Production (live)</option></select></label><label>Service fee (%)<input id="task12YoFee" type="number" min="0" max="100" step="0.01" value="5"></label><label>Production API URL<input id="task12YoProductionUrl" readonly value="https://paymentsapi1.yo.co.ug/ybs/task.php"></label><label>Sandbox API URL<input id="task12YoSandboxUrl" readonly value="https://sandbox.yo.co.ug/services/yopaymentsdev/task.php"></label><label>IPN callback URL<input id="task12YoIpnUrl" readonly></label><label>Failure callback URL<input id="task12YoFailureUrl" readonly></label></div><div class="command-toolbar"><button id="task12YoTestBtn" class="command-secondary-btn" type="button">🔌 Test connection</button><button id="task12YoSandboxBtn" class="command-secondary-btn" type="button">🌱 Enable sandbox mode</button><button id="task12YoSaveBtn" class="command-primary-btn" type="button">💾 Save configuration</button></div><div id="task12YoStatusMessage" class="command-tabs-note" aria-live="polite"></div><p class="command-tabs-note">Provide <code>YO_API_USERNAME</code>, <code>YO_API_PASSWORD</code>, and <code>YO_API_PUBLIC_KEY</code> through workspace secrets before testing or collecting real payments.</p></section>`);
+        document.getElementById('task12YoSaveBtn')?.addEventListener('click', task12SaveYoConfig);
+        document.getElementById('task12YoTestBtn')?.addEventListener('click', task12TestYoConfig);
+        document.getElementById('task12YoSandboxBtn')?.addEventListener('click', () => { document.getElementById('task12YoMode').value = 'sandbox'; task12SaveYoConfig(); });
+    }
+
+    async function loadYoConfigPanel() {
+        yoSettingsMarkup();
+        try {
+            const data = await api('/api/payments/config/status');
+            document.getElementById('task12YoStatus').textContent = data.configured ? '✅ Configured' : '⚠️ Not configured';
+            document.getElementById('task12YoMode').value = data.mode || 'sandbox';
+            document.getElementById('task12YoFee').value = Number(data.serviceFeePercentage ?? 5);
+            document.getElementById('task12YoProductionUrl').value = data.productionUrl || '';
+            document.getElementById('task12YoSandboxUrl').value = data.sandboxUrl || '';
+            document.getElementById('task12YoIpnUrl').value = data.ipnUrl || '';
+            document.getElementById('task12YoFailureUrl').value = data.failureUrl || '';
+        } catch (error) {
+            const status = document.getElementById('task12YoStatus');
+            if (status) status.textContent = '⚠️ Unable to check server';
+            const message = document.getElementById('task12YoStatusMessage');
+            if (message) message.textContent = task12Error(error);
+        }
+    }
+
+    async function task12SaveYoConfig() {
+        const message = document.getElementById('task12YoStatusMessage');
+        if (message) message.textContent = 'Saving configuration…';
+        try {
+            const data = await api('/api/payments/config', { method: 'POST', body: JSON.stringify({ mode: document.getElementById('task12YoMode').value, serviceFeePercentage: Number(document.getElementById('task12YoFee').value || 0) }) });
+            if (message) message.textContent = '✅ Yo! Payments configuration saved.';
+            if (data.mode) document.getElementById('task12YoMode').value = data.mode;
+            await loadYoConfigPanel();
+            await logSuperAdminAction('save_yo_payments_configuration', { mode: data.mode });
+        } catch (error) {
+            if (message) message.textContent = task12Error(error);
+        }
+    }
+
+    async function task12TestYoConfig() {
+        const message = document.getElementById('task12YoStatusMessage');
+        if (message) message.textContent = 'Testing Yo! connection…';
+        try {
+            const data = await api('/api/payments/config/test', { method: 'POST', body: JSON.stringify({ mode: document.getElementById('task12YoMode').value }) });
+            if (message) message.textContent = `✅ Yo! connection responded${data.status ? `: ${data.status}` : '.'}`;
+        } catch (error) {
+            if (message) message.textContent = task12Error(error);
+        }
+    }
+
+    async function renderLivePaymentsTab(tab, target) {
+        const rows = await commandLoad('payment_transactions', 300);
+        const today = new Date().toISOString().slice(0, 10);
+        const todayRows = rows.filter(row => String(row.paymentDate || row.createdAt || '').slice(0, 10) === today);
+        const completed = todayRows.filter(row => ['completed', 'disbursed'].includes(String(row.status).toLowerCase()));
+        if (tab === 'overview') {
+            target.innerHTML = commandModuleCard('💳 Live payments overview', `<div class="command-stats-grid"><div class="command-stat-card"><strong class="stat-value">${todayRows.length}</strong><span class="stat-label">Payments today</span></div><div class="command-stat-card"><strong class="stat-value">${money(completed.reduce((sum, row) => sum + Number(row.amountPaid || 0), 0))}</strong><span class="stat-label">Collected today</span></div><div class="command-stat-card"><strong class="stat-value">${money(completed.reduce((sum, row) => sum + Number(row.fee || 0), 0))}</strong><span class="stat-label">Fees earned</span></div><div class="command-stat-card"><strong class="stat-value">${todayRows.filter(row => row.status === 'pending').length}</strong><span class="stat-label">Pending</span></div><div class="command-stat-card"><strong class="stat-value">${todayRows.filter(row => row.status === 'failed').length}</strong><span class="stat-label">Failed</span></div></div><h4 style="color:#4B2E9E;margin:18px 0 8px;">Recent transactions</h4>${commandTable(['Reference','Client','Sector','Amount','Status','Date'], rows.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0, 20).map(row => commandRow([escHtml(row.reference || row.id), escHtml(row.clientName || row.clientId || '—'), escHtml(row.sector || '—'), commandFormatMoney(row.amountPaid || 0), escHtml(row.status || 'pending'), escHtml(row.createdAt ? new Date(row.createdAt).toLocaleString() : '—')])), 'No Yo! transactions recorded yet.')}`, '<button class="command-secondary-btn" id="task12ExportPaymentsBtn" type="button">📥 Export today</button>');
+            document.getElementById('task12ExportPaymentsBtn')?.addEventListener('click', () => task12ExportTransactions(todayRows));
+            return;
+        }
+        if (tab === 'transactions') {
+            target.innerHTML = commandModuleCard('💳 Live payment transactions', `<div class="command-toolbar"><input id="task12PaymentSearch" type="search" placeholder="Search reference, client, phone…"><select id="task12PaymentStatus"><option value="">All statuses</option><option>pending</option><option>completed</option><option>failed</option><option>disbursed</option></select></div><div id="task12PaymentRows">${task12PaymentRows(rows)}</div>`);
+            const rerender = () => { const value = (document.getElementById('task12PaymentSearch')?.value || '').toLowerCase(); const status = document.getElementById('task12PaymentStatus')?.value || ''; document.getElementById('task12PaymentRows').innerHTML = task12PaymentRows(rows.filter(row => (!status || row.status === status) && (!value || `${row.reference} ${row.clientName} ${row.clientPhone} ${row.sector}`.toLowerCase().includes(value)))); };
+            document.getElementById('task12PaymentSearch')?.addEventListener('input', rerender);
+            document.getElementById('task12PaymentStatus')?.addEventListener('change', rerender);
+            return;
+        }
+        return false;
+    }
+
+    function task12PaymentRows(rows) {
+        return commandTable(['Reference','Client','Institution','Method','Amount','Status','Date'], rows.sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(row => commandRow([escHtml(row.reference || row.id), escHtml(row.clientName || row.clientId || '—'), escHtml(row.institutionId || '—'), escHtml(row.paymentMethod || '—'), commandFormatMoney(row.amountPaid || 0), escHtml(row.status || 'pending'), escHtml(row.createdAt ? new Date(row.createdAt).toLocaleString() : '—')])), 'No payment transactions found.');
+    }
+
+    function task12ExportTransactions(rows) {
+        const csv = [['Reference','Client','Institution','Sector','Amount','Fee','Status','Date'], ...rows.map(row => [row.reference || row.id, row.clientName || row.clientId, row.institutionId, row.sector, row.amountPaid || 0, row.fee || 0, row.status, row.createdAt || ''])].map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), link = document.createElement('a'); link.href = url; link.download = `apshule-payments-${new Date().toISOString().slice(0, 10)}.csv`; link.click(); URL.revokeObjectURL(url);
+    }
+
+    async function renderBeneficiariesTab(target) {
+        const [rows, institutions] = await Promise.all([commandLoad('institution_beneficiaries', 300), commandLoad('institutions', 300)]);
+        const institutionMap = new Map(institutions.map(row => [row.id, row]));
+        target.innerHTML = commandModuleCard('🏦 Institution beneficiaries', `<div class="command-toolbar"><input id="task12BeneficiarySearch" type="search" placeholder="Search institution, account, contact…"><select id="task12BeneficiaryType"><option value="">All types</option><option>Yo Account</option><option>MobileMoney</option><option>Bank</option></select><button id="task12AddBeneficiaryBtn" class="command-primary-btn" type="button">＋ Add beneficiary</button></div><div id="task12BeneficiaryFormWrap" hidden></div><div id="task12BeneficiaryRows">${task12BeneficiaryRows(rows, institutionMap)}</div>`);
+        const rerender = () => { const value = (document.getElementById('task12BeneficiarySearch')?.value || '').toLowerCase(); const type = document.getElementById('task12BeneficiaryType')?.value || ''; document.getElementById('task12BeneficiaryRows').innerHTML = task12BeneficiaryRows(rows.filter(row => (!type || row.beneficiaryType === type) && (!value || `${institutionMap.get(row.institutionId)?.name || row.institutionName} ${row.beneficiaryAccount} ${row.contactPerson} ${row.contactPhone}`.toLowerCase().includes(value))), institutionMap); };
+        document.getElementById('task12BeneficiarySearch')?.addEventListener('input', rerender);
+        document.getElementById('task12BeneficiaryType')?.addEventListener('change', rerender);
+        document.getElementById('task12AddBeneficiaryBtn')?.addEventListener('click', () => task12BeneficiaryForm(null, institutions));
+        target.querySelector('#task12BeneficiaryRows')?.addEventListener('click', event => {
+            const edit = event.target.closest('[data-beneficiary-edit]'), deactivate = event.target.closest('[data-beneficiary-deactivate]');
+            if (edit) task12BeneficiaryForm(rows.find(row => row.id === edit.dataset.beneficiaryEdit), institutions);
+            if (deactivate) task12DeactivateBeneficiary(deactivate.dataset.beneficiaryDeactivate);
+        });
+    }
+
+    function task12BeneficiaryRows(rows, institutions) {
+        return rows.length ? rows.map(row => `<div class="command-list-card"><div><h4>🏦 ${escHtml(institutions.get(row.institutionId)?.name || row.institutionName || row.institutionId || 'Institution')}</h4><p>${escHtml(row.beneficiaryType || 'MobileMoney')} · ${escHtml(row.beneficiaryAccount || '—')} · ${escHtml(row.contactPerson || row.contactPhone || 'No contact')} · ${row.isActive === false ? 'Inactive' : '✅ Active'}</p></div><div class="command-list-actions"><button data-beneficiary-edit="${escHtml(row.id)}" type="button">Edit</button><button data-beneficiary-deactivate="${escHtml(row.id)}" type="button">${row.isActive === false ? 'Activate' : 'Deactivate'}</button></div></div>`).join('') : '<div class="command-activity-item">No institution beneficiaries registered yet.</div>';
+    }
+
+    function task12BeneficiaryForm(existing, institutions) {
+        const wrap = document.getElementById('task12BeneficiaryFormWrap');
+        if (!wrap) return;
+        const item = existing || {};
+        wrap.hidden = false;
+        wrap.innerHTML = `<form id="task12BeneficiaryForm" class="command-panel-card command-form"><h4 style="color:#4B2E9E;">${existing ? 'Edit' : 'Add'} beneficiary</h4><div class="two-col"><label>Institution *<select id="task12BeneficiaryInstitution" required>${institutions.map(row => `<option value="${escHtml(row.id)}" ${row.id === item.institutionId ? 'selected' : ''}>${escHtml(row.name || row.id)}</option>`).join('')}</select></label><label>Contact person<input id="task12BeneficiaryContact" value="${escHtml(item.contactPerson || '')}"></label><label>Contact phone *<input id="task12BeneficiaryPhone" type="tel" required value="${escHtml(item.contactPhone || '')}"></label><label>Contact email<input id="task12BeneficiaryEmail" type="email" value="${escHtml(item.contactEmail || '')}"></label><label>Beneficiary type<select id="task12BeneficiaryKind"><option ${item.beneficiaryType === 'Yo Account' ? 'selected' : ''}>Yo Account</option><option ${item.beneficiaryType === 'MobileMoney' ? 'selected' : ''}>MobileMoney</option><option ${item.beneficiaryType === 'Bank' ? 'selected' : ''}>Bank</option></select></label><label>Account number *<input id="task12BeneficiaryAccount" required value="${escHtml(item.beneficiaryAccount || '')}"></label><label>Bank name<input id="task12BeneficiaryBank" value="${escHtml(item.bankName || '')}"></label><label>Bank account name<input id="task12BeneficiaryAccountName" value="${escHtml(item.bankAccountName || '')}"></label><label>Bank branch<input id="task12BeneficiaryBranch" value="${escHtml(item.bankBranch || '')}"></label><label>API bank identifier<input id="task12BeneficiaryApiBank" value="${escHtml(item.apiBankIdentifier || '')}"></label></div><div class="command-toolbar"><button class="command-secondary-btn" id="task12CancelBeneficiaryBtn" type="button">Cancel</button><button class="command-secondary-btn" id="task12VerifyBeneficiaryBtn" type="button">🔌 Test connection</button><button class="command-primary-btn" type="submit">Save beneficiary</button></div><div id="task12BeneficiaryStatus" class="command-tabs-note" aria-live="polite"></div></form>`;
+        document.getElementById('task12CancelBeneficiaryBtn')?.addEventListener('click', () => { wrap.hidden = true; wrap.innerHTML = ''; });
+        document.getElementById('task12VerifyBeneficiaryBtn')?.addEventListener('click', task12VerifyBeneficiary);
+        document.getElementById('task12BeneficiaryForm')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const status = document.getElementById('task12BeneficiaryStatus'); if (status) status.textContent = 'Saving…';
+            const payload = { institutionId: document.getElementById('task12BeneficiaryInstitution').value, institutionName: institutions.find(row => row.id === document.getElementById('task12BeneficiaryInstitution').value)?.name || '', contactPerson: document.getElementById('task12BeneficiaryContact').value.trim(), contactPhone: document.getElementById('task12BeneficiaryPhone').value.trim(), contactEmail: document.getElementById('task12BeneficiaryEmail').value.trim(), beneficiaryType: document.getElementById('task12BeneficiaryKind').value, beneficiaryAccount: document.getElementById('task12BeneficiaryAccount').value.trim(), bankName: document.getElementById('task12BeneficiaryBank').value.trim(), bankAccountName: document.getElementById('task12BeneficiaryAccountName').value.trim(), bankBranch: document.getElementById('task12BeneficiaryBranch').value.trim(), apiBankIdentifier: document.getElementById('task12BeneficiaryApiBank').value.trim(), isActive: existing?.isActive !== false, createdBy: existing?.createdBy || currentUser.uid, createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+            try { if (existing) await updateDoc(doc(db, 'institution_beneficiaries', existing.id), payload); else await addDoc(collection(db, 'institution_beneficiaries'), payload); if (status) status.textContent = '✅ Beneficiary saved'; await renderBeneficiariesTab(document.getElementById('commandModuleContent')); } catch (error) { if (status) status.textContent = task12Error(error); }
+        });
+    }
+
+    async function task12VerifyBeneficiary() {
+        const status = document.getElementById('task12BeneficiaryStatus'); if (status) status.textContent = 'Checking account with Yo!…';
+        try {
+            const data = await api('/api/payments/beneficiaries/verify', { method: 'POST', body: JSON.stringify({ account: document.getElementById('task12BeneficiaryAccount').value.trim(), beneficiaryType: document.getElementById('task12BeneficiaryKind').value }) });
+            if (status) status.textContent = `✅ Account response received${data.status ? `: ${data.status}` : '.'}`;
+        } catch (error) { if (status) status.textContent = task12Error(error); }
+    }
+
+    async function task12DeactivateBeneficiary(id) {
+        const existing = await getDoc(doc(db, 'institution_beneficiaries', id)).catch(() => null);
+        if (!existing?.exists()) return;
+        const next = existing.data().isActive === false;
+        await updateDoc(doc(db, 'institution_beneficiaries', id), { isActive: next, updatedAt: new Date().toISOString(), updatedBy: currentUser.uid }).catch(error => showNotification(task12Error(error), 'error'));
+        loadCommandModule('payments', 'beneficiaries');
+    }
+
+    function wrapTask12CommandFunctions() {
+        if (state.wrapped) return;
+        state.wrapped = true;
+        if (typeof loadCommandSettings === 'function') {
+            const baseSettings = loadCommandSettings;
+            loadCommandSettings = async function () { await baseSettings(); await loadYoConfigPanel(); };
+        }
+        if (typeof renderCommandPaymentsTab === 'function') {
+            const basePayments = renderCommandPaymentsTab;
+            renderCommandPaymentsTab = async function (tab, target) {
+                if (tab === 'beneficiaries') return renderBeneficiariesTab(target);
+                if (tab === 'overview' || tab === 'transactions') return renderLivePaymentsTab(tab, target);
+                return basePayments(tab, target);
+            };
+        }
+        addClinicOnlinePayButton();
+        const borrowerPayButton = document.getElementById('mfiBorrowerPayBtn');
+        borrowerPayButton?.addEventListener('click', () => {
+            const customer = window._mfiBorrowerCustomer || {};
+            const outstanding = Number(customer.outstandingBalance ?? customer.balanceRemaining ?? customer.loanBalance ?? 0);
+            const reference = customer.loanId || customer.loanReference || customer.id || currentUser.uid;
+            const status = document.getElementById('mfiBorrowerPaymentStatus');
+            if (!outstanding) {
+                if (status) status.textContent = 'Your MFI profile does not contain an outstanding loan balance yet.';
+                return;
+            }
+            openClientPayment({ institutionId: customer.institutionId || mfiInstitutionId(), institutionName: mfiInstitution?.name || 'MFI', sector: 'MFI', billReference: reference, totalAmount: Number(customer.loanAmount || outstanding), alreadyPaid: Math.max(0, Number(customer.loanAmount || outstanding) - outstanding), clientPhone: currentUser.phone });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        wrapTask12CommandFunctions();
+        document.getElementById('clientPaymentForm')?.addEventListener('submit', submitClientPayment);
+    });
+    window.openClientPayment = openClientPayment;
+    window.task12LoadYoConfigPanel = loadYoConfigPanel;
+})();
 </script>
 <!-- face-api.js — AI face recognition (vladmandic maintained fork) -->
 <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>

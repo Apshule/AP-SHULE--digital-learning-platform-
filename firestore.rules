@@ -166,6 +166,39 @@ service cloud.firestore {
     match /settings/{settingId} {
       allow read, write: if signedIn() && (isSuperAdmin() || settingId == 'about');
     }
+
+    // Task 12 payment records: server webhooks use the service account; clients
+    // can only see their own records or their institution scope.
+    match /payment_transactions/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && (resource.data.clientId == request.auth.uid || resource.data.payerId == request.auth.uid))
+        || (signedIn() && resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+      allow create: if isSuperAdmin() || (signedIn() && (request.resource.data.clientId == request.auth.uid || request.resource.data.payerId == request.auth.uid));
+      allow update, delete: if isSuperAdmin();
+    }
+    match /institution_beneficiaries/{id} {
+      allow read, write: if isSuperAdmin() || (signedIn() && resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+    }
+    match /payment_disbursements/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+      allow create, update, delete: if isSuperAdmin();
+    }
+    match /payment_notifications/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && (resource.data.userId == request.auth.uid || resource.data.recipientId == request.auth.uid));
+      allow create, update, delete: if isSuperAdmin();
+    }
+    match /payment_settings/{id} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /yo_webhook_logs/{id} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+    match /payment_audit_log/{id} {
+      allow read: if isSuperAdmin();
+      allow create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
     match /mfi_collateral_types/{typeId} {
       allow read: if signedIn();
       allow write: if isSuperAdmin();

@@ -8,3 +8,4 @@
 - [Preview build environment](preview-build-environment.md) — Full workspace builds need explicit PORT and BASE_PATH values for the mockup preview.
 - [MFI reporting boundaries](mfi-reporting-boundaries.md) — Director analytics and offline report snapshots are read-only; approvals, borrower edits, and institution-crossing reads stay rule-gated.
 - [IndexedDB version migrations](indexeddb-version-migrations.md) — New offline stores need an explicit versioned upgrade branch, not only an updated initial store list.
+- [Yo payment boundaries](yo-payment-boundaries.md) — Keep Yo credentials, signed callbacks, and balance mutations server-side; clients handle references and status only.
