@@ -1,0 +1,504 @@
+Task 7 — Step 4 of 4: Integration, student/teacher views, and final testing
+
+CONTEXT:
+- Step 1 built Video Studio foundation + Cartoon Studio (Tab 1)
+- Step 2 built AI Auto-Video + Series Mode (Tab 2)
+- Step 3 built Digital Teacher Twin (Tab 3)
+- Now we integrate everything: student views, teacher views, polish, 
+  and full regression testing across Tasks 1-7
+
+GOAL:
+Make Video Studio production-ready:
+- Students see all published videos in a unified video library
+- Teachers see videos relevant to their subject/class
+- Series Mode plays as playlist
+- Cost tracking dashboard for Super Admin
+- Full regression across Tasks 1-7
+- Performance optimized
+
+═══════════════════════════════════════════════════════════════
+PART A: STUDENT VIDEO LIBRARY
+═══════════════════════════════════════════════════════════════
+
+Add a new section to Student Home screen:
+
+LOCATION: BELOW "Learning Materials (PDFs)" dropdown, ABOVE "CBC & UNEB"
+TITLE: "🎬 Video Tutorials"
+
+Content:
+- Search bar: "Search videos by topic or subject"
+- Filter chips: All | Cartoon | AI Auto | Twin | Series
+- Language filter dropdown
+- Subject filter dropdown
+- Video grid/list below
+
+Each video card:
+┌─────────────────────────────────────────┐
+│ [Thumbnail]                              │
+│ Photosynthesis — S2 Biology              │
+│ 🎨 Cartoon · 5 min · Luganda            │
+│ [▶ Play] [📥 Download]                  │
+└─────────────────────────────────────────┘
+
+For Series:
+┌─────────────────────────────────────────┐
+│ [Thumbnail]                              │
+│ Photosynthesis — Full Lesson             │
+│ 📚 Series · 6 parts · 45 min             │
+│ [▶ Play All] [📥 Download All]          │
+│ ▸ Part 1 (8 min)                        │
+│ ▸ Part 2 (8 min)                        │
+│ ... (expandable)                         │
+└─────────────────────────────────────────┘
+
+Data source:
+- Query video_library WHERE:
+  * publishedToSchools is empty OR contains currentUser.schoolId
+  * classLevel matches student's class
+- ORDER BY createdAt DESC
+
+═══════════════════════════════════════════════════════════════
+PART B: TEACHER VIDEO LIBRARY
+═══════════════════════════════════════════════════════════════
+
+Add a section to Teacher Dashboard:
+
+LOCATION: Inside "CBC Teaching Tools" card, below the 6 sub-buttons
+TITLE: "🎬 Video Library"
+
+Content:
+- Filter: My Subject | All Subjects
+- Filter: Class Level (P1-S6)
+- Filter: Language
+- Grid of video cards
+
+Teacher can:
+- Watch any video
+- Assign to students (creates a notification)
+- Download for classroom use (projector mode)
+- See view counts
+
+Add "Assign to Class" button on each card:
+- Opens dialog: select class + optional message
+- Sends notification to all students in that class
+- Adds to student's "Assigned Videos" section
+
+═══════════════════════════════════════════════════════════════
+PART C: SERIES PLAYLIST PLAYER
+═══════════════════════════════════════════════════════════════
+
+Improve video player for Series Mode:
+
+When student taps [▶ Play All] on a series:
+- Open player modal
+- Show current segment (Part 1)
+- Below video: playlist with all 6 segments
+- Current segment highlighted
+- Progress bar across all segments
+
+Player controls:
+- ⏮ Previous Segment
+- ▶ Play/Pause
+- ⏭ Next Segment
+- ▸ Auto-advance to next segment when current ends
+- 📝 Show captions
+
+Auto-advance:
+- When segment ends, wait 3 seconds
+- Show overlay: "Next: Part 2 — Light Reactions" 
+- [▶ Play Now] [Skip for 30s]
+- Auto-play next segment
+
+Progress tracking:
+- Track per segment (as normal videos)
+- When all 6 done → mark series as complete
+- Earn teacher earnings per segment watched
+
+═══════════════════════════════════════════════════════════════
+PART D: ASSIGNED VIDEOS (Student View)
+═══════════════════════════════════════════════════════════════
+
+When teacher assigns a video to a class:
+
+Student sees in Home screen (top of Video Tutorials section):
+
+┌─────────────────────────────────────────┐
+│ 📌 ASSIGNED BY YOUR TEACHER              │
+│                                          │
+│ ▸ [Thumbnail] "Photosynthesis"          │
+│   Assigned by Mr. Mugisha · 2 hours ago │
+│   [▶ Watch Now]                          │
+│                                          │
+│ ▸ [Thumbnail] "Fractions Practice"      │
+│   Assigned by Mrs. Nabirye · 1 day ago  │
+│   [▶ Watch Now]                          │
+└─────────────────────────────────────────┘
+
+Data source:
+- Query assignments collection WHERE classId == student's class
+- ORDER BY assignedAt DESC
+- LIMIT 5
+
+═══════════════════════════════════════════════════════════════
+PART E: COST TRACKING DASHBOARD (Super Admin)
+═══════════════════════════════════════════════════════════════
+
+Add a "💰 Video Cost Dashboard" inside Video Studio modal:
+
+Tab: "📊 Stats"
+
+Content:
+┌─────────────────────────────────────────┐
+│ 📊 VIDEO STUDIO STATS                    │
+│                                          │
+│ THIS MONTH (September 2026)             │
+│ ┌──────────────────────────┐            │
+│ │ Cartoon:    45 videos     │ FREE       │
+│ │ AI Auto:    12 videos     │ UGX 24,000 │
+│ │ Twin:        8 videos     │ UGX 56,000 │
+│ │ TOTAL:      65 videos     │ UGX 80,000 │
+│ └──────────────────────────┘            │
+│                                          │
+│ THIS YEAR                                │
+│ Total videos: 234                       │
+│ Total cost: UGX 280,000                 │
+│                                          │
+│ BREAKDOWN BY MODE                        │
+│ [Pie chart: Cartoon 40%, AI 35%, Twin 25%] │
+│                                          │
+│ TOP CREATORS                             │
+│ 1. Photosynthesis Series (245 views)    │
+│ 2. Fractions in Market (198 views)      │
+│ 3. Water Cycle (152 views)              │
+│                                          │
+│ MONTHLY BUDGET: UGX 100,000             │
+│ Current spend: UGX 80,000 (80%)         │
+│ ▓▓▓▓▓▓▓▓░░  [⚠️ Near limit]            │
+└─────────────────────────────────────────┘
+
+Data source:
+- Query video_generation_stats per month
+- Aggregate from video_studio_projects
+- Calculate costs per mode
+
+═══════════════════════════════════════════════════════════════
+PART F: VIDEO ANALYTICS PER VIDEO
+═══════════════════════════════════════════════════════════════
+
+Each video in Super Admin Library shows analytics when tapped:
+
+Video Detail Modal (id="videoAnalyticsModal"):
+- Video preview (small)
+- Title, subject, class
+- Created by, created date
+- Total views
+- Unique viewers
+- Average completion %
+- Device breakdown (phone/tablet/laptop)
+- Language breakdown (if multilingual)
+- Top watching schools (if published to all)
+- [📥 Download analytics CSV] button
+
+Data source:
+- Query videoCompletions WHERE videoKey matches
+- Aggregate counts
+
+═══════════════════════════════════════════════════════════════
+PART G: VIDEO RECOMMENDATIONS FOR STUDENTS
+═══════════════════════════════════════════════════════════════
+
+Add smart recommendations to Student Home:
+
+Below assigned videos, add:
+
+┌─────────────────────────────────────────┐
+│ ✨ RECOMMENDED FOR YOU                    │
+│                                          │
+│ Based on your weak areas:                │
+│ [Video card 1] [Video card 2] [Video card 3] │
+└─────────────────────────────────────────┘
+
+Logic:
+- Read student's weakAreas array
+- Query video_library WHERE subject IN weakAreas
+- ORDER BY viewsCount DESC
+- Show top 3
+- If no weak areas: show most popular videos overall
+
+═══════════════════════════════════════════════════════════════
+PART H: VIDEO SHARING
+═══════════════════════════════════════════════════════════════
+
+Add share button to each video (student + teacher views):
+
+When tapped:
+- Generate share link: https://appshule.com/#video/{projectId}
+- Uses Web Share API if available
+- Otherwise copies to clipboard
+- Shows "✅ Link copied" toast
+
+When someone opens the share link:
+- If not logged in: prompt login
+- If logged in: opens video directly
+- After watching: "Browse more videos" suggestion
+
+═══════════════════════════════════════════════════════════════
+PART I: OFFLINE DOWNLOAD MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Add "Downloads" tab to Account page:
+
+┌─────────────────────────────────────────┐
+│ 📥 MY DOWNLOADS                          │
+│                                          │
+│ Storage used: 45 MB of 500 MB           │
+│ ▓▓░░░░░░░░ 9%                          │
+│                                          │
+│ Downloaded Videos (8):                  │
+│ ▸ Photosynthesis (Cartoon · 5 min) 3MB │
+│ ▸ Fractions Practice (AI · 8 min) 4MB │
+│ ▸ [Series] Water Cycle (45 min) 18MB  │
+│   (contains 6 segments)                │
+│                                          │
+│ [Clear All Downloads] [Manage Storage] │
+└─────────────────────────────────────────┘
+
+Actions:
+- Individual video: [Delete] to free space
+- Series: expandable to delete specific parts
+- Clear all: requires confirmation
+- Show warning when storage > 80%
+
+Integrates with Task 2's offline system.
+
+═══════════════════════════════════════════════════════════════
+PART J: PERFORMANCE OPTIMIZATION
+═══════════════════════════════════════════════════════════════
+
+Ensure Video Studio performs well:
+
+1. Video library:
+   - Pagination: 20 videos per page
+   - Lazy-load thumbnails
+   - Cache loaded metadata for 5 minutes
+
+2. Series playlist:
+   - Load all segments at once (small metadata)
+   - Stream audio on demand
+   - Preload next segment's audio
+
+3. Analytics:
+   - Aggregate data cached for 10 minutes
+   - Use Firestore aggregation queries
+   - Avoid loading all videoCompletions
+
+4. Cost dashboard:
+   - Query stats collection (already aggregated)
+   - Refresh on modal open
+   - Cache for session
+
+Benchmarks:
+- Video library load: <2 seconds
+- Playlist load: <1 second
+- Analytics dashboard: <3 seconds
+- Cost dashboard: <2 seconds
+
+═══════════════════════════════════════════════════════════════
+PART K: ACCESSIBILITY
+═══════════════════════════════════════════════════════════════
+
+Add:
+1. aria-labels on all video controls
+2. Keyboard navigation:
+   - Space: play/pause
+   - Arrow keys: seek
+   - F: fullscreen
+   - Escape: close
+3. Captions toggle button (visible)
+4. Volume control
+5. Speed control (0.5x to 2x)
+6. Alt text on thumbnails
+
+═══════════════════════════════════════════════════════════════
+PART L: MOBILE OPTIMIZATION
+═══════════════════════════════════════════════════════════════
+
+Video Studio must work on all devices:
+
+1. Phone (<500px):
+   - Full-screen modals
+   - Stacked video cards
+   - Bottom controls
+   - Portrait + landscape video support
+
+2. Tablet (500-900px):
+   - 2-column video grid
+   - Sidebar filters
+
+3. Desktop (>900px):
+   - 3-column video grid
+   - Side filters
+   - Larger preview
+
+Test at 3 breakpoints.
+
+═══════════════════════════════════════════════════════════════
+PART M: FULL REGRESSION TESTING (Tasks 1-7)
+═══════════════════════════════════════════════════════════════
+
+Run this complete regression suite:
+
+TASK 1 — NCDC/UNEB:
+☐ Student CBC & UNEB section works
+☐ Teacher CBC Teaching Tools card shows
+☐ NCDC 10 Modules button
+☐ Super Admin NCDC/UNEB Control
+☐ School Admin NCDC Compliance card
+
+TASK 2 — Offline PWA:
+☐ Offline badge shows
+☐ Offline login works
+☐ Sync button works
+☐ Connection detection works
+
+TASK 3 — Offline Earnings:
+☐ Teacher Offline Earnings Summary
+☐ PDF report downloads
+☐ Super Admin overview
+
+TASK 4 — Project Integrity:
+☐ Student My Projects
+☐ QR code generation
+☐ Teacher verification + viva audio
+☐ Evidence Folder
+☐ Duplicate detection
+
+TASK 5 — Curriculum Linker:
+☐ Search works
+☐ 3-tab detail
+☐ AI activity generation
+☐ Favorites
+
+TASK 6 — NCDC Course:
+☐ Course overview (10 modules)
+☐ Video lessons
+☐ Quiz engine
+☐ Practical uploads
+☐ CPD certificate
+
+TASK 7 — Video Studio:
+☐ Cartoon Studio generates video
+☐ AI Auto-Video generates from topic
+☐ Series Mode splits into segments
+☐ Digital Twin creation (if APIs configured)
+☐ Video Library shows all videos
+☐ Student Video Tutorials section
+☐ Teacher Video Library
+☐ Assigned videos notification
+☐ Cost dashboard
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Verify these composite indexes exist:
+
+1. video_library:
+   - subject + classLevel + createdAt (desc)
+   - publishedToSchools + createdAt (desc)
+
+2. video_studio_projects:
+   - mode + status + createdAt (desc)
+   - createdBy + createdAt (desc)
+
+3. videoCompletions:
+   - videoKey + completedAt (desc)
+   - teacherId + completedAt (desc)
+
+4. teacher_twins:
+   - status + createdAt (desc)
+
+5. assignments:
+   - classId + assignedAt (desc)
+
+Replit should flag any missing indexes.
+
+═══════════════════════════════════════════════════════════════
+PART O: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add clear code comments for:
+   - Video generation pipeline
+   - Series splitting logic
+   - Twin creation flow
+   - Cost calculation
+3. Check for unused imports
+4. Verify no syntax errors
+5. Ensure no memory leaks from video players
+
+═══════════════════════════════════════════════════════════════
+PART P: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 7 feature completeness:
+   - Cartoon Studio ✅/❌
+   - AI Auto-Video ✅/❌
+   - Series Mode ✅/❌
+   - Digital Teacher Twin ✅/❌ (or "not configured")
+   - Video Library ✅/❌
+   - Student Video Tutorials ✅/❌
+   - Teacher Video Library ✅/❌
+   - Assigned Videos ✅/❌
+   - Cost Dashboard ✅/❌
+   - Downloads Management ✅/❌
+
+2. Regression results:
+   - Task 1-6 all pass? ✅/❌
+   - Any bugs found + fixes
+
+3. Performance:
+   - Benchmarks met?
+
+4. Cost estimate for Month 1:
+   - Cartoon Studio: UGX 0
+   - AI Auto-Video: UGX X (if used)
+   - Digital Twin: UGX 73,000/month (if enabled)
+
+5. Recommendations for Task 8:
+   - Prerequisites
+   - Technical debt
+
+If everything passes:
+"Task 7 fully complete — Video Studio with Cartoon, AI Auto-Video, 
+Series Mode, Digital Teacher Twin, student library, teacher library, 
+assigned videos, cost dashboard, and downloads all working. Ready for Task 8."
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-6 or Steps 1-3 of Task 7
+- Do NOT download YouTube videos
+- Do NOT expose API keys
+- Do NOT exceed monthly budget
+- Do NOT lose offline downloads
+- Do NOT break student video tracking
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-L, then run regression (Part M) and report (Part P).
+
+Confirm when done with:
+"Task 7 fully complete — Video Studio ready. Ready for Task 8."
+
+Report:
+- Feature completeness
+- Regression results
+- Performance benchmarks
+- Screenshots: student video library, series playlist, assigned 
+  videos, cost dashboard, downloads management
