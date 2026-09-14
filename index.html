@@ -2167,6 +2167,12 @@
                         <h4>📝 User Feedback</h4>
                         <div id="feedbackAdminList"></div>
                     </div>
+                    <!-- Preference analytics -->
+                    <div id="superadminPreferencesOverview" class="admin-section" style="display:none;border:1.5px solid #4B2E9E22;">
+                        <h4>⚙️ User Preferences Overview</h4>
+                        <p style="font-size:12px;color:#888;margin:0 0 10px;">Aggregated language, connection, and sync preferences. No passwords or private settings are shown.</p>
+                        <div id="preferencesOverviewContent"><div style="color:#999;font-size:13px;">Loading…</div></div>
+                    </div>
 
                     <!-- Video Q&A — all questions from all students, with reply -->
                     <div class="admin-section">
@@ -2875,8 +2881,8 @@
                     <details class="settings-panel">
                         <summary>ℹ️ About &amp; Help</summary>
                         <div class="settings-panel-body">
-                            <div class="settings-pending-row"><span>App version</span><strong>1.0.0</strong></div>
-                            <div class="settings-pending-row"><span>Build</span><strong>2026-09-14</strong></div>
+                            <div class="settings-pending-row"><span>App version</span><strong id="settingsAppVersion">1.0.0</strong></div>
+                            <div class="settings-pending-row"><span>Build / last update</span><strong id="settingsBuildInfo">2026-09-14</strong></div>
                             <div class="settings-help-grid">
                                 <button type="button" data-settings-help="guide">📖 User Guide</button>
                                 <button type="button" data-settings-help="faqs">❓ FAQs</button>
@@ -2900,8 +2906,15 @@
             <div id="settingsFeedbackModal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsFeedbackTitle">
                 <div class="settings-modal-card">
                     <div class="settings-modal-head"><h3 id="settingsFeedbackTitle">Send feedback</h3><button class="settings-modal-close" type="button" data-close-settings-modal>&times;</button></div>
-                    <input id="settingsFeedbackSubject" class="settings-form-field" type="text" placeholder="Subject">
-                    <textarea id="settingsFeedbackDescription" class="settings-form-field" rows="5" placeholder="Tell us what happened or what you would like to see."></textarea>
+                    <input id="settingsFeedbackSubject" class="settings-form-field" type="text" placeholder="Subject / short title" maxlength="120">
+                    <select id="settingsFeedbackCategory" class="settings-form-field" aria-label="Feedback category">
+                        <option value="general">General</option><option value="offline">Offline mode</option><option value="lessons">Lessons and videos</option><option value="account">Account and access</option><option value="payments">Payments</option>
+                    </select>
+                    <select id="settingsFeedbackPriority" class="settings-form-field" aria-label="Feature priority">
+                        <option value="normal">Normal priority</option><option value="high">High priority</option><option value="urgent">Urgent</option>
+                    </select>
+                    <textarea id="settingsFeedbackDescription" class="settings-form-field" rows="5" minlength="20" placeholder="Tell us what happened or what you would like to see (at least 20 characters)."></textarea>
+                    <div id="settingsFeedbackMetadata" style="font-size:11px;color:#777;background:#f7f5ff;padding:8px;border-radius:10px;margin-bottom:8px;"></div>
                     <button id="settingsFeedbackSubmitBtn" type="button" class="settings-secondary-btn" style="width:100%;background:#4B2E9E;color:#fff;">Submit</button>
                 </div>
             </div>
