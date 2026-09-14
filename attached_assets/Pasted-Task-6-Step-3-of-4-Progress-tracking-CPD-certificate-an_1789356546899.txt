@@ -1,0 +1,395 @@
+Task 6 — Step 3 of 4: Progress tracking, CPD certificate, and teacher earnings
+
+CONTEXT:
+- Step 1 created collections: ncdc_course_modules, ncdc_module_lessons, 
+  teacher_retooling_progress, ncdc_cpd_certificates
+- Step 2 built teacher-facing UI (video/PDF/quiz/practical per module)
+- Now we add: aggregated progress tracking, CPD certificate generation, 
+  and tie module completions into teacher earnings
+
+GOAL:
+- Teachers see their overall course progress with CPD point tracking
+- When all 10 modules are completed, they auto-generate a verifiable 
+  CPD certificate (PDF)
+- Every module completion earns a small revenue bonus
+- Super Admin can view course progress across all teachers
+- Certificate is verifiable by QR code
+
+═══════════════════════════════════════════════════════════════
+PART A: EXTEND COURSE_ENROLLMENT DOC
+═══════════════════════════════════════════════════════════════
+
+Extend the course_enrollment doc created in Step 1:
+
+Fields:
+- teacherId
+- enrolledAt
+- modulesCompleted (number, 0-10)
+- totalModules (number, 10)
+- lastActivityAt
+- cpdPointsEarned (number, calculated: modulesCompleted * 2)
+- cpdPointsTotal (number, 20)
+- averageQuizScore (number, 0-100)
+- certificateIssued (boolean, default false)
+- certificateId (string, empty until issued)
+- certificateIssuedAt (timestamp)
+- certificateUrl (string, empty until issued)
+
+Add a helper recalcEnrollment(teacherId):
+1. Query teacher_retooling_progress WHERE teacherId == uid
+2. Count modules with moduleCompleted == true
+3. Compute average quiz score across all quizzes taken
+4. Update course_enrollment with recalculated values
+
+Call recalcEnrollment after each module completion.
+
+═══════════════════════════════════════════════════════════════
+PART B: TEACHER PROGRESS DASHBOARD SECTION
+═══════════════════════════════════════════════════════════════
+
+Add a new card to the Teacher Dashboard:
+
+LOCATION: BELOW the "NCDC 10 Modules Course" button
+CARD TITLE: "📊 My Retooling Progress"
+
+Content:
+┌─────────────────────────────────────────┐
+│ 📊 MY RETOOLING PROGRESS                │
+├─────────────────────────────────────────┤
+│ Modules: 4 of 10                         │
+│ ▓▓▓▓░░░░░░ 40%                          │
+│                                          │
+│ CPD Points: 8 of 20                     │
+│ Average Quiz Score: 82%                 │
+│ Last Activity: 2 days ago               │
+│                                          │
+│ ⏭ Next: Module 5 — Planning             │
+│                                          │
+│ [Continue Course]                        │
+└─────────────────────────────────────────┘
+
+Load data from course_enrollment for currentUser.uid.
+
+If no enrollment yet:
+- Show: "Start the NCDC Retooling Course"
+- [Begin Course] button opens the course modal
+
+═══════════════════════════════════════════════════════════════
+PART C: CPD CERTIFICATE GENERATION
+═══════════════════════════════════════════════════════════════
+
+When teacher completes Module 10 (final module):
+
+1. Trigger automatic certificate generation:
+   - Generate a unique certificateId: 
+     Format: "APSH-CPD-{year}-{teacherId last 6 chars}-{random 4}"
+     Example: "APSH-CPD-2026-A1B2C3-XK7P"
+   - Compute SHA-256 hash of certificateId (for verification)
+   - Generate PDF using jsPDF (already loaded)
+
+2. PDF layout:
+   - Landscape orientation, A4 size
+   - Border: purple gradient
+   - Header: "APSHULE DIGITAL LEARNING PLATFORM"
+   - Title: "Certificate of Professional Development"
+   - Subtitle: "NCDC Teacher Retooling Program"
+   - Body: "This certifies that"
+   - Teacher name (large, bold)
+   - "has successfully completed the 10-module NCDC-aligned teacher retooling course, earning 20 CPD points."
+   - List of 10 module names (small, two columns)
+   - Completion date
+   - Certificate ID (small, bottom left)
+   - QR code (bottom right) — encodes verification URL
+   - Signature line: "Wasswa Fred, Operations Supervisor"
+   - AppShule logo top left
+
+3. Upload to Firebase Storage:
+   - Path: cpd_certificates/{teacherId}/certificate.pdf
+   - Get download URL
+
+4. Save to ncdc_cpd_certificates:
+   {
+     teacherId, teacherName, teacherEmail,
+     issuedAt: serverTimestamp(),
+     cpdPoints: 20,
+     certificateUrl,
+     certificateId,
+     certificateHash, // SHA-256
+     verified: true
+   }
+
+5. Update course_enrollment:
+   {
+     certificateIssued: true,
+     certificateId,
+     certificateIssuedAt: serverTimestamp(),
+     certificateUrl
+   }
+
+6. Show celebration modal to teacher:
+   "🏆 Congratulations!
+    You've completed all 10 modules!
+    Your CPD Certificate (20 points) is ready.
+    [📥 Download Certificate] [Share]"
+
+═══════════════════════════════════════════════════════════════
+PART D: CERTIFICATE VERIFICATION PAGE
+═══════════════════════════════════════════════════════════════
+
+Add a public verification page (accessible without login):
+
+When anyone scans the certificate QR, it opens:
+https://appshule.com/verify/{certificateId}
+
+Behavior:
+1. Parse certificateId from URL
+2. Look up in ncdc_cpd_certificates collection
+3. If found AND verified == true:
+   Show:
+   ┌─────────────────────────────────────┐
+   │ ✅ VALID CERTIFICATE                │
+   │                                      │
+   │ Teacher: {name}                     │
+   │ Certificate: {certificateId}        │
+   │ Issued: {date}                      │
+   │ CPD Points: 20                      │
+   │ Status: Verified                    │
+   └─────────────────────────────────────┘
+4. If not found or unverified:
+   Show: "❌ Invalid or expired certificate"
+
+Add this as a route inside the app (use hash routing since we're on GitHub Pages):
+https://appshule.com/#verify/{certificateId}
+
+The hash route works on GitHub Pages without server configuration.
+
+═══════════════════════════════════════════════════════════════
+PART E: TEACHER EARNINGS FROM MODULE COMPLETION
+═══════════════════════════════════════════════════════════════
+
+Each module completed earns a small revenue bonus for the teacher:
+
+1. On module completion (from Step 2), also create an earning record:
+   - Add to teacherEarnings collection:
+     {
+       teacherId: currentUser.uid,
+       moduleNumber: N,
+       type: 'ncdc_module_completion',
+       amount: 500,  // UGX 500 per module
+       paid: false,
+       earnedAt: serverTimestamp()
+     }
+
+2. Update teacher's pendingEarnings:
+   - users/{teacherId}.pendingEarnings: increment(500)
+
+3. Add to Teacher Dashboard "Earnings Breakdown":
+   - New line: "NCDC Modules: X completions, UGX X earned"
+
+4. Total possible from course: UGX 5,000 (10 modules × 500)
+
+5. Super Admin can change the bonus amount via a setting:
+   - Add field to settings/ncdcConfig: moduleBonusAmount (default 500)
+
+═══════════════════════════════════════════════════════════════
+PART F: SUPER ADMIN — COURSE OVERVIEW
+═══════════════════════════════════════════════════════════════
+
+Add to Super Admin Admin Panel:
+
+📚 NCDC COURSE OVERVIEW
+- Total teachers enrolled: X
+- Teachers completed all 10 modules: X
+- Teachers in progress: X
+- Teachers not started: X
+- Average completion: X%
+- Certificates issued: X
+
+Top 5 teachers by progress (list with module count)
+
+Data source:
+- Query course_enrollment (all)
+- Query ncdc_cpd_certificates (count)
+
+Place this section BELOW "NCDC/UNEB Control" card.
+
+Add filter:
+- All schools / specific school dropdown
+- Date range: All time / This term / Last 30 days
+
+═══════════════════════════════════════════════════════════════
+PART G: SCHOOL ADMIN — TEACHER PROGRESS
+═══════════════════════════════════════════════════════════════
+
+Add to School Admin Admin Panel:
+
+👨‍🏫 TEACHERS' RETOOLING PROGRESS
+- List of teachers in this school
+- For each: name, modules completed, last activity
+- Sortable by completion (highest first)
+- Filter: All / Completed / In Progress / Not Started
+
+Data source:
+- Query users WHERE role == 'teacher' AND schoolId == currentSchool
+- Join with course_enrollment
+
+This helps headteachers see which teachers need help.
+
+═══════════════════════════════════════════════════════════════
+PART H: NOTIFICATIONS
+═══════════════════════════════════════════════════════════════
+
+Trigger notifications at these milestones:
+
+1. On first enrollment:
+   - To teacher: "Welcome to NCDC Retooling Course! Start Module 1"
+   - To school admin: "{teacherName} enrolled in retooling course"
+
+2. On each module completion:
+   - To teacher: "✅ Module N complete! +2 CPD points"
+   - To school admin: "{teacherName} completed Module N of 10"
+
+3. On certificate issuance:
+   - To teacher: "🏆 Certificate ready! You've earned 20 CPD points."
+   - To school admin: "{teacherName} completed the full NCDC course!"
+   - To super admin: "{teacherName} from {schoolName} earned CPD certificate."
+
+4. Weekly digest (once per week):
+   - To school admin: "This week: X teachers completed Y modules."
+
+Use existing notifications collection pattern.
+
+═══════════════════════════════════════════════════════════════
+PART I: ADMIN — ISSUE/REVOKE CERTIFICATES
+═══════════════════════════════════════════════════════════════
+
+Super Admin can manually manage certificates:
+
+Add to Admin Panel → NCDC/UNEB Control:
+- "📜 Certificate Manager" button
+- Opens modal with:
+  * Search teacher by email
+  * Show their course_enrollment + certificate status
+  * Buttons:
+    - [Issue Certificate] (if not issued but eligible)
+    - [Revoke Certificate] (sets verified = false)
+    - [Re-issue Certificate] (generates new certificateId)
+    - [Download PDF]
+
+Used for edge cases like:
+- Teacher transferred schools mid-course
+- Certificate lost / needs replacement
+- Dispute resolution
+
+═══════════════════════════════════════════════════════════════
+PART J: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Course progress tracking must work offline:
+
+1. When teacher completes a lesson offline:
+   - Save to IndexedDB offline_teacher_progress
+   - Mark syncPending = true
+
+2. When online:
+   - Sync to teacher_retooling_progress collection
+   - Recalculate enrollment
+
+3. Certificate generation requires online (Firebase Storage upload)
+   - If offline when Module 10 completes: queue certificate generation
+   - Show message: "Certificate will be generated when you connect"
+
+═══════════════════════════════════════════════════════════════
+PART K: TESTING
+═══════════════════════════════════════════════════════════════
+
+A. Progress tracking:
+   1. Login as teacher
+   2. Complete Module 1 (from Step 2)
+   3. Verify course_enrollment.modulesCompleted == 1
+   4. Verify cpdPointsEarned == 2
+   5. Verify teacherEarnings has new entry with 500 UGX
+   6. Verify users.pendingEarnings increased by 500
+
+B. Certificate generation:
+   1. Complete all 10 modules (can seed progress manually)
+   2. Verify: celebration modal appears
+   3. Verify: certificate PDF generated and uploaded
+   4. Verify: ncdc_cpd_certificates has new doc
+   5. Verify: certificateId matches format "APSH-CPD-YYYY-XXXXXX-XXXX"
+   6. Verify: course_enrollment.certificateIssued == true
+
+C. Certificate download:
+   1. Open certificate from teacher dashboard
+   2. Verify: PDF downloads
+   3. Open PDF → verify all fields correct
+   4. Scan QR → verify opens verification page
+
+D. Verification page:
+   1. Open appshule.com/#verify/{validId}
+   2. Verify: shows "VALID CERTIFICATE" with details
+   3. Try invalid ID → verify: "Invalid or expired certificate"
+
+E. Super Admin overview:
+   1. Login as super admin
+   2. Open Admin Panel → NCDC Course Overview
+   3. Verify: counts match (enrolled, completed, certs)
+   4. Verify: top 5 teachers list appears
+
+F. School Admin view:
+   1. Login as school admin
+   2. Open Admin Panel → Teachers' Retooling Progress
+   3. Verify: teachers from this school listed
+   4. Verify: progress columns correct
+
+G. Manual certificate management:
+   1. Super admin → Certificate Manager
+   2. Search teacher email
+   3. Test Issue / Revoke / Re-issue buttons
+   4. Verify changes reflected in Firestore
+
+H. Offline progress:
+   1. Turn off WiFi
+   2. Complete a lesson offline
+   3. Verify: saved to IndexedDB
+   4. Turn on WiFi → verify syncs to Firestore
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Progress bars: purple-to-orange gradient
+- Certificate: purple border, gold accents
+- Badges: green (complete), yellow (in progress), grey (not started)
+- Buttons: rounded 20-25px
+
+Certificate PDF styling:
+- Landscape A4
+- Purple decorative border
+- Gold seal icon
+- Elegant serif font for title
+- Clean sans-serif for details
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-5 or Steps 1-2 of Task 6
+- Do NOT issue certificates without all 10 modules complete
+- Do NOT lose progress if certificate generation fails
+- Do NOT expose certificate IDs beyond what's needed for verification
+- Do NOT break offline sync
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 6 Step 3 complete — Progress tracking, CPD certificate, 
+and teacher earnings built and tested"
+
+Report:
+- Which tests A through H passed
+- Any bugs found
+- Screenshots recommended: teacher progress card, certificate PDF, 
+  verification page, Super Admin overview, School Admin view
