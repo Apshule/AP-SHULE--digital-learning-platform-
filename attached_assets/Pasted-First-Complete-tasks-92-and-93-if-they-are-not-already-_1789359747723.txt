@@ -1,0 +1,139 @@
+First: Complete tasks #92 and #93 if they are not already finished. 
+If they are already done or leftover from earlier work, delete them 
+and clear the queue.
+
+Do NOT leave them pending.
+
+Once the queue is clear, immediately proceed with Task 7 (Video Studio) 
+— implement ALL 4 STEPS in one continuous pass:
+
+═══════════════════════════════════════════════════════════════
+STEP 1: FOUNDATION + CARTOON STUDIO (Tab 1)
+═══════════════════════════════════════════════════════════════
+
+- Create Firestore collections: video_studio_projects, cartoon_assets, 
+  video_generation_queue, video_library
+- Seed 20 cartoon assets (4 characters × 5 poses)
+- Add "Video Studio" card in Super Admin Admin Panel
+- Modal with 4 tabs: Cartoon Studio, AI Auto-Video, Digital Twin, Library
+- Cartoon Studio form: Topic, Type, Subject, Class, Language, 
+  Character, Duration, Script
+- 5-step pipeline: Translate → Audio → Images → Captions → Compile
+- Preview modal (slideshow + audio + captions)
+- Publish to Schools button
+- Video Library tab with filters and pagination
+
+═══════════════════════════════════════════════════════════════
+STEP 2: AI AUTO-VIDEO + SERIES MODE (Tab 2)
+═══════════════════════════════════════════════════════════════
+
+- AI Auto-Video form: Topic, Subject, Class, Language
+- Duration Mode: Single Video OR Series Mode
+- Single: 5/10/15 min
+- Series: Total time (30/45/60 min) + Segment length (5/8/10 min)
+- Visual Style: Cartoon / Pixabay stock / Slideshow
+- Difficulty: Standard / Beginner / Advanced
+- 6-step pipeline: Script → Translate → Audio → Visuals → Captions → Compile
+- Gemini API for script generation (free tier)
+- Google TTS (browser SpeechSynthesis)
+- Pixabay images (free tier)
+- Series Mode: splits 45-min lesson into 6 segments
+- Series playlist UI in Library
+- Cost tracker in header
+
+═══════════════════════════════════════════════════════════════
+STEP 3: DIGITAL TEACHER TWIN (Tab 3) — UI ONLY, NO LIVE APIS
+═══════════════════════════════════════════════════════════════
+
+IMPORTANT: Build the FULL UI, but do NOT make live API calls yet.
+
+- Create Firestore collections: teacher_twins, twin_generation_jobs, 
+  twin_api_config
+- Digital Twin tab shows API Configuration panel:
+  * Status: ⚠️ Not configured (default)
+  * Input fields: ElevenLabs API Key + D-ID API Key
+  * [Test Connection] buttons (disabled until key entered)
+  * [Save Configuration] button
+  * Monthly budget field (default 100,000 UGX)
+- When APIs NOT configured:
+  * Show message: "⚠️ Digital Twin disabled. Configure APIs first."
+  * [Create Digital Twin] button disabled
+- When APIs ARE configured (later):
+  * Full creation form appears (consent + video upload)
+  * Twin creation pipeline runs
+- Twin management list
+- Teacher access to own twin (read-only)
+- Teacher earnings: 200 UGX per twin video view
+- Cost management + monthly budget alerts
+
+Do NOT make real API calls yet. Just build the UI.
+
+═══════════════════════════════════════════════════════════════
+STEP 4: INTEGRATION + STUDENT/TEACHER VIEWS + FINAL TESTING
+═══════════════════════════════════════════════════════════════
+
+- Student Video Library on Home (search, filters, cards)
+- Teacher Video Library in Teacher Dashboard
+- Series Playlist Player (auto-advance, sidebar)
+- Assigned Videos for students
+- Cost Tracking Dashboard for Super Admin
+- Video Analytics per video
+- Video Recommendations (based on weak areas)
+- Video Sharing (Web Share API)
+- Downloads Management
+- Performance optimization
+- Accessibility (keyboard, captions, aria)
+- Mobile responsive (3 breakpoints)
+- Firestore indexes
+- FULL REGRESSION: Tasks 1-6 still work
+- Code cleanup
+
+═══════════════════════════════════════════════════════════════
+CONSTRAINTS
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-6
+- Do NOT download YouTube videos
+- Do NOT make live API calls for Digital Twin
+- Do NOT exceed Gemini free tier
+- Do NOT expose API keys
+
+═══════════════════════════════════════════════════════════════
+WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+1. First — finish/clear tasks #92 and #93
+2. Then — build Step 1 fully
+3. Then — build Step 2 fully
+4. Then — build Step 3 fully (UI only)
+5. Then — build Step 4 fully
+6. Then — run full regression tests
+7. Then — report
+
+Do NOT pause between steps. Do NOT ask for confirmation.
+Do NOT wait for further input. Build continuously until Task 7 is 
+fully complete.
+
+If you run out of free credits mid-way, save progress and stop. 
+We will continue after credits reset.
+
+If at any point you need me to clarify something, batch your 
+questions together so we answer them all at once.
+
+═══════════════════════════════════════════════════════════════
+FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+When Task 7 is complete, report:
+1. All 4 steps done — yes/no
+2. Feature checklist (Cartoon / AI Auto / Series / Twin UI / 
+   Student library / Teacher library / Assigned / Playlist / 
+   Cost dashboard / Downloads)
+3. Regression: Tasks 1-6 all pass?
+4. Any bugs found + fixes
+5. Confirmation: "Task 7 fully complete. Ready for Task 8."
+
+═══════════════════════════════════════════════════════════════
+
+Start now.
