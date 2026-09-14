@@ -741,6 +741,9 @@
       allRecords('offline_mfi_customers'),
       allRecords('offline_mfi_collateral'),
       allRecords('offline_mfi_verification'),
+      allRecords('offline_clinic_visits'),
+      allRecords('offline_clinic_prescriptions'),
+      allRecords('offline_clinic_checkins'),
       Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
     ])
       .then(function (records) {
@@ -752,8 +755,11 @@
         var mfiCustomers = records[5].filter(function (item) { return item.syncStatus === 'pending'; });
         var mfiCollateral = records[6].filter(function (item) { return item.syncStatus === 'pending'; });
         var mfiVerification = records[7].filter(function (item) { return item.syncStatus === 'pending'; });
-        var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification);
-        var cachedSize = records[8].reduce(function (total, items) {
+         var clinicVisits = records[8].filter(function (item) { return item.syncStatus === 'pending'; });
+         var clinicPrescriptions = records[9].filter(function (item) { return item.syncStatus === 'pending'; });
+         var clinicCheckins = records[10].filter(function (item) { return item.syncStatus === 'pending'; });
+         var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins);
+         var cachedSize = records[11].reduce(function (total, items) {
           return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         }, 0);
         return {
@@ -765,6 +771,9 @@
           mfiCustomers: mfiCustomers.length,
           mfiCollateral: mfiCollateral.length,
           mfiVerification: mfiVerification.length,
+          clinicVisits: clinicVisits.length,
+          clinicPrescriptions: clinicPrescriptions.length,
+          clinicCheckins: clinicCheckins.length,
           total: pending.length,
           size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
           cachedSize: cachedSize
@@ -781,7 +790,10 @@
         allRecords('offline_views'),
         allRecords('offline_mfi_customers'),
         allRecords('offline_mfi_collateral'),
-        allRecords('offline_mfi_verification')
+         allRecords('offline_mfi_verification'),
+         allRecords('offline_clinic_visits'),
+         allRecords('offline_clinic_prescriptions'),
+         allRecords('offline_clinic_checkins')
       ]).then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
@@ -789,14 +801,17 @@
         var mfiCustomers = records[3].filter(function (item) { return item.syncStatus === 'pending'; });
         var mfiCollateral = records[4].filter(function (item) { return item.syncStatus === 'pending'; });
         var mfiVerification = records[5].filter(function (item) { return item.syncStatus === 'pending'; });
-        var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length;
+         var clinicVisits = records[6].filter(function (item) { return item.syncStatus === 'pending'; });
+         var clinicPrescriptions = records[7].filter(function (item) { return item.syncStatus === 'pending'; });
+         var clinicCheckins = records[8].filter(function (item) { return item.syncStatus === 'pending'; });
+         var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length + clinicVisits.length + clinicPrescriptions.length + clinicCheckins.length;
         if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
         if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
           return { status: 'mobile-paused', mode: mode, uploaded: 0, pending: total };
         }
         var context = { mode: mode, api: API };
         /* Every push completes before any pull begins. */
-        var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false };
+         var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false, clinicVisits: false, clinicPrescriptions: false, clinicCheckins: false };
         return Promise.resolve()
           .then(function () {
             if (!syncHooks.pushProjects || !projects.length) return null;
@@ -828,13 +843,31 @@
             return syncHooks.pushMfiVerification(mfiVerification, context);
           })
           .then(function (result) { if (syncHooks.pushMfiVerification && mfiVerification.length) pushed.mfiVerification = true; return result; })
+           .then(function () {
+             if (!syncHooks.pushClinicVisits || !clinicVisits.length) return null;
+             return syncHooks.pushClinicVisits(clinicVisits, context);
+           })
+           .then(function (result) { if (syncHooks.pushClinicVisits && clinicVisits.length) pushed.clinicVisits = true; return result; })
+           .then(function () {
+             if (!syncHooks.pushClinicPrescriptions || !clinicPrescriptions.length) return null;
+             return syncHooks.pushClinicPrescriptions(clinicPrescriptions, context);
+           })
+           .then(function (result) { if (syncHooks.pushClinicPrescriptions && clinicPrescriptions.length) pushed.clinicPrescriptions = true; return result; })
+           .then(function () {
+             if (!syncHooks.pushClinicCheckins || !clinicCheckins.length) return null;
+             return syncHooks.pushClinicCheckins(clinicCheckins, context);
+           })
+           .then(function (result) { if (syncHooks.pushClinicCheckins && clinicCheckins.length) pushed.clinicCheckins = true; return result; })
           .then(function () {
             return Promise.all((pushed.projects ? projects.map(function (item) { return putRecord('offline_projects', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.caRecords ? caRecords.map(function (item) { return putRecord('offline_ca_records', Object.assign({}, item, { synced: true, syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.views ? views.map(function (item) { return putRecord('offline_views', Object.assign({}, item, { synced: true, syncedAt: Date.now() })); }) : [])
               .concat(pushed.mfiCustomers ? mfiCustomers.map(function (item) { return putRecord('offline_mfi_customers', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.mfiCollateral ? mfiCollateral.map(function (item) { return putRecord('offline_mfi_collateral', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-              .concat(pushed.mfiVerification ? mfiVerification.map(function (item) { return putRecord('offline_mfi_verification', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
+               .concat(pushed.mfiVerification ? mfiVerification.map(function (item) { return putRecord('offline_mfi_verification', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+               .concat(pushed.clinicVisits ? clinicVisits.map(function (item) { return putRecord('offline_clinic_visits', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+               .concat(pushed.clinicPrescriptions ? clinicPrescriptions.map(function (item) { return putRecord('offline_clinic_prescriptions', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+               .concat(pushed.clinicCheckins ? clinicCheckins.map(function (item) { return putRecord('offline_clinic_checkins', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
           })
           .then(function () {
             var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};
@@ -874,7 +907,7 @@
             });
           })
           .then(function () {
-            var uploaded = (pushed.projects ? projects.length : 0) + (pushed.caRecords ? caRecords.length : 0) + (pushed.views ? views.length : 0) + (pushed.mfiCustomers ? mfiCustomers.length : 0) + (pushed.mfiCollateral ? mfiCollateral.length : 0);
+             var uploaded = (pushed.projects ? projects.length : 0) + (pushed.caRecords ? caRecords.length : 0) + (pushed.views ? views.length : 0) + (pushed.mfiCustomers ? mfiCustomers.length : 0) + (pushed.mfiCollateral ? mfiCollateral.length : 0) + (pushed.mfiVerification ? mfiVerification.length : 0) + (pushed.clinicVisits ? clinicVisits.length : 0) + (pushed.clinicPrescriptions ? clinicPrescriptions.length : 0) + (pushed.clinicCheckins ? clinicCheckins.length : 0);
             return pendingSummary().then(function (remaining) {
               return { status: 'complete', mode: mode, uploaded: uploaded, pending: remaining.total };
             });
@@ -1214,6 +1247,67 @@
     markMfiVerificationSynced: function (localId, extra) {
       return getRecord('offline_mfi_verification', localId).then(function (item) {
         return item ? putRecord('offline_mfi_verification', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueClinicVisit: function (visit) {
+      visit = visit || {};
+      if (!visit.institutionId || !visit.patientId || !visit.visitDate) return fail('An institution, patient, and visit date are required');
+      var value = Object.assign({}, visit, {
+        localId: visit.localId || randomId('clinic-visit-'),
+        syncStatus: visit.syncStatus || 'pending',
+        queuedAt: visit.queuedAt || Date.now()
+      });
+      return putRecord('offline_clinic_visits', value).then(function () { return value; });
+    },
+    listClinicVisits: function (institutionId, patientId) {
+      return allRecords('offline_clinic_visits').then(function (items) {
+        return items.filter(function (item) { return (!institutionId || item.institutionId === institutionId) && (!patientId || item.patientId === patientId); });
+      });
+    },
+    markClinicVisitSynced: function (localId, extra) {
+      return getRecord('offline_clinic_visits', localId).then(function (item) {
+        return item ? putRecord('offline_clinic_visits', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueClinicPrescription: function (prescription) {
+      prescription = prescription || {};
+      if (!prescription.institutionId || !prescription.patientId || !prescription.visitId) return fail('An institution, patient, and visit are required');
+      var value = Object.assign({}, prescription, {
+        localId: prescription.localId || randomId('clinic-prescription-'),
+        syncStatus: prescription.syncStatus || 'pending',
+        queuedAt: prescription.queuedAt || Date.now()
+      });
+      return putRecord('offline_clinic_prescriptions', value).then(function () { return value; });
+    },
+    listClinicPrescriptions: function (institutionId, patientId) {
+      return allRecords('offline_clinic_prescriptions').then(function (items) {
+        return items.filter(function (item) { return (!institutionId || item.institutionId === institutionId) && (!patientId || item.patientId === patientId); });
+      });
+    },
+    markClinicPrescriptionSynced: function (localId, extra) {
+      return getRecord('offline_clinic_prescriptions', localId).then(function (item) {
+        return item ? putRecord('offline_clinic_prescriptions', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueClinicCheckin: function (checkin) {
+      checkin = checkin || {};
+      if (!checkin.institutionId || !checkin.patientId || !checkin.appointmentId) return fail('An institution, patient, and appointment are required');
+      var value = Object.assign({}, checkin, {
+        localId: checkin.localId || randomId('clinic-checkin-'),
+        syncStatus: checkin.syncStatus || 'pending',
+        queuedAt: checkin.queuedAt || Date.now(),
+        checkedInAt: checkin.checkedInAt || new Date().toISOString()
+      });
+      return putRecord('offline_clinic_checkins', value).then(function () { return value; });
+    },
+    listClinicCheckins: function (institutionId, patientId) {
+      return allRecords('offline_clinic_checkins').then(function (items) {
+        return items.filter(function (item) { return (!institutionId || item.institutionId === institutionId) && (!patientId || item.patientId === patientId); });
+      });
+    },
+    markClinicCheckinSynced: function (localId, extra) {
+      return getRecord('offline_clinic_checkins', localId).then(function (item) {
+        return item ? putRecord('offline_clinic_checkins', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
       });
     },
     cacheMfiPortfolio: function (portfolio) {
