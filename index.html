@@ -1257,6 +1257,8 @@
             <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" role="status" aria-live="polite" aria-label="Connection mode: Offline mode">
                 <span class="connection-dot" aria-hidden="true"></span><span id="connectionModeLabel" class="connection-label">Offline mode</span>
             </div>
+            <button id="globalSyncStatusBtn" class="global-sync-status-btn" type="button" data-status="offline" aria-label="Offline sync status" aria-expanded="false"><span class="global-sync-dot" aria-hidden="true"></span><span class="global-sync-count">0</span></button>
+            <button id="globalSettingsBtn" class="global-settings-btn" type="button" aria-label="Open Settings &amp; Preferences" title="Settings &amp; Preferences"><i class="fas fa-cog" aria-hidden="true"></i></button>
             <button id="headerSyncNowBtn" class="sync-now-btn" type="button" aria-label="Sync now" aria-busy="false"><i class="fas fa-sync-alt" aria-hidden="true"></i><span class="sync-label">Sync Now</span></button>
             <button class="search-icon-btn" id="openGlobalSearchBtn" title="Search everything"><i class="fas fa-search"></i></button>
             <button class="ai-icon-btn" id="openAIDrawerBtn"><i class="fas fa-robot"></i></button>
@@ -1269,6 +1271,23 @@
                     <div class="dropdown-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
                 </div>
             </div>
+        </div>
+        <div id="globalSyncPopover" class="global-sync-popover" role="dialog" aria-label="Sync status">
+            <h4>Sync status</h4>
+            <p id="globalSyncStatusText">Offline — work will sync when connected.</p>
+            <p id="globalSyncLastText">Last sync: Not synced yet</p>
+            <p id="globalSyncPendingText">Pending items: 0</p>
+            <button id="globalSyncPopoverBtn" type="button">Sync Now</button>
+        </div>
+    </div>
+
+    <div id="globalSettingsModal" class="global-settings-modal" role="dialog" aria-modal="true" aria-labelledby="globalSettingsTitle">
+        <div class="global-settings-shell">
+            <div class="global-settings-modal-head">
+                <h3 id="globalSettingsTitle">⚙️ Settings &amp; Preferences</h3>
+                <button id="globalSettingsCloseBtn" class="global-settings-modal-close" type="button" aria-label="Close settings">&times;</button>
+            </div>
+            <div id="globalSettingsModalBody" class="global-settings-modal-body"></div>
         </div>
     </div>
 
