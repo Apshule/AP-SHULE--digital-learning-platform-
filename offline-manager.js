@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 15;
+  var DB_VERSION = 16;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -29,7 +29,10 @@
     'offline_mfi_collateral',
     'offline_mfi_verification',
     'offline_mfi_portfolio',
-    'offline_mfi_reports'
+    'offline_mfi_reports',
+    'offline_clinic_visits',
+    'offline_clinic_prescriptions',
+    'offline_clinic_checkins'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -176,7 +179,10 @@
                  offline_mfi_collateral: 'localId',
                   offline_mfi_verification: 'localId',
                   offline_mfi_portfolio: 'institutionId',
-                  offline_mfi_reports: 'localId'
+                   offline_mfi_reports: 'localId',
+                   offline_clinic_visits: 'localId',
+                   offline_clinic_prescriptions: 'localId',
+                   offline_clinic_checkins: 'localId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
