@@ -1,0 +1,386 @@
+Task 6 — Step 4 of 4: Integration, polish, and final testing
+
+CONTEXT:
+- Step 1 created the 4 NCDC collections + seed script
+- Step 2 built teacher-facing course UI (video/PDF/quiz/practical)
+- Step 3 added progress tracking, CPD certificate, teacher earnings
+- Now we integrate everything cleanly, polish UX, and run full regression
+
+GOAL:
+Make Task 6 production-ready:
+- Course content editable by Super Admin (video URLs, PDF URLs, quiz questions)
+- Teacher dashboard shows unified view of everything
+- Offline handling robust across all interactions
+- Performance optimized
+- Full regression across Tasks 1-6
+
+═══════════════════════════════════════════════════════════════
+PART A: SUPER ADMIN — COURSE CONTENT EDITOR
+═══════════════════════════════════════════════════════════════
+
+Super Admin must be able to edit course content after seeding.
+
+Add a new section in Admin Panel → NCDC/UNEB Control:
+"✏️ Edit Course Content" button
+
+When clicked → opens a modal (id="editCourseContentModal"):
+
+List of 10 modules with expandable lesson editors:
+
+┌─────────────────────────────────────────┐
+│ 📘 Module 1 — Familiarisation          │
+│ [▼ Expand]                              │
+├─────────────────────────────────────────┤
+│ (when expanded)                         │
+│                                          │
+│ Lesson 1 — Video                        │
+│ YouTube URL: [input field]              │
+│ [Test URL] [Save]                       │
+│                                          │
+│ Lesson 2 — PDF                          │
+│ PDF URL: [input field]                  │
+│ [Upload New PDF] [Save]                 │
+│                                          │
+│ Lesson 3 — Quiz                         │
+│ 5 questions — [Edit Questions]          │
+│                                          │
+│ Lesson 4 — Practical                    │
+│ Task description: [textarea]            │
+│ [Save]                                  │
+└─────────────────────────────────────────┘
+
+Behavior:
+- Load current values from ncdc_module_lessons
+- On Save: update Firestore doc + refresh cache
+- Show toast "✅ Module N updated"
+
+Quiz editor (for Lesson 3):
+- Show current 5 questions
+- Allow editing question text + options + correct answer
+- [Add Question] [Delete Question] buttons
+- Save updates contentData.questions
+
+═══════════════════════════════════════════════════════════════
+PART B: TEACHER DASHBOARD — UNIFIED VIEW
+═══════════════════════════════════════════════════════════════
+
+Refine the Teacher Dashboard to show a consolidated view:
+
+Update the "CBC Teaching Tools (Earn More)" card:
+
+Top section — Progress Summary:
+┌─────────────────────────────────────────┐
+│ 🎓 YOUR CBC JOURNEY                      │
+│                                          │
+│ NCDC Retooling: 4/10 modules (40%)      │
+│ CPD Points: 8/20                         │
+│ Avg Quiz: 82%                            │
+│                                          │
+│ [Continue Module 5]                      │
+└─────────────────────────────────────────┘
+
+Sub-buttons below (existing 6):
+1. NCDC 10 Modules Course (shows progress badge)
+2. Auto Lesson Plan Generator
+3. Triangulation Assessment
+4. Curriculum Linker Search
+5. Project Verification
+6. Create UNEB Scenario Items
+
+Add progress badge to #1:
+- "4/10" pill next to "NCDC 10 Modules Course"
+- Green if 10/10, yellow if in-progress, grey if not started
+
+═══════════════════════════════════════════════════════════════
+PART C: TEACHER DASHBOARD — CERTIFICATE DISPLAY
+═══════════════════════════════════════════════════════════════
+
+Once a teacher has earned their CPD certificate:
+
+Add a certificate card to Teacher Dashboard (below CBC Teaching Tools):
+
+┌─────────────────────────────────────────┐
+│ 🏆 CPD CERTIFICATE EARNED                │
+│                                          │
+│ Certificate ID: APSH-CPD-2026-A1B2C3-XK7P│
+│ Issued: 14 Sep 2026                      │
+│ CPD Points: 20                           │
+│                                          │
+│ [📥 Download PDF] [🔗 Copy Verify Link] │
+│ [📤 Share] [🖨 Print]                   │
+└─────────────────────────────────────────┘
+
+Actions:
+- Download PDF: opens certificate URL
+- Copy Verify Link: copies appshule.com/#verify/{id}
+- Share: uses Web Share API with PDF + link
+- Print: opens PDF in new tab
+
+═══════════════════════════════════════════════════════════════
+PART D: SCHOOL ADMIN — TEACHER DETAIL VIEW
+═══════════════════════════════════════════════════════════════
+
+In School Admin → Teachers' Retooling Progress section:
+
+When admin taps a teacher name → open detail view:
+
+Teacher Detail Modal (id="teacherProgressModal"):
+- Teacher name + email
+- Enrolled date
+- Modules completed: X/10
+- CPD points earned
+- Average quiz score
+- Last activity
+- List of completed modules with dates + quiz scores
+- Certificate status (issued/not issued)
+- [📄 View certificate] (if issued)
+
+This lets headteachers drill into individual teacher progress.
+
+═══════════════════════════════════════════════════════════════
+PART E: EXPORT REPORTS
+═══════════════════════════════════════════════════════════════
+
+Add export buttons in Super Admin NCDC Course Overview:
+
+1. "📥 Export Full Report (PDF)"
+   - Contains:
+     * Title: "NCDC Teacher Retooling Report"
+     * School name (if filtered) or "All Schools"
+     * Date range
+     * Table: Teacher Name | School | Modules Completed | CPD | Certificate
+     * Summary totals at bottom
+   - Filename: ncdc_retooling_report_{date}.pdf
+
+2. "📥 Export CSV"
+   - Same data as CSV
+   - Filename: ncdc_retooling_{date}.csv
+
+3. Monthly summary (optional):
+   - "📊 This Month" card:
+     * Teachers completed: X
+     * Modules completed: X
+     * Certificates issued: X
+
+═══════════════════════════════════════════════════════════════
+PART F: CERTIFICATE RE-ISSUE / REGENERATE
+═══════════════════════════════════════════════════════════════
+
+Handle the case where a teacher needs a new certificate:
+
+Super Admin → Certificate Manager:
+- Add "Regenerate PDF" button per teacher
+- Regenerates the PDF with:
+  * Same certificate ID
+  * Same issued date
+  * Latest teacher name (if it changed)
+- Overwrites certificateUrl in Firestore
+
+If teacher is offboarded:
+- Admin can revoke certificate
+- Sets verified = false
+- Verification page shows "Revoked"
+
+═══════════════════════════════════════════════════════════════
+PART G: PERFORMANCE OPTIMIZATION
+═══════════════════════════════════════════════════════════════
+
+Verify these benchmarks:
+
+1. Course overview modal load time: <1 second
+2. Module detail load time: <500ms
+3. Video player start: <3 seconds
+4. PDF viewer open: <2 seconds
+5. Quiz load: <500ms
+6. Progress dashboard: <1 second
+7. Certificate PDF generation: <5 seconds
+
+Optimizations to apply:
+- Cache course modules in memory (loaded once per session)
+- Lazy-load PDF content only when opened
+- Compress quiz images if any
+- Debounce rapid lesson completions
+
+═══════════════════════════════════════════════════════════════
+PART H: ERROR HANDLING & EDGE CASES
+═══════════════════════════════════════════════════════════════
+
+Handle these gracefully:
+
+1. Video URL is broken:
+   - Show "Video unavailable. Contact admin." 
+   - Allow marking lesson complete with admin override
+
+2. PDF URL is broken:
+   - Show "PDF not available. Read the summary instead."
+   - Allow marking complete after 10-second delay
+
+3. Quiz has missing questions:
+   - Show "Quiz being updated. Try again later."
+
+4. Practical upload fails:
+   - Retry 2 times
+   - If still fails: "Save photo offline and retry"
+
+5. Certificate generation fails:
+   - Retry 3 times
+   - Log error to Firestore error_logs collection
+   - Show teacher: "Certificate being prepared. Check back in 5 minutes."
+
+6. Teacher loses internet mid-module:
+   - Auto-save progress every 10 seconds
+   - Resume where left off when reconnected
+
+═══════════════════════════════════════════════════════════════
+PART I: ACCESSIBILITY
+═══════════════════════════════════════════════════════════════
+
+Add:
+1. aria-labels to all icons/buttons
+2. role="dialog" on modals
+3. Keyboard navigation (Tab, Enter, Escape)
+4. Focus management (auto-focus first field)
+5. Screen reader announcements for quiz results
+6. Alt text on all images
+
+═══════════════════════════════════════════════════════════════
+PART J: MOBILE RESPONSIVENESS
+═══════════════════════════════════════════════════════════════
+
+Confirm the course works on:
+- Phone (<500px): Full-screen modals, single column
+- Tablet (500-900px): Centered modals, wider cards
+- Desktop (>900px): Side panel or centered modal
+
+Test at 3 breakpoints:
+- 375px (iPhone SE)
+- 768px (iPad)
+- 1440px (Desktop)
+
+═══════════════════════════════════════════════════════════════
+PART K: FULL REGRESSION TESTING
+═══════════════════════════════════════════════════════════════
+
+Run this complete regression suite:
+
+TASK 1 — NCDC/UNEB:
+☐ Student CBC & UNEB section
+☐ Teacher CBC Teaching Tools card
+☐ Super Admin NCDC/UNEB Control
+☐ School Admin NCDC Compliance card
+
+TASK 2 — Offline PWA:
+☐ Offline badge shows
+☐ Offline login works
+☐ Sync button works
+☐ Connection detection works
+
+TASK 3 — Offline Teacher Earnings:
+☐ Offline earnings summary
+☐ PDF earnings report
+☐ Super Admin offline overview
+
+TASK 4 — Project Integrity:
+☐ Student My Projects
+☐ QR generation
+☐ Teacher verification + viva
+☐ Evidence Folder
+☐ Duplicate detection
+
+TASK 5 — Curriculum Linker:
+☐ Search works
+☐ 3-tab detail view
+☐ AI activity generation
+☐ Favorites
+
+TASK 6 — NCDC Course:
+☐ Course overview (10 modules)
+☐ Video lesson plays
+☐ PDF lesson opens
+☐ Quiz works with scoring
+☐ Practical uploads
+☐ Module completion unlocks next
+☐ Progress tracking shows X/10
+☐ CPD certificate generation
+☐ Verification page works
+☐ Teacher earnings from modules
+☐ Super Admin overview
+☐ School Admin teacher view
+☐ Certificate manager
+
+═══════════════════════════════════════════════════════════════
+PART L: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+1. Remove console.log debug statements
+2. Add code comments for:
+   - Course data structure
+   - Progress calculation logic
+   - Certificate generation flow
+   - Offline sync logic
+3. Check for unused imports
+4. Verify no syntax errors (DevTools Console)
+5. Ensure no memory leaks from unclosed listeners
+
+═══════════════════════════════════════════════════════════════
+PART M: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Feature completeness:
+   - Course overview: ✅/❌
+   - Video lesson: ✅/❌
+   - PDF lesson: ✅/❌
+   - Quiz engine: ✅/❌
+   - Practical upload: ✅/❌
+   - Module progression: ✅/❌
+   - Progress tracking: ✅/❌
+   - CPD certificate: ✅/❌
+   - Verification page: ✅/❌
+   - Teacher earnings: ✅/❌
+   - Admin views: ✅/❌
+   - Certificate manager: ✅/❌
+
+2. Regression results:
+   - Task 1-6 all pass: ✅/❌
+   - Any bugs found + fixes
+
+3. Performance benchmarks: met?
+
+4. Recommendations for Task 7:
+   - Prerequisites needed
+   - Technical debt to note
+
+If everything passes:
+"Task 6 fully complete — NCDC 10-Module Course with video, PDF, 
+quiz, practical, progress tracking, CPD certificate, teacher earnings, 
+and admin views all working. Ready for Task 7."
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-5 or Steps 1-3 of Task 6
+- Do NOT delete any Firestore data
+- Do NOT issue certificates without proper completion
+- Do NOT break offline sync
+- Do NOT exceed Gemini API free tier
+- Do NOT download YouTube videos
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-J first (content editor + unified dashboard + 
+certificate display + reports + edge cases + accessibility + mobile), 
+then run Part K (regression) and report via Part M.
+
+Confirm when done with:
+"Task 6 fully complete — NCDC Course ready. Ready for Task 7."
+
+Report:
+- Feature completeness check
+- Regression results
+- Any bugs found and fixed
+- Screenshots recommended: content editor, unified dashboard, 
+  certificate card, teacher detail modal, exports, mobile views
