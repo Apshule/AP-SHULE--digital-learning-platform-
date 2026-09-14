@@ -473,6 +473,14 @@
       ]
     },
     {
+      "collectionGroup": "clinic_appointments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "appointmentDate", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "clinic_visits",
       "queryScope": "COLLECTION",
       "fields": [
@@ -489,6 +497,14 @@
       ]
     },
     {
+      "collectionGroup": "clinic_visits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "visitDate", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "clinic_prescriptions",
       "queryScope": "COLLECTION",
       "fields": [
@@ -501,6 +517,14 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "clinic_prescriptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
@@ -551,6 +575,15 @@
       "fields": [
         { "fieldPath": "patientId", "order": "ASCENDING" },
         { "fieldPath": "billDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "clinic_billing",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "billDate", "order": "DESCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
     {

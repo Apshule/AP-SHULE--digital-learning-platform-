@@ -14,3 +14,9 @@ For offline clinic records that depend on one another, keep the local identifier
 **Why:** Offline replay does not automatically expose an ID translation table to later queue handlers, so random server IDs can leave dependent records pointing at nonexistent documents.
 
 **How to apply:** Use stable local IDs for queued clinic inventory and bills, replay parent records before dependent records, and preserve the references when marking the queue records synced.
+
+For clinic administration, cache the dashboard snapshot by institution but keep report generation online-only; offline screens must identify the snapshot timestamp instead of presenting stale data as a fresh report.
+
+**Why:** Operational metrics are useful during connectivity loss, while financial, compliance, and medical exports need current server data and clear freshness boundaries.
+
+**How to apply:** Store the complete institution snapshot in the versioned clinic dashboard store, expose its updated time in the dashboard, and show a reconnect requirement in report views.

@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 17;
+  var DB_VERSION = 18;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -38,7 +38,8 @@
     'offline_clinic_dispensing',
     'offline_clinic_billing',
     'offline_clinic_payments',
-    'offline_clinic_claims'
+    'offline_clinic_claims',
+    'offline_clinic_dashboard'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -194,7 +195,8 @@
                    offline_clinic_dispensing: 'localId',
                    offline_clinic_billing: 'localId',
                    offline_clinic_payments: 'localId',
-                   offline_clinic_claims: 'localId'
+                    offline_clinic_claims: 'localId',
+                    offline_clinic_dashboard: 'institutionId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -313,6 +315,10 @@
             if (name === 'offline_clinic_inventory' && !store.indexNames.contains('updatedAt')) store.createIndex('updatedAt', 'updatedAt', { unique: false });
             if (name === 'offline_clinic_billing' && !store.indexNames.contains('createdAt')) store.createIndex('createdAt', 'createdAt', { unique: false });
           });
+        }
+        if (oldVersion < 18 && !db.objectStoreNames.contains('offline_clinic_dashboard')) {
+          var clinicDashboardStore = db.createObjectStore('offline_clinic_dashboard', { keyPath: 'institutionId' });
+          clinicDashboardStore.createIndex('updatedAt', 'updatedAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -1506,6 +1512,16 @@
           return Object.assign({}, item, { id: item.id || item.localId });
         });
       });
+    },
+    cacheClinicDashboard: function (dashboard) {
+      dashboard = dashboard || {};
+      if (!dashboard.institutionId) return fail('An institution is required for clinic dashboard caching');
+      return putRecord('offline_clinic_dashboard', Object.assign({}, dashboard, {
+        updatedAt: dashboard.updatedAt || new Date().toISOString()
+      }));
+    },
+    getClinicDashboard: function (institutionId) {
+      return getRecord('offline_clinic_dashboard', institutionId);
     },
     cacheMfiPortfolio: function (portfolio) {
       portfolio = portfolio || {};

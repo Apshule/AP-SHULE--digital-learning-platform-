@@ -104,7 +104,7 @@ describe("Task 11 Step 1 clinic foundation contracts", () => {
 
   it("keeps clinic offline stores in the IndexedDB sync contract", () => {
     for (const value of [
-       "var DB_VERSION = 17",
+       "var DB_VERSION = 18",
       "offline_clinic_visits",
       "offline_clinic_prescriptions",
       "offline_clinic_checkins",
@@ -117,6 +117,89 @@ describe("Task 11 Step 1 clinic foundation contracts", () => {
     ]) {
       expect(indexSource + offlineSource).toContain(value);
     }
+  });
+});
+
+describe("Task 11 Step 3 clinic dashboard, reports, and administration contracts", () => {
+  it("adds admin dashboard metrics, report categories, exports, and analytics", () => {
+    for (const value of [
+      "clinicAdminDashboardSection",
+      "clinicAdminRevenueToday",
+      "clinicAdminRevenueMonth",
+      "clinicAdminLowStock",
+      "clinicTopServices",
+      "clinicAdminAlerts",
+      "clinicReportsModal",
+      "Financial",
+      "Operational",
+      "Medical",
+      "Compliance",
+      "Custom report",
+      "Export PDF",
+      "Export Excel",
+      "Export CSV",
+      "clinicAnalyticsModal",
+      "clinicRevenueTrendChart",
+      "clinicPeakHoursHeatmap",
+      "clinicDoctorPerformanceTable",
+      "clinicDestroyAnalyticsCharts",
+      "generateClinicReport",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("adds institution-scoped staff, settings, communications, and branch-aware foundations", () => {
+    for (const value of [
+      "clinicStaffModal",
+      "clinicStaffRoleFilter",
+      "clinicStaffStatus",
+      "clinicSettingsModal",
+      "operatingHours",
+      "insuranceProviders",
+      "clinicCommunicationModal",
+      "clinic_communications",
+      "clinic_report_templates",
+      "clinic_access_audit",
+      "clinic_branches",
+      "sameClinicAdminInstitution",
+    ]) {
+      expect(indexSource + rulesSource).toContain(value);
+    }
+    expect(rulesSource).toContain("request.resource.data.diff(resource.data).affectedKeys().hasOnly");
+  });
+
+  it("adds requested Step 3 date indexes and cached dashboard migration", () => {
+    const required: Array<[string, string[]]> = [
+      ["clinic_appointments", ["institutionId", "appointmentDate"]],
+      ["clinic_visits", ["institutionId", "visitDate"]],
+      ["clinic_prescriptions", ["institutionId", "createdAt"]],
+      ["clinic_billing", ["institutionId", "billDate", "status"]],
+      ["clinic_payments", ["institutionId", "paymentDate"]],
+      ["clinic_pharmacy_inventory", ["institutionId", "category"]],
+    ];
+    for (const [collectionGroup, fields] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+    for (const value of [
+      "var DB_VERSION = 18",
+      "offline_clinic_dashboard",
+      "if (oldVersion < 18 &&",
+      "cacheClinicDashboard",
+      "getClinicDashboard",
+    ]) {
+      expect(offlineSource).toContain(value);
+    }
+  });
+
+  it("keeps fresh reports online-only and supports offline dashboard snapshots", () => {
+    expect(indexSource).toContain("Reports require internet for fresh data.");
+    expect(indexSource).toContain("Offline mode: showing dashboard data");
+    expect(indexSource).toContain("clinicStep3LoadData");
+    expect(indexSource).toContain("Offline?.getClinicDashboard");
   });
 });
 
