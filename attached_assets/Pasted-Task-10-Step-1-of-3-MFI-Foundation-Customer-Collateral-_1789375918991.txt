@@ -1,0 +1,634 @@
+Task 10 — Step 1 of 3: MFI Foundation + Customer + Collateral + Auto-Scoring
+
+CONTEXT:
+- Tasks 1-9 complete. AppShule now serves Education sector
+- Task 10 introduces MICROFINANCE sector (MFI)
+- This task is ONLY the Collateral Management & Scoring module
+- Full MFI Loan System will come in Task 14
+- Task 10 will add a new institution type: MFI
+
+GOAL OF STEP 1:
+Build the MFI foundation:
+- New "MFI" institution type in institution management
+- MFI Customer registration
+- Collateral data capture form
+- Auto-scoring engine (0-100 points)
+
+The Super Admin (or MFI Admin) can register customers and capture 
+collateral. When a Loan Officer submits collateral, the system 
+automatically calculates a score.
+
+YOUTUBE / ToS NOTE: Not applicable here — no video content.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS FOR MFI
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. mfi_customers
+   Fields:
+   - customerId (Firebase uid or auto-generated)
+   - firstName
+   - lastName
+   - phone
+   - email (optional)
+   - nationalId
+   - dateOfBirth
+   - gender (Male/Female/Other)
+   - occupation
+   - monthlyIncome (number, UGX)
+   - businessName
+   - businessAddress
+   - physicalAddress
+   - institutionId (which MFI this customer belongs to)
+   - branchId (optional — for multi-branch MFIs)
+   - createdBy (Loan Officer uid)
+   - createdAt
+   - status (active/inactive/blacklisted)
+
+2. mfi_collateral_types (seeded, not user-created)
+   Fields:
+   - typeId (auto)
+   - name (Land, Vehicle, Guarantor, Business Assets, 
+     Bank Guarantee, Household Assets)
+   - baseScore (max points this type can earn)
+   - description
+   - isActive (boolean, default true)
+   - sortOrder
+
+3. mfi_collateral
+   Fields:
+   - collateralId (auto)
+   - customerId (reference to mfi_customers)
+   - institutionId
+   - typeId (reference to mfi_collateral_types)
+   - description (text — "Plot 12, Nakasero Road, Land Title")
+   - estimatedValueUgx (number)
+   - ownershipProofPath (Firebase Storage URL of document)
+   - ownershipProofType (Title Deed/Logbook/Sales Agreement/None)
+   - location (text)
+   - condition (Good/Fair/Poor)
+   - guarantorName (if type = Guarantor)
+   - guarantorPhone
+   - guarantorIdPath (Firebase Storage URL)
+   - guarantorRelationship
+   - guarantorSignedForm (boolean)
+   - capturedBy (uid)
+   - capturedAt (timestamp)
+   - status (draft/submitted/under_review/verified/rejected)
+   - notes (text)
+
+4. mfi_collateral_scoring
+   Fields:
+   - scoringId (auto)
+   - collateralId (reference)
+   - assetTypeScore (0-25)
+   - ownershipProofScore (0-25)
+   - marketValueScore (0-20)
+   - locationScore (0-15)
+   - liquidityScore (0-15)
+   - totalScore (0-100)
+   - grade (Excellent/Good/Fair/Weak)
+   - recommendation (Approve/Request Top-up/Reject)
+   - managerComments (text)
+   - scoredBy (manager uid)
+   - scoredAt (timestamp)
+   - status (pending/approved/rejected/topup_requested)
+
+5. mfi_collateral_documents
+   Fields:
+   - documentId (auto)
+   - collateralId (reference)
+   - documentType (Title Deed/Logbook/ID Copy/Guarantor Form/
+     Valuation Report/Sales Agreement)
+   - filePath (Firebase Storage URL)
+   - fileName (string)
+   - fileSize (number)
+   - uploadedBy (uid)
+   - uploadedAt (timestamp)
+
+═══════════════════════════════════════════════════════════════
+PART B: SEED COLLATERAL TYPES
+═══════════════════════════════════════════════════════════════
+
+On Task 10 initialization, seed mfi_collateral_types with 6 records:
+
+1. Land & Property
+   - baseScore: 25
+   - description: "Land titles, lease agreements, rental properties"
+
+2. Vehicle
+   - baseScore: 20
+   - description: "Cars, motorcycles, trucks (logbook required)"
+
+3. Guarantor
+   - baseScore: 15
+   - description: "Third-party individuals who sign as sureties"
+
+4. Business Assets
+   - baseScore: 12
+   - description: "Inventory, machinery, equipment"
+
+5. Bank Guarantee
+   - baseScore: 20
+   - description: "Fixed deposits, savings accounts"
+
+6. Household Assets
+   - baseScore: 5
+   - description: "Electronics, furniture, livestock (low value)"
+
+Add a Super Admin button "🌱 Seed MFI Collateral Types" (visible 
+only to superadmin) to seed these.
+
+═══════════════════════════════════════════════════════════════
+PART C: MFI SECTOR IN INSTITUTION MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Extend the existing Institution Management (from Task 9 Step 1):
+
+1. Add "MFI" to the institution type dropdown
+   Options now: School / MFI / Clinic / Farm
+
+2. When MFI is selected, show additional fields:
+   - License Number (MFI registration)
+   - UMRA Registration Number (Regulatory)
+   - Number of Branches
+   - Primary Services (dropdown multi-select):
+     * Group Loans
+     * Individual Loans
+     * Agricultural Loans
+     * Business Loans
+     * Savings
+     - Loan Portfolio Size (approximate, UGX)
+
+3. When MFI institution is created:
+   - Set default admin role = "MFI Admin"
+   - Auto-create a default branch
+   - Link to existing institution_branding collection
+
+4. Super Admin sees MFI institutions in the Institution Management 
+   list with a badge "🏦 MFI"
+
+═══════════════════════════════════════════════════════════════
+PART D: MFI ADMIN ACCOUNT ROLE
+═══════════════════════════════════════════════════════════════
+
+Add new user roles:
+
+1. MFI Admin (like School Admin, but for MFI)
+   - Manages one MFI institution
+   - Can register customers
+   - Can capture collateral
+   - Can review collateral (manager role)
+   - Can generate UMRA reports
+
+2. Loan Officer (sub-role under MFI Admin)
+   - Registers customers
+   - Captures collateral
+   - Submits for review
+   - Cannot approve
+
+3. Loan Manager (sub-role)
+   - Reviews collateral scores
+   - Approves / Rejects / Requests top-up
+
+4. Loan Director (sub-role)
+   - Views dashboards
+   - Exports UMRA reports
+
+Update existing role dropdown in User Management to include these 
+4 new roles. Filter institution dropdown to show only MFIs when 
+creating an MFI role user.
+
+═══════════════════════════════════════════════════════════════
+PART E: MFI ADMIN DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When an MFI Admin logs in:
+
+New bottom navigation for MFI Admin:
+[🏠 Home] [👥 Customers] [📋 Collateral] [📊 Reports] [👤 Account]
+
+Home screen shows:
+┌─────────────────────────────────────────┐
+│ 🏦 {MFI Name}                            │
+│ Welcome, {adminName}                     │
+├─────────────────────────────────────────┤
+│ 📊 QUICK STATS                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Total    │ │ Collateral│ │ Pending  │ │
+│ │ Customers│ │ Captured │ │ Reviews  │ │
+│ │ 245      │ │ 180      │ │ 12       │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [➕ New Customer] [📋 Capture Collateral]│
+│ [👥 View Customers] [📊 View Reports]   │
+│                                          │
+│ 📋 RECENT ACTIVITY                       │
+│ • New customer: John Doe                 │
+│ • Collateral submitted: Mary (Land)     │
+│ • Approved: Peter's Vehicle             │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART F: CUSTOMER REGISTRATION FORM
+═══════════════════════════════════════════════════════════════
+
+When MFI Admin taps [➕ New Customer]:
+
+Full-screen modal (id="mfiCustomerFormModal"):
+
+Section 1 — Personal Information:
+- First Name (required)
+- Last Name (required)
+- Phone (required)
+- Email (optional)
+- National ID (required)
+- Date of Birth (required)
+- Gender (dropdown)
+
+Section 2 — Occupation & Income:
+- Occupation (required)
+- Monthly Income (UGX, required)
+- Business Name (optional)
+- Business Address (optional)
+
+Section 3 — Physical Address:
+- Physical Address (required, textarea)
+
+Section 4 — Photo Upload:
+- Customer Photo (optional, camera/gallery)
+- National ID Front (required, camera/gallery)
+- National ID Back (required, camera/gallery)
+
+On save:
+- Create Firebase Auth user (role: borrower — read-only)
+- Create mfi_customers doc
+- Show success modal: "✅ Customer registered"
+
+═══════════════════════════════════════════════════════════════
+PART G: COLLATERAL CAPTURE FORM
+═══════════════════════════════════════════════════════════════
+
+When MFI Admin taps [📋 Capture Collateral]:
+
+Step 1 — Select Customer:
+- Search bar: search by name/phone
+- List of recent customers
+- Or [+ Register New Customer] button
+
+Step 2 — Collateral Details Form (id="collateralFormModal"):
+
+Fields (all required unless marked optional):
+- Collateral Type (dropdown — from mfi_collateral_types)
+- Description (textarea — e.g. "Plot 12, Nakasero Road")
+- Estimated Value (UGX, number)
+- Ownership Proof Type (dropdown):
+  * Title Deed
+  * Logbook
+  * Sales Agreement
+  * Bank Statement
+  * None
+- Upload Ownership Proof (file upload — image or PDF)
+- Location (text)
+- Condition (dropdown): Good / Fair / Poor
+
+If Type == "Guarantor":
+- Guarantor Name (required)
+- Guarantor Phone (required)
+- Guarantor Relationship (dropdown): Spouse/Parent/Sibling/
+  Friend/Colleague/Other
+- Guarantor National ID (upload)
+- Guarantor Signed Form (upload PDF)
+
+Additional Documents (optional multiple):
+- Upload up to 5 supporting documents
+- Each with type label
+
+Notes (optional, textarea)
+
+Step 3 — Review & Submit:
+- Show summary of captured data
+- Show estimated score preview (calculation happens on submit)
+- [Save as Draft] [Submit for Review]
+
+On submit:
+- Save mfi_collateral doc
+- Compute score automatically (see Part H)
+- Save mfi_collateral_scoring doc
+- Change collateral status to "submitted"
+- Notify Loan Manager
+- Show result modal:
+  "✅ Collateral Submitted
+   Score: 85/100 (Excellent)
+   Recommendation: Approve
+   
+   Manager will review shortly."
+
+═══════════════════════════════════════════════════════════════
+PART H: AUTO-SCORING ENGINE
+═══════════════════════════════════════════════════════════════
+
+The heart of Task 10 — automatic collateral scoring.
+
+Add function computeCollateralScore(collateralData, customerData):
+Returns { assetTypeScore, ownershipProofScore, marketValueScore, 
+          locationScore, liquidityScore, totalScore, grade, recommendation }
+
+SCORING RUBRIC:
+
+1. Asset Type (0-25 points):
+   Based on collateral.typeId (from mfi_collateral_types.baseScore):
+   - Land/Property: 25
+   - Vehicle: 20
+   - Guarantor: 15
+   - Business Assets: 12
+   - Bank Guarantee: 20
+   - Household Assets: 5
+   
+   Take the baseScore directly from the type record.
+
+2. Ownership Proof (0-25 points):
+   - Official Title/Logbook: 25
+   - Signed Agreement: 15
+   - Bank Statement: 20
+   - No proof / None: 0
+
+3. Market Value (0-20 points):
+   Compare estimatedValueUgx to customer's total requested loan 
+   amount (if available; otherwise use customer.monthlyIncome * 12):
+   - Value >= 150% of reference: 20
+   - 100-149%: 15
+   - 50-99%: 10
+   - Below 50%: 0
+
+4. Location/Accessibility (0-15 points):
+   Based on location text. Check for keywords:
+   - Kampala/Wakiso/Entebbe: 15
+   - Regional Town (Mbarara, Gulu, Mbale, Jinja, etc.): 10
+   - Other rural: 5
+   - Empty/Unknown: 0
+
+5. Liquidity (0-15 points):
+   Based on asset type:
+   - Land/Property: 15 (easy to sell)
+   - Vehicle: 12
+   - Bank Guarantee: 15
+   - Business Assets: 8
+   - Guarantor: 5
+   - Household Assets: 3
+
+TOTAL SCORE = sum of all 5 categories (max 100)
+
+INTERPRETATION:
+- 80-100: Grade "Excellent" → Recommendation "Approve"
+- 60-79: Grade "Good" → Recommendation "Approve"
+- 40-59: Grade "Fair" → Recommendation "Request Top-up"
+- Below 40: Grade "Weak" → Recommendation "Reject"
+
+Store all in mfi_collateral_scoring.
+
+═══════════════════════════════════════════════════════════════
+PART I: SCORE DISPLAY
+═══════════════════════════════════════════════════════════════
+
+After submitting a collateral, show a score card:
+
+┌─────────────────────────────────────────┐
+│ 📊 COLLATERAL SCORE                      │
+├─────────────────────────────────────────┤
+│ Asset Type:        25/25 ████████████   │
+│ Ownership Proof:   25/25 ████████████   │
+│ Market Value:      20/20 ████████████   │
+│ Location:          15/15 ████████████   │
+│ Liquidity:         13/15 ██████████░░   │
+│                                          │
+│ TOTAL SCORE:       98/100                │
+│ GRADE:             ⭐ Excellent          │
+│ RECOMMENDATION:    ✅ Approve            │
+│                                          │
+│ 🟢 This collateral is strong. Manager    │
+│    review expected within 24 hours.      │
+└─────────────────────────────────────────┘
+
+For "Fair" grade (40-59):
+"🟡 Needs improvement. Manager may request additional collateral."
+
+For "Weak" grade (0-39):
+"🔴 High risk. Consider adding a guarantor or additional collateral."
+
+═══════════════════════════════════════════════════════════════
+PART J: MFI CUSTOMERS LIST
+═══════════════════════════════════════════════════════════════
+
+When MFI Admin taps [👥 View Customers] or [Customers tab]:
+
+Full-screen modal (id="mfiCustomersListModal"):
+
+- Search bar (name, phone, nationalId)
+- Filter: All / Active / Inactive / Blacklisted
+- Sort: Newest / Most collateral / Alphabetical
+- [+ New Customer] button top-right
+
+Customer cards:
+┌─────────────────────────────────────────┐
+│ 👤 John Doe                              │
+│ 📱 +256705732540                         │
+│ 💼 Business: Solar Shop                  │
+│ 📋 Collateral: 2 items                   │
+│ Status: ✅ Active                        │
+│ [👁 View] [📋 Add Collateral] [⋮]       │
+└─────────────────────────────────────────┘
+
+⋮ More menu:
+- Edit customer
+- View collateral
+- Add to blacklist
+- Delete customer
+
+Customer detail modal shows:
+- Full profile
+- All collateral items with scores
+- Timeline of activities
+
+═══════════════════════════════════════════════════════════════
+PART K: COLLATERAL LIST VIEW
+═══════════════════════════════════════════════════════════════
+
+When MFI Admin taps [📋 Collateral tab] or [View Collateral]:
+
+Full-screen modal (id="mfiCollateralListModal"):
+
+- Filter by: Status (draft/submitted/under_review/verified/rejected)
+- Filter by: Type (Land/Vehicle/etc.)
+- Filter by: Score range (Excellent/Good/Fair/Weak)
+- Sort: Newest / Highest score / Lowest score
+
+Collateral cards:
+┌─────────────────────────────────────────┐
+│ 🏠 Land — Plot 12 Nakasero              │
+│ Customer: John Doe                       │
+│ Value: UGX 80,000,000                    │
+│ Score: 98/100 ⭐ Excellent              │
+│ Status: ⏳ Submitted                     │
+│ [👁 View] [✏️ Edit]                     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Danger: #dc3545 (red)
+
+MFI sector uses a DARK BLUE accent for differentiation:
+- MFI primary: #1A5490 (dark blue)
+- MFI secondary: #2E7DAF (light blue)
+
+Score visualization:
+- 80-100: Green gradient bar
+- 60-79: Light green
+- 40-59: Yellow/orange
+- 0-39: Red
+
+═══════════════════════════════════════════════════════════════
+PART M: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+MFI registration requires internet (creating Firebase Auth). Show 
+message when offline.
+
+BUT — Customer and collateral capture should support offline:
+1. Save to IndexedDB: offline_mfi_customers, offline_mfi_collateral
+2. Queue for sync when connection restored
+3. Show badge: "Saved offline — will sync at office WiFi"
+
+Sync logic uses Task 2's offline system.
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. mfi_customers: institutionId (asc) + createdAt (desc)
+2. mfi_customers: institutionId (asc) + status (asc)
+3. mfi_collateral: customerId (asc) + createdAt (desc)
+4. mfi_collateral: institutionId (asc) + status (asc)
+5. mfi_collateral_scoring: status (asc) + scoredAt (desc)
+
+═══════════════════════════════════════════════════════════════
+PART O: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Super Admin + 1 MFI Admin account:
+
+A. Seed collateral types:
+   1. Login as super admin
+   2. Open Command Center → MFI section OR Settings
+   3. Click "🌱 Seed MFI Collateral Types"
+   4. Verify: 6 types in mfi_collateral_types collection
+
+B. Create MFI institution:
+   1. Command Center → Institutions → [+ Add Institution]
+   2. Select Type: MFI
+   3. Fill all MFI-specific fields
+   4. Save
+   5. Verify: institution appears with 🏦 badge
+
+C. Create Loan Officer user:
+   1. Command Center → Users → [+ Add User]
+   2. Role: Loan Officer
+   3. Institution: select the MFI
+   4. Save
+   5. Verify: user created + role assigned
+
+D. Login as MFI Admin (or use super admin to test MFI views):
+   1. Verify: MFI-specific bottom nav appears
+   2. Verify: MFI dashboard shows 3 stat cards
+
+E. Register customer:
+   1. Tap [➕ New Customer]
+   2. Fill all required fields
+   3. Upload ID Front + Back
+   4. Save
+   5. Verify: mfi_customers has new doc
+   6. Verify: Firebase Auth created borrower account
+
+F. Capture collateral — Land example:
+   1. Tap [📋 Capture Collateral]
+   2. Select customer
+   3. Type: Land & Property
+   4. Description: "Plot 12, Nakasero Road"
+   5. Value: 80,000,000
+   6. Ownership: Title Deed
+   7. Location: Kampala
+   8. Condition: Good
+   9. Submit
+   10. Verify: score computed = 25 + 25 + 20 + 15 + 15 = 100
+   11. Verify: grade = Excellent, recommendation = Approve
+
+G. Capture collateral — Household Assets (weak):
+   1. Repeat with Household Assets
+   2. Value: 20,000,000
+   3. Ownership: None
+   4. Location: Rural village
+   5. Verify: score = 5 + 0 + 10 + 5 + 3 = 23
+   6. Verify: grade = Weak, recommendation = Reject
+
+H. Capture collateral — Guarantor:
+   1. Type: Guarantor
+   2. Fill guarantor fields
+   3. Verify: score includes guarantor-specific logic
+
+I. Customer list:
+   1. Open Customers tab
+   2. Verify: registered customers appear
+   3. Test search
+   4. Test filters
+
+J. Collateral list:
+   1. Open Collateral tab
+   2. Verify: submitted collateral appears
+   3. Verify: score shows correctly
+   4. Test filters
+
+K. Offline test:
+   1. Turn off WiFi
+   2. Try to register customer → "requires internet" message
+   3. Try to capture collateral → saved to IndexedDB, queued
+   4. Turn on WiFi → syncs
+
+L. Regression check:
+   1. Task 1-9 features still work
+   2. Education sector unaffected
+   3. School admin still sees their own dashboard
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-9
+- Do NOT change Education sector navigation
+- Do NOT delete existing institutions
+- Do NOT allow non-MFI users to access MFI screens
+- Do NOT allow collateral scoring without required fields
+- Do NOT lose draft collateral (save offline)
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 10 Step 1 complete — MFI Foundation + Customer + Collateral + Auto-Scoring built"
+
+Report:
+- Which tests A through L passed
+- Any bugs found
+- Screenshots recommended: MFI institution creation, customer form, 
+  collateral form, auto-scoring result (Excellent + Weak examples), 
+  customers list, collateral list
