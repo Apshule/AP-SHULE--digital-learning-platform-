@@ -38,13 +38,19 @@ service cloud.firestore {
     }
 
     function isFarmUser() {
-      return signedIn() && role() in ['farm_admin', 'farm_manager', 'farm_worker'];
+      return signedIn() && role() in ['farm_admin', 'farm_manager', 'farm_worker', 'farm_director'];
     }
 
     function sameFarm(farmId) {
       return isFarmUser()
         && (farmId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.farmId
-          || farmId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+          || farmId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId
+          || (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.farmIds != null
+            && farmId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.farmIds));
+    }
+
+    function isFarmReader() {
+      return isFarmUser() && (role() in ['farm_admin', 'farm_manager', 'farm_director']);
     }
 
     function isFarmAdmin() {
@@ -420,31 +426,32 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
     match /farm_workers/{workerId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if (isFarmReader() && sameFarm(resource.data.farmId))
+        || signedIn() && resource.data.userId == request.auth.uid;
       allow create: if isFarmAdmin() && sameFarm(request.resource.data.farmId);
       allow update: if isFarmAdmin() && sameFarm(resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
     match /farm_cameras/{cameraId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create, delete: if isFarmAdmin() && sameFarm(request.resource.data.farmId);
       allow update: if isFarmAdmin() && sameFarm(resource.data.farmId)
         || isFarmManager() && sameFarm(resource.data.farmId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastHeartbeat', 'updatedAt', 'lastDetectionAt', 'isConnected']);
     }
     match /farm_animal_movements/{movementId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
       allow update: if isFarmManager() && sameFarm(resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
     match /farm_daily_summaries/{summaryId} {
-      allow read: if isFarmUser() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create, update: if isFarmManager() && sameFarm(request.resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
     match /farm_worker_attendance/{attendanceId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId)
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId)
         || signedIn() && resource.data.userId == request.auth.uid;
       allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
         && (role() != 'farm_worker' || request.resource.data.userId == request.auth.uid);
@@ -452,14 +459,15 @@ service cloud.firestore {
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
     match /farm_egg_collections/{collectionId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if (isFarmReader() && sameFarm(resource.data.farmId))
+        || signedIn() && resource.data.collectedBy == request.auth.uid;
       allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
         && (role() != 'farm_worker' || request.resource.data.collectedBy == request.auth.uid);
       allow update: if isFarmManager() && sameFarm(resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
     match /farm_inventory/{itemId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create: if isFarmAdmin() && sameFarm(request.resource.data.farmId)
         && request.resource.data.quantityInStock >= 0;
       allow update: if isFarmManager() && sameFarm(resource.data.farmId)
@@ -467,13 +475,14 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /farm_feed_consumption/{consumptionId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if (isFarmReader() && sameFarm(resource.data.farmId))
+        || signedIn() && resource.data.fedBy == request.auth.uid;
       allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
         && (role() != 'farm_worker' || request.resource.data.fedBy == request.auth.uid);
       allow update, delete: if false;
     }
     match /farm_produce/{produceId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
       // Produce records are append-only in the current UI; corrections use a
       // new audited record rather than mutating historical financial data.
@@ -481,7 +490,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /farm_sales/{saleId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId)
         && request.resource.data.totalAmount >= 0
         && request.resource.data.amountPaid >= 0
@@ -489,15 +498,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /farm_expenses/{expenseId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId)
         && request.resource.data.amount >= 0;
       // Expense records are append-only so historical costs cannot be changed.
       allow update: if false;
       allow delete: if false;
     }
+    match /farm_report_templates/{templateId} {
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
+      allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
     match /farm_lost_animals/{lostAnimalId} {
-      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow read: if isFarmReader() && sameFarm(resource.data.farmId);
       allow create, update: if isFarmManager() && sameFarm(request.resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }

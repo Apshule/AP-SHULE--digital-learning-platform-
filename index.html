@@ -2356,7 +2356,7 @@
             <div class="command-section-title"><span>👥 User Management</span><button id="commandAddUserBtn" class="command-primary-btn" type="button">＋ Add User</button></div>
             <p class="command-tabs-note">Search and manage platform accounts. User actions are restricted to Super Admins.</p>
             <div class="command-panel-card">
-                <div class="command-toolbar"><input id="commandUserSearch" type="search" placeholder="Search name, email, phone…" aria-label="Search users"><select id="commandUserRoleFilter" aria-label="Filter users by role"><option value="">All roles</option><option value="individual">Students</option><option value="teacher">Teachers</option><option value="school">School Admins</option><option value="mfi_admin">MFI Admins</option><option value="loan_officer">Loan Officers</option><option value="loan_manager">Loan Managers</option><option value="loan_director">Loan Directors</option><option value="clinic_admin">Clinic Admins</option><option value="doctor">Doctors</option><option value="nurse">Nurses</option><option value="receptionist">Receptionists</option><option value="pharmacist">Pharmacists</option><option value="patient">Patients</option><option value="clinic_staff">Legacy Clinic Staff</option><option value="farm_admin">Farm Admins</option><option value="farm_manager">Farm Managers</option><option value="farm_worker">Farm Workers</option><option value="farmer">Legacy Farmers</option><option value="borrower">Borrowers</option><option value="superadmin">Super Admins</option></select><select id="commandUserStatusFilter" aria-label="Filter users by status"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select></div>
+                <div class="command-toolbar"><input id="commandUserSearch" type="search" placeholder="Search name, email, phone…" aria-label="Search users"><select id="commandUserRoleFilter" aria-label="Filter users by role"><option value="">All roles</option><option value="individual">Students</option><option value="teacher">Teachers</option><option value="school">School Admins</option><option value="mfi_admin">MFI Admins</option><option value="loan_officer">Loan Officers</option><option value="loan_manager">Loan Managers</option><option value="loan_director">Loan Directors</option><option value="clinic_admin">Clinic Admins</option><option value="doctor">Doctors</option><option value="nurse">Nurses</option><option value="receptionist">Receptionists</option><option value="pharmacist">Pharmacists</option><option value="patient">Patients</option><option value="clinic_staff">Legacy Clinic Staff</option><option value="farm_admin">Farm Admins</option><option value="farm_manager">Farm Managers</option><option value="farm_worker">Farm Workers</option><option value="farm_director">Farm Directors</option><option value="farmer">Legacy Farmers</option><option value="borrower">Borrowers</option><option value="superadmin">Super Admins</option></select><select id="commandUserStatusFilter" aria-label="Filter users by status"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select></div>
                 <div class="command-toolbar"><button id="commandImportUsersBtn" class="command-secondary-btn" type="button">📥 Import CSV</button><button id="commandExportUsersBtn" class="command-secondary-btn" type="button">📤 Export CSV</button><button id="commandDownloadUserTemplateBtn" class="command-secondary-btn" type="button">Download template</button><input id="commandUserCsvInput" type="file" accept=".csv,text/csv" style="display:none"></div>
                 <div id="commandUserImportPreview" style="display:none;margin-bottom:10px;"></div>
                 <div id="commandUsersList" class="command-list"><div class="command-activity-item">Loading users…</div></div>
@@ -2372,6 +2372,7 @@
             <div class="command-section-title"><span>📈 Platform Analytics</span><button id="commandAnalyticsRefreshBtn" class="command-secondary-btn" type="button">Refresh</button></div>
             <div class="command-toolbar"><label style="font-size:12px;font-weight:700;color:#555;">Date range <select id="commandAnalyticsRange" class="command-toolbar select" aria-label="Analytics date range"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="all">All time</option></select></label><span id="commandAnalyticsUpdated" class="command-tabs-note" style="margin:8px 0 0 auto;"></span></div>
             <div id="commandAnalyticsSummary"><div class="command-panel-card"><div class="command-activity-item">Loading analytics…</div></div></div>
+            <div class="command-analytics-section"><div class="command-section-title"><span>🌾 Farm analytics</span><button id="commandFarmAnalyticsRefreshBtn" class="command-secondary-btn" type="button">Load farm analytics</button></div><div id="commandFarmAnalytics" class="command-panel-card"><div class="command-activity-item">Farm totals are loaded on demand.</div></div></div>
             <div class="command-analytics-section"><h3>📥 Reports</h3><p class="command-tabs-note">Exports use the selected date range and the same live Firestore aggregation.</p><div class="command-report-actions"><button class="command-secondary-btn" data-command-report="users" type="button">User analytics PDF</button><button class="command-secondary-btn" data-command-report="revenue" type="button">Revenue report PDF</button><button class="command-secondary-btn" data-command-report="engagement" type="button">Engagement PDF</button><button class="command-secondary-btn" data-command-report="institutions" type="button">Institution PDF</button><button class="command-primary-btn" data-command-report="zip" type="button">Export all analytics ZIP</button></div><div id="commandReportStatus" class="command-tabs-note" style="margin-top:10px;" aria-live="polite"></div></div>
             <button id="commandOpenLegacyAdminBtn" class="command-secondary-btn" type="button">Open full legacy Admin Panel</button>
         </div>
@@ -16465,7 +16466,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== TASK 13 FARM FOUNDATION =====
-    const FARM_ROLES=['farm_admin','farm_manager','farm_worker'];
+    const FARM_ROLES=['farm_admin','farm_manager','farm_worker','farm_director'];
     const FARM_ANIMAL_SEEDS=[
         {id:'cow',name:'Cow',icon:'🐄',sortOrder:1},
         {id:'goat',name:'Goat',icon:'🐐',sortOrder:2},
@@ -16476,12 +16477,14 @@ document.addEventListener('DOMContentLoaded', () => {
         {id:'donkey',name:'Donkey',icon:'🐴',sortOrder:7}
     ];
     const FARM_WORKER_ROLES=['Herder','Milker','Egg Collector','Feeder','Manager','Security','Cleaner','Vet'];
-    let farmState={farm:null,types:[],workers:[],cameras:[],movements:[],summaries:[],attendance:[],eggCollections:[],inventory:[],feedConsumption:[],produce:[],sales:[],expenses:[],section:'home'};
+    let farmState={farm:null,types:[],workers:[],cameras:[],movements:[],summaries:[],attendance:[],eggCollections:[],inventory:[],feedConsumption:[],produce:[],sales:[],expenses:[],section:'home',reportRange:'month',reportType:'animal',workerFilters:{role:'',status:'',sort:'name'},farmChartInstances:[]};
     let farmFaceFile=null;
     function isFarmRole(role=currentUser?.role){ return FARM_ROLES.includes(role); }
     function farmInstitutionId(){ return currentUser?.farmId||currentUser?.institutionId||''; }
     function farmCanManage(){ return ['superadmin','farm_admin'].includes(currentUser?.role); }
     function farmCanOperate(){ return ['superadmin','farm_admin','farm_manager'].includes(currentUser?.role); }
+    function farmIsWorker(){ return currentUser?.role==='farm_worker'; }
+    function farmIsDirector(){ return currentUser?.role==='farm_director'; }
     function farmEsc(value){ return typeof escHtml==='function'?escHtml(value??''):String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function farmDate(value,withTime=false){ const d=value?.toDate?value.toDate():new Date(value||0); return Number.isNaN(d.getTime())?'—':d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',...(withTime?{hour:'2-digit',minute:'2-digit'}:{})}); }
     function farmToday(){ return new Date().toISOString().slice(0,10); }
@@ -16500,7 +16503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('farmModalClose').onclick=()=>farmCloseModal(); modal.onclick=event=>{if(event.target===modal)farmCloseModal();};
         document.getElementById('farmContent').addEventListener('click',farmHandleAction);
     }
-    function farmCloseModal(){ document.getElementById('farmModal')?.classList.remove('open'); }
+    function farmCloseModal(){ if(typeof farmDestroyAnalyticsCharts==='function')farmDestroyAnalyticsCharts(); document.getElementById('farmModal')?.classList.remove('open'); }
     function farmOpenModal(title,html){ const modal=document.getElementById('farmModal'); if(!modal)return; document.getElementById('farmModalTitle').textContent=title; document.getElementById('farmModalBody').innerHTML=html; modal.classList.add('open'); }
     function farmSetupOfflineHooks(){
         if(!window.OfflineManager||window._farmOfflineHooks)return;
@@ -16514,19 +16517,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     async function farmLoadData(){
         farmEnsureUi(); farmSetupOfflineHooks(); const farmId=farmInstitutionId(); if(!farmId)return;
+        if(farmIsDirector()&&farmScopeIds().length>1){try{await farmLoadDirectorPortfolio();farmState.lastUpdated=new Date();farmRender();}catch(error){farmShow('Farm portfolio could not be loaded','error');}return;}
         const empty={docs:[]};
+        const workerOnly=farmIsWorker()&&currentUser?.uid;
         try{
             const [farmSnap,typeSnap,workerSnap,cameraSnap,movementSnap,summarySnap,attendanceSnap,eggSnap,inventorySnap,feedSnap,produceSnap,salesSnap,expenseSnap]=await Promise.all([
                 getDoc(doc(db,'farms',farmId)).catch(()=>null),
                 getDocs(query(collection(db,'farm_animal_types'),limit(50))).catch(()=>empty),
-                getDocs(query(collection(db,'farm_workers'),where('farmId','==',farmId),limit(300))).catch(()=>empty),
+                getDocs(workerOnly?query(collection(db,'farm_workers'),where('userId','==',currentUser.uid),limit(5)):query(collection(db,'farm_workers'),where('farmId','==',farmId),limit(300))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_cameras'),where('farmId','==',farmId),limit(100))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_animal_movements'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_daily_summaries'),where('farmId','==',farmId),limit(90))).catch(()=>empty),
-                getDocs(query(collection(db,'farm_worker_attendance'),where('farmId','==',farmId),limit(300))).catch(()=>empty),
-                getDocs(query(collection(db,'farm_egg_collections'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
+                getDocs(workerOnly?query(collection(db,'farm_worker_attendance'),where('userId','==',currentUser.uid),limit(90)):query(collection(db,'farm_worker_attendance'),where('farmId','==',farmId),limit(300))).catch(()=>empty),
+                getDocs(workerOnly?query(collection(db,'farm_egg_collections'),where('collectedBy','==',currentUser.uid),limit(500)):query(collection(db,'farm_egg_collections'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_inventory'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
-                getDocs(query(collection(db,'farm_feed_consumption'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
+                getDocs(workerOnly?query(collection(db,'farm_feed_consumption'),where('fedBy','==',currentUser.uid),limit(500)):query(collection(db,'farm_feed_consumption'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_produce'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_sales'),where('farmId','==',farmId),limit(500))).catch(()=>empty),
                 getDocs(query(collection(db,'farm_expenses'),where('farmId','==',farmId),limit(500))).catch(()=>empty)
@@ -16559,6 +16564,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!farmState.inventory.length)farmState.inventory=cachedInventory.map(item=>({id:item.itemId,...item}));
         }
         if(!farmState.farm&&window.OfflineManager){ const cached=await OfflineManager.getFarmReport(farmId,farmToday()).catch(()=>null); if(cached)farmState.farm=cached.farm||null; }
+        if(!navigator.onLine&&window.OfflineManager){ const cachedReports=await OfflineManager.listFarmReports(farmId).catch(()=>[]); const latest=cachedReports.find(row=>row.report); if(latest?.report){farmState.summaries=[latest.report,...farmState.summaries.filter(row=>row.summaryDate!==latest.report.summaryDate)];farmState.lastUpdated=latest.cachedAt||new Date();} }
+        if(navigator.onLine||!farmState.lastUpdated)farmState.lastUpdated=new Date();
         farmRender();
     }
     function farmMovementTotals(typeId,date=farmToday()){
@@ -16603,6 +16610,186 @@ document.addEventListener('DOMContentLoaded', () => {
     function farmCurrentWorker(){
         return farmState.workers.find(item=>item.userId===currentUser?.uid)||farmState.workers.find(item=>item.status!=='inactive')||null;
     }
+    function farmScopeIds(){
+        const ids=Array.isArray(currentUser?.farmIds)?currentUser.farmIds.filter(Boolean):[];
+        return farmIsDirector()&&ids.length?Array.from(new Set(ids)):[farmInstitutionId()];
+    }
+    async function farmLoadDirectorPortfolio(){
+        const ids=farmScopeIds(),empty={docs:[]};
+        const farmSnaps=await Promise.all(ids.map(id=>getDoc(doc(db,'farms',id)).catch(()=>null)));
+        const collections=['farm_workers','farm_animal_movements','farm_egg_collections','farm_produce','farm_sales','farm_expenses','farm_daily_summaries','farm_worker_attendance','farm_feed_consumption'];
+        const batches=await Promise.all(ids.map(farmId=>Promise.all(collections.map(name=>getDocs(query(collection(db,name),where('farmId','==',farmId),limit(500))).catch(()=>empty)))));
+        const merged={};collections.forEach((name,index)=>{merged[name]=batches.flatMap(batch=>(batch[index]?.docs||[]).map(item=>({id:item.id,...item.data()})));});
+        farmState.farm={id:'portfolio',farmName:'Farm Director portfolio',farmType:'Multi-farm',portfolioFarms:farmSnaps.filter(snap=>snap?.exists()).map(snap=>({id:snap.id,...snap.data()}))};
+        farmState.portfolioFarms=farmState.farm.portfolioFarms;
+        farmState.workers=merged.farm_workers;farmState.movements=merged.farm_animal_movements;farmState.eggCollections=merged.farm_egg_collections;farmState.produce=merged.farm_produce;farmState.sales=merged.farm_sales;farmState.expenses=merged.farm_expenses;farmState.summaries=merged.farm_daily_summaries;farmState.attendance=merged.farm_worker_attendance;farmState.feedConsumption=merged.farm_feed_consumption;farmState.types=farmState.types||[];farmState.inventory=[];farmState.cameras=[];
+    }
+    function farmRangeDates(range='month'){
+        const end=new Date(),start=new Date(end);
+        if(range==='today') start.setHours(0,0,0,0);
+        else { start.setDate(1); start.setHours(0,0,0,0); }
+        return {start,end};
+    }
+    function farmInRange(value,range='month'){
+        const time=new Date(value||0).getTime(),dates=farmRangeDates(range);
+        return Number.isFinite(time)&&time>=dates.start.getTime()&&time<=dates.end.getTime();
+    }
+    function farmRowsForRange(rows,dateField,range='month'){
+        return rows.filter(row=>farmInRange(row[dateField]||row.createdAt,range));
+    }
+    function farmDashboardMetrics(){
+        const todayEggs=farmRowsForRange(farmState.eggCollections,'collectedAt','today'),monthEggs=farmRowsForRange(farmState.eggCollections,'collectedAt','month');
+        const todayMilk=farmRowsForRange(farmState.produce,'collectedAt','today').filter(row=>row.produceType==='Milk'),monthMilk=farmRowsForRange(farmState.produce,'collectedAt','month').filter(row=>row.produceType==='Milk');
+        const todaySales=farmRowsForRange(farmState.sales,'saleDate','today'),monthSales=farmRowsForRange(farmState.sales,'saleDate','month'),todayExpenses=farmRowsForRange(farmState.expenses,'expenseDate','today'),monthExpenses=farmRowsForRange(farmState.expenses,'expenseDate','month');
+        const activeWorkers=farmState.workers.filter(row=>row.status!=='inactive'),todayAttendance=farmRowsForRange(farmState.attendance,'date','today');
+        const animals=farmAnimalCards();
+        const sum=(rows,key)=>rows.reduce((total,row)=>total+Number(row[key]||0),0);
+        return {animals,activeWorkers,todayAttendance,todayEggs,monthEggs,todayMilk,monthMilk,todaySales,monthSales,todayExpenses,monthExpenses,
+            todayRevenue:sum(todaySales,'totalAmount'),monthRevenue:sum(monthSales,'totalAmount'),todayExpense:sum(todayExpenses,'amount'),monthExpense:sum(monthExpenses,'amount'),
+            todayEggCount:sum(todayEggs,'goodEggs')||sum(todayEggs,'totalEggs'),monthEggCount:sum(monthEggs,'goodEggs')||sum(monthEggs,'totalEggs'),
+            todayMilkCount:sum(todayMilk,'quantity'),monthMilkCount:sum(monthMilk,'quantity'),
+            totalAnimals:animals.reduce((total,row)=>total+Number(row.evening||0),0),missingAnimals:animals.reduce((total,row)=>total+Number(row.missing||0),0)};
+    }
+    function farmDetailedAlerts(metrics=farmDashboardMetrics()){
+        const alerts=farmAlerts().map(message=>({severity:'danger',title:'Missing animals',message}));
+        farmState.inventory.filter(row=>row.isActive!==false).forEach(item=>{
+            if(Number(item.quantityInStock||0)<=Number(item.reorderLevel||0)) alerts.push({severity:'warning',title:'Low stock',message:`${item.itemName||'Inventory item'} is at ${item.quantityInStock||0} ${item.unit||''}.`});
+            if(item.expiryDate&&new Date(item.expiryDate).getTime()-Date.now()<=30*86400000) alerts.push({severity:'warning',title:'Expiry',message:`${item.itemName||'Inventory item'} expires on ${item.expiryDate}.`});
+        });
+        const checked=new Set(metrics.todayAttendance.map(row=>row.workerId)),absent=metrics.activeWorkers.filter(row=>!checked.has(row.id));
+        if(absent.length) alerts.push({severity:'warning',title:'Absence',message:`${absent.length} active worker(s) have no check-in today.`});
+        return alerts.slice(0,12);
+    }
+    function farmActivityTimeline(){
+        const rows=[];
+        farmState.movements.forEach(row=>rows.push({at:row.detectedAt||row.createdAt,icon:'🐄',title:`${farmType(row.animalTypeId).name} ${row.direction||'movement'}`,detail:row.reviewRequired?'Manual review required':'Animal movement'}));
+        farmState.eggCollections.forEach(row=>rows.push({at:row.collectedAt||row.createdAt,icon:'🥚',title:`${row.goodEggs||row.totalEggs||0} eggs collected`,detail:`${row.sessionType||'Collection'} · ${row.collectedByName||'Farm team'}`}));
+        farmState.feedConsumption.forEach(row=>rows.push({at:row.fedAt||row.createdAt,icon:'🌾',title:`Feed used: ${row.quantityConsumed||0} ${row.unit||''}`,detail:row.itemName||'Feed consumption'}));
+        farmState.sales.forEach(row=>rows.push({at:row.saleDate||row.createdAt,icon:'💰',title:`Sale ${farmMoney(row.totalAmount)}`,detail:row.produceType||'Produce'}));
+        return rows.sort((a,b)=>new Date(b.at||0)-new Date(a.at||0)).slice(0,12);
+    }
+    function farmWorkerMobileHtml(){
+        const worker=farmCurrentWorker(),today=farmToday(),attendance=farmState.attendance.find(row=>row.workerId===worker?.id&&String(row.date||row.attendanceDate||'').slice(0,10)===today),ownEggs=farmState.eggCollections.filter(row=>(row.collectedBy===worker?.userId||row.collectedBy===worker?.id)&&farmSameDay(row.collectedAt||row.createdAt)),ownFeed=farmState.feedConsumption.filter(row=>(row.fedBy===worker?.userId||row.fedBy===worker?.id)&&farmSameDay(row.fedAt||row.createdAt)),tasks=worker?.tasks||worker?.dailyTasks||[];
+        return `<div class="farm-card"><div class="farm-section-title">👤 My workday</div><p>${farmEsc(worker?.fullName||currentUser?.name||'Farm worker')} · ${farmEsc(worker?.role||'Worker')}</p><div class="farm-modal-actions"><span class="farm-badge">${attendance?.checkOutTime?'Checked out':attendance?'Checked in':'Not checked in'}</span>${attendance&&!attendance.checkOutTime?`<button class="farm-btn warning" data-farm-action="worker-checkout">Check out</button>`:`<button class="farm-btn primary" data-farm-action="worker-checkin">${attendance?'Check in again':'Check in'}</button>`}</div></div><div class="farm-section-title">✅ Daily tasks</div>${tasks.length?tasks.map((task,index)=>`<div class="farm-list-card"><div><h4>${farmEsc(task.title||task.name||task)}</h4><p>${farmEsc(task.description||'Assigned farm task')}</p></div><button class="farm-btn ${task.completed?'':'primary'}" data-farm-action="complete-task" data-task-index="${index}">${task.completed?'Done':'Complete'}</button></div>`).join(''):'<div class="farm-empty">No tasks assigned today.</div>'}<div class="farm-section-title">🐾 Assigned animals</div><div class="farm-card">${(worker?.assignedAnimals||[]).map(id=>{const type=farmType(id);return `<span class="farm-badge" style="margin:3px">${type.icon||'🐾'} ${farmEsc(type.name)}</span>`}).join('')||'No animals assigned.'}</div><div class="farm-section-title">📋 My records today</div><div class="farm-stats"><div class="farm-stat"><span>🥚 Eggs</span><strong>${ownEggs.reduce((sum,row)=>sum+Number(row.goodEggs||row.totalEggs||0),0)}</strong></div><div class="farm-stat"><span>🌾 Feed</span><strong>${ownFeed.reduce((sum,row)=>sum+Number(row.quantityConsumed||0),0)}</strong></div></div><div class="farm-actions"><button class="farm-btn primary" data-farm-action="egg-count">🥚 Record eggs</button><button class="farm-btn" data-farm-action="feed">🌾 Record feed</button></div>`;
+    }
+    function farmRenderEnhancedHome(target){
+        if(farmIsWorker()){ target.innerHTML=farmWorkerMobileHtml(); return; }
+        const metrics=farmDashboardMetrics(),alerts=farmDetailedAlerts(metrics),activity=farmActivityTimeline(),card=(label,value,detail)=>`<div class="farm-stat"><span>${label}</span><strong>${value}</strong><small>${detail||''}</small></div>`;
+        const portfolio=farmIsDirector()&&farmState.portfolioFarms?.length?`<div class="farm-section-title">🌍 Farm comparison</div><div class="farm-card"><p class="farm-note">Read-only aggregate across ${farmState.portfolioFarms.length} farms.</p>${farmState.portfolioFarms.map(portfolioFarm=>{const sales=farmState.sales.filter(row=>row.farmId===portfolioFarm.id).reduce((sum,row)=>sum+Number(row.totalAmount||0),0);const expense=farmState.expenses.filter(row=>row.farmId===portfolioFarm.id).reduce((sum,row)=>sum+Number(row.amount||0),0);const animals=farmState.movements.filter(row=>row.farmId===portfolioFarm.id&&row.direction==='IN').length;return `<div class="farm-list-card"><div><h4>${farmEsc(portfolioFarm.farmName||portfolioFarm.id)}</h4><p>${farmEsc(portfolioFarm.location||'Location not set')}</p></div><span class="farm-badge">${farmMoney(sales-expense)} net · ${animals} movements</span></div>`}).join('')}</div>`:'';target.innerHTML=`<div class="farm-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><strong>Today</strong><p class="farm-note">Operational snapshot · ${farmToday()}</p></div><span class="farm-badge">${navigator.onLine?'Live':'Cached'}</span></div><div class="farm-stats">${card('🐄 Animals',metrics.totalAnimals,'Current herd count')}${card('🥚 Eggs',metrics.todayEggCount.toLocaleString(),`${metrics.todayEggs.length} collections`)}${card('🥛 Milk',`${metrics.todayMilkCount} L`,'Collected today')}${card('👥 Workers',metrics.activeWorkers.length,`${metrics.todayAttendance.length} check-ins`)}${card('💰 Revenue',farmMoney(metrics.todayRevenue),'Sales today')}${card('💸 Expenses',farmMoney(metrics.todayExpense),'Expenses today')}${card('📈 Net profit',farmMoney(metrics.todayRevenue-metrics.todayExpense),'Revenue minus expenses')}</div></div><div class="farm-card"><div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Month to date</strong><p class="farm-note">Since ${farmRangeDates('month').start.toISOString().slice(0,10)}</p></div><span class="farm-badge">${farmMoney(metrics.monthRevenue-metrics.monthExpense)} net</span></div><div class="farm-stats">${card('🥚 Eggs',metrics.monthEggCount.toLocaleString(),'Good eggs')}${card('🥛 Milk',`${metrics.monthMilkCount} L`,'Collected')}${card('💰 Revenue',farmMoney(metrics.monthRevenue),'Sales')}${card('💸 Expenses',farmMoney(metrics.monthExpense),'Costs')}</div></div>${portfolio}<div class="farm-section-title">🚨 Alerts</div>${alerts.length?alerts.map(alert=>`<div class="farm-alert"><strong>${farmEsc(alert.title)}</strong><br>${farmEsc(alert.message)}</div>`).join(''):'<div class="farm-card">✅ No low-stock, expiry, missing-animal, or absence alerts.</div>'}<div class="farm-section-title">🎯 Quick actions</div><div class="farm-actions">${farmIsDirector()?'':`<button class="farm-btn primary" data-farm-action="egg-count">🥚 Egg collection</button><button class="farm-btn" data-farm-action="attendance">📸 Attendance</button><button class="farm-btn" data-farm-action="settings">⚙️ Farm settings</button>`}<button class="farm-btn" data-farm-action="analytics">📈 Analytics</button><button class="farm-btn" data-farm-action="reports">📊 Reports</button><button class="farm-btn" data-farm-action="workers">👥 Staff</button></div><div class="farm-section-title">🕒 Activity timeline</div><div class="farm-timeline">${activity.length?activity.map(item=>`<div class="farm-list-card"><div><h4>${item.icon} ${farmEsc(item.title)}</h4><p>${farmEsc(item.detail)} · ${farmDate(item.at,true)}</p></div></div>`).join(''):'<div class="farm-empty">No recent activity.</div>'}</div><p class="farm-note">Last updated: ${farmDate(farmState.lastUpdated||new Date(),true)}${navigator.onLine?'':' · Offline dashboard snapshot'}</p>`;
+    }
+    function farmReportDateFilter(row,filters){
+        const value=row[filters.dateField]||row.createdAt||row.saleDate||row.expenseDate||row.collectedAt;
+        if(filters.from&&String(value).slice(0,10)<filters.from)return false;
+        if(filters.to&&String(value).slice(0,10)>filters.to)return false;
+        return true;
+    }
+    function farmReportData(reportType='animal',filters={}){
+        const titleMap={animal:'Animal report',production:'Production report',worker:'Worker report',financial:'Financial report',compliance:'Compliance report',custom:'Custom farm report'},title=titleMap[reportType]||titleMap.custom,rows=[],summary=[];
+        const inFilter=(row,dateField)=>farmReportDateFilter(row,{...filters,dateField});
+        if(reportType==='animal'){rows.push(...farmAnimalCards().map(row=>[row.type.name,row.morning,row.evening,row.missing,row.totals.in,row.totals.out]));summary.push(`Current animals: ${farmDashboardMetrics().totalAnimals}`);}
+        if(reportType==='production'){farmState.eggCollections.filter(row=>inFilter(row,'collectedAt')).forEach(row=>rows.push(['Eggs',row.sessionType||'—',row.totalEggs||0,row.brokenEggs||0,row.goodEggs||0,row.collectedByName||'—']));farmState.produce.filter(row=>inFilter(row,'collectedAt')).forEach(row=>rows.push([row.produceType||'Produce','—',row.quantity||0,row.unit||'—',row.quality||'—',row.collectedByName||'—']));summary.push(`Egg collections: ${rows.length}`);}
+        if(reportType==='worker'){farmState.workers.filter(row=>(!filters.workerId||row.id===filters.workerId)&&(!filters.status||row.status===filters.status)).forEach(worker=>{const attendance=farmState.attendance.filter(row=>row.workerId===worker.id&&inFilter(row,'date')),eggs=farmState.eggCollections.filter(row=>(row.collectedBy===worker.id||row.collectedBy===worker.userId)&&inFilter(row,'collectedAt')),feed=farmState.feedConsumption.filter(row=>(row.fedBy===worker.id||row.fedBy===worker.userId)&&inFilter(row,'fedAt'));rows.push([worker.fullName||'Worker',worker.role||'—',attendance.filter(row=>['present','late','half_day'].includes(row.status)).length,attendance.filter(row=>row.status==='late').length,eggs.reduce((sum,row)=>sum+Number(row.goodEggs||0),0),feed.reduce((sum,row)=>sum+Number(row.quantityConsumed||0),0)]);});}
+        if(reportType==='financial'){farmState.sales.filter(row=>inFilter(row,'saleDate')).forEach(row=>rows.push(['Revenue',row.saleDate||'—',row.produceType||'—',row.totalAmount||0,row.paymentStatus||'—',row.buyerName||'—']));farmState.expenses.filter(row=>inFilter(row,'expenseDate')).forEach(row=>rows.push(['Expense',row.expenseDate||'—',row.category||'—',-Number(row.amount||0),'Paid','']));const revenue=rows.filter(row=>row[0]==='Revenue').reduce((sum,row)=>sum+Number(row[3]||0),0),expense=Math.abs(rows.filter(row=>row[0]==='Expense').reduce((sum,row)=>sum+Number(row[3]||0),0));summary.push(`Profit and loss: Revenue ${farmMoney(revenue)} · Expenses ${farmMoney(expense)} · Net ${farmMoney(revenue-expense)}`);summary.push(`Cash flow includes ${farmState.sales.length} sale(s) and ${farmState.expenses.length} expense(s).`);}
+        if(reportType==='compliance'){farmState.attendance.filter(row=>inFilter(row,'date')).forEach(row=>rows.push([row.workerName||'Worker',row.date||row.attendanceDate||'—',row.status||'—',row.method||'—',row.verifiedByFace?'Face verified':'Manual']));farmState.movements.filter(row=>inFilter(row,'detectedAt')&&row.reviewRequired).forEach(row=>rows.push(['Animal review',farmDate(row.detectedAt,true),farmType(row.animalTypeId).name,'Review required',row.confidenceScore||0]));summary.push('Compliance report includes attendance verification and animal events requiring review.');}
+        if(reportType==='custom'){const selected=filters.columns||['Metric','Value'];rows.push(...farmReportData(filters.baseType||'animal',filters).rows.map(row=>row.slice(0,selected.length)));summary.push(`Custom template: ${filters.templateName||'Untitled'}`);}
+        const headers={animal:['Animal','Morning','Evening','Missing','In','Out'],production:['Type','Session','Quantity','Broken/Unit','Good/Quality','Recorded by'],worker:['Worker','Role','Present days','Late days','Good eggs','Feed used'],financial:['Type','Date','Category','Amount','Status','Party'],compliance:['Subject','Date','Status','Method','Review']}[reportType]||filters.columns||['Metric','Value'];
+        return {reportType,title,headers,rows,summary,filters,generatedAt:new Date().toISOString(),farmName:farmState.farm?.farmName||'Farm'};
+    }
+    async function generateFarmReport(reportType='animal',filters={}){
+        const report=farmReportData(reportType,filters);
+        if(window.OfflineManager&&farmInstitutionId()) await OfflineManager.cacheFarmReport({farmId:farmInstitutionId(),summaryDate:`${farmToday()}-${reportType}`,report,farm:farmState.farm}).catch(()=>{});
+        return report;
+    }
+    function farmReportCsv(report){
+        const lines=[[report.title,...report.headers],...report.rows].map(row=>row.map(value=>`"${String(value??'').replace(/"/g,'""')}"`).join(','));
+        return lines.join('\n');
+    }
+    function farmDownloadReportFormat(report,format){
+        const filename=`${(report.farmName||'farm').replace(/\s+/g,'-').toLowerCase()}-${report.reportType}-${farmToday()}`;
+        if(format==='csv'){const blob=new Blob([farmReportCsv(report)],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${filename}.csv`;a.click();URL.revokeObjectURL(url);return;}
+        if(format==='xlsx'&&window.XLSX){const sheet=window.XLSX.utils.aoa_to_sheet([[report.farmName,report.title],['Generated',farmDate(report.generatedAt,true)],...report.summary.map(item=>[item]),report.headers,...report.rows]),book=window.XLSX.utils.book_new();window.XLSX.utils.book_append_sheet(book,sheet,'Farm report');window.XLSX.writeFile(book,`${filename}.xlsx`);return;}
+        if(window.jspdf?.jsPDF){const pdf=new window.jspdf.jsPDF(),body=[...report.summary,...report.rows.map(row=>row.join(' | '))];pdf.text([report.farmName,report.title,`Generated: ${farmDate(report.generatedAt,true)}`],14,16);if(pdf.autoTable)pdf.autoTable({startY:32,head:[report.headers],body:report.rows.map(row=>row.map(value=>String(value??''))),styles:{fontSize:8}});else pdf.text(body.slice(0,35),14,28);pdf.text('APSHULE Farm Records',14,285);pdf.save(`${filename}.pdf`);return;}
+        const blob=new Blob([farmReportCsv(report)],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`${filename}.txt`;a.click();URL.revokeObjectURL(url);
+    }
+    function farmOpenReports(){
+        const types=[['animal','Animals'],['production','Production'],['worker','Workers'],['financial','Financial / P&L'],['compliance','Compliance'],['custom','Custom builder']];
+        farmOpenModal('📊 Farm reports',`<div class="farm-report-tabs">${types.map(([value,label])=>`<button type="button" class="farm-btn ${value===farmState.reportType?'primary':''}" data-report-tab="${value}">${label}</button>`).join('')}</div><form class="farm-form" id="farmReportForm"><div class="farm-grid"><label>From<input name="from" type="date" value="${farmToday().slice(0,8)}01"></label><label>To<input name="to" type="date" value="${farmToday()}"></label></div><label>Worker filter<select name="workerId"><option value="">All workers</option>${farmState.workers.map(row=>`<option value="${farmEsc(row.id)}">${farmEsc(row.fullName)}</option>`).join('')}</select></label><div class="farm-grid"><label>Custom base<select name="baseType"><option value="animal">Animals</option><option value="production">Production</option><option value="worker">Workers</option><option value="financial">Financial</option></select></label><label>Template name<input name="templateName" placeholder="Optional saved template"></label></div><label>Custom columns (comma separated)<input name="columns" placeholder="Metric, Value"></label><div id="farmReportOutput" class="farm-report"></div><div class="farm-modal-actions"><button class="farm-btn primary" type="submit">Generate report</button><button class="farm-btn" type="button" data-save-template>Save template</button><button class="farm-btn" type="button" data-report-format="pdf">PDF</button><button class="farm-btn" type="button" data-report-format="xlsx">Excel</button><button class="farm-btn" type="button" data-report-format="csv">CSV</button></div></form>`);
+        const form=document.getElementById('farmReportForm'),output=document.getElementById('farmReportOutput'),getFilters=()=>({from:form.from.value,to:form.to.value,workerId:form.workerId.value,baseType:form.baseType.value,templateName:form.templateName.value,columns:form.columns.value.split(',').map(item=>item.trim()).filter(Boolean)}),render=async()=>{const report=await generateFarmReport(farmState.reportType,getFilters());form.dataset.report=JSON.stringify(report);output.innerHTML=`<strong>${farmEsc(report.title)}</strong><p>${farmEsc(report.farmName)} · ${farmDate(report.generatedAt,true)}</p>${report.summary.map(item=>`<p>${farmEsc(item)}</p>`).join('')}<div style="overflow:auto"><table class="farm-report-table"><thead><tr>${report.headers.map(item=>`<th>${farmEsc(item)}</th>`).join('')}</tr></thead><tbody>${report.rows.slice(0,40).map(row=>`<tr>${row.map(item=>`<td>${farmEsc(item)}</td>`).join('')}</tr>`).join('')||'<tr><td colspan="8">No records match these filters.</td></tr>'}</tbody></table></div>`;};
+        form.onsubmit=event=>{event.preventDefault();render();};render();document.querySelectorAll('[data-report-tab]').forEach(button=>button.onclick=()=>{farmState.reportType=button.dataset.reportTab;document.querySelectorAll('[data-report-tab]').forEach(item=>item.classList.toggle('primary',item===button));render();});form.querySelector('[data-save-template]')?.addEventListener('click',async()=>{const template={name:form.templateName.value.trim()||'Farm template',baseType:form.baseType.value,columns:getFilters().columns,updatedAt:new Date().toISOString()};try{const saved=JSON.parse(localStorage.getItem('apshule-farm-report-templates')||'[]');localStorage.setItem('apshule-farm-report-templates',JSON.stringify([template,...saved.filter(item=>item.name!==template.name)].slice(0,20)));if(navigator.onLine&&db)await setDoc(doc(collection(db,'farm_report_templates')), {farmId:farmInstitutionId(),...template,createdBy:currentUser?.uid||''});farmShow('Report template saved','success');}catch(error){farmShow('Could not save report template','error');}});form.querySelectorAll('[data-report-format]').forEach(button=>button.onclick=()=>{const report=form.dataset.report?JSON.parse(form.dataset.report):farmReportData(farmState.reportType,getFilters());farmDownloadReportFormat(report,button.dataset.reportFormat);});
+    }
+    function farmDestroyAnalyticsCharts(){(farmState.farmChartInstances||[]).forEach(chart=>chart?.destroy?.());farmState.farmChartInstances=[];}
+    function farmOpenAnalytics(){
+        farmOpenModal('📈 Farm analytics',`<div id="farmAnalyticsBody"><div class="farm-stats"><div class="farm-stat"><span>Efficiency</span><strong id="farmEfficiency">—</strong><small>Good eggs / total eggs</small></div><div class="farm-stat"><span>Attendance</span><strong id="farmAttendanceRate">—</strong><small>Present today</small></div></div><canvas id="farmPopulationChart" height="150"></canvas><canvas id="farmProductionChart" height="150"></canvas><div class="farm-section-title">Worker productivity</div><div id="farmWorkerProductivity"></div><div class="farm-section-title">Alerts and anomalies</div><div id="farmAnalyticsAlerts"></div></div>`);
+        const metrics=farmDashboardMetrics(),eff=metrics.todayEggCount?Math.round(metrics.todayEggCount/Math.max(metrics.todayEggs.reduce((sum,row)=>sum+Number(row.totalEggs||0),0),1)*100):0,rate=metrics.activeWorkers.length?Math.round(metrics.todayAttendance.filter(row=>['present','late','half_day'].includes(row.status)).length/metrics.activeWorkers.length*100):0;
+        document.getElementById('farmEfficiency').textContent=`${eff}%`;document.getElementById('farmAttendanceRate').textContent=`${rate}%`;
+        const labels=Array.from({length:7},(_,index)=>{const date=new Date();date.setDate(date.getDate()-(6-index));return date.toISOString().slice(0,10);}),eggs=labels.map(day=>farmState.eggCollections.filter(row=>String(row.collectedAt||row.createdAt).slice(0,10)===day).reduce((sum,row)=>sum+Number(row.goodEggs||row.totalEggs||0),0)),animals=labels.map(()=>metrics.totalAnimals);
+        farmDestroyAnalyticsCharts();if(window.Chart){farmState.farmChartInstances.push(new Chart(document.getElementById('farmPopulationChart'),{type:'line',data:{labels,datasets:[{label:'Animals',data:animals,borderColor:'#2E7D32',tension:.3}]},options:{responsive:true,plugins:{legend:{display:true}}}}));farmState.farmChartInstances.push(new Chart(document.getElementById('farmProductionChart'),{type:'bar',data:{labels,datasets:[{label:'Good eggs',data:eggs,backgroundColor:'#81C784'}]},options:{responsive:true}}));}
+        document.getElementById('farmWorkerProductivity').innerHTML=metrics.activeWorkers.map(worker=>{const eggs=farmState.eggCollections.filter(row=>(row.collectedBy===worker.id||row.collectedBy===worker.userId)&&farmInRange(row.collectedAt||row.createdAt,'month')).reduce((sum,row)=>sum+Number(row.goodEggs||0),0);return `<div class="farm-list-card"><div><strong>${farmEsc(worker.fullName)}</strong><p>${farmEsc(worker.role||'Worker')}</p></div><span class="farm-badge">${eggs} good eggs</span></div>`}).join('')||'<div class="farm-empty">No productivity records yet.</div>';
+        document.getElementById('farmAnalyticsAlerts').innerHTML=farmDetailedAlerts(metrics).map(item=>`<div class="farm-alert"><strong>${farmEsc(item.title)}</strong> · ${farmEsc(item.message)}</div>`).join('')||'<p class="farm-note">No anomalies detected.</p>';
+    }
+    function farmOpenWorkerDetail(worker){
+        if(!worker)return;const attendance=farmState.attendance.filter(row=>row.workerId===worker.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))),tasks=worker.tasks||worker.dailyTasks||[],salary=Number(worker.monthlySalaryUgx||0),present=attendance.filter(row=>['present','late','half_day'].includes(row.status)).length;
+        farmOpenModal(`👤 ${worker.fullName||'Worker'}`,`<div class="farm-card"><strong>${farmEsc(worker.role||'Worker')}</strong><p>${farmEsc(worker.phone||'No phone')} · ${farmEsc(worker.status||'active')}</p><p>Salary: ${farmMoney(salary)} / month · Attendance days: ${present}</p><p>Assigned animals: ${farmEsc((worker.assignedAnimals||[]).map(id=>farmType(id).name).join(', ')||'None')}</p></div><div class="farm-section-title">📅 Attendance calendar</div><div class="farm-grid">${attendance.slice(0,31).map(row=>`<div class="farm-card"><strong>${farmEsc(row.date||row.attendanceDate||'—')}</strong><p>${farmEsc(row.status||'—')}</p></div>`).join('')||'<div class="farm-empty">No attendance history.</div>'}</div><div class="farm-section-title">✅ Tasks and productivity</div>${tasks.map(task=>`<div class="farm-list-card"><div><strong>${farmEsc(task.title||task.name||task)}</strong></div><span class="farm-badge">${task.completed?'Done':'Open'}</span></div>`).join('')||'<div class="farm-note">No assigned tasks recorded.</div>'}${farmCanManage()?`<button class="farm-btn primary" data-farm-action="edit-worker" data-worker-id="${farmEsc(worker.id)}">Edit worker</button>`:''}`);
+    }
+    function farmOpenSettings(){
+        if(!farmCanManage())return farmShow('Only Farm Admin can change farm settings','error');
+        const farm=farmState.farm||{};farmOpenModal('⚙️ Farm settings',`<form class="farm-form" id="farmSettingsForm"><div class="farm-grid"><label>Farm name<input name="farmName" required value="${farmEsc(farm.farmName||'')}"></label><label>Farm type<input name="farmType" value="${farmEsc(farm.farmType||'Mixed farm')}"></label></div><label>Tagline<input name="tagline" value="${farmEsc(farm.tagline||'')}"></label><div class="farm-grid"><label>Owner<input name="ownerName" value="${farmEsc(farm.ownerName||'')}"></label><label>Location<input name="location" value="${farmEsc(farm.location||'')}"></label></div><div class="farm-grid"><label>Latitude<input name="latitude" type="number" step="any" value="${farm.latitude??''}"></label><label>Longitude<input name="longitude" type="number" step="any" value="${farm.longitude??''}"></label></div><label>Schedules<input name="schedules" value="${farmEsc(farm.schedules||'Feed 07:00 · Milk 06:00 · Eggs 10:00')}"></label><div class="farm-grid"><label>Default egg price (UGX)<input name="eggPrice" type="number" min="0" value="${Number(farm.defaultPrices?.egg||0)}"></label><label>Default milk price (UGX)<input name="milkPrice" type="number" min="0" value="${Number(farm.defaultPrices?.milk||0)}"></label></div><label><input name="absenceNotifications" type="checkbox" style="width:auto" ${farm.notificationPreferences?.absence!==false?'checked':''}> Notify on absence and low stock</label><label>Default salary (UGX)<input name="salaryDefault" type="number" min="0" value="${Number(farm.salaryDefault||0)}"></label><div class="farm-modal-actions"><button class="farm-btn primary" type="submit">Save settings</button></div></form>`);
+        document.getElementById('farmSettingsForm').onsubmit=async event=>{event.preventDefault();const form=event.target,payload={farmName:form.farmName.value.trim(),farmType:form.farmType.value.trim(),tagline:form.tagline.value.trim(),ownerName:form.ownerName.value.trim(),location:form.location.value.trim(),latitude:form.latitude.value?Number(form.latitude.value):null,longitude:form.longitude.value?Number(form.longitude.value):null,schedules:form.schedules.value.trim(),defaultPrices:{egg:Math.max(0,Number(form.eggPrice.value||0)),milk:Math.max(0,Number(form.milkPrice.value||0))},notificationPreferences:{absence:form.absenceNotifications.checked},salaryDefault:Math.max(0,Number(form.salaryDefault.value||0)),updatedAt:new Date().toISOString()};if(navigator.onLine&&db){await updateDoc(doc(db,'farms',farmInstitutionId()),payload);farmState.farm={...farmState.farm,...payload};farmCloseModal();farmShow('Farm settings saved','success');farmRender();}else farmShow('Farm settings require an internet connection','error');};
+    }
+    function farmRenderSuperAdminAnalytics(target){
+        if(currentUser?.role!=='superadmin')return;
+        target.innerHTML=`<div class="farm-card"><div class="farm-section-title">🌍 Farm network analytics</div><div class="farm-stats">${['Farm count','Animal totals','Farm revenue','Top-performing farm'].map((label,index)=>`<div class="farm-stat"><span>${label}</span><strong>${index===0?'—':index===1?'—':index===2?'UGX —':'—'}</strong><small>Load from scoped farm records</small></div>`).join('')}</div><p class="farm-note">Super Admin farm analytics is read-only and must be opened with an institution or farm scope.</p></div>`;
+    }
+    async function farmLoadSuperAdminAnalytics(targetId='commandFarmAnalytics'){
+        const target=document.getElementById(targetId);if(!target||currentUser?.role!=='superadmin'||!db)return;
+        target.innerHTML='<div class="command-activity-item">Loading farm analytics…</div>';
+        try{
+            const farmsSnap=await getDocs(query(collection(db,'farms'),limit(300))),farms=farmsSnap.docs.map(item=>({id:item.id,...item.data()}));
+            const byFarm=await Promise.all(farms.map(async farm=>{
+                const [salesSnap,expenseSnap,movementSnap]=await Promise.all([
+                    getDocs(query(collection(db,'farm_sales'),where('farmId','==',farm.id),limit(500))).catch(()=>({docs:[]})),
+                    getDocs(query(collection(db,'farm_expenses'),where('farmId','==',farm.id),limit(500))).catch(()=>({docs:[]})),
+                    getDocs(query(collection(db,'farm_animal_movements'),where('farmId','==',farm.id),limit(500))).catch(()=>({docs:[]}))
+                ]);
+                const revenue=salesSnap.docs.reduce((sum,row)=>sum+Number(row.data().totalAmount||0),0),expense=expenseSnap.docs.reduce((sum,row)=>sum+Number(row.data().amount||0),0);
+                return {...farm,revenue,expense,net:revenue-expense,animalMovements:movementSnap.size};
+            }));
+            const revenue=byFarm.reduce((sum,row)=>sum+row.revenue,0),net=byFarm.reduce((sum,row)=>sum+row.net,0),top=[...byFarm].sort((a,b)=>b.net-a.net)[0];
+            target.innerHTML=`<div class="farm-stats"><div class="farm-stat"><span>Farm count</span><strong>${byFarm.length}</strong><small>Institution-scoped farms</small></div><div class="farm-stat"><span>Animal movement events</span><strong>${byFarm.reduce((sum,row)=>sum+row.animalMovements,0)}</strong><small>Read-only operational total</small></div><div class="farm-stat"><span>Farm revenue</span><strong>${farmMoney(revenue)}</strong><small>Recorded sales</small></div><div class="farm-stat"><span>Top-performing farm</span><strong>${farmEsc(top?.farmName||'—')}</strong><small>${farmMoney(top?.net||0)} net</small></div></div><div class="farm-section-title">Farm comparison</div>${byFarm.sort((a,b)=>b.net-a.net).map(row=>`<div class="farm-list-card"><div><h4>${farmEsc(row.farmName||row.id)}</h4><p>${farmEsc(row.institutionId||'No institution badge')} · Revenue ${farmMoney(row.revenue)} · Costs ${farmMoney(row.expense)}</p></div><span class="farm-badge">${farmMoney(row.net)} net</span></div>`).join('')||'<div class="farm-empty">No farm records are available.</div>'}<p class="farm-note">Aggregate net: ${farmMoney(net)} · Super Admin view is read-only.</p>`;
+        }catch(error){target.innerHTML='<div class="farm-empty">Farm analytics could not be loaded for the current session.</div>';}
+    }
+    const farmLegacyRender=farmRender;
+    farmRender=function(){
+        farmEnsureUi();const content=document.getElementById('farmContent');if(!content)return;
+        document.getElementById('farmPageTitle').textContent=`🌾 ${farmState.farm?.farmName||'Farm Dashboard'}`;
+        document.getElementById('farmWelcome').textContent=`Welcome, ${currentUser?.name||'farm team'} · ${farmState.farm?.farmType||'Mixed farm'}`;
+        document.getElementById('farmOnlineStatus').textContent=navigator.onLine?'● Online':'● Offline — cached data';
+        if(farmState.section==='home')farmRenderEnhancedHome(content);
+        else if(farmState.section==='analytics'){farmOpenAnalytics();farmState.section='home';}
+        else if(farmState.section==='settings'){farmOpenSettings();farmState.section='home';}
+        else if(farmIsWorker()&&farmState.section==='workers')farmRenderEnhancedHome(content);
+        else farmLegacyRender();
+    };
+    const farmLegacyHandleAction=farmHandleAction;
+    farmHandleAction=async function(event){
+        const button=event.target.closest('[data-farm-action]');if(!button)return;const action=button.dataset.farmAction;
+        if(action==='analytics'){farmOpenAnalytics();return;}
+        if(action==='reports'){farmOpenReports();return;}
+        if(action==='settings'){farmOpenSettings();return;}
+        if(action==='worker-detail'){farmOpenWorkerDetail(farmState.workers.find(row=>row.id===button.dataset.workerId));return;}
+        if(action==='worker-checkin'||action==='worker-checkout'){await farmMarkAttendance();return;}
+        if(action==='complete-task'){const worker=farmCurrentWorker(),index=Number(button.dataset.taskIndex);if(worker&&(worker.tasks||worker.dailyTasks)?.[index]){const tasks=[...(worker.tasks||worker.dailyTasks)];tasks[index]={...tasks[index],completed:true,completedAt:new Date().toISOString()};if(navigator.onLine&&db)await updateDoc(doc(db,'farm_workers',worker.id),{tasks,updatedAt:new Date().toISOString()});worker.tasks=tasks;farmRender();}return;}
+        if(action==='download-report'){farmOpenReports();return;}
+        await farmLegacyHandleAction(event);
+    };
+    const farmLegacyRenderWorkers=farmRenderWorkers;
+    farmRenderWorkers=function(target){
+        const filters=farmState.workerFilters,roles=[...new Set(farmState.workers.map(row=>row.role).filter(Boolean))];
+        let workers=farmState.workers.filter(row=>(!filters.role||row.role===filters.role)&&(!filters.status||row.status===filters.status));
+        workers.sort((a,b)=>filters.sort==='salary'?Number(b.monthlySalaryUgx||0)-Number(a.monthlySalaryUgx||0):filters.sort==='status'?String(a.status||'').localeCompare(String(b.status||'')):String(a.fullName||'').localeCompare(String(b.fullName||'')));
+        target.innerHTML=`<div class="farm-card"><div class="farm-grid"><label>Role<select id="farmWorkerRoleFilter"><option value="">All roles</option>${roles.map(role=>`<option value="${farmEsc(role)}" ${filters.role===role?'selected':''}>${farmEsc(role)}</option>`).join('')}</select></label><label>Status<select id="farmWorkerStatusFilter"><option value="">All statuses</option><option value="active" ${filters.status==='active'?'selected':''}>Active</option><option value="inactive" ${filters.status==='inactive'?'selected':''}>Inactive</option></select></label></div><label>Sort<select id="farmWorkerSort"><option value="name">Name</option><option value="salary" ${filters.sort==='salary'?'selected':''}>Salary</option><option value="status" ${filters.sort==='status'?'selected':''}>Status</option></select></label></div><div class="farm-modal-actions"><button class="farm-btn primary" data-farm-action="add-worker">＋ Add Worker</button><button class="farm-btn" data-farm-action="analytics">📈 Productivity</button></div>${workers.map(worker=>`<div class="farm-list-card"><div><h4>👤 ${farmEsc(worker.fullName)}</h4><p>${farmEsc(worker.role||'Worker')} · ${farmEsc(worker.phone||'No phone')}<br>${farmMoney(worker.monthlySalaryUgx||0)}/month · Assigned: ${farmEsc((worker.assignedAnimals||[]).map(id=>farmType(id).name).join(', ')||'None')}</p></div><div><span class="farm-badge ${worker.status==='inactive'?'warn':''}">${farmEsc(worker.status||'active')}</span><div class="farm-modal-actions"><button class="farm-btn" data-farm-action="worker-detail" data-worker-id="${farmEsc(worker.id)}">Details</button>${farmCanManage()?`<button class="farm-btn" data-farm-action="edit-worker" data-worker-id="${farmEsc(worker.id)}">Edit</button>`:''}</div></div></div>`).join('')||'<div class="farm-empty">No workers match the selected filters.</div>'}`;
+        ['farmWorkerRoleFilter','farmWorkerStatusFilter','farmWorkerSort'].forEach(id=>document.getElementById(id)?.addEventListener('change',event=>{if(id.endsWith('RoleFilter'))filters.role=event.target.value;else if(id.endsWith('StatusFilter'))filters.status=event.target.value;else filters.sort=event.target.value;farmRender();}));
+    };
     function farmTodayEggs(){
         return farmState.eggCollections.filter(item=>farmSameDay(item.collectedAt||item.createdAt)).reduce((total,item)=>total+Number(item.totalEggs||Number(item.traysCollected||0)*Number(item.eggsPerTray||30)),0);
     }
@@ -16806,6 +16993,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('DOMContentLoaded', () => {
         wrapTask12CommandFunctions();
         document.getElementById('clientPaymentForm')?.addEventListener('submit', submitClientPayment);
+        document.getElementById('commandFarmAnalyticsRefreshBtn')?.addEventListener('click', () => farmLoadSuperAdminAnalytics());
     });
     window.openClientPayment = openClientPayment;
     window.task12LoadPaymentCenter = task12LoadPaymentCenter;

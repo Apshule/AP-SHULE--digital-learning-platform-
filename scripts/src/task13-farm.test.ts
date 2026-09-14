@@ -23,6 +23,7 @@ describe("Task 13 Step 1 farm foundation contracts", () => {
       "farm_admin",
       "farm_manager",
       "farm_worker",
+      "farm_director",
     ]) {
       expect(indexSource).toContain(value);
     }
@@ -123,5 +124,51 @@ describe("Task 13 Step 1 farm foundation contracts", () => {
     expect(rulesSource).toContain("request.resource.data.quantityInStock >= 0");
     expect(rulesSource).toContain("request.resource.data.amountPaid <= request.resource.data.totalAmount");
     expect(offlineSource).toContain("oldVersion < 21");
+  });
+
+  it("supports the Step 3 dashboard, reports, analytics, staff, settings, and worker boundaries", () => {
+    for (const value of [
+      "farmDashboardMetrics",
+      "farmDetailedAlerts",
+      "farmActivityTimeline",
+      "farmWorkerMobileHtml",
+      "generateFarmReport",
+      "farmReportData",
+      "farmDownloadReportFormat",
+      "farmOpenReports",
+      "farmOpenAnalytics",
+      "farmDestroyAnalyticsCharts",
+      "farmOpenWorkerDetail",
+      "farmOpenSettings",
+      "farm_report_templates",
+      "farm_director",
+      "Last updated:",
+      "Month to date",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("farmState.farmChartInstances");
+    expect(indexSource).toContain("data-farm-action=\"worker-checkin\"");
+    expect(indexSource).toContain("data-farm-action=\"worker-checkout\"");
+    expect(rulesSource).toContain("function isFarmReader()");
+    expect(rulesSource).toContain("farmId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.farmIds");
+    expect(rulesSource).toContain("match /farm_report_templates/{templateId}");
+  });
+
+  it("adds Step 3 reporting indexes for scoped operational filters", () => {
+    const required = [
+      ["farm_egg_collections", "sessionType"],
+      ["farm_produce", "produceType"],
+      ["farm_sales", "paymentStatus"],
+      ["farm_expenses", "category"],
+      ["farm_worker_attendance", "workerId"],
+      ["farm_feed_consumption", "fedBy"],
+    ] as const;
+    for (const [collectionGroup, fieldPath] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup
+        && index.fields.some(field => field.fieldPath === fieldPath)
+      )).toBe(true);
+    }
   });
 });
