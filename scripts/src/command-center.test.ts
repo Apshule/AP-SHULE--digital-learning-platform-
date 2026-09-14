@@ -72,4 +72,51 @@ describe("Task 9 Step 1 command center contracts", () => {
       expect(indexSource).toContain(contract);
     }
   });
+
+  it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
+    for (const value of [
+      "commandAnalyticsRange",
+      "commandAnalyticsSummary",
+      "commandPlatformSettingsBody",
+      "settings','platform",
+      "securityModal",
+      "securityTabs",
+      "audit_logs",
+      "support_preview",
+      "debugPanelModal",
+      "commandAnnouncementPreview",
+      "aggregateCommandAnalytics",
+      "exportCommandReport",
+      "logSuperAdminAction",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("cached for 5 minutes");
+    expect(indexSource).toContain("Secret values are never requested");
+  });
+
+  it("adds the Step 3 security indexes and superadmin rules", () => {
+    const requiredIndexes: Array<[string, string[]]> = [
+      ["audit_logs", ["userId", "createdAt"]],
+      ["audit_logs", ["action", "createdAt"]],
+      ["failed_logins", ["email", "timestamp"]],
+      ["active_sessions", ["userId", "lastActivityAt"]],
+      ["data_subject_requests", ["type", "createdAt"]],
+    ];
+    for (const [collectionGroup, fields] of requiredIndexes) {
+      expect(indexes.indexes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          collectionGroup,
+          fields: fields.map((fieldPath, index) => ({
+            fieldPath,
+            order: index === fields.length - 1 ? "DESCENDING" : "ASCENDING",
+          })),
+        }),
+      ]));
+    }
+    for (const collection of ["audit_logs", "failed_logins", "active_sessions", "data_subject_requests"]) {
+      expect(rulesSource).toContain(`match /${collection}/`);
+    }
+    expect(rulesSource).toContain("settingId == 'about'");
+  });
 });

@@ -107,10 +107,26 @@ service cloud.firestore {
     match /cpd_certificates/{certificateId} {
       allow read, write: if isSuperAdmin();
     }
+    match /audit_logs/{auditId} {
+      allow read, create: if isSuperAdmin();
+    }
+    match /failed_logins/{failedLoginId} {
+      allow read: if isSuperAdmin();
+      allow create: if true;
+    }
+    match /active_sessions/{sessionId} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /data_subject_requests/{requestId} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /settings/{settingId} {
+      allow read, write: if signedIn() && (isSuperAdmin() || settingId == 'about');
+    }
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status))(/.*)?$');
     }
   }
 }
