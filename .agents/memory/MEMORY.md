@@ -7,3 +7,4 @@
 - [GitHub Pages push allowlist](github-pages-push-allowlist.md) — The authenticated site push helper must include repository contracts when changes need to reach the main GitHub branch.
 - [Preview build environment](preview-build-environment.md) — Full workspace builds need explicit PORT and BASE_PATH values for the mockup preview.
 - [MFI reporting boundaries](mfi-reporting-boundaries.md) — Director analytics and offline report snapshots are read-only; approvals, borrower edits, and institution-crossing reads stay rule-gated.
+- [IndexedDB version migrations](indexeddb-version-migrations.md) — New offline stores need an explicit versioned upgrade branch, not only an updated initial store list.

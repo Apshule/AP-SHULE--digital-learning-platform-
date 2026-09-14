@@ -1,0 +1,809 @@
+Task 11 — Step 1 of 3: Clinic Foundation + Patient Records + Appointments + Prescriptions
+
+CONTEXT:
+- Tasks 1-10 complete. AppShule serves Education + Microfinance sectors
+- Task 11 introduces CLINIC/PHARMACY/DRUG SHOP sector
+- This step builds the foundation: patient records, appointments, 
+  doctor/nurse workflows, and prescription management
+- Task 11 Step 2 will add Pharmacy + Product Scanner
+- Task 11 Step 3 will add Dashboard + Insurance + Reports
+
+GOAL OF STEP 1:
+- New "Clinic" institution type (extends Institution Management from Task 9)
+- New roles: Clinic Admin, Doctor, Nurse, Receptionist, Pharmacist, Patient
+- Patient registration and records
+- Appointment scheduling and check-in
+- Visit documentation (symptoms, diagnosis, vitals)
+- Prescription management
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. clinic_patients
+   Fields:
+   - patientId (Firebase uid or auto)
+   - patientNumber (auto-generated: CLN-{year}-{sequence})
+   - firstName, lastName
+   - dateOfBirth
+   - gender (Male/Female/Other)
+   - phone (required)
+   - email (optional)
+   - nationalId
+   - address
+   - emergencyContactName
+   - emergencyContactPhone
+   - bloodType (A+, A-, B+, B-, AB+, AB-, O+, O-)
+   - allergies (array of strings)
+   - chronicConditions (array of strings)
+   - insuranceProvider (optional)
+   - insuranceNumber (optional)
+   - photoUrl (Firebase Storage URL)
+   - institutionId (which clinic)
+   - branchId (optional)
+   - createdBy (uid)
+   - createdAt
+   - status (active/inactive/deceased)
+
+2. clinic_appointments
+   Fields:
+   - appointmentId (auto)
+   - patientId (reference)
+   - patientName (denormalized)
+   - doctorId (uid of doctor)
+   - doctorName
+   - appointmentDate (date)
+   - appointmentTime (time slot)
+   - appointmentType (General Checkup / Dental / Follow-up / 
+     Emergency / Lab Test / Consultation / Vaccination)
+   - reason (text)
+   - notes (text)
+   - status (scheduled/checked_in/in_progress/completed/
+     cancelled/no_show)
+   - institutionId
+   - branchId
+   - createdBy (uid)
+   - createdAt
+   - updatedAt
+   - checkedInAt (timestamp)
+   - completedAt (timestamp)
+
+3. clinic_visits
+   Fields:
+   - visitId (auto)
+   - patientId
+   - patientNumber
+   - appointmentId (optional — may be walk-in)
+   - doctorId
+   - doctorName
+   - visitDate (date)
+   - visitTime (time)
+   - visitType (Appointment / Walk-in / Emergency)
+   - symptoms (text — patient's complaint)
+   - diagnosis (text — doctor's diagnosis)
+   - treatmentPlan (text)
+   - doctorNotes (text)
+   - vitals:
+     - weight (kg)
+     - height (cm)
+     - bpSystolic (mmHg)
+     - bpDiastolic (mmHg)
+     - temperature (°C)
+     - heartRate (bpm)
+     - oxygenSaturation (%)
+     - respiratoryRate (breaths/min)
+   - followUpDate (date, optional)
+   - followUpNotes (text)
+   - status (in_progress/completed/referred)
+   - institutionId
+   - branchId
+   - createdBy
+   - createdAt
+   - completedAt
+
+4. clinic_prescriptions
+   Fields:
+   - prescriptionId (auto)
+   - visitId (reference)
+   - patientId
+   - patientName
+   - doctorId
+   - doctorName
+   - medicationName (string)
+   - dosage (string — e.g. "500mg")
+   - frequency (string — e.g. "Twice daily")
+   - duration (string — e.g. "7 days")
+   - quantity (number)
+   - instructions (text — e.g. "Take after meals")
+   - status (pending/dispensed/partially_dispensed/cancelled)
+   - dispensedBy (uid — Pharmacist)
+   - dispensedAt (timestamp)
+   - notes (text)
+   - institutionId
+   - branchId
+   - createdAt
+
+5. clinic_services
+   Fields:
+   - serviceId (auto)
+   - name (string — e.g. "General Consultation")
+   - description (text)
+   - price (number, UGX)
+   - category (Consultation/Lab/Pharmacy/Dental/Surgery/Imaging/Other)
+   - durationMinutes (number)
+   - isActive (boolean, default true)
+   - institutionId
+   - sortOrder
+   - createdAt
+
+6. clinic_branches
+   Fields:
+   - branchId (auto)
+   - name (string — e.g. "Main Branch Kampala")
+   - location (text)
+   - phone
+   - managerId (uid)
+   - managerName
+   - institutionId
+   - isActive (boolean)
+   - createdAt
+
+═══════════════════════════════════════════════════════════════
+PART B: CLINIC SECTOR IN INSTITUTION MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Extend Institution Management (from Task 9):
+
+1. Add "Clinic" to the institution type dropdown
+   Options now: School / MFI / Clinic / Farm
+
+2. When Clinic is selected, show additional fields:
+   - Clinic License Number (required for regulated clinics)
+   - Type of facility (dropdown): Clinic / Pharmacy / Drug Shop / 
+     Hospital / Health Center
+   - Services Offered (multi-select):
+     * General Consultation
+     * Dental Services
+     * Laboratory Tests
+     * Pharmacy Sales
+     * Maternity
+     * Vaccination
+     * Imaging (X-ray, Ultrasound)
+     * Minor Surgery
+     * Physiotherapy
+   - Operating Hours (text — e.g. "Mon-Fri 8AM-8PM, Sat 9AM-5PM")
+   - Emergency Contact (phone)
+   - Number of Beds (if Hospital/Health Center)
+
+3. When Clinic institution is created:
+   - Set default admin role = "Clinic Admin"
+   - Auto-create a default branch
+   - Link to existing institution_branding
+   - Seed default services (see Part C)
+
+4. Super Admin sees Clinic institutions with badge "🏥 Clinic"
+
+═══════════════════════════════════════════════════════════════
+PART C: SEED DEFAULT CLINIC SERVICES
+═══════════════════════════════════════════════════════════════
+
+On Clinic institution creation, auto-seed clinic_services with 
+10 default services (editable later):
+
+1. General Consultation — UGX 20,000 — 15 min
+2. Specialist Consultation — UGX 50,000 — 30 min
+3. Laboratory Test (Basic) — UGX 30,000 — 20 min
+4. Laboratory Test (Advanced) — UGX 80,000 — 45 min
+5. Dental Checkup — UGX 40,000 — 30 min
+6. Dental Cleaning — UGX 60,000 — 45 min
+7. Vaccination — UGX 15,000 — 10 min
+8. Pharmacy Sale — variable — 5 min
+9. Minor Wound Dressing — UGX 25,000 — 15 min
+10. Blood Pressure Check — UGX 5,000 — 5 min
+
+Add a Super Admin button "🌱 Seed Clinic Services" to seed services 
+for testing.
+
+═══════════════════════════════════════════════════════════════
+PART D: NEW USER ROLES
+═══════════════════════════════════════════════════════════════
+
+Add 6 new roles to the User Management system:
+
+1. Clinic Admin (full access to one clinic)
+   - Manages staff, services, patients
+   - Views all reports and analytics
+
+2. Doctor
+   - Sees patient records for their appointments
+   - Records visits, diagnoses, prescriptions
+   - Cannot manage staff or billing
+
+3. Nurse
+   - Checks in patients, records vitals
+   - Assists doctor
+   - Cannot write prescriptions
+
+4. Receptionist
+   - Registers patients
+   - Schedules appointments
+   - Checks in patients
+   - Cannot view medical details
+
+5. Pharmacist
+   - Dispenses prescriptions
+   - Manages pharmacy inventory
+   - Records pharmacy sales
+   - Cannot edit medical records
+
+6. Patient (borrower-like role)
+   - Views their own appointments
+   - Views their own prescriptions
+   - Cannot modify anything
+
+Update the User Management role dropdown to include these 6 roles.
+When creating a user with Clinic role, institution dropdown shows 
+only Clinic institutions.
+
+═══════════════════════════════════════════════════════════════
+PART E: CLINIC ADMIN DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When a Clinic Admin logs in:
+
+New bottom nav for Clinic Admin:
+[🏠 Home] [👥 Patients] [📅 Appointments] [💰 Billing] [👤 Account]
+
+Home screen shows:
+
+┌─────────────────────────────────────────┐
+│ 🏥 {Clinic Name}                         │
+│ Welcome, {adminName}                     │
+├─────────────────────────────────────────┤
+│ 📊 TODAY'S OVERVIEW                      │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Patients │ │ Today's  │ │ Revenue  │ │
+│ │ Total    │ │ Appoint. │ │ Today    │ │
+│ │ 1,245    │ │ 28       │ │ UGX 245K │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Pending  │ │ Low Stock│              │
+│ │ Bills    │ │ Alerts   │              │
+│ │ 34       │ │ 5        │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [➕ New Patient] [📅 New Appointment]   │
+│ [👥 View Patients] [💰 Billing]         │
+│ [💊 Pharmacy] [📊 Reports]              │
+│                                          │
+│ 📋 TODAY'S APPOINTMENTS                  │
+│ • John Kato — General Checkup — 10:00   │
+│ • Sarah Hamble — Dental — 11:30         │
+│ • Paul Mugisha — Follow-up — 14:00      │
+│ [View All]                               │
+│                                          │
+│ 🏆 TOP SERVICES THIS MONTH               │
+│ • General Consultation: 600             │
+│ • Laboratory Tests: 420                  │
+│ • Pharmacy Sales: 380                    │
+│ • Dental Services: 210                   │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART F: DOCTOR DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When a Doctor logs in:
+
+New bottom nav for Doctor:
+[🏠 Home] [📅 My Schedule] [👥 My Patients] [💊 Prescriptions] [👤 Account]
+
+Home screen shows:
+┌─────────────────────────────────────────┐
+│ 👨‍⚕️ Dr. {doctorName}                     │
+│ {Clinic Name}                            │
+├─────────────────────────────────────────┤
+│ 📊 TODAY                                │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Today's  │ │ Waiting  │ │ Completed│ │
+│ │ Appts    │ │          │ │ Today    │ │
+│ │ 12       │ │ 3        │ │ 5        │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 📅 UPCOMING APPOINTMENTS                 │
+│ • 10:00 — John Kato — Follow-up         │
+│ • 11:30 — Sarah Hamble — New patient    │
+│ • 14:00 — Paul Mugisha — Consultation   │
+│                                          │
+│ 🚨 ATTENTION                             │
+│ • 3 patients waiting                    │
+│ • 2 prescriptions pending dispense      │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════
+PART G: RECEPTIONIST DASHBOARD
+═══════════════════════════════════════════
+
+New bottom nav for Receptionist:
+[🏠 Home] [👥 Patients] [📅 Appointments] [✅ Check-in] [👤 Account]
+
+Home shows:
+- Today's appointment list
+- Quick check-in buttons
+- Register new patient
+- Search patients
+
+═══════════════════════════════════════════
+PART H: NURSE DASHBOARD
+═══════════════════════════════════════════
+
+New bottom nav for Nurse:
+[🏠 Home] [👥 Patients] [📋 Vitals] [💉 Queue] [👤 Account]
+
+Home shows:
+- Patients checked in today
+- Vitals pending
+- Queue of patients waiting for doctor
+
+═══════════════════════════════════════════
+PART I: PHARMACIST DASHBOARD
+═══════════════════════════════════════════
+
+New bottom nav for Pharmacist:
+[🏠 Home] [💊 Dispense] [📦 Inventory] [🧾 Sales] [👤 Account]
+
+Home shows:
+- Pending prescriptions
+- Today's dispensed count
+- Low stock alerts
+- Recent pharmacy sales
+
+(Full pharmacy features in Step 2)
+
+═══════════════════════════════════════════
+PART J: PATIENT REGISTRATION FORM
+═══════════════════════════════════════════
+
+When Receptionist or Clinic Admin taps [➕ New Patient]:
+
+Full-screen modal (id="clinicPatientFormModal"):
+
+Section 1 — Personal Information:
+- First Name (required)
+- Last Name (required)
+- Date of Birth (required — date picker)
+- Age (auto-calculated from DOB, read-only)
+- Gender (dropdown, required)
+- National ID (required)
+- Phone (required)
+- Email (optional)
+- Address (textarea, required)
+
+Section 2 — Emergency Contact:
+- Contact Name (required)
+- Contact Phone (required)
+- Relationship (dropdown: Spouse/Parent/Sibling/Child/Friend/Other)
+
+Section 3 — Medical Info:
+- Blood Type (dropdown)
+- Allergies (tag input — add multiple)
+- Chronic Conditions (tag input — add multiple)
+- Current Medications (optional, text)
+
+Section 4 — Insurance (Optional):
+- Insurance Provider (dropdown: NHIF / AAR / Jubilee / UAP / 
+  Prudential / Other / None)
+- Insurance Number (text)
+- Policy Holder Name (if different from patient)
+
+Section 5 — Photo:
+- Patient Photo (camera/gallery)
+
+On Save:
+- Generate patientNumber: "CLN-{year}-{sequence padded to 5}"
+- Create clinic_patients doc
+- Create Firebase Auth (role: patient — read-only)
+- Show success modal:
+  "✅ Patient Registered
+   Patient Number: CLN-2026-00123
+   [📋 Book Appointment] [👁 View Profile]"
+
+═══════════════════════════════════════════════════════════════
+PART K: PATIENT LIST & SEARCH
+═══════════════════════════════════════════════════════════════
+
+Full-screen modal (id="clinicPatientsListModal"):
+
+- Search bar: name, phone, patient number, national ID
+- Filter: All / Active / Inactive
+- Sort: Newest / Name A-Z / Most Visits
+- [+ New Patient] button
+
+Patient cards:
+┌─────────────────────────────────────────┐
+│ 👤 John Kato — CLN-2026-00123           │
+│ 35 yrs · Male · 📱 +256705732540        │
+│ Last visit: 2 days ago                  │
+│ [👁 View] [📅 Book] [📋 History] [⋮]   │
+└─────────────────────────────────────────┘
+
+Patient detail modal shows:
+- Full profile
+- Visit history (chronological)
+- Prescription history
+- Billing history
+- Upcoming appointments
+- Insurance info
+
+═══════════════════════════════════════════════════════════════
+PART L: APPOINTMENT SCHEDULING
+═══════════════════════════════════════════════════════════════
+
+When Receptionist or Clinic Admin taps [📅 New Appointment]:
+
+Modal (id="clinicAppointmentFormModal"):
+
+Section 1 — Select Patient:
+- Search bar: name/phone/patient number
+- List of recent patients
+- Or [+ New Patient] button
+
+Section 2 — Appointment Details:
+- Doctor (dropdown — list active doctors in this clinic)
+- Date (date picker, default today)
+- Time Slot (dropdown of available 15/30-min slots):
+  * Shows already-booked slots as disabled
+  * Auto-populated based on doctor's schedule
+- Appointment Type (dropdown):
+  * General Checkup
+  * Follow-up
+  * Emergency
+  * Consultation
+  * Dental
+  * Lab Test
+  * Vaccination
+- Reason for Visit (textarea, required)
+- Notes (textarea, optional)
+
+On Save:
+- Create clinic_appointments doc
+- Send notification to doctor
+- Show confirmation:
+  "✅ Appointment Booked
+   {patient} with Dr. {doctor}
+   {date} at {time}
+   [📱 Send SMS Reminder] [➕ Book Another]"
+
+═══════════════════════════════════════════════════════════════
+PART M: APPOINTMENT CHECK-IN
+═══════════════════════════════════════════════════════════════
+
+When patient arrives:
+
+Receptionist taps [✅ Check-in] tab:
+
+Shows today's scheduled appointments:
+┌─────────────────────────────────────────┐
+│ 📅 TODAY'S APPOINTMENTS                  │
+│                                          │
+│ 10:00 — John Kato                        │
+│ Status: ⏳ Scheduled                     │
+│ [✅ Check In]                            │
+│                                          │
+│ 11:30 — Sarah Hamble                     │
+│ Status: ✅ Checked In (10:45 AM)        │
+│ [📋 Send to Nurse]                       │
+│                                          │
+│ 14:00 — Paul Mugisha                     │
+│ Status: ⏳ Scheduled                     │
+│ [✅ Check In]                            │
+└─────────────────────────────────────────┘
+
+Check-in flow:
+1. Receptionist clicks [✅ Check In]
+2. Patient status → checked_in
+3. checkedInAt = serverTimestamp
+4. Notification to Nurse: "Patient ready for vitals"
+5. Toast: "✅ John checked in at 10:45 AM"
+
+═══════════════════════════════════════════════════════════════
+PART N: NURSE VITALS RECORDING
+═══════════════════════════════════════════════════════════════
+
+When Nurse opens a checked-in patient:
+
+Modal (id="vitalsFormModal"):
+
+Patient header:
+- Name, age, gender
+- Reason for visit (from appointment)
+
+Vitals form:
+- Weight (kg) — number input
+- Height (cm) — number input
+- Blood Pressure: systolic / diastolic (two inputs)
+- Temperature (°C) — decimal input
+- Heart Rate (bpm) — number
+- Oxygen Saturation (%) — number
+- Respiratory Rate (breaths/min) — number
+- Additional Notes (textarea)
+
+Auto-calculations:
+- BMI = weight / (height/100)^2 — display automatically
+- Flag abnormal values in red (e.g. BP > 140/90)
+
+On Save:
+- Create clinic_visit doc with status = "in_progress"
+- Save vitals to visit
+- Notify Doctor: "Patient ready for consultation"
+- Toast: "✅ Vitals recorded"
+
+═══════════════════════════════════════════════════════════════
+PART O: DOCTOR CONSULTATION
+═══════════════════════════════════════════════════════════════
+
+When Doctor opens a patient in their queue:
+
+Full-screen consultation modal (id="consultationModal"):
+
+Tabs:
+
+TAB 1 — PATIENT INFO
+- Full profile
+- Allergies (highlighted in red)
+- Chronic conditions
+- Past visits summary
+- Current vitals (from Part N)
+
+TAB 2 — SYMPTOMS & DIAGNOSIS
+- Chief Complaint (textarea — pre-filled from appointment reason)
+- History of Present Illness (textarea)
+- Physical Examination Findings (textarea)
+- Diagnosis (textarea, required)
+- Differential Diagnosis (optional, textarea)
+
+TAB 3 — TREATMENT PLAN
+- Treatment Plan (textarea, required)
+- Procedures performed (multi-select from clinic_services)
+- Lab tests requested (multi-select or free text)
+- Referral (optional):
+  * Refer to specialist (text)
+  * Refer to hospital (text)
+- Follow-up:
+  * Follow-up Date (date picker)
+  * Follow-up Notes (textarea)
+
+TAB 4 — PRESCRIPTIONS
+Add prescription form (repeatable):
+- Medication Name (autocomplete from inventory later)
+- Dosage (e.g. "500mg")
+- Frequency (dropdown: Once daily, Twice daily, 3x daily, 
+  4x daily, As needed, Every 6 hours, Every 8 hours)
+- Duration (e.g. "7 days")
+- Quantity (number)
+- Instructions (textarea — "Take after meals")
+- [+ Add Another Medication] button
+- Remove button per medication
+
+TAB 5 — FINALIZE VISIT
+- Summary of diagnosis + prescriptions
+- [💾 Save as Draft] button
+- [✅ Complete Visit] button (finalizes visit)
+
+On [✅ Complete Visit]:
+1. Update clinic_visit: status = "completed", completedAt = now
+2. Save all prescriptions to clinic_prescriptions
+   (status = "pending")
+3. Notify Pharmacist: "3 new prescriptions to dispense"
+4. Notify Billing: "Visit complete — generate invoice"
+5. Notify Patient (if they have app): "Your visit summary is ready"
+6. Show success modal:
+   "✅ Visit Completed
+    Diagnosis: {diagnosis}
+    Prescriptions: 3
+    [📄 Print Summary] [💊 Send to Pharmacy]"
+
+═══════════════════════════════════════════════════════════════
+PART P: PRESCRIPTIONS LIST (Pharmacist View)
+═══════════════════════════════════════════════════════════════
+
+Pharmacist taps [💊 Dispense] tab:
+
+Full-screen list (id="prescriptionsListModal"):
+
+Filter: All / Pending / Dispensed / Cancelled
+
+List:
+┌─────────────────────────────────────────┐
+│ John Kato — CLN-2026-00123              │
+│ Visit: 12 Sep 2026                       │
+│                                          │
+│ 1. Amoxicillin 500mg — Twice daily      │
+│    7 days — 14 caps — Pending           │
+│                                          │
+│ 2. Paracetamol 500mg — 3x daily        │
+│    5 days — 15 tabs — Pending           │
+│                                          │
+│ [💊 Dispense All] [📋 Partial Dispense] │
+└─────────────────────────────────────────┘
+
+Dispense flow:
+1. Pharmacist clicks [💊 Dispense]
+2. Modal opens showing medications + stock levels
+3. Pharmacist confirms dispensed quantities
+4. Update clinic_prescriptions: status = "dispensed"
+5. Reduce pharmacy inventory stock (full stock system in Step 2)
+6. Notify Patient: "Your prescription is ready for pickup"
+7. Show toast: "✅ Dispensed"
+
+═══════════════════════════════════════════════════════════════
+PART Q: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Clinic accent: #0D7377 (teal) — for Clinic sector
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Special clinic UI:
+- Vitals use color-coded indicators (green normal, red abnormal)
+- Appointment status uses badges:
+  * Scheduled: blue
+  * Checked In: yellow
+  * In Progress: orange
+  * Completed: green
+  * Cancelled: grey
+  * No Show: red
+- Prescription status badges similar
+
+Mobile-first:
+- Full-screen modals on phone
+- Tablets: two-column layouts
+- Desktop: sidebars
+
+═══════════════════════════════════════════════════════════════
+PART R: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Patient registration requires internet (Firebase Auth).
+
+But these work OFFLINE:
+1. Vitals recording (save to IndexedDB, sync later)
+2. Consultation notes (save offline)
+3. Prescription writing (save offline)
+4. Check-in (save offline)
+
+Add to IndexedDB:
+- offline_clinic_visits
+- offline_clinic_prescriptions
+- offline_clinic_checkins
+
+Sync when online using Task 2's system.
+
+═══════════════════════════════════════════════════════════════
+PART S: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. clinic_patients: institutionId (asc) + createdAt (desc)
+2. clinic_patients: institutionId (asc) + phone (asc)
+3. clinic_appointments: institutionId (asc) + appointmentDate (asc) + appointmentTime (asc)
+4. clinic_appointments: doctorId (asc) + appointmentDate (asc)
+5. clinic_visits: patientId (asc) + visitDate (desc)
+6. clinic_visits: doctorId (asc) + visitDate (desc)
+7. clinic_prescriptions: patientId (asc) + createdAt (desc)
+8. clinic_prescriptions: status (asc) + createdAt (asc)
+9. clinic_services: institutionId (asc) + category (asc)
+
+═══════════════════════════════════════════════════════════════
+PART T: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with: 1 Super Admin + 1 Clinic Admin + 1 Doctor + 
+1 Nurse + 1 Receptionist + 1 Pharmacist
+
+A. Create Clinic institution:
+   1. Super Admin → Command Center → Institutions → [+ Add]
+   2. Type: Clinic
+   3. Fill all clinic-specific fields
+   4. Save
+   5. Verify: 10 default services auto-seeded
+
+B. Create clinic staff users:
+   1. Create Doctor, Nurse, Receptionist, Pharmacist
+   2. Assign to the Clinic
+   3. Verify roles work
+
+C. Receptionist workflow:
+   1. Login as Receptionist
+   2. Register new patient (John Kato)
+   3. Verify: patientNumber generated
+   4. Book appointment with Doctor for tomorrow 10 AM
+   5. Verify: appointment in doctor's queue
+
+D. Nurse workflow:
+   1. Login as Nurse
+   2. See today's check-in list
+   3. After receptionist checks in John → status shows checked_in
+   4. Record vitals for John
+   5. Verify: visit created with vitals
+   6. Doctor notified
+
+E. Doctor workflow:
+   1. Login as Doctor
+   2. See John in queue
+   3. Open consultation
+   4. Fill symptoms, diagnosis, treatment plan
+   5. Add 2 prescriptions
+   6. Complete visit
+   7. Verify: visit marked complete
+   8. Verify: prescriptions saved with status pending
+   9. Verify: notifications sent
+
+F. Pharmacist workflow:
+   1. Login as Pharmacist
+   2. See John's pending prescriptions
+   3. Dispense both
+   4. Verify: status = dispensed
+   5. Verify: patient notified
+
+G. Patient view:
+   1. Login as patient (John)
+   2. Verify: sees own visit history
+   3. Verify: sees own prescriptions
+   4. Verify: cannot edit
+
+H. Clinic Admin dashboard:
+   1. See all stats (patients, appointments, revenue)
+   2. Test quick actions
+   3. Test patient list + search
+   4. Test patient detail view
+
+I. Appointment management:
+   1. Test scheduling
+   2. Test cancellation
+   3. Test no-show marking
+
+J. Offline:
+   1. Turn off WiFi
+   2. Nurse records vitals → saved offline
+   3. Turn on WiFi → syncs
+   4. Verify: vitals appear in Firestore
+
+K. Regression (Tasks 1-10):
+   1. Education sector still works
+   2. MFI sector still works
+   3. Institution Management shows School/MFI/Clinic types
+   4. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART U: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-10
+- Do NOT change Education or MFI sector navigation
+- Do NOT allow unauthorized users to view patient data
+- Do NOT allow patients to edit their own medical records
+- Do NOT lose prescriptions between doctor and pharmacist
+- Do NOT skip vitals when doctor sees patient (soft reminder, not block)
+- Do NOT allow non-Pharmacist to dispense
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 11 Step 1 complete — Clinic Foundation + Patient Records + 
+Appointments + Prescriptions built"
+
+Report:
+- Which tests A through K passed
+- Any bugs found
+- Screenshots recommended: Clinic institution creation, 
+  patient registration, appointment scheduling, check-in flow, 
+  vitals recording, doctor consultation, prescription list, 
+  patient view

@@ -289,6 +289,50 @@
         .mfi-filter-row input,.mfi-filter-row select { flex:1 1 130px; border:1px solid #cfdde8; border-radius:12px; padding:9px; font-size:12px; }
         .mfi-hidden { display:none !important; }
         @media (max-width:520px) { .mfi-form-grid { grid-template-columns:1fr; } .mfi-form-grid .full { grid-column:auto; } .mfi-score-row { grid-template-columns:98px 1fr 42px; } }
+        .clinic-page { --clinic-primary:#0D7377; --clinic-dark:#164E63; --clinic-mint:#E7F7F5; padding-bottom:100px; }
+        .clinic-hero { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; background:linear-gradient(135deg,#4B2E9E,#0D7377); color:#fff; border-radius:22px; padding:20px; margin-bottom:14px; box-shadow:0 8px 24px rgba(13,115,119,.2); }
+        .clinic-eyebrow { margin:0 0 6px; letter-spacing:.12em; font-size:10px; font-weight:900; opacity:.78; }
+        .clinic-hero h2,.clinic-page-head h2 { margin:0 0 5px; font-size:22px; }
+        .clinic-hero p { margin:0; opacity:.9; font-size:13px; }
+        .clinic-status-dot { white-space:nowrap; font-size:11px; font-weight:800; background:rgba(255,255,255,.16); border-radius:16px; padding:7px 10px; }
+        .clinic-offline-note { background:#fff4dc; color:#7a5410; border:1px solid #f0cf83; border-radius:12px; padding:9px 11px; font-size:11px; margin:10px 0; }
+        .clinic-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+        .clinic-stat-card { background:#fff; border:1px solid #d6efed; border-radius:16px; padding:13px 9px; text-align:center; box-shadow:0 4px 14px rgba(13,115,119,.08); }
+        .clinic-stat-card strong { display:block; color:#0D7377; font-size:22px; }
+        .clinic-stat-card span { color:#64748b; font-size:10px; }
+        .clinic-section-title { margin:17px 0 10px; color:#0D7377; font-size:16px; font-weight:900; }
+        .clinic-action-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+        .clinic-action-btn { border:0; background:#fff; color:#0D7377; border-radius:15px; padding:13px 8px; box-shadow:0 3px 12px rgba(13,115,119,.09); font-size:11px; font-weight:800; cursor:pointer; }
+        .clinic-panel { background:#fff; border:1px solid #d6efed; border-radius:17px; padding:15px; box-shadow:0 4px 14px rgba(13,115,119,.07); }
+        .clinic-page-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:14px; }
+        .clinic-page-head h2 { color:#164E63; }
+        .clinic-filter-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+        .clinic-filter-row input,.clinic-filter-row select { flex:1 1 160px; border:1px solid #cfe3e4; border-radius:12px; padding:9px; font-size:12px; }
+        .clinic-primary-btn,.clinic-secondary-btn { border:0; border-radius:20px; padding:10px 14px; font-weight:800; cursor:pointer; }
+        .clinic-primary-btn { color:#fff; background:#0D7377; }
+        .clinic-secondary-btn { color:#0D7377; background:#E7F7F5; }
+        .clinic-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+        .clinic-form-grid .full { grid-column:1/-1; }
+        .clinic-form label { display:flex; flex-direction:column; gap:5px; color:#3c4b5a; font-size:12px; font-weight:700; margin-bottom:10px; }
+        .clinic-form input,.clinic-form select,.clinic-form textarea { box-sizing:border-box; width:100%; border:1px solid #cfe3e4; border-radius:11px; padding:10px; font:inherit; font-size:13px; background:#fff; }
+        .clinic-form textarea { min-height:72px; resize:vertical; }
+        .clinic-form-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; margin-top:14px; }
+        .clinic-form-status { min-height:18px; color:#64748b; font-size:11px; }
+        .clinic-list-card { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid #e1f0ef; }
+        .clinic-list-card:last-child { border-bottom:0; }
+        .clinic-list-card h4 { margin:0 0 4px; color:#164E63; font-size:14px; }
+        .clinic-list-card p { margin:0; color:#64748b; font-size:11px; line-height:1.5; }
+        .clinic-list-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
+        .clinic-list-actions button { border:1px solid #cfe3e4; color:#0D7377; background:#fff; border-radius:14px; padding:6px 9px; font-size:10px; font-weight:800; cursor:pointer; }
+        .clinic-badge { display:inline-flex; padding:4px 8px; border-radius:12px; font-size:10px; font-weight:800; background:#E7F7F5; color:#0D7377; }
+        .clinic-empty { padding:12px 0; color:#64748b; font-size:12px; }
+        .clinic-patient-banner { background:#E7F7F5; border-radius:12px; padding:10px; color:#164E63; font-weight:800; margin-bottom:12px; }
+        .clinic-prescription-box { background:#f6fbfb; border:1px solid #d6efed; border-radius:14px; padding:12px; margin-top:10px; }
+        .clinic-vital-result { color:#0D7377; font-size:12px; font-weight:800; padding:10px; border-radius:10px; background:#E7F7F5; }
+        .clinic-abnormal { color:#b42318 !important; background:#fff0ef !important; border-color:#f3b7b2 !important; }
+        .clinic-modal .command-modal-card { border-top:5px solid #0D7377; }
+        @media (max-width:720px) { .clinic-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .clinic-action-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:520px) { .clinic-form-grid { grid-template-columns:1fr; } .clinic-form-grid .full { grid-column:auto; } .clinic-page-head { align-items:flex-start; flex-direction:column; } .clinic-hero { flex-direction:column; } }
         .header-institution-name { color:#FF8C42; font-size:11px; font-weight:800; margin-top:2px; }
         .login-institution-logo { display:none; width:44px; height:44px; border-radius:10px; object-fit:cover; margin:-2px auto 8px; border:2px solid #eee9ff; }
         @media (min-width:600px) { .command-stats-grid { grid-template-columns:repeat(5,minmax(0,1fr)); } .command-actions-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } .command-analytics-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .command-report-actions { grid-template-columns:repeat(3,minmax(0,1fr)); } }
@@ -2227,7 +2271,7 @@
             <div class="command-section-title"><span>👥 User Management</span><button id="commandAddUserBtn" class="command-primary-btn" type="button">＋ Add User</button></div>
             <p class="command-tabs-note">Search and manage platform accounts. User actions are restricted to Super Admins.</p>
             <div class="command-panel-card">
-                <div class="command-toolbar"><input id="commandUserSearch" type="search" placeholder="Search name, email, phone…" aria-label="Search users"><select id="commandUserRoleFilter" aria-label="Filter users by role"><option value="">All roles</option><option value="individual">Students</option><option value="teacher">Teachers</option><option value="school">School Admins</option><option value="mfi_admin">MFI Admins</option><option value="loan_officer">Loan Officers</option><option value="loan_manager">Loan Managers</option><option value="loan_director">Loan Directors</option><option value="clinic_staff">Clinic Staff</option><option value="farmer">Farmers</option><option value="borrower">Borrowers</option><option value="superadmin">Super Admins</option></select><select id="commandUserStatusFilter" aria-label="Filter users by status"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select></div>
+                <div class="command-toolbar"><input id="commandUserSearch" type="search" placeholder="Search name, email, phone…" aria-label="Search users"><select id="commandUserRoleFilter" aria-label="Filter users by role"><option value="">All roles</option><option value="individual">Students</option><option value="teacher">Teachers</option><option value="school">School Admins</option><option value="mfi_admin">MFI Admins</option><option value="loan_officer">Loan Officers</option><option value="loan_manager">Loan Managers</option><option value="loan_director">Loan Directors</option><option value="clinic_admin">Clinic Admins</option><option value="doctor">Doctors</option><option value="nurse">Nurses</option><option value="receptionist">Receptionists</option><option value="pharmacist">Pharmacists</option><option value="patient">Patients</option><option value="clinic_staff">Legacy Clinic Staff</option><option value="farmer">Farmers</option><option value="borrower">Borrowers</option><option value="superadmin">Super Admins</option></select><select id="commandUserStatusFilter" aria-label="Filter users by status"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option></select></div>
                 <div class="command-toolbar"><button id="commandImportUsersBtn" class="command-secondary-btn" type="button">📥 Import CSV</button><button id="commandExportUsersBtn" class="command-secondary-btn" type="button">📤 Export CSV</button><button id="commandDownloadUserTemplateBtn" class="command-secondary-btn" type="button">Download template</button><input id="commandUserCsvInput" type="file" accept=".csv,text/csv" style="display:none"></div>
                 <div id="commandUserImportPreview" style="display:none;margin-bottom:10px;"></div>
                 <div id="commandUsersList" class="command-list"><div class="command-activity-item">Loading users…</div></div>
@@ -2311,6 +2355,9 @@
             <div class="mfi-section">📋 My Collateral</div><div id="mfiBorrowerCollateralList" class="mfi-panel-card"><div class="mfi-activity-item">Loading collateral…</div></div>
             <div class="mfi-form-actions" style="justify-content:flex-start;"><button id="mfiBorrowerStatementBtn" class="mfi-primary-btn" type="button">📥 Download Statement</button></div>
         </div>
+        <div id="clinicPatientModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicPatientModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicPatientModalTitle">Register patient</h3><button class="command-close" data-command-close="clinicPatientModal" type="button" aria-label="Close patient form">&times;</button></div><div class="command-modal-body"><div class="clinic-offline-note">Patient registration is online-only because it creates a secure account.</div><form id="clinicPatientForm" class="clinic-form"><div class="clinic-form-grid"><label>First name *<input id="clinicPatientFirstName" required></label><label>Last name *<input id="clinicPatientLastName" required></label><label>Date of birth *<input id="clinicPatientDob" type="date" required></label><label>Sex *<select id="clinicPatientSex" required><option value="">Select</option><option>Female</option><option>Male</option><option>Other</option></select></label><label>Phone *<input id="clinicPatientPhone" type="tel" required></label><label>Email<input id="clinicPatientEmail" type="email"></label><label>National ID<input id="clinicPatientNationalId"></label><label>Emergency contact<input id="clinicPatientEmergency"></label><label class="full">Address<textarea id="clinicPatientAddress"></textarea></label></div><div id="clinicPatientFormStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clinicPatientModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Register patient</button></div></form></div></div></div>
+        <div id="clinicAppointmentModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicAppointmentModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicAppointmentModalTitle">Schedule appointment</h3><button class="command-close" data-command-close="clinicAppointmentModal" type="button" aria-label="Close appointment form">&times;</button></div><div class="command-modal-body"><form id="clinicAppointmentForm" class="clinic-form"><div class="clinic-form-grid"><label>Patient *<select id="clinicAppointmentPatient" required></select></label><label>Doctor *<select id="clinicAppointmentDoctor" required></select></label><label>Date *<input id="clinicAppointmentDateForm" type="date" required></label><label>Time *<input id="clinicAppointmentTime" type="time" required></label><label>Reason *<input id="clinicAppointmentReason" required></label><label>Branch<input id="clinicAppointmentBranch" placeholder="Main branch"></label></div><div id="clinicAppointmentFormStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clinicAppointmentModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save appointment</button></div></form></div></div></div>
+        <div id="clinicClinicalModal" class="command-fullscreen-modal clinic-modal" role="dialog" aria-modal="true" aria-labelledby="clinicClinicalModalTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="clinicClinicalModalTitle">Clinical visit</h3><button class="command-close" data-command-close="clinicClinicalModal" type="button" aria-label="Close clinical form">&times;</button></div><div class="command-modal-body"><form id="clinicClinicalForm" class="clinic-form"><input id="clinicClinicalAppointmentId" type="hidden"><input id="clinicClinicalPatientId" type="hidden"><div id="clinicClinicalPatientLabel" class="clinic-patient-banner"></div><div class="clinic-form-grid" id="clinicVitalsFields"><label>Temperature °C<input id="clinicVitalTemperature" type="number" step="0.1" min="25" max="45"></label><label>Pulse / min<input id="clinicVitalPulse" type="number" min="20" max="250"></label><label>Respiratory rate / min<input id="clinicVitalRespiratory" type="number" min="5" max="80"></label><label>Blood pressure<input id="clinicVitalBloodPressure" placeholder="120/80"></label><label>Weight kg<input id="clinicVitalWeight" type="number" step="0.1" min="0"></label><label>Height cm<input id="clinicVitalHeight" type="number" step="0.1" min="0"></label><div id="clinicBmiResult" class="clinic-vital-result full">BMI will appear when weight and height are entered.</div></div><label>Symptoms / complaint<textarea id="clinicVisitSymptoms" required></textarea></label><label>Clinical notes<textarea id="clinicVisitNotes"></textarea></label><div id="clinicPrescriptionFields" class="clinic-prescription-box"><strong>Prescription (doctor only)</strong><div class="clinic-form-grid"><label>Medicine<input id="clinicMedicineName"></label><label>Dosage<input id="clinicMedicineDosage" placeholder="e.g. 500 mg"></label><label>Frequency<input id="clinicMedicineFrequency" placeholder="e.g. 3 times daily"></label><label>Duration<input id="clinicMedicineDuration" placeholder="e.g. 5 days"></label></div></div><div id="clinicClinicalFormStatus" class="clinic-form-status" aria-live="polite"></div><div class="clinic-form-actions"><button class="clinic-secondary-btn" data-command-close="clinicClinicalModal" type="button">Cancel</button><button class="clinic-primary-btn" type="submit">Save visit</button></div></form></div></div></div>
         <div id="portfolioModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="portfolioTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="portfolioTitle">📊 Full Portfolio</h3><button class="command-close" data-command-close="portfolioModal" type="button" aria-label="Close portfolio">&times;</button></div><div class="command-modal-body"><div id="mfiPortfolioTabs" class="mfi-tab-row"></div><div id="mfiPortfolioBody"><div class="mfi-activity-item">Loading portfolio…</div></div></div></div></div>
         <div id="riskAnalyticsModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="riskAnalyticsTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="riskAnalyticsTitle">⚠️ Risk Analytics</h3><button class="command-close" data-command-close="riskAnalyticsModal" type="button" aria-label="Close risk analytics">&times;</button></div><div class="command-modal-body"><div id="mfiRiskTabs" class="mfi-tab-row"></div><div id="mfiRiskBody"><div class="mfi-activity-item">Loading risk analytics…</div></div></div></div></div>
         <div id="umraReportsModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="umraReportsTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="umraReportsTitle">📥 UMRA Compliance Reports</h3><button class="command-close" data-command-close="umraReportsModal" type="button" aria-label="Close reports">&times;</button></div><div class="command-modal-body"><form id="umraReportForm" class="mfi-form"><div class="mfi-form-grid"><label>Report type *<select id="umraReportType" required><option value="collateral_register">Collateral Register</option><option value="valuation">Collateral Valuation Report</option><option value="coverage">Collateral Coverage Summary</option><option value="loan_register">Loan Register</option><option value="overdue">Overdue Report</option><option value="branch_performance">Branch Performance Report</option><option value="quarterly">Quarterly Compliance Report</option></select></label><label>Branch<select id="umraReportBranch"><option value="">All branches</option></select></label><label>From date<input id="umraReportFrom" type="date"></label><label>To date<input id="umraReportTo" type="date"></label><label>Format<select id="umraReportFormat"><option value="pdf">PDF</option><option value="xlsx">Excel</option><option value="csv">CSV</option></select></label><label>Collateral type<select id="umraReportTypeFilter"><option value="">All types</option></select></label></div><div id="umraReportStatus" class="mfi-form-help" aria-live="polite"></div><div class="mfi-form-actions" style="justify-content:flex-start;"><button class="mfi-primary-btn" type="submit">Generate Report</button><button id="umraReportExportBtn" class="mfi-secondary-btn mfi-hidden" type="button">📥 Export Current Preview</button></div></form><div id="umraReportPreview" class="mfi-report-preview"><div class="mfi-activity-item">Choose a report and generate a preview.</div></div></div></div></div>
@@ -2382,6 +2429,27 @@
             <div class="command-modal-card"><div class="command-modal-head"><h3 id="mfiResultTitle">✅ Collateral Submitted</h3><button class="command-close" data-command-close="mfiResultModal" type="button" aria-label="Close result">&times;</button></div><div id="mfiResultBody" class="command-modal-body"></div></div>
         </div>
         <!-- HOME PAGE -->
+        <div id="clinicHomePage" class="page clinic-page">
+            <div class="clinic-hero"><div><p class="clinic-eyebrow">APSHULE HEALTH</p><h2 id="clinicInstitutionName">Clinic dashboard</h2><p id="clinicWelcomeText">Coordinate safe, connected care for every patient.</p></div><span class="clinic-status-dot">● Online-ready</span></div>
+            <div id="clinicOfflineNotice" class="clinic-offline-note" hidden>Offline mode: visits, prescriptions, and check-ins will sync when connected.</div>
+            <div class="clinic-stat-grid"><div class="clinic-stat-card"><strong id="clinicStatPatients">—</strong><span>Patients</span></div><div class="clinic-stat-card"><strong id="clinicStatAppointments">—</strong><span>Appointments today</span></div><div class="clinic-stat-card"><strong id="clinicStatWaiting">—</strong><span>Waiting / checked in</span></div><div class="clinic-stat-card"><strong id="clinicStatPrescriptions">—</strong><span>Pending prescriptions</span></div></div>
+            <div class="clinic-section-title">Quick actions</div><div class="clinic-action-grid"><button class="clinic-action-btn" data-clinic-action="patients">👥 Patients</button><button class="clinic-action-btn" data-clinic-action="appointments">📅 Appointments</button><button class="clinic-action-btn" data-clinic-action="checkin">✅ Check in</button><button class="clinic-action-btn" data-clinic-action="work">🩺 My work queue</button></div>
+            <div class="clinic-section-title">Today</div><div id="clinicTodayList" class="clinic-panel"><div class="clinic-empty">Loading clinic activity…</div></div>
+        </div>
+        <div id="clinicPatientsPage" class="page clinic-page">
+            <div class="clinic-page-head"><div><p class="clinic-eyebrow">PATIENT CARE</p><h2>Patients</h2></div><button id="clinicRegisterPatientBtn" class="clinic-primary-btn">＋ Register patient</button></div>
+            <div class="clinic-filter-row"><input id="clinicPatientSearch" type="search" placeholder="Search name, phone, patient number"><select id="clinicPatientStatusFilter"><option value="">All patients</option><option value="active">Active</option><option value="inactive">Inactive</option></select></div><div id="clinicPatientsList" class="clinic-panel"><div class="clinic-empty">Loading patients…</div></div>
+        </div>
+        <div id="clinicAppointmentsPage" class="page clinic-page">
+            <div class="clinic-page-head"><div><p class="clinic-eyebrow">SCHEDULE</p><h2>Appointments</h2></div><button id="clinicScheduleAppointmentBtn" class="clinic-primary-btn">＋ Schedule</button></div>
+            <div class="clinic-filter-row"><input id="clinicAppointmentDate" type="date"><select id="clinicAppointmentStatus"><option value="">All statuses</option><option value="scheduled">Scheduled</option><option value="checked_in">Checked in</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></div><div id="clinicAppointmentsList" class="clinic-panel"><div class="clinic-empty">Loading appointments…</div></div>
+        </div>
+        <div id="clinicWorkPage" class="page clinic-page">
+            <div class="clinic-page-head"><div><p class="clinic-eyebrow">CLINICAL WORKSPACE</p><h2 id="clinicWorkTitle">My work queue</h2></div></div><div id="clinicWorkList" class="clinic-panel"><div class="clinic-empty">Loading work queue…</div></div>
+        </div>
+        <div id="clinicPatientPortalPage" class="page clinic-page">
+            <div class="clinic-hero"><div><p class="clinic-eyebrow">MY HEALTH</p><h2>My patient record</h2><p>Read-only access to your visits and prescriptions.</p></div></div><div id="clinicPatientSummary" class="clinic-panel"></div><div class="clinic-section-title">Visit history</div><div id="clinicPatientHistory" class="clinic-panel"><div class="clinic-empty">Loading history…</div></div>
+        </div>
         <div id="homePage" class="page active-page">
             <div class="education-level">
                 <button class="level-btn active" data-level="primary">🏫 Primary School</button>
@@ -3685,7 +3753,7 @@
                 <label>Physical Address<input id="commandInstitutionAddress"></label>
                 <div class="two-col"><label>Primary Contact Name *<input id="commandInstitutionContact" required></label><label>Contact Role<select id="commandInstitutionContactRole"><option>Headteacher</option><option>Director</option><option>Manager</option><option>Owner</option></select></label></div>
                 <div id="commandMfiInstitutionFields" class="mfi-form-grid mfi-hidden" style="margin:10px 0;"><label>License Number<input id="commandInstitutionLicenseNumber"></label><label>UMRA Registration Number<input id="commandInstitutionUmraNumber"></label><label>Number of Branches<input id="commandInstitutionBranchCount" type="number" min="1" value="1"></label><label>Loan Portfolio Size (UGX)<input id="commandInstitutionPortfolioSize" type="number" min="0"></label><label class="full">Primary Services (select all that apply)<select id="commandInstitutionServices" multiple size="5"><option>Group Loans</option><option>Individual Loans</option><option>Agricultural Loans</option><option>Business Loans</option><option>Savings</option></select></label></div>
-                <div id="commandClinicInstitutionFields" class="mfi-form-grid mfi-hidden" style="margin:10px 0;"><label>Clinic License Number *<input id="commandClinicLicenseNumber"></label><label>Facility Type *<select id="commandClinicFacilityType"><option value="clinic">Clinic</option><option value="health_centre">Health Centre</option><option value="hospital">Hospital</option><option value="drug_shop">Drug Shop</option><option value="pharmacy">Pharmacy</option></select></label><label class="full">Services Offered<select id="commandClinicServices" multiple size="5"><option>General Consultation</option><option>Maternal &amp; Child Health</option><option>Laboratory</option><option>Pharmacy</option><option>Emergency Care</option><option>Immunisation</option><option>Family Planning</option><option>Dental Care</option></select></label><label>Operating Hours<input id="commandClinicOperatingHours" placeholder="Mon–Sat, 08:00–18:00"></label><label>Emergency Contact<input id="commandClinicEmergencyContact" type="tel"></label><label>Beds<input id="commandClinicBeds" type="number" min="0" value="0"></label><label>Default Branch<input id="commandClinicDefaultBranch" placeholder="Main branch"></label></div>
+                <div id="commandClinicInstitutionFields" class="mfi-form-grid mfi-hidden" style="margin:10px 0;"><label>Clinic License Number *<input id="commandClinicLicenseNumber"></label><label>Facility Type *<select id="commandClinicFacilityType"><option value="clinic">Clinic</option><option value="health_centre">Health Centre</option><option value="hospital">Hospital</option><option value="drug_shop">Drug Shop</option><option value="pharmacy">Pharmacy</option></select></label><label class="full">Services Offered<select id="commandClinicServices" multiple size="6"><option>General Consultation</option><option>Maternal &amp; Child Health</option><option>Laboratory</option><option>Pharmacy</option><option>Emergency Care</option><option>Immunisation</option><option>Family Planning</option><option>Dental Care</option><option>HIV Testing</option><option>Radiology</option></select><span class="mfi-form-help">Leave blank to seed all ten starter services.</span></label><label>Operating Hours<input id="commandClinicOperatingHours" placeholder="Mon–Sat, 08:00–18:00"></label><label>Emergency Contact<input id="commandClinicEmergencyContact" type="tel"></label><label>Beds<input id="commandClinicBeds" type="number" min="0" value="0"></label><label>Default Branch<input id="commandClinicDefaultBranch" placeholder="Main branch"></label></div>
                 <div class="two-col"><label>Admin Login Email *<input id="commandInstitutionAdminEmail" type="email" required></label><label>Initial Admin Password *<input id="commandInstitutionAdminPassword" type="text" minlength="6" required></label></div>
                 <label style="display:flex;align-items:center;gap:8px;"><input id="commandInstitutionWelcome" type="checkbox" checked style="width:auto;"> Create a welcome notification</label>
                 <div id="commandInstitutionFormStatus" style="font-size:12px;min-height:18px;"></div><button class="command-primary-btn" type="submit">✅ Save Institution</button>
@@ -4704,6 +4772,9 @@
             pushMfiCustomers: async items => { for(const item of items) { const payload={...item}; delete payload.localId; delete payload.syncStatus; delete payload.queuedAt; await addDoc(collection(db,'mfi_customers'),{...payload,syncedAt:new Date().toISOString()}); } },
             pushMfiCollateral: async items => { for(const item of items) await mfiSyncOfflineCollateral(item); },
              pushMfiVerification: async items => { for(const item of items) await mfiSyncOfflineVerification(item); },
+             pushClinicVisits: async items => { for(const item of items) { const payload={...item}; delete payload.syncStatus; delete payload.queuedAt; await addDoc(collection(db,'clinic_visits'),{...payload,syncedAt:new Date().toISOString()}); } },
+             pushClinicPrescriptions: async items => { for(const item of items) { const payload={...item}; delete payload.localId; delete payload.syncStatus; delete payload.queuedAt; if(String(payload.visitId||'').startsWith('clinic-visit-')) { const visitSnap=await getDocs(query(collection(db,'clinic_visits'),where('localId','==',payload.visitId),limit(1))); payload.visitId=visitSnap.docs[0]?.id||payload.visitId; } await addDoc(collection(db,'clinic_prescriptions'),{...payload,syncedAt:new Date().toISOString()}); } },
+             pushClinicCheckins: async items => { for(const item of items) { const payload={...item}; delete payload.localId; delete payload.syncStatus; delete payload.queuedAt; const appointmentId=payload.appointmentId; delete payload.appointmentId; await updateDoc(doc(db,'clinic_appointments',appointmentId),{status:'checked_in',checkedInAt:payload.checkedInAt||new Date().toISOString(),checkedInBy:payload.checkedInBy||currentUser?.uid,syncSource:'offline'}); } },
             pullProjects: async () => {
                 if(!auth?.currentUser) return [];
                 const data=await complianceApi('/projects');
@@ -12362,16 +12433,20 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const select=document.getElementById('commandUserInstitution'); if(!select) return;
         const role=document.getElementById('commandUserRole')?.value||'';
         const mfiRole=['mfi_admin','loan_officer','loan_manager','loan_director'].includes(role);
-        const rows=mfiRole?commandInstitutions.filter(item=>item.type==='mfi'):commandInstitutions;
+         const clinicRole=CLINIC_ROLES.includes(role);
+         const rows=mfiRole?commandInstitutions.filter(item=>item.type==='mfi'):clinicRole?commandInstitutions.filter(item=>item.type==='clinic'):commandInstitutions;
         select.innerHTML='<option value="">— Select institution —</option>'+rows.map(item=>`<option value="${escHtml(item.id)}">${escHtml(item.name||item.id)} (${escHtml(item.type||'school')})</option>`).join('');
     }
     async function submitCommandInstitution(event) {
         event.preventDefault(); if(!commandRequiresOnline()) return;
         const status=document.getElementById('commandInstitutionFormStatus'); if(status) status.textContent='Saving institution…';
         const adminEmail=document.getElementById('commandInstitutionAdminEmail').value.trim(), adminPassword=document.getElementById('commandInstitutionAdminPassword').value;
-        const mfiServices=Array.from(document.getElementById('commandInstitutionServices')?.selectedOptions||[]).map(option=>option.value);
-        const values={name:document.getElementById('commandInstitutionName').value.trim(),type:document.getElementById('commandInstitutionType').value,region:document.getElementById('commandInstitutionRegion').value.trim(),phone:document.getElementById('commandInstitutionPhone').value.trim(),email:document.getElementById('commandInstitutionEmail').value.trim(),website:document.getElementById('commandInstitutionWebsite').value.trim(),address:document.getElementById('commandInstitutionAddress').value.trim(),contactPerson:document.getElementById('commandInstitutionContact').value.trim(),contactRole:document.getElementById('commandInstitutionContactRole').value,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid,licenseNumber:document.getElementById('commandInstitutionLicenseNumber')?.value.trim()||'',umraRegistrationNumber:document.getElementById('commandInstitutionUmraNumber')?.value.trim()||'',branchCount:Number(document.getElementById('commandInstitutionBranchCount')?.value||1),primaryServices:mfiServices,loanPortfolioSizeUgx:Number(document.getElementById('commandInstitutionPortfolioSize')?.value||0)};
-        try { const admin=await createManagedAuthUser(adminEmail,adminPassword), ref=await addDoc(collection(db,'institutions'),{...values,adminUid:admin?.uid||null}); if(admin?.uid) await setDoc(doc(db,'users',admin.uid),{uid:admin.uid,name:values.contactPerson,email:adminEmail,phone:values.phone,role:values.type==='school'?'school':values.type==='mfi'?'mfi_admin':values.type==='clinic'?'clinic_staff':'farmer',institutionId:ref.id,status:'active',createdAt:values.createdAt,createdBy:currentUser.uid},{merge:true}); if(values.type==='school') await addDoc(collection(db,'schools'),{name:values.name,contact:values.phone,location:values.address,logo:'',institutionId:ref.id,createdAt:values.createdAt,status:'active'}); if(values.type==='mfi'){const branchRef=await addDoc(collection(db,'mfi_branches'),{institutionId:ref.id,name:'Main Branch',code:'MAIN',address:values.address,createdAt:values.createdAt,status:'active'}); await setDoc(doc(db,'institutions',ref.id),{defaultBranchId:branchRef.id,brandingId:ref.id},{merge:true}); await setDoc(doc(db,'institution_branding',ref.id),{institutionId:ref.id,institutionDisplayName:values.name,showAppshuleLogo:true,showInstitutionLogo:true,createdBy:currentUser.uid,updatedAt:values.createdAt},{merge:true});} await logSuperAdminAction('create_institution',{institutionId:ref.id,type:values.type}); if(status) status.textContent='✅ Institution created'; showNotification('✅ Institution created','success'); document.getElementById('commandInstitutionForm').reset(); document.getElementById('commandMfiInstitutionFields')?.classList.add('mfi-hidden'); closeCommandModal('commandInstitutionModal'); await loadCommandInstitutions(); await loadCommandDashboard(); }
+         const mfiServices=Array.from(document.getElementById('commandInstitutionServices')?.selectedOptions||[]).map(option=>option.value);
+         const clinicServiceDefaults=['General Consultation','Maternal & Child Health','Laboratory','Pharmacy','Emergency Care','Immunisation','Family Planning','Dental Care','HIV Testing','Radiology'];
+         const clinicServices=Array.from(document.getElementById('commandClinicServices')?.selectedOptions||[]).map(option=>option.value);
+         const values={name:document.getElementById('commandInstitutionName').value.trim(),type:document.getElementById('commandInstitutionType').value,region:document.getElementById('commandInstitutionRegion').value.trim(),phone:document.getElementById('commandInstitutionPhone').value.trim(),email:document.getElementById('commandInstitutionEmail').value.trim(),website:document.getElementById('commandInstitutionWebsite').value.trim(),address:document.getElementById('commandInstitutionAddress').value.trim(),contactPerson:document.getElementById('commandInstitutionContact').value.trim(),contactRole:document.getElementById('commandInstitutionContactRole').value,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid,licenseNumber:document.getElementById('commandInstitutionLicenseNumber')?.value.trim()||'',umraRegistrationNumber:document.getElementById('commandInstitutionUmraNumber')?.value.trim()||'',branchCount:Number(document.getElementById('commandInstitutionBranchCount')?.value||1),primaryServices:mfiServices,loanPortfolioSizeUgx:Number(document.getElementById('commandInstitutionPortfolioSize')?.value||0),clinicLicenseNumber:document.getElementById('commandClinicLicenseNumber')?.value.trim()||'',facilityType:document.getElementById('commandClinicFacilityType')?.value||'',servicesOffered:clinicServices,operatingHours:document.getElementById('commandClinicOperatingHours')?.value.trim()||'',emergencyContact:document.getElementById('commandClinicEmergencyContact')?.value.trim()||'',beds:Number(document.getElementById('commandClinicBeds')?.value||0),defaultBranchName:document.getElementById('commandClinicDefaultBranch')?.value.trim()||'Main Branch'};
+         if(values.type==='clinic'&&!values.clinicLicenseNumber){ if(status) status.textContent='Clinic license number is required.'; return; }
+         try { const admin=await createManagedAuthUser(adminEmail,adminPassword), ref=await addDoc(collection(db,'institutions'),{...values,adminUid:admin?.uid||null}); if(admin?.uid) await setDoc(doc(db,'users',admin.uid),{uid:admin.uid,name:values.contactPerson,email:adminEmail,phone:values.phone,role:values.type==='school'?'school':values.type==='mfi'?'mfi_admin':values.type==='clinic'?'clinic_admin':'farmer',institutionId:ref.id,status:'active',createdAt:values.createdAt,createdBy:currentUser.uid},{merge:true}); if(values.type==='school') await addDoc(collection(db,'schools'),{name:values.name,contact:values.phone,location:values.address,logo:'',institutionId:ref.id,createdAt:values.createdAt,status:'active'}); if(values.type==='mfi'){const branchRef=await addDoc(collection(db,'mfi_branches'),{institutionId:ref.id,name:'Main Branch',code:'MAIN',address:values.address,createdAt:values.createdAt,status:'active'}); await setDoc(doc(db,'institutions',ref.id),{defaultBranchId:branchRef.id,brandingId:ref.id},{merge:true}); await setDoc(doc(db,'institution_branding',ref.id),{institutionId:ref.id,institutionDisplayName:values.name,showAppshuleLogo:true,showInstitutionLogo:true,createdBy:currentUser.uid,updatedAt:values.createdAt},{merge:true});} if(values.type==='clinic'){const branchRef=await addDoc(collection(db,'clinic_branches'),{institutionId:ref.id,name:values.defaultBranchName,address:values.address,phone:values.phone,createdAt:values.createdAt,status:'active'}); await setDoc(doc(db,'institutions',ref.id),{defaultBranchId:branchRef.id,brandingId:ref.id},{merge:true}); await Promise.all((clinicServices.length?clinicServices:clinicServiceDefaults).map((service,index)=>addDoc(collection(db,'clinic_services'),{institutionId:ref.id,name:service,category:'general',active:true,sortOrder:index,createdAt:values.createdAt}))); await setDoc(doc(db,'institution_branding',ref.id),{institutionId:ref.id,institutionDisplayName:values.name,institutionTagline:values.facilityType,primaryColor:'#0D7377',secondaryColor:'#4B2E9E',showAppshuleLogo:true,showInstitutionLogo:true,createdBy:currentUser.uid,updatedAt:values.createdAt},{merge:true});} await logSuperAdminAction('create_institution',{institutionId:ref.id,type:values.type}); if(status) status.textContent='✅ Institution created'; showNotification('✅ Institution created','success'); document.getElementById('commandInstitutionForm').reset(); document.getElementById('commandMfiInstitutionFields')?.classList.add('mfi-hidden'); document.getElementById('commandClinicInstitutionFields')?.classList.add('mfi-hidden'); closeCommandModal('commandInstitutionModal'); await loadCommandInstitutions(); await loadCommandDashboard(); }
         catch(error) { console.error('Create institution failed:',error); if(status) status.textContent=error?.message||'Unable to create institution'; }
     }
     function showInstitutionDetails(item) { const body=document.getElementById('commandDetailBody'); document.getElementById('commandDetailTitle').textContent='Institution details'; if(body) body.innerHTML=`<div class="command-panel-card">${Object.entries(item).filter(([key])=>key!=='id').map(([key,value])=>`<div class="settings-pending-row"><span>${escHtml(key)}</span><strong style="max-width:60%;text-align:right;word-break:break-word;">${escHtml(typeof value==='object'?JSON.stringify(value):String(value??'—'))}</strong></div>`).join('')}</div>`; openCommandModal('commandDetailModal'); }
@@ -13570,10 +13645,217 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(window._mfiCommandControlsInitialized) return;
         window._mfiCommandControlsInitialized=true;
         document.getElementById('seedMfiCollateralTypesBtn')?.addEventListener('click',mfiSeedCollateralTypes);
-        document.getElementById('commandInstitutionType')?.addEventListener('change',event=>document.getElementById('commandMfiInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='mfi'));
+         document.getElementById('commandInstitutionType')?.addEventListener('change',event=>{document.getElementById('commandMfiInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='mfi');document.getElementById('commandClinicInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='clinic');});
         document.getElementById('commandUserRole')?.addEventListener('change',updateCommandInstitutionOptions);
         document.getElementById('commandAddInstitutionBtn')?.addEventListener('click',()=>{document.getElementById('commandMfiInstitutionFields')?.classList.add('mfi-hidden');});
     }
+     const CLINIC_ROLES=['clinic_admin','doctor','nurse','receptionist','pharmacist','patient'];
+     function isClinicRole(role=currentUser?.role){ return CLINIC_ROLES.includes(role); }
+     function clinicInstitutionId(){ return currentUser?.institutionId||''; }
+     function clinicRoleLabel(role=currentUser?.role){ return ({clinic_admin:'Clinic Admin',doctor:'Doctor',nurse:'Nurse',receptionist:'Receptionist',pharmacist:'Pharmacist',patient:'Patient'})[role]||'Clinic'; }
+     function clinicDate(value){ const date=new Date(value); return Number.isNaN(date.getTime())?'—':date.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+     function clinicDateTime(date,time){ return `${date||''}T${time||'00:00'}`; }
+     function clinicEsc(value){ return escHtml(value??''); }
+     function clinicPage(pageId){
+         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
+         document.getElementById(`${pageId}Page`)?.classList.add('active-page');
+         document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.page===pageId));
+         if(pageId==='clinic') loadClinicDashboard();
+         if(pageId==='clinicPatients') loadClinicPatients();
+         if(pageId==='clinicAppointments') loadClinicAppointments();
+         if(pageId==='clinicWork') loadClinicWorkQueue();
+         if(pageId==='clinicPatientPortal') loadClinicPatientPortal();
+         window.scrollTo({top:0,behavior:'smooth'});
+     }
+     function setupClinicNavigation(){
+         const bottom=document.querySelector('.bottom-nav'); if(!bottom) return;
+         const role=currentUser?.role;
+         const items=role==='patient'
+             ? [['clinicPatientPortal','🏥','My health'],['clinicAppointments','📅','Appointments'],['notifications','🔔','Alerts'],['account','👤','Account']]
+             : [['clinic','🏥','Dashboard'],['clinicPatients','👥','Patients'],['clinicAppointments','📅','Schedule'],['clinicWork','🩺',role==='pharmacist'?'Dispensing':'My work'],['notifications','🔔','Alerts'],['account','👤','Account']];
+         bottom.classList.remove('superadmin-bottom-nav');
+         bottom.innerHTML=items.map(([page,icon,label])=>`<div class="nav-item" data-page="${page}" style="position:relative;"><span style="font-size:19px;">${icon}</span><span>${label}</span></div>`).join('');
+         bottom.querySelectorAll('.nav-item').forEach(item=>item.addEventListener('click',()=>item.dataset.page.startsWith('clinic')?clinicPage(item.dataset.page):navigateTo(item.dataset.page)));
+     }
+     function clinicNotify(targetUserId,title,body,type='clinic'){
+         if(!db) return Promise.resolve();
+         return addDoc(collection(db,'notifications'),{targetUserId:targetUserId||null,targetInstitutionId:clinicInstitutionId(),targetRole:null,title,body,type,createdAt:new Date().toISOString(),timestamp:new Date().toISOString(),read:false}).catch(()=>{});
+     }
+     async function clinicLoadUsers(roles){
+         if(!db||!clinicInstitutionId()) return [];
+         try {
+             const snap=await getDocs(query(collection(db,'users'),where('institutionId','==',clinicInstitutionId()),limit(300)));
+             return snap.docs.map(item=>({uid:item.id,...item.data()})).filter(item=>!roles||roles.includes(item.role));
+         } catch(error){ console.warn('Clinic users unavailable:',error); return []; }
+     }
+     async function clinicLoadPatients(){
+         if(!db||!clinicInstitutionId()) return [];
+         const snap=await getDocs(query(collection(db,'clinic_patients'),where('institutionId','==',clinicInstitutionId()),limit(500)));
+         return snap.docs.map(item=>({id:item.id,...item.data()})).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+     }
+     async function clinicLoadAppointments(){
+         if(!db||!clinicInstitutionId()) return [];
+         const snap=await getDocs(query(collection(db,'clinic_appointments'),where('institutionId','==',clinicInstitutionId()),limit(500)));
+         return snap.docs.map(item=>({id:item.id,...item.data()})).sort((a,b)=>String(`${a.appointmentDate}T${a.appointmentTime}`).localeCompare(String(`${b.appointmentDate}T${b.appointmentTime}`)));
+     }
+     function clinicRenderPatientRows(rows){
+         const list=document.getElementById('clinicPatientsList'); if(!list) return;
+         const search=(document.getElementById('clinicPatientSearch')?.value||'').toLowerCase(),status=document.getElementById('clinicPatientStatusFilter')?.value||'';
+         const filtered=rows.filter(item=>(!status||String(item.status||'active')===status)&&(!search||`${item.firstName} ${item.lastName} ${item.phone} ${item.patientNumber}`.toLowerCase().includes(search)));
+         list.innerHTML=filtered.length?filtered.map(item=>`<div class="clinic-list-card"><div><h4>👤 ${clinicEsc(item.firstName)} ${clinicEsc(item.lastName)}</h4><p>${clinicEsc(item.patientNumber||item.id)} · ${clinicEsc(item.phone||'No phone')} · DOB ${clinicEsc(item.dateOfBirth||'—')}<br><span class="clinic-badge">${clinicEsc(item.status||'active')}</span></p></div><div class="clinic-list-actions">${currentUser?.role!=='patient'?`<button data-clinic-appointment-patient="${item.id}">Schedule</button>`:''}<button data-clinic-visit-patient="${item.id}">History / visit</button></div></div>`).join(''):'<div class="clinic-empty">No patients match this search.</div>';
+         list.querySelectorAll('[data-clinic-appointment-patient]').forEach(button=>button.onclick=()=>openClinicAppointmentModal(button.dataset.clinicAppointmentPatient));
+         list.querySelectorAll('[data-clinic-visit-patient]').forEach(button=>clinicOpenClinicalVisit(button.dataset.clinicVisitPatient));
+     }
+     async function loadClinicPatients(){
+         const list=document.getElementById('clinicPatientsList'); if(!list||!isClinicRole()) return;
+         list.innerHTML='<div class="clinic-empty">Loading patients…</div>';
+         try { const rows=await clinicLoadPatients(); clinicRenderPatientRows(rows); window._clinicPatients=rows; } catch(error){ list.innerHTML=`<div class="clinic-empty">${clinicEsc(error.message||'Unable to load patients.')}</div>`; }
+     }
+     async function loadClinicDashboard(){
+         if(!isClinicRole()) return;
+         const name=document.getElementById('clinicInstitutionName'); if(name) name.textContent=currentUser?.institutionName||'Clinic dashboard';
+         const welcome=document.getElementById('clinicWelcomeText'); if(welcome) welcome.textContent=`Welcome, ${currentUser?.name||clinicRoleLabel()}.`;
+         const offline=document.getElementById('clinicOfflineNotice'); if(offline) offline.hidden=navigator.onLine;
+         try {
+             const [patients,appointments,prescriptions]=await Promise.all([clinicLoadPatients(),clinicLoadAppointments(),getDocs(query(collection(db,'clinic_prescriptions'),where('institutionId','==',clinicInstitutionId()),limit(300))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[])]);
+             const today=new Date().toISOString().slice(0,10),todayAppointments=appointments.filter(item=>item.appointmentDate===today),waiting=todayAppointments.filter(item=>['checked_in','scheduled'].includes(item.status||'scheduled'));
+             [['clinicStatPatients',patients.length],['clinicStatAppointments',todayAppointments.length],['clinicStatWaiting',waiting.length],['clinicStatPrescriptions',prescriptions.filter(item=>['pending','ready'].includes(item.status||'pending')).length]].forEach(([id,value])=>{const el=document.getElementById(id);if(el)el.textContent=value;});
+             const list=document.getElementById('clinicTodayList'); if(list) list.innerHTML=todayAppointments.length?todayAppointments.slice(0,12).map(item=>`<div class="clinic-list-card"><div><h4>${clinicEsc(item.appointmentTime||'')} · ${clinicEsc(item.patientName||item.patientId)}</h4><p>${clinicEsc(item.reason||'Consultation')} · Dr. ${clinicEsc(item.doctorName||'Unassigned')}</p></div><div class="clinic-list-actions">${item.status==='scheduled'&&['clinic_admin','receptionist','nurse'].includes(currentUser?.role)?`<button data-clinic-checkin="${item.id}">Check in</button>`:''}${['doctor','nurse'].includes(currentUser?.role)&&item.status==='checked_in'?`<button data-clinic-open-visit="${item.id}">Open visit</button>`:''}</div></div>`).join(''):'<div class="clinic-empty">No appointments scheduled today.</div>';
+             list?.querySelectorAll('[data-clinic-checkin]').forEach(button=>button.onclick=()=>clinicCheckIn(button.dataset.clinicCheckin));
+             list?.querySelectorAll('[data-clinic-open-visit]').forEach(button=>button.onclick=()=>clinicOpenClinicalVisit(null,button.dataset.clinicOpenVisit));
+         } catch(error){ console.warn('Clinic dashboard failed:',error); }
+     }
+     async function loadClinicAppointments(){
+         const list=document.getElementById('clinicAppointmentsList'); if(!list||!isClinicRole()) return;
+         list.innerHTML='<div class="clinic-empty">Loading appointments…</div>';
+         try {
+             const rows=await clinicLoadAppointments(), date=document.getElementById('clinicAppointmentDate')?.value||'',status=document.getElementById('clinicAppointmentStatus')?.value||'';
+             const filtered=rows.filter(item=>(!date||item.appointmentDate===date)&&(!status||item.status===status));
+             list.innerHTML=filtered.length?filtered.map(item=>`<div class="clinic-list-card"><div><h4>${clinicEsc(item.appointmentDate)} · ${clinicEsc(item.appointmentTime)} · ${clinicEsc(item.patientName||item.patientId)}</h4><p>${clinicEsc(item.reason||'Consultation')} · Dr. ${clinicEsc(item.doctorName||'Unassigned')}<br><span class="clinic-badge">${clinicEsc(item.status||'scheduled')}</span></p></div><div class="clinic-list-actions">${item.status==='scheduled'&&['clinic_admin','receptionist','nurse'].includes(currentUser?.role)?`<button data-clinic-checkin="${item.id}">Check in</button>`:''}${['doctor','nurse'].includes(currentUser?.role)&&item.status==='checked_in'?`<button data-clinic-open-visit="${item.id}">Clinical visit</button>`:''}</div></div>`).join(''):'<div class="clinic-empty">No appointments match the selected filters.</div>';
+             list.querySelectorAll('[data-clinic-checkin]').forEach(button=>button.onclick=()=>clinicCheckIn(button.dataset.clinicCheckin));
+             list.querySelectorAll('[data-clinic-open-visit]').forEach(button=>button.onclick=()=>clinicOpenClinicalVisit(null,button.dataset.clinicOpenVisit));
+         } catch(error){ list.innerHTML=`<div class="clinic-empty">${clinicEsc(error.message||'Unable to load appointments.')}</div>`; }
+     }
+     async function loadClinicWorkQueue(){
+         const list=document.getElementById('clinicWorkList'); if(!list||!isClinicRole()) return;
+         const title=document.getElementById('clinicWorkTitle'); if(title) title.textContent=currentUser?.role==='pharmacist'?'Prescription dispensing':'My work queue';
+         if(currentUser?.role==='pharmacist') {
+             const snap=await getDocs(query(collection(db,'clinic_prescriptions'),where('institutionId','==',clinicInstitutionId()),limit(300))).catch(()=>({docs:[]}));
+             const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(item=>['pending','ready'].includes(item.status||'pending'));
+             list.innerHTML=rows.length?rows.map(item=>`<div class="clinic-list-card"><div><h4>💊 ${clinicEsc(item.patientName||item.patientId)}</h4><p>${clinicEsc(item.medicineName||'Medicine')} · ${clinicEsc(item.dosage||'')} · ${clinicEsc(item.frequency||'')} · ${clinicEsc(item.duration||'')}</p></div><div class="clinic-list-actions"><button data-clinic-dispense="${item.id}">Mark dispensed</button></div></div>`).join(''):'<div class="clinic-empty">No prescriptions waiting for dispensing.</div>';
+             list.querySelectorAll('[data-clinic-dispense]').forEach(button=>button.onclick=()=>clinicDispense(button.dataset.clinicDispense));
+         } else {
+             const appointments=(await clinicLoadAppointments()).filter(item=>item.status==='checked_in'&&(['doctor','nurse'].includes(currentUser?.role)?item.doctorId===currentUser.uid:true));
+             list.innerHTML=appointments.length?appointments.map(item=>`<div class="clinic-list-card"><div><h4>🩺 ${clinicEsc(item.patientName||item.patientId)}</h4><p>${clinicEsc(item.appointmentDate)} ${clinicEsc(item.appointmentTime)} · ${clinicEsc(item.reason||'Consultation')}</p></div><div class="clinic-list-actions"><button data-clinic-open-visit="${item.id}">Open visit</button></div></div>`).join(''):'<div class="clinic-empty">No checked-in patients are waiting.</div>';
+             list.querySelectorAll('[data-clinic-open-visit]').forEach(button=>button.onclick=()=>clinicOpenClinicalVisit(null,button.dataset.clinicOpenVisit));
+         }
+     }
+     async function clinicOpenClinicalVisit(patientId,appointmentId){
+         let patient=window._clinicPatients?.find(item=>item.id===patientId),appointment;
+         if(appointmentId){ appointment=(await getDoc(doc(db,'clinic_appointments',appointmentId))).data(); patient=patient||window._clinicPatients?.find(item=>item.id===appointment?.patientId); }
+         if(!patient&&patientId) patient=(await getDoc(doc(db,'clinic_patients',patientId))).data();
+         if(!patient) { showNotification('Patient details are unavailable','error'); return; }
+         document.getElementById('clinicClinicalAppointmentId').value=appointmentId||'';
+         document.getElementById('clinicClinicalPatientId').value=patientId||appointment?.patientId||'';
+         document.getElementById('clinicClinicalPatientLabel').textContent=`${patient.firstName||''} ${patient.lastName||''} · ${patient.patientNumber||patient.id}`;
+         const prescription=document.getElementById('clinicPrescriptionFields'); if(prescription) prescription.style.display=currentUser?.role==='doctor'||currentUser?.role==='clinic_admin'?'block':'none';
+         openCommandModal('clinicClinicalModal');
+     }
+     function clinicUpdateBmi(){
+         const weight=Number(document.getElementById('clinicVitalWeight')?.value||0),height=Number(document.getElementById('clinicVitalHeight')?.value||0),result=document.getElementById('clinicBmiResult');
+         if(!result) return;
+         if(!weight||!height){ result.textContent='BMI will appear when weight and height are entered.'; return; }
+         const bmi=weight/Math.pow(height/100,2),category=bmi<18.5?'Underweight':bmi<25?'Healthy range':bmi<30?'Overweight':'Obesity';
+         result.textContent=`BMI ${bmi.toFixed(1)} · ${category}`; result.classList.toggle('clinic-abnormal',bmi<18.5||bmi>=30);
+     }
+     function clinicMarkAbnormal(input, predicate){ input?.classList.toggle('clinic-abnormal',Boolean(input.value)&&predicate(Number(input.value))); }
+     async function submitClinicClinical(event){
+         event.preventDefault();
+         const status=document.getElementById('clinicClinicalFormStatus'),patientId=document.getElementById('clinicClinicalPatientId').value,appointmentId=document.getElementById('clinicClinicalAppointmentId').value;
+         const visit={institutionId:clinicInstitutionId(),patientId,appointmentId:appointmentId||null,doctorId:currentUser.uid,doctorName:currentUser.name||'',nurseId:currentUser.role==='nurse'?currentUser.uid:null,visitDate:new Date().toISOString(),symptoms:document.getElementById('clinicVisitSymptoms').value.trim(),notes:document.getElementById('clinicVisitNotes').value.trim(),vitals:{temperature:Number(document.getElementById('clinicVitalTemperature').value)||null,pulse:Number(document.getElementById('clinicVitalPulse').value)||null,respiratoryRate:Number(document.getElementById('clinicVitalRespiratory').value)||null,bloodPressure:document.getElementById('clinicVitalBloodPressure').value.trim(),weightKg:Number(document.getElementById('clinicVitalWeight').value)||null,heightCm:Number(document.getElementById('clinicVitalHeight').value)||null},status:'completed',createdAt:new Date().toISOString()};
+         const medicine=document.getElementById('clinicMedicineName').value.trim();
+         const prescription=medicine?{institutionId:clinicInstitutionId(),patientId,visitId:null,doctorId:currentUser.uid,doctorName:currentUser.name||'',medicineName:medicine,dosage:document.getElementById('clinicMedicineDosage').value.trim(),frequency:document.getElementById('clinicMedicineFrequency').value.trim(),duration:document.getElementById('clinicMedicineDuration').value.trim(),status:'pending',createdAt:new Date().toISOString()}:null;
+         if(!visit.symptoms){ if(status) status.textContent='Record the patient complaint or reason for visit.'; return; }
+         if(status) status.textContent=navigator.onLine?'Saving clinical visit…':'Saving offline…';
+         try {
+             if(!navigator.onLine) {
+                 const localVisit=await Offline.queueClinicVisit(visit); if(prescription){ prescription.visitId=localVisit.localId; await Offline.queueClinicPrescription(prescription); }
+                 if(status) status.textContent='✅ Saved offline; it will sync when connected.';
+             } else {
+                 const visitRef=await addDoc(collection(db,'clinic_visits'),visit); if(prescription){ prescription.visitId=visitRef.id; await addDoc(collection(db,'clinic_prescriptions'),prescription); }
+                 if(appointmentId) await updateDoc(doc(db,'clinic_appointments',appointmentId),{status:'completed',completedAt:new Date().toISOString(),completedBy:currentUser.uid});
+                 if(prescription) { const pharmacists=await clinicLoadUsers(['pharmacist']); await Promise.all(pharmacists.map(user=>clinicNotify(user.uid,'Prescription ready',`${currentUser.name||'Doctor'} prescribed ${medicine}.`,'clinic_prescription'))); }
+                 if(status) status.textContent='✅ Visit saved.';
+             }
+             closeCommandModal('clinicClinicalModal'); document.getElementById('clinicClinicalForm').reset(); clinicPage('clinicWork');
+         } catch(error){ console.error('Clinic visit failed:',error); if(status) status.textContent=error.message||'Unable to save the visit.'; }
+     }
+     async function clinicCheckIn(appointmentId){
+         const appointment=(await getDoc(doc(db,'clinic_appointments',appointmentId))).data(); if(!appointment) return;
+         try {
+             if(!navigator.onLine) await Offline.queueClinicCheckin({institutionId:clinicInstitutionId(),patientId:appointment.patientId,appointmentId,checkedInBy:currentUser.uid,checkedInAt:new Date().toISOString()});
+             else await updateDoc(doc(db,'clinic_appointments',appointmentId),{status:'checked_in',checkedInAt:new Date().toISOString(),checkedInBy:currentUser.uid});
+             const nurses=await clinicLoadUsers(['nurse']); await Promise.all(nurses.map(user=>clinicNotify(user.uid,'Patient checked in',`${appointment.patientName||'A patient'} is ready for triage.`,'clinic_checkin')));
+             showNotification(navigator.onLine?'Patient checked in':'Check-in saved offline','success'); loadClinicAppointments(); loadClinicDashboard();
+         } catch(error){ showNotification(error.message||'Unable to check in patient','error'); }
+     }
+     async function clinicDispense(prescriptionId){
+         try { await updateDoc(doc(db,'clinic_prescriptions',prescriptionId),{status:'dispensed',dispensedBy:currentUser.uid,dispensedByName:currentUser.name||'',dispensedAt:new Date().toISOString()}); showNotification('Prescription marked as dispensed','success'); loadClinicWorkQueue(); } catch(error){ showNotification(error.message||'Unable to dispense prescription','error'); }
+     }
+     async function openClinicAppointmentModal(patientId){
+         if(!navigator.onLine){ showNotification('Scheduling requires an internet connection','info'); return; }
+         const patients=window._clinicPatients?.length?window._clinicPatients:await clinicLoadPatients(),doctors=await clinicLoadUsers(['doctor']); window._clinicPatients=patients;
+         document.getElementById('clinicAppointmentPatient').innerHTML=patients.map(item=>`<option value="${item.id}" ${item.id===patientId?'selected':''}>${clinicEsc(item.firstName)} ${clinicEsc(item.lastName)} · ${clinicEsc(item.phone||'')}</option>`).join('');
+         document.getElementById('clinicAppointmentDoctor').innerHTML=doctors.map(item=>`<option value="${item.uid}">${clinicEsc(item.name||item.email)}</option>`).join('');
+         document.getElementById('clinicAppointmentDateForm').value=new Date().toISOString().slice(0,10); openCommandModal('clinicAppointmentModal');
+     }
+     async function submitClinicAppointment(event){
+         event.preventDefault(); const status=document.getElementById('clinicAppointmentFormStatus'),patientId=document.getElementById('clinicAppointmentPatient').value,doctorId=document.getElementById('clinicAppointmentDoctor').value,date=document.getElementById('clinicAppointmentDateForm').value,time=document.getElementById('clinicAppointmentTime').value;
+         if(!patientId||!doctorId||!date||!time){ status.textContent='Complete the patient, doctor, date, and time.'; return; }
+         status.textContent='Checking availability…';
+         try {
+             const existing=(await clinicLoadAppointments()).find(item=>item.doctorId===doctorId&&item.appointmentDate===date&&item.appointmentTime===time&&!['cancelled','completed'].includes(item.status));
+             if(existing){ status.textContent='That doctor already has an appointment at this time.'; return; }
+             const patient=window._clinicPatients?.find(item=>item.id===patientId),doctor=(await clinicLoadUsers(['doctor'])).find(item=>item.uid===doctorId);
+             const appointment={institutionId:clinicInstitutionId(),patientId,patientName:`${patient?.firstName||''} ${patient?.lastName||''}`.trim(),doctorId,doctorName:doctor?.name||'',appointmentDate:date,appointmentTime:time,reason:document.getElementById('clinicAppointmentReason').value.trim(),branch:document.getElementById('clinicAppointmentBranch').value.trim(),status:'scheduled',createdBy:currentUser.uid,createdAt:new Date().toISOString()};
+             await addDoc(collection(db,'clinic_appointments'),appointment); await clinicNotify(doctorId,'New appointment',`${appointment.patientName||'Patient'} is booked for ${date} at ${time}.`,'clinic_appointment'); status.textContent='✅ Appointment scheduled'; showNotification('Appointment scheduled','success'); closeCommandModal('clinicAppointmentModal'); loadClinicAppointments(); loadClinicDashboard();
+         } catch(error){ status.textContent=error.message||'Unable to schedule appointment.'; }
+     }
+     async function submitClinicPatient(event){
+         event.preventDefault(); const status=document.getElementById('clinicPatientFormStatus'); if(!navigator.onLine){ status.textContent='Patient registration requires an internet connection.'; return; }
+         const firstName=document.getElementById('clinicPatientFirstName').value.trim(),lastName=document.getElementById('clinicPatientLastName').value.trim(),email=document.getElementById('clinicPatientEmail').value.trim(),phone=document.getElementById('clinicPatientPhone').value.trim();
+         if(!email){ status.textContent='Email is required to create the patient sign-in account.'; return; }
+         status.textContent='Creating patient account…';
+         try {
+             const password=`Aps${Math.random().toString(36).slice(2,10)}!`,credential=await createManagedAuthUser(email,password),uid=credential.uid;
+             const patient={institutionId:clinicInstitutionId(),patientNumber:`CL-${new Date().getFullYear()}-${uid.slice(0,6).toUpperCase()}`,firstName,lastName,dateOfBirth:document.getElementById('clinicPatientDob').value,sex:document.getElementById('clinicPatientSex').value,phone,email,nationalId:document.getElementById('clinicPatientNationalId').value.trim(),emergencyContact:document.getElementById('clinicPatientEmergency').value.trim(),address:document.getElementById('clinicPatientAddress').value.trim(),status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid};
+             await setDoc(doc(db,'clinic_patients',uid),patient); await setDoc(doc(db,'users',uid),{uid,name:`${firstName} ${lastName}`,email,phone,role:'patient',institutionId:clinicInstitutionId(),patientId:uid,status:'active',createdAt:new Date().toISOString()},{merge:true}); await clinicNotify(uid,'Welcome to your clinic portal',`Your patient account is ready. Sign in with ${email} and the password provided by the clinic.`,'clinic_welcome');
+             status.textContent='✅ Patient registered. Share the temporary password securely with the patient.'; showNotification('Patient registered','success'); closeCommandModal('clinicPatientModal'); document.getElementById('clinicPatientForm').reset(); loadClinicPatients();
+         } catch(error){ console.error('Patient registration failed:',error); status.textContent=error.message||'Unable to register patient.'; }
+     }
+     async function loadClinicPatientPortal(){
+         const summary=document.getElementById('clinicPatientSummary'),history=document.getElementById('clinicPatientHistory'); if(!summary||!history) return;
+         const patient=await getDoc(doc(db,'clinic_patients',currentUser.uid)).then(s=>s.exists()?({id:s.id,...s.data()}):null).catch(()=>null);
+         summary.innerHTML=patient?`<div class="clinic-patient-banner">${clinicEsc(patient.firstName)} ${clinicEsc(patient.lastName)} · ${clinicEsc(patient.patientNumber||patient.id)}<br><small>${clinicEsc(patient.phone||'')} · ${clinicEsc(patient.dateOfBirth||'')}</small></div>`:'<div class="clinic-empty">Your patient record is not available yet.</div>';
+         const [visits,prescriptions]=await Promise.all([getDocs(query(collection(db,'clinic_visits'),where('patientId','==',currentUser.uid),limit(100))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[]),getDocs(query(collection(db,'clinic_prescriptions'),where('patientId','==',currentUser.uid),limit(100))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[])]);
+         const byVisit=new Map(prescriptions.map(item=>[item.visitId,item]));
+         history.innerHTML=visits.length?visits.sort((a,b)=>String(b.visitDate||'').localeCompare(String(a.visitDate||''))).map(item=>{const rx=byVisit.get(item.id);return `<div class="clinic-list-card"><div><h4>${clinicDate(item.visitDate)} · Visit</h4><p>${clinicEsc(item.symptoms||'')}<br>${clinicEsc(item.notes||'')} ${rx?`<br><strong>Prescription:</strong> ${clinicEsc(rx.medicineName)} · ${clinicEsc(rx.dosage||'')} · ${clinicEsc(rx.frequency||'')} · ${clinicEsc(rx.status||'pending')}`:''}</p></div></div>`;}).join(''):'<div class="clinic-empty">No completed visits yet.</div>';
+     }
+     function initClinicInteractions(){
+         if(window._clinicInteractionsInitialized) return; window._clinicInteractionsInitialized=true;
+         document.getElementById('clinicRegisterPatientBtn')?.addEventListener('click',()=>openCommandModal('clinicPatientModal'));
+         document.getElementById('clinicScheduleAppointmentBtn')?.addEventListener('click',()=>openClinicAppointmentModal());
+         document.getElementById('clinicPatientForm')?.addEventListener('submit',submitClinicPatient);
+         document.getElementById('clinicAppointmentForm')?.addEventListener('submit',submitClinicAppointment);
+         document.getElementById('clinicClinicalForm')?.addEventListener('submit',submitClinicClinical);
+         ['clinicVitalWeight','clinicVitalHeight'].forEach(id=>document.getElementById(id)?.addEventListener('input',clinicUpdateBmi));
+         [['clinicVitalTemperature',v=>v<35||v>38],['clinicVitalPulse',v=>v<50||v>120],['clinicVitalRespiratory',v=>v<10||v>30]].forEach(([id,predicate])=>document.getElementById(id)?.addEventListener('input',event=>clinicMarkAbnormal(event.target,predicate)));
+         document.getElementById('clinicPatientSearch')?.addEventListener('input',()=>clinicRenderPatientRows(window._clinicPatients||[]));
+         document.getElementById('clinicPatientStatusFilter')?.addEventListener('change',()=>clinicRenderPatientRows(window._clinicPatients||[]));
+         document.getElementById('clinicAppointmentDate')?.addEventListener('change',loadClinicAppointments); document.getElementById('clinicAppointmentStatus')?.addEventListener('change',loadClinicAppointments);
+         document.querySelectorAll('[data-clinic-action]').forEach(button=>button.addEventListener('click',()=>{const action=button.dataset.clinicAction;clinicPage(action==='patients'?'clinicPatients':action==='appointments'?'clinicAppointments':action==='work'?'clinicWork':'clinic');}));
+         document.getElementById('clinicPatientsList')?.addEventListener('click',event=>{const patient=event.target.closest('[data-clinic-visit-patient]');if(patient)clinicOpenClinicalVisit(patient.dataset.clinicVisitPatient);});
+     }
     function navigateTo(pageId) {
         if(currentUser?.role==='superadmin' && !['superAdminCommandCenter','superAdminUsers','superAdminInstitutions','superAdminAnalytics','superAdminSettings'].includes(`${pageId}Page`)) {
             navigateSuperAdmin('dashboard');
@@ -13587,6 +13869,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
         let an = document.querySelector(`.nav-item[data-page="${pageId}"]`);
         if(an) an.classList.add('active');
+         if(isClinicRole()) {
+             if(pageId==='clinic') return clinicPage('clinic');
+             if(['clinicPatients','clinicAppointments','clinicWork','clinicPatientPortal'].includes(pageId)) return clinicPage(pageId);
+         }
         if(pageId==='teacher') loadTeacherDashboard();
         if(pageId==='account') loadMyVideoQuestions();
         if(pageId==='about') loadAboutFromFirestore();
@@ -13628,7 +13914,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             <div class="account-field"><label>Name</label><div>${escHtml(currentUser.name)}</div></div>
             <div class="account-field"><label>Email</label><div>${escHtml(currentUser.email)}</div></div>
             <div class="account-field"><label>Phone</label><div>${escHtml(currentUser.phone||'N/A')}</div></div>
-            <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':currentUser.role==='school'?'School Admin':currentUser.role==='teacher'?'Teacher':currentUser.role==='mfi_admin'?'MFI Admin':currentUser.role==='loan_officer'?'Loan Officer':currentUser.role==='loan_manager'?'Loan Manager':currentUser.role==='loan_director'?'Loan Director':currentUser.role==='borrower'?'Borrower':'Individual'}</div></div>
+            <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':currentUser.role==='school'?'School Admin':currentUser.role==='teacher'?'Teacher':currentUser.role==='mfi_admin'?'MFI Admin':currentUser.role==='loan_officer'?'Loan Officer':currentUser.role==='loan_manager'?'Loan Manager':currentUser.role==='loan_director'?'Loan Director':CLINIC_ROLES.includes(currentUser.role)?clinicRoleLabel(currentUser.role):currentUser.role==='borrower'?'Borrower':'Individual'}</div></div>
             <div class="account-field"><label>Address</label><div id="userAddressDisplay">${escHtml(address)}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
             <div class="account-field"><label>Total Logins</label><div>${currentUser.loginCount||0}</div></div>`;
         document.getElementById('editAddressBtn')?.addEventListener('click', () => {
@@ -13642,13 +13928,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';
         const isMfi = isMfiRole();
-        if(isSuper) initCommandCenter(); else if(isMfi) { if(currentUser?.role==='loan_manager'){ setupMfiManagerNavigation(); } else if(currentUser?.role==='loan_director'){ setupMfiDirectorNavigation(); } else if(currentUser?.role==='borrower'){ setupMfiBorrowerNavigation(); } else { setupMfiNavigation(); } initMfiInteractions(); initMfiManagerInteractions(); setTimeout(()=>currentUser?.role==='loan_manager'?mfiManagerNavigate('home'):currentUser?.role==='loan_director'?mfiDirectorNavigate('home'):currentUser?.role==='borrower'?mfiBorrowerNavigate('home'):mfiNavigate('home'),0); } else restoreStandardNavigation();
+        const isClinic = isClinicRole();
+        if(isSuper) initCommandCenter(); else if(isMfi) { if(currentUser?.role==='loan_manager'){ setupMfiManagerNavigation(); } else if(currentUser?.role==='loan_director'){ setupMfiDirectorNavigation(); } else if(currentUser?.role==='borrower'){ setupMfiBorrowerNavigation(); } else { setupMfiNavigation(); } initMfiInteractions(); initMfiManagerInteractions(); setTimeout(()=>currentUser?.role==='loan_manager'?mfiManagerNavigate('home'):currentUser?.role==='loan_director'?mfiDirectorNavigate('home'):currentUser?.role==='borrower'?mfiBorrowerNavigate('home'):mfiNavigate('home'),0); } else if(isClinic) { setupClinicNavigation(); initClinicInteractions(); setTimeout(()=>clinicPage(currentUser.role==='patient'?'clinicPatientPortal':'clinic'),0); } else restoreStandardNavigation();
         // Store superadmin UID so students/teachers can send targeted notifications
         if(isSuper) {
             setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});
         }
         document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
-        document.getElementById('liveLessonMenuItem').style.display = isMfi ? "none" : "flex";
+        document.getElementById('liveLessonMenuItem').style.display = (isMfi||isClinic) ? "none" : "flex";
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
         document.getElementById('offlineViewsOverviewSection').style.display = isSuper ? "block" : "none";
@@ -13665,13 +13952,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!isSuper&&!isSchool&&!isTeacher) loadMyAdmissionStatus();
         document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
         // Live nav item — visible for students (individual), school, and superadmin
-        const showLiveNav = !isTeacher&&!isMfi;
+        const showLiveNav = !isTeacher&&!isMfi&&!isClinic;
         document.getElementById('liveNavItem').style.display = showLiveNav ? "flex" : "none";
         // Teacher dashboard nav item
         document.getElementById('teacherNavItem').style.display = isTeacher ? "flex" : "none";
         // Profile pic — hidden for superadmin and school
         const profilePicSection = document.getElementById('profilePicUploadSection');
-        if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper||isMfi) ? "none" : "block";
+        if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper||isMfi||isClinic) ? "none" : "block";
         // Superadmin gets a PDF upload card in their account page instead
         const superPdfAcc = document.getElementById('superAdminPdfAccountSection');
         if(superPdfAcc) superPdfAcc.style.display = isSuper ? "block" : "none";
@@ -13706,7 +13993,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         renderEnrolledList();
         renderEventsTicker();
         if(isTeacher) loadTeacherDashboard();
-        if(!isMfi) { loadStudentVideoLibrary().catch(() => {}); loadTeacherVideoLibrary().catch(() => {}); loadTeacherTwinAccount().catch(() => {}); }
+        if(!isMfi&&!isClinic) { loadStudentVideoLibrary().catch(() => {}); loadTeacherVideoLibrary().catch(() => {}); loadTeacherTwinAccount().catch(() => {}); }
         videoStudioRenderDownloads().catch(() => {});
         // Request browser notification permission (non-blocking)
         if(Notification && Notification.permission === 'default') {
@@ -13729,7 +14016,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         renderForYouSection();
         renderMyWeakAreasTags();
         checkAndPromptWeakAreas();
-        if(isSuper) navigateSuperAdmin('dashboard'); else if(isMfi) { mfiLoadTypes(); if(currentUser?.role==='loan_director') mfiDirectorNavigate('home'); else if(currentUser?.role==='borrower') mfiBorrowerNavigate('home'); else { mfiLoadDashboard(); mfiNavigate('home'); } } else navigateTo('home');
+        if(isSuper) navigateSuperAdmin('dashboard'); else if(isMfi) { mfiLoadTypes(); if(currentUser?.role==='loan_director') mfiDirectorNavigate('home'); else if(currentUser?.role==='borrower') mfiBorrowerNavigate('home'); else { mfiLoadDashboard(); mfiNavigate('home'); } } else if(isClinic) clinicPage(currentUser.role==='patient'?'clinicPatientPortal':'clinic'); else navigateTo('home');
     }
 
     // ===== FIRESTORE LISTENERS =====

@@ -22,6 +22,15 @@ service cloud.firestore {
         && institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId;
     }
 
+    function isClinicUser() {
+      return signedIn() && role() in ['clinic_admin', 'doctor', 'nurse', 'receptionist', 'pharmacist', 'patient'];
+    }
+
+    function sameClinicInstitution(institutionId) {
+      return isClinicUser()
+        && institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId;
+    }
+
     match /liveLessons/{lessonId} {
       allow read: if signedIn();
       allow create, update, delete: if signedIn()
@@ -202,9 +211,48 @@ service cloud.firestore {
       allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
 
+    // Clinic records are institution-scoped. Reception can manage demographics
+    // and scheduling, but cannot read visits or prescriptions.
+    match /clinic_patients/{patientId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'receptionist'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'receptionist'];
+      allow delete: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() == 'clinic_admin';
+    }
+    match /clinic_appointments/{appointmentId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'doctor', 'patient'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'doctor', 'nurse']
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
+      allow delete: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'receptionist'];
+    }
+    match /clinic_visits/{visitId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'doctor', 'nurse'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'doctor', 'nurse'];
+      allow delete: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() == 'clinic_admin';
+    }
+    match /clinic_prescriptions/{prescriptionId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'doctor'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'doctor', 'pharmacist'];
+      allow delete: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() == 'clinic_admin';
+    }
+    match /clinic_services/{serviceId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
+      allow write: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() == 'clinic_admin';
+    }
+    match /clinic_branches/{branchId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
+      allow write: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() == 'clinic_admin';
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches)(/.*)?$');
     }
   }
 }

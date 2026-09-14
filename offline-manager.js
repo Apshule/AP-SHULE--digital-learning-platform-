@@ -279,6 +279,18 @@
           if (!reportStore.indexNames.contains('institutionId')) reportStore.createIndex('institutionId', 'institutionId', { unique: false });
           if (!reportStore.indexNames.contains('createdAt')) reportStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
+        if (oldVersion < 16) {
+          ['offline_clinic_visits', 'offline_clinic_prescriptions', 'offline_clinic_checkins'].forEach(function (name) {
+            var store = db.objectStoreNames.contains(name)
+              ? event.target.transaction.objectStore(name)
+              : db.createObjectStore(name, { keyPath: 'localId' });
+            if (!store.indexNames.contains('institutionId')) store.createIndex('institutionId', 'institutionId', { unique: false });
+            if (!store.indexNames.contains('syncStatus')) store.createIndex('syncStatus', 'syncStatus', { unique: false });
+            if (name === 'offline_clinic_visits' && !store.indexNames.contains('patientId')) store.createIndex('patientId', 'patientId', { unique: false });
+            if (name === 'offline_clinic_prescriptions' && !store.indexNames.contains('patientId')) store.createIndex('patientId', 'patientId', { unique: false });
+            if (name === 'offline_clinic_checkins' && !store.indexNames.contains('patientId')) store.createIndex('patientId', 'patientId', { unique: false });
+          });
+        }
       };
       request.onsuccess = function () {
         var db = request.result;
@@ -1017,7 +1029,7 @@
       return getRecord('offline_command_stats', 'superadmin');
     },
     getPendingSummary: pendingSummary,
-    getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, mfiCustomers: summary.mfiCustomers, mfiCollateral: summary.mfiCollateral, mfiVerification: summary.mfiVerification, total: summary.total }; }); },
+    getPendingCounts: function () { return pendingSummary().then(function (summary) { return { projects: summary.projects, caRecords: summary.caRecords, views: summary.views, mfiCustomers: summary.mfiCustomers, mfiCollateral: summary.mfiCollateral, mfiVerification: summary.mfiVerification, clinicVisits: summary.clinicVisits, clinicPrescriptions: summary.clinicPrescriptions, clinicCheckins: summary.clinicCheckins, total: summary.total }; }); },
     getPendingSize: function () { return pendingSummary().then(function (summary) { return summary.size; }); },
     getStorageSummary: pendingSummary,
     queueProject: function (project) {
