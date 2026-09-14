@@ -1,0 +1,331 @@
+Task 8 — Step 1 of 2: Connection Settings Page + User Preferences
+
+CONTEXT:
+- Task 2 built offline PWA + triple mode (offline / mobile data / WiFi)
+- Task 2 also created offline_settings IndexedDB table
+- Now we build the user-facing Settings page so users can control 
+  their experience
+- This is a SMALL, POLISH task — no new heavy features
+
+GOAL:
+Every user (student, teacher, school admin) gets a "Settings" 
+section in their Account page with:
+- Connection preferences (data saver, auto-sync)
+- Language preference (7 Ugandan languages)
+- Storage management (see cached size, clear cache)
+- Sync status display
+- About + Help links
+
+═══════════════════════════════════════════════════════════════
+PART A: SETTINGS SECTION IN ACCOUNT PAGE
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Account page (existing tab in bottom navigation)
+PLACE IT: BELOW "My Subscriptions" card, ABOVE "My Questions & Answers"
+
+Add a new card "⚙️ Settings & Preferences"
+
+Inside, show these sections (collapsible accordion):
+
+1. 🌐 Connection & Data
+2. 🌍 Language
+3. 💾 Storage
+4. 🔄 Sync
+5. ℹ️ About & Help
+
+═══════════════════════════════════════════════════════════════
+PART B: CONNECTION & DATA SECTION
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 🌐 CONNECTION & DATA                     │
+├─────────────────────────────────────────┤
+│ Current mode: 🟢 WiFi · Full HD         │
+│ (auto-updates based on navigator.onLine │
+│  and navigator.connection)               │
+│                                          │
+│ Download HD videos only on WiFi         │
+│ [═══════●] ON                            │
+│                                          │
+│ Auto-sync on WiFi                        │
+│ [═══════●] ON                            │
+│                                          │
+│ Auto-sync on mobile data                 │
+│ [●═══════] OFF                           │
+│                                          │
+│ Data usage this month:                   │
+│ 📥 Downloaded: 45 MB                     │
+│ 📤 Uploaded: 12 MB                       │
+│ Total cached: 45 MB                      │
+│                                          │
+│ [🔄 Refresh data usage]                 │
+└─────────────────────────────────────────┘
+
+Behavior:
+- Toggles save to offline_settings IndexedDB
+- Also sync to Firestore users/{uid}/preferences
+- Current mode badge updates live (listen to online/offline events)
+- Data usage tracked in IndexedDB (bytes in/out)
+
+═══════════════════════════════════════════════════════════════
+PART C: LANGUAGE SECTION
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 🌍 LANGUAGE                              │
+├─────────────────────────────────────────┤
+│ App Language:                            │
+│                                          │
+│ ○ English                                │
+│ ● Luganda                                │
+│ ○ Lusoga                                 │
+│ ○ Runyankore                             │
+│ ○ Runyoro                                │
+│ ○ Acholi                                 │
+│ ○ Swahili                                │
+│                                          │
+│ Preferred video language:                │
+│ [Dropdown: English ▼]                    │
+│ (Used when videos have multiple language │
+│  versions available)                     │
+│                                          │
+│ [💾 Save Language Settings]             │
+└─────────────────────────────────────────┘
+
+Behavior:
+- App Language: changes UI text where translations exist
+- Video Language: sets default for video player
+- Save to users/{uid}/preferences.language and .videoLanguage
+- Show toast: "✅ Language updated"
+
+═══════════════════════════════════════════════════════════════
+PART D: STORAGE SECTION
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 💾 STORAGE                               │
+├─────────────────────────────────────────┤
+│ Storage used: 45 MB of 500 MB available  │
+│ ▓▓▓░░░░░░░░░░░░░░░░░░ 9%                │
+│                                          │
+│ Breakdown:                               │
+│ • Cartoon videos: 12 MB (3 videos)      │
+│ • AI videos: 18 MB (2 videos)           │
+│ • PDFs: 8 MB (5 files)                  │
+│ • Projects: 5 MB (8 photos)             │
+│ • Other: 2 MB                            │
+│                                          │
+│ Actions:                                 │
+│ [🧹 Clear Cartoon Videos (12 MB)]       │
+│ [🧹 Clear AI Videos (18 MB)]            │
+│ [🧹 Clear PDFs (8 MB)]                  │
+│ [🗑️ Clear All Cached Data]              │
+│                                          │
+│ ⚠️ Clearing will require re-download     │
+│    next time you have WiFi.              │
+└─────────────────────────────────────────┘
+
+Behavior:
+- Query IndexedDB to calculate sizes per category
+- Clear buttons remove specific stores
+- "Clear All" requires confirmation modal
+- Show toast after each clear
+
+═══════════════════════════════════════════════════════════════
+PART E: SYNC SECTION
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 🔄 SYNC                                  │
+├─────────────────────────────────────────┤
+│ Last sync: 2 minutes ago                 │
+│                                          │
+│ Pending items:                           │
+│ • 3 projects (offline)                   │
+│ • 2 video views                          │
+│ • 1 CA record                            │
+│                                          │
+│ [🔄 Sync Now]                            │
+│                                          │
+│ Auto-sync schedule:                      │
+│ ✓ On app open                            │
+│ ✓ On WiFi connect                        │
+│ ✓ Every 30 minutes while online          │
+│                                          │
+│ Sync history:                            │
+│ • 12 Sep 4:30 PM — 5 items synced       │
+│ • 12 Sep 12:15 PM — 3 items synced      │
+│ • 11 Sep 6:45 PM — 8 items synced       │
+└─────────────────────────────────────────┘
+
+Behavior:
+- Query IndexedDB for pending items across all stores
+- [Sync Now] triggers Task 2's sync function
+- Sync history stored in a new IndexedDB store: offline_sync_history
+- Show loading spinner while syncing
+
+═══════════════════════════════════════════════════════════════
+PART F: ABOUT & HELP SECTION
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ ℹ️ ABOUT & HELP                          │
+├─────────────────────────────────────────┤
+│ App version: 1.0.0                       │
+│ Build: 2026-09-14                        │
+│                                          │
+│ [📖 User Guide]                          │
+│ [❓ FAQs]                                │
+│ [🐛 Report a Bug]                        │
+│ [💡 Request a Feature]                  │
+│ [📞 Contact Support]                     │
+│ [📄 Privacy Policy]                      │
+│ [📜 Terms of Service]                    │
+│                                          │
+│ Made with ❤️ in Uganda 🇺🇬              │
+└─────────────────────────────────────────┘
+
+Behavior:
+- User Guide: opens a modal with scrolling text + screenshots
+- FAQs: opens a modal with expandable Q&A
+- Report Bug: opens a form → writes to bug_reports collection
+- Request Feature: opens a form → writes to feature_requests collection
+- Contact Support: opens WhatsApp link to +256705732540
+- Privacy/Terms: opens external link to apshule.com/legal
+
+═══════════════════════════════════════════════════════════════
+PART G: USER GUIDE MODAL
+═══════════════════════════════════════════════════════════════
+
+When user clicks [📖 User Guide]:
+
+Opens a full-screen modal with:
+- Section 1: Getting Started (login, profile)
+- Section 2: Watching Videos (offline downloads)
+- Section 3: Projects (milestones, QR codes)
+- Section 4: NCDC Course (if teacher)
+- Section 5: Offline Mode (how it works)
+- Section 6: FAQs (expandable)
+
+Content is text-based (no external images needed initially).
+
+═══════════════════════════════════════════════════════════════
+PART H: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Danger: #dc3545 (red)
+
+Cards:
+- White background
+- 16px border-radius
+- Soft shadow
+- Collapsible header with chevron icon
+
+Toggles:
+- Green when ON
+- Grey when OFF
+- Smooth transition animation
+
+Accordion sections:
+- Only one open at a time (or all closed by default)
+- Smooth expand/collapse
+
+Mobile-first:
+- Full width on phone
+- Section headers are touch-friendly (48px min height)
+
+═══════════════════════════════════════════════════════════════
+PART I: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Settings page itself works offline:
+- Preferences load from IndexedDB
+- Changes save to IndexedDB immediately
+- Sync to Firestore when online
+- Storage sizes calculated from IndexedDB
+
+═══════════════════════════════════════════════════════════════
+PART J: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 student account:
+
+A. Settings page loads:
+   1. Login as student
+   2. Tap Account tab
+   3. Scroll down → verify "Settings & Preferences" card appears
+   4. Verify 5 sections (Connection, Language, Storage, Sync, About)
+
+B. Connection toggles:
+   1. Toggle "Auto-sync on mobile data" ON
+   2. Refresh page → verify toggle stays ON
+   3. Check IndexedDB offline_settings has the value
+
+C. Language change:
+   1. Select "Luganda"
+   2. Save
+   3. Verify toast appears
+   4. Check users/{uid}/preferences.language = "luganda"
+
+D. Storage display:
+   1. Check storage sizes display correctly
+   2. Click [Clear Cartoon Videos]
+   3. Confirm → verify size decreases
+   4. Check IndexedDB offline_videos cleared
+
+E. Sync status:
+   1. Check pending items count
+   2. Click [Sync Now] while offline → shows message
+   3. Turn on WiFi → click [Sync Now] → items sync
+
+F. User Guide:
+   1. Click [📖 User Guide]
+   2. Verify modal opens with sections
+   3. Close modal
+
+G. Report Bug:
+   1. Click [🐛 Report a Bug]
+   2. Fill in description
+   3. Submit
+   4. Check bug_reports collection for new doc
+
+H. Contact Support:
+   1. Click [📞 Contact Support]
+   2. Verify opens WhatsApp to +256705732540
+
+═══════════════════════════════════════════════════════════════
+PART K: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-7
+- Do NOT require internet for the Settings page
+- Do NOT lose user preferences between sessions
+- Do NOT delete tasks without confirmation
+- Do NOT add complex new features beyond what's specified
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 8 Step 1 complete — Settings & Preferences page built and tested"
+
+Report:
+- Which tests A through H passed
+- Any bugs found
+- Screenshots recommended: settings page, toggles, storage section, 
+  user guide modal, sync history

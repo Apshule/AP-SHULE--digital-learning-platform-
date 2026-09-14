@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 8;
+  var DB_VERSION = 10;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -20,7 +20,9 @@
     'offline_recent_curriculum',
     'offline_ncdc_modules',
     'offline_teacher_progress',
-    'offline_video_studio'
+    'offline_video_studio',
+    'offline_pdfs',
+    'offline_sync_history'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -30,6 +32,12 @@
     autoDownloadWifi: true,
     downloadHdWifiOnly: true,
     languagePreference: 'English',
+    videoLanguage: 'English',
+    usageMonth: new Date().toISOString().slice(0, 7),
+    downloadedBytes: 0,
+    uploadedBytes: 0,
+    lastSyncBytes: 0,
+    lastSyncAt: null,
     autoSyncWifi: true,
     autoSyncMobile: false
   };
@@ -152,7 +160,9 @@
                offline_recent_curriculum: 'docId',
                offline_ncdc_modules: 'moduleNumber',
                 offline_teacher_progress: 'progressKey',
-                offline_video_studio: 'libraryId'
+                offline_video_studio: 'libraryId',
+                offline_pdfs: 'pdfId',
+                offline_sync_history: 'historyId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
