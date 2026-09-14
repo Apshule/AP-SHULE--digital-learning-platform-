@@ -3587,12 +3587,94 @@
     }
     window.showNotification = showNotification;
 
+    const APP_VERSION = '1.1.0';
+    const APP_BUILD = '2026-09-14';
+    const LANGUAGE_CODES = { English:'en', Luganda:'lg', Lusoga:'xog', Runyankore:'nyn', Runyoro:'nyo', Acholi:'ach', Swahili:'sw' };
+    const TRANSLATIONS = {
+        English:{greeting:'Hello',tagline:"Let's Learn With Ease From Anywhere at Anytime",home:'Home',resources:'Resources',dashboard:'Dashboard',alerts:'Alerts',account:'Account',about:'About',syncNow:'Sync Now',settings:'Settings & Preferences',welcome:'Welcome to APSHULE',chooseClass:'📚 Select Your Class',availableSubjects:'📖 Available Subjects',allSynced:'All synced',pending:'Pending',syncFailed:'Sync failed',offlineMode:'Offline mode',language:'Language',storage:'Storage',sync:'Sync',help:'About & Help'},
+        Luganda:{greeting:'Gyebale',tagline:'Tusome n’obwangu okuva wonna era buli kiseera',home:'Awaka',resources:'Eby’okuyiga',dashboard:'Ekipande',alerts:'Obubaka',account:'Akawunti',about:'Ebikwata kuffe',syncNow:'Ssynca kati',settings:'Enteekateeka n’obwagazi',welcome:'Tusanyuse okukulaba ku APSHULE',chooseClass:'📚 Londa ekibiina kyo',availableSubjects:'📖 Emitwe egiriwo',allSynced:'Byonna bisynciddwa',pending:'Birindiridde',syncFailed:'Ssync eremedde',offlineMode:'Toli ku yintaneeti',language:'Olulimi',storage:'Obuwanika',sync:'Ssync',help:'Obuyambi'},
+        Lusoga:{greeting:'Wasuze otya',tagline:'Twige n’obwangu buli wanti na buli kaseera',home:'Kaaka',resources:'Ebintu eby’okuyiga',dashboard:'Ekipande',alerts:'Obubaka',account:'Akawunti',about:'Ebikwata kuffe',syncNow:'Ssynca kati',settings:'Enteekateeka n’obwagazi',welcome:'Tusanyuse okukulaba ku APSHULE',chooseClass:'📚 Londa ekibiina kyo',availableSubjects:'📖 Emitwe egiriwo',allSynced:'Byonna bisynciddwa',pending:'Birindiridde',syncFailed:'Ssync eremedde',offlineMode:'Toli ku yintaneeti',language:'Olulimi',storage:'Obuwanika',sync:'Ssync',help:'Obuyambi'},
+        Runyankore:{greeting:'Oraire ota',tagline:'Twegye n’obwangu ahantu hoona na buri kaire',home:'Amaka',resources:'Ebikwato by’okwega',dashboard:'Ekipande',alerts:'Amakuru',account:'Akawunti',about:'Ebikwatireho',syncNow:'Ssynca hati',settings:'Enteekateeka n’obwendi',welcome:'Kaaribu aha APSHULE',chooseClass:'📚 Sharamu ekibiina kyawe',availableSubjects:'📖 Eby’okwega ebiriho',allSynced:'Byona bisyncirwe',pending:'Birindiriire',syncFailed:'Ssync ebingwa',offlineMode:'Tari aha yintaneeti',language:'Orurimi',storage:'Obubiko',sync:'Ssync',help:'Obuyambi'},
+        Runyoro:{greeting:'Oraire ota',tagline:'Twegye n’obwangu hoona na buli kaire',home:'Kaaka',resources:'Eby’okwega',dashboard:'Ekipande',alerts:'Amakuru',account:'Akawunti',about:'Ebikwatireho',syncNow:'Ssynca hati',settings:'Enteekateeka n’obwendi',welcome:'Kaaribu aha APSHULE',chooseClass:'📚 Sharamu ekibiina kyawe',availableSubjects:'📖 Eby’okwega ebiriho',allSynced:'Byona bisyncirwe',pending:'Birindiriire',syncFailed:'Ssync ebingwa',offlineMode:'Tari aha yintaneeti',language:'Orurimi',storage:'Obubiko',sync:'Ssync',help:'Obuyambi'},
+        Acholi:{greeting:'Itye nining',tagline:'Wa pwony maber ki kabedo mo keken i kare mo keken',home:'Gang',resources:'Gin pwony',dashboard:'Dashboard',alerts:'Kwena',account:'Akaunt',about:'Lok mewa',syncNow:'Sync kombedi',settings:'Yub manok ki miti',welcome:'Wabimo APSHULE',chooseClass:'📚 Yer kelas mari',availableSubjects:'📖 Kwan ma tye',allSynced:'Gik weng osync',pending:'Tye ka kuro',syncFailed:'Sync pe olare',offlineMode:'Pe i internet',language:'Dhok',storage:'Kabedo',sync:'Sync',help:'Kony'},
+        Swahili:{greeting:'Habari',tagline:'Tujifunze kwa urahisi kutoka popote na wakati wowote',home:'Nyumbani',resources:'Rasilimali',dashboard:'Dashibodi',alerts:'Arifa',account:'Akaunti',about:'Kuhusu',syncNow:'Sawazisha sasa',settings:'Mipangilio na mapendeleo',welcome:'Karibu APSHULE',chooseClass:'📚 Chagua darasa lako',availableSubjects:'📖 Masomo yanayopatikana',allSynced:'Yote yamesawazishwa',pending:'Inasubiri',syncFailed:'Usawazishaji umeshindwa',offlineMode:'Nje ya mtandao',language:'Lugha',storage:'Hifadhi',sync:'Sawazisha',help:'Msaada'}
+    };
+    let currentAppLanguage = 'English';
+    function t(key) { return (TRANSLATIONS[currentAppLanguage] && TRANSLATIONS[currentAppLanguage][key]) || TRANSLATIONS.English[key] || key; }
+    function applyTranslations(language) {
+        currentAppLanguage = LANGUAGE_CODES[language] ? language : 'English';
+        document.documentElement.lang = LANGUAGE_CODES[currentAppLanguage] || 'en';
+        document.querySelectorAll('[data-i18n]').forEach(el => { const key=el.dataset.i18n; if(t(key)) el.textContent=t(key); });
+        const title=document.getElementById('globalSettingsTitle'); if(title) title.textContent='⚙️ '+t('settings');
+        const version=document.getElementById('settingsAppVersion'); if(version) version.textContent=APP_VERSION;
+        const build=document.getElementById('settingsBuildInfo'); if(build) build.textContent=APP_BUILD;
+        const syncButton=document.getElementById('globalSyncPopoverBtn'); if(syncButton) syncButton.textContent=t('syncNow');
+    }
+    window.apshuleTranslation = { t, applyTranslations, LANGUAGE_CODES, TRANSLATIONS };
     const Offline = window.AppShuleOffline;
     function formatOfflineBytes(bytes) {
         const value = Number(bytes)||0;
         if(value < 1024) return `${value} B`;
         if(value < 1048576) return `${Math.round(value/1024)} KB`;
         return `${(value/1048576).toFixed(1)} MB`;
+    }
+    let _globalSyncFailed = false;
+    let _settingsAccordionHome = null;
+    let _settingsLastSyncAt = null;
+    function setGlobalSyncStatus(summary, mode, failed) {
+        const button=document.getElementById('globalSyncStatusBtn');
+        const statusText=document.getElementById('globalSyncStatusText');
+        const lastText=document.getElementById('globalSyncLastText');
+        const pendingText=document.getElementById('globalSyncPendingText');
+        const pending=Number(summary?.total||0);
+        const state=failed ? 'failed' : mode==='offline' ? 'offline' : pending ? 'pending' : 'synced';
+        if(button) {
+            button.dataset.status=state;
+            button.setAttribute('aria-label', failed ? t('syncFailed') : mode==='offline' ? t('offlineMode') : pending ? `${t('pending')}: ${pending}` : t('allSynced'));
+            const count=button.querySelector('.global-sync-count'); if(count) count.textContent=String(pending);
+        }
+        if(statusText) statusText.textContent=failed ? 'Sync failed — try again when your connection is stable.' : mode==='offline' ? 'Offline — work will sync when connected.' : pending ? `${pending} item(s) waiting to sync.` : 'All changes are synced.';
+        if(lastText) lastText.textContent=`Last sync: ${_settingsLastSyncAt ? new Date(_settingsLastSyncAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) : 'Not synced yet'}`;
+        if(pendingText) pendingText.textContent=`Pending items: ${pending}`;
+    }
+    function openGlobalSettings() {
+        const modal=document.getElementById('globalSettingsModal'), body=document.getElementById('globalSettingsModalBody'), card=document.getElementById('connectionSettingsCard');
+        if(!modal||!body||!card) return;
+        const accordion=card.querySelector('.settings-accordion');
+        if(accordion && !_settingsAccordionHome) {
+            _settingsAccordionHome={parent:accordion.parentNode,next:accordion.nextSibling};
+            body.appendChild(accordion);
+        }
+        modal.classList.add('show');
+        document.body.style.overflow='hidden';
+        document.getElementById('globalSettingsBtn')?.setAttribute('aria-expanded','true');
+        refreshSettingsDashboard().catch(console.error);
+    }
+    function closeGlobalSettings() {
+        const modal=document.getElementById('globalSettingsModal'), body=document.getElementById('globalSettingsModalBody');
+        if(_settingsAccordionHome && body) {
+            const accordion=body.querySelector('.settings-accordion');
+            if(accordion) _settingsAccordionHome.parent.insertBefore(accordion,_settingsAccordionHome.next);
+            _settingsAccordionHome=null;
+        }
+        modal?.classList.remove('show');
+        document.body.style.overflow='';
+        document.getElementById('globalSettingsBtn')?.setAttribute('aria-expanded','false');
+    }
+    async function mergeAccountPreferences(settings) {
+        if(!Offline || !currentUser?.uid || !navigator.onLine || !db) return settings;
+        try {
+            const remote=(await getDoc(doc(db,'users',currentUser.uid))).data()||{};
+            const account=remote.preferences||{};
+            const accountValues={languagePreference:account.language||account.languagePreference,videoLanguage:account.videoLanguage};
+            const applied=Object.fromEntries(Object.entries(accountValues).filter(([,value])=>value));
+            if(Object.keys(applied).length) {
+                const merged=await Offline.saveSettings(currentUser.uid,applied);
+                if(applied.languagePreference && applied.languagePreference!==settings.languagePreference) showNotification('Account language preferences applied on this device','info');
+                return merged;
+            }
+        } catch(error) { console.warn('Preference merge deferred:',error); }
+        return settings;
     }
     async function resolveConnectionMode() {
         if(!Offline) return navigator.onLine ? 'wifi' : 'offline';
@@ -3611,6 +3693,9 @@
         if(badge) { badge.dataset.mode=mode; badge.setAttribute('aria-label','Connection mode: '+Offline.connectionLabel(mode)); }
         if(label) label.textContent=Offline.connectionLabel(mode);
         const summary=await Offline.getPendingSummary();
+        const settings=await Offline.getSettings(currentUser?.uid);
+        _settingsLastSyncAt=settings.lastSyncAt||_settingsLastSyncAt;
+        setGlobalSyncStatus(summary,mode,_globalSyncFailed);
         const syncText=mode==='offline' ? `Sync Now (${summary.total} items) - Connect to internet` : `Sync Now (${summary.total} items - ${formatOfflineBytes(summary.size)})`;
         [document.getElementById('headerSyncNowBtn'),document.getElementById('accountSyncNowBtn')].forEach(btn=>{if(btn){const span=btn.querySelector('.sync-label');if(span)span.textContent=syncText;else btn.textContent=syncText;}});
         const total=document.getElementById('totalCachedSize');
@@ -3627,7 +3712,9 @@
     }
     async function loadConnectionSettings() {
         if(!Offline) return;
-        const settings=await Offline.getSettings(currentUser?.uid);
+        let settings=await Offline.getSettings(currentUser?.uid);
+        settings=await mergeAccountPreferences(settings);
+        applyTranslations(settings.languagePreference||'English');
         const hd=document.getElementById('downloadHdWifiToggle'), wifi=document.getElementById('autoSyncWifiToggle'), mobile=document.getElementById('autoSyncMobileToggle');
         if(hd) hd.checked=settings.downloadHdWifiOnly!==false;
         if(wifi) wifi.checked=settings.autoSyncWifi!==false;
@@ -3680,31 +3767,42 @@
             languagePreference:appLanguage,
             videoLanguage
         });
+        applyTranslations(appLanguage);
         if(navigator.onLine && auth?.currentUser) updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:settings,'preferences.language':appLanguage,'preferences.videoLanguage':videoLanguage}).catch(()=>{});
-        const status=document.getElementById('connectionStatusText'); if(status) status.textContent='Connection settings saved';
+        const status=document.getElementById('connectionStatusText'); if(status) status.textContent='Connection settings saved on this device';
         await refreshSettingsDashboard(settings);
     }
     async function runOfflineSync(manual=false) {
         if(!Offline) return;
-        const mode=await resolveConnectionMode(), settings=await Offline.getSettings(currentUser?.uid);
-        if(mode==='mobile' && manual && !confirm('Sync pending work using mobile data? Continue?')) return;
-        const before=await Offline.getPendingSummary();
-        const result=await Offline.syncNow({force:manual||mode==='wifi',auto:!manual,allowMobile:settings.autoSyncMobile,confirm:true,userId:currentUser?.uid});
-        const syncedBytes=result.status==='complete' ? before.size : 0;
-        if(currentUser?.uid) {
-            if(syncedBytes) await Offline.recordDataUsage(currentUser.uid,'uploadedBytes',syncedBytes);
-            await Offline.saveSettings(currentUser.uid,{lastSyncBytes:syncedBytes,lastSyncAt:new Date().toISOString()});
-            await Offline.recordSyncHistory(currentUser.uid,{status:result.status,mode,uploaded:result.uploaded||0,pending:result.pending||0,bytes:syncedBytes});
+        try {
+            const mode=await resolveConnectionMode(), settings=await Offline.getSettings(currentUser?.uid);
+            if(mode==='mobile' && manual && !confirm('Sync pending work using mobile data? Continue?')) return;
+            const before=await Offline.getPendingSummary();
+            const result=await Offline.syncNow({force:manual||mode==='wifi',auto:!manual,allowMobile:settings.autoSyncMobile,confirm:true,userId:currentUser?.uid});
+            const syncedBytes=result.status==='complete' ? before.size : 0;
+            if(currentUser?.uid) {
+                if(syncedBytes) await Offline.recordDataUsage(currentUser.uid,'uploadedBytes',syncedBytes);
+                const timestamp=new Date().toISOString();
+                _settingsLastSyncAt=timestamp;
+                await Offline.saveSettings(currentUser.uid,{lastSyncBytes:syncedBytes,lastSyncAt:timestamp});
+                await Offline.recordSyncHistory(currentUser.uid,{status:result.status,mode,uploaded:result.uploaded||0,pending:result.pending||0,bytes:syncedBytes});
+            }
+            _globalSyncFailed=false;
+            if(result.status==='complete' && auth?.currentUser && currentUser) {
+                const savedSettings=await Offline.getSettings(currentUser.uid);
+                await updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:savedSettings}).catch(()=>{});
+            }
+            if(result.status==='offline') showNotification(`Sync Now (${result.pending} items) - Connect to internet`,'info');
+            else if(result.status==='mobile-paused') showNotification('Pending work will sync on WiFi','info');
+            else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
+            if(currentUser?.role==='teacher') await loadOfflineEarningsSummary();
+            await refreshSettingsDashboard();
+        } catch(error) {
+            _globalSyncFailed=true;
+            await refreshOfflineUi().catch(()=>{});
+            showNotification('Sync failed. Your offline work is still saved on this device.','error');
+            throw error;
         }
-        if(result.status==='complete' && auth?.currentUser && currentUser) {
-            const savedSettings=await Offline.getSettings(currentUser.uid);
-            await updateDoc(doc(db,'users',currentUser.uid),{offlineSettings:savedSettings}).catch(()=>{});
-        }
-        if(result.status==='offline') showNotification(`Sync Now (${result.pending} items) - Connect to internet`,'info');
-        else if(result.status==='mobile-paused') showNotification('Pending work will sync on WiFi','info');
-        else showNotification(`Sync complete! ${result.uploaded} items uploaded`,'success');
-        if(currentUser?.role==='teacher') await loadOfflineEarningsSummary();
-        await refreshSettingsDashboard();
     }
     function openSettingsInfo(kind) {
         const modal=document.getElementById('settingsInfoModal'), title=document.getElementById('settingsInfoTitle'), body=document.getElementById('settingsInfoBody');
@@ -3712,11 +3810,11 @@
         const content={
             guide:{
                 title:'APSHULE User Guide',
-                body:`<h4>Getting Started</h4><p>Log in, complete your profile, and choose your class or subject from Home.</p><h4>Watching Videos</h4><p>Open a lesson while online, then use its offline download option when you are on WiFi.</p><h4>Projects</h4><p>Open My Projects to record milestones, attach evidence, and keep working when disconnected.</p><h4>NCDC Course</h4><p>Teachers can open the NCDC course from the Teacher area and continue progress offline.</p><h4>Offline Mode</h4><p>APSHULE saves supported work on this device and syncs it when a connection is available. Use Sync Now to check manually.</p>`
+                body:`<h4>Getting Started</h4><p>Log in, complete your profile, choose Primary or Secondary, then select your class and subject from Home.</p><h4>Watching Videos</h4><p>Open a lesson, use the captions and language selector, and record your progress. HD downloads are best on WiFi.</p><h4>My Projects</h4><p>Open My Projects to create milestones, attach evidence, scan the project QR, and keep working when disconnected.</p><h4>Teaching Tools</h4><p>Teachers can use the curriculum linker, lesson resources, live lessons, student questions, and the NCDC course.</p><h4>Admin Panel</h4><p>Superadmins can manage users, materials, courses, live lessons, feedback, Video Studio, and preference analytics.</p><h4>Offline Mode</h4><p>Supported lessons and work are saved on this device. Open Settings → Sync to see pending items and use Sync Now when connected.</p><h4>Troubleshooting</h4><p>Check your connection mode, refresh the app, clear only the affected cache category, and report a bug with at least 20 characters of detail if the issue continues.</p>`
             },
             faqs:{
                 title:'Frequently Asked Questions',
-                body:`<details><summary><strong>Can I use APSHULE without internet?</strong></summary><p>Yes. Cached lessons and supported work remain available offline. New online content needs a connection first.</p></details><details><summary><strong>Will my work be lost if I close the app?</strong></summary><p>No. Offline work is stored on this device until it synchronises.</p></details><details><summary><strong>Why are HD downloads limited to WiFi?</strong></summary><p>HD files use more data. You can change the preference, but WiFi is recommended.</p></details><details><summary><strong>How do I free storage?</strong></summary><p>Open Storage in Settings and clear a category or all cached data. Your profile and preferences are kept.</p></details>`
+                body:`<details><summary><strong>Can I use APSHULE without internet?</strong></summary><p>Yes, for cached lessons and supported offline work.</p></details><details><summary><strong>Will my work be lost if I close the app?</strong></summary><p>No. It stays on this device until synchronised.</p></details><details><summary><strong>Why are HD downloads limited to WiFi?</strong></summary><p>HD files use more data and are protected by your connection preference.</p></details><details><summary><strong>How do I free storage?</strong></summary><p>Open Storage and clear a category or all cached data.</p></details><details><summary><strong>Why is my sync pending?</strong></summary><p>Check your connection mode and the mobile-data sync preference.</p></details><details><summary><strong>Can I change the app language?</strong></summary><p>Open Settings → Language, choose one of seven supported languages, and save.</p></details><details><summary><strong>How do I report a bug?</strong></summary><p>Use Report a Bug and describe the issue in at least 20 characters.</p></details><details><summary><strong>How do I request a feature?</strong></summary><p>Use Request a Feature, add a short title, description, and priority.</p></details><details><summary><strong>Where are my certificates?</strong></summary><p>Teachers can find NCDC progress and completed CPD certificates in the Teacher area.</p></details><details><summary><strong>How do I contact support?</strong></summary><p>Use Contact Support in Settings to open the APSHULE WhatsApp support channel.</p></details>`
             }
         }[kind];
         if(!content) return;
@@ -3731,22 +3829,30 @@
         title.textContent=kind==='bug'?'Report a Bug':'Request a Feature';
         subject.placeholder=kind==='bug'?'What went wrong?':'What feature would help you?';
         subject.value='';
+        const category=document.getElementById('settingsFeedbackCategory'), priority=document.getElementById('settingsFeedbackPriority');
+        if(category) category.style.display=kind==='bug'?'block':'none';
+        if(priority) priority.style.display=kind==='feature'?'block':'none';
         const description=document.getElementById('settingsFeedbackDescription'); if(description) description.value='';
+        const metadata=document.getElementById('settingsFeedbackMetadata');
+        if(metadata) metadata.textContent=`Device: ${navigator.platform||'unknown'} · Browser: ${navigator.userAgent||'unknown'} · Version: ${APP_VERSION}`;
         modal.classList.add('show');
     }
     async function submitSettingsFeedback() {
         const modal=document.getElementById('settingsFeedbackModal');
         const subject=document.getElementById('settingsFeedbackSubject')?.value.trim();
         const description=document.getElementById('settingsFeedbackDescription')?.value.trim();
+        const feedbackType=modal?.dataset.feedbackType;
         if(!subject || !description) { showNotification('Add a subject and description first','error'); return; }
+        if(feedbackType==='bug' && description.length<20) { showNotification('Please describe the bug in at least 20 characters','error'); return; }
         if(!auth?.currentUser || !navigator.onLine) { showNotification('Connect to the internet to send feedback','info'); return; }
-        const type=modal?.dataset.feedbackType==='feature'?'feature_requests':'bug_reports';
+        const type=feedbackType==='feature'?'feature_requests':'bug_reports';
+        const metadata={device:navigator.platform||'unknown',browser:navigator.userAgent||'unknown',appVersion:APP_VERSION,language:currentAppLanguage};
         const btn=document.getElementById('settingsFeedbackSubmitBtn');
         if(btn) btn.disabled=true;
         try {
-            await addDoc(collection(db,type),{subject,description,userId:currentUser?.uid||auth.currentUser.uid,userName:currentUser?.name||'',createdAt:new Date().toISOString(),source:'account-settings'});
+            await addDoc(collection(db,type),{subject,description,category:document.getElementById('settingsFeedbackCategory')?.value||null,priority:document.getElementById('settingsFeedbackPriority')?.value||null,metadata,userId:currentUser?.uid||auth.currentUser.uid,userName:currentUser?.name||'',createdAt:new Date().toISOString(),source:'account-settings'});
             if(modal) modal.classList.remove('show');
-            showNotification(type==='bug_reports'?'Bug report sent':'Feature request sent','success');
+            showNotification(type==='bug_reports'?'Bug report sent successfully':'Feature request sent successfully','success');
         } catch(error) {
             console.error('Settings feedback failed:',error);
             showNotification('Unable to send feedback right now','error');
