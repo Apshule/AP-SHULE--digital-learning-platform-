@@ -45,6 +45,8 @@ const FILES = [
   "scripts/src/push-to-github.ts",
   "firestore.rules",
   "firestore.indexes.json",
+  ".agents/memory/MEMORY.md",
+  ".agents/memory/github-pages-push-allowlist.md",
   "CNAME",
   "firebase-messaging-sw.js",
   "manifest.json",
