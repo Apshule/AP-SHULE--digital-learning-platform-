@@ -94,6 +94,20 @@ service cloud.firestore {
       allow create, update, delete: if isSuperAdmin();
     }
 
+    // Command Center management collections are explicitly superadmin-scoped.
+    match /transactions/{transactionId} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /subscriptions/{subscriptionId} {
+      allow read, write: if isSuperAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+    match /ca_exports/{exportId} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /cpd_certificates/{certificateId} {
+      allow read, write: if isSuperAdmin();
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
       allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews)(/.*)?$');

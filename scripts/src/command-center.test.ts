@@ -44,8 +44,32 @@ describe("Task 9 Step 1 command center contracts", () => {
 
   it("adds the requested command center indexes and scoped collections", () => {
     const groups = indexes.indexes.map(index => index.collectionGroup);
-    expect(groups).toEqual(expect.arrayContaining(["users", "institutions", "institution_branding"]));
+    expect(groups).toEqual(expect.arrayContaining([
+      "users",
+      "institutions",
+      "institution_branding",
+      "transactions",
+      "subscriptions",
+      "notifications",
+      "liveLessons",
+      "ca_exports",
+      "cpd_certificates",
+    ]));
     expect(rulesSource).toContain("match /institution_branding/{brandingId}");
     expect(rulesSource).toContain("match /institutions/{institutionId}");
+    expect(rulesSource).toContain("match /transactions/{transactionId}");
+    expect(rulesSource).toContain("match /ca_exports/{exportId}");
+  });
+
+  it("adds Step 2 quick actions and management modules", () => {
+    for (const action of ["ncdc", "live", "announce", "reports"]) {
+      expect(indexSource).toContain(`data-command-action="${action}"`);
+    }
+    for (const module of ["Video Library", "PDF Library", "UNEB Items", "Curriculum Links", "Subjects & Classes", "Payments & Subscriptions", "NCDC / UNEB Control", "Live Lesson Control", "Communication"]) {
+      expect(indexSource).toContain(module);
+    }
+    for (const contract of ["renderCommandContentTab", "renderCommandPaymentsTab", "renderCommandNcdcTab", "renderCommandLiveTab", "renderCommandCommunicationTab", "commandOfflineMessage", "Step 3 reports"]) {
+      expect(indexSource).toContain(contract);
+    }
   });
 });
