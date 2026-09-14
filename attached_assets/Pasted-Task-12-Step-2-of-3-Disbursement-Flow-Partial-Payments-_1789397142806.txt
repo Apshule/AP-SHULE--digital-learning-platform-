@@ -1,0 +1,614 @@
+Task 12 — Step 2 of 3: Disbursement Flow + Partial Payments + Balance Tracking + Notifications
+
+CONTEXT:
+- Step 1 built: Yo! API config, Beneficiary management, Client payment 
+  initiation, IPN webhook handler, Audit log
+- Step 2 now handles what happens AFTER the client pays:
+  * Auto-disbursement to institutions
+  * Partial payment tracking across all sectors
+  * Credit notes for overpayments
+  * Cross-sector balance reconciliation
+  * Multi-channel notifications
+
+GOAL OF STEP 2:
+- After client payment is confirmed, funds auto-disburse to the 
+  institution's Yo! account (or bank/MoMo)
+- Track partial payments, overpayments, and credit notes across 
+  Education, MFI, and Clinic sectors
+- Send notifications to all 3 parties (client, institution, super admin)
+- Complete the payment lifecycle
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these additional collections:
+
+1. credit_notes
+   Fields:
+   - creditNoteId (auto)
+   - clientId (Firebase uid)
+   - clientName
+   - institutionId
+   - sector (Education / MFI / Clinic / Farm)
+   - originalBillReference (bill that was overpaid)
+   - creditAmount (number)
+   - usedAmount (number, default 0)
+   - balanceRemaining (number)
+   - status (active / used / expired)
+   - expiryDate (date, default +12 months)
+   - createdAt
+   - updatedAt
+   - createdBy (system)
+
+2. sector_balances (unified view across all sectors)
+   Fields:
+   - balanceId (auto)
+   - clientId
+   - institutionId
+   - sector (Education / MFI / Clinic)
+   - referenceType (school_fees / microfinance_loan / clinic_bill)
+   - referenceId (bill/loan doc ID)
+   - totalAmount
+   - amountPaid
+   - balanceRemaining
+   - status (unpaid / partially_paid / paid / overpaid)
+   - dueDate
+   - lastPaymentDate
+   - lastPaymentAmount
+   - updatedAt
+
+3. payment_reminders
+   Fields:
+   - reminderId (auto)
+   - transactionId (or balanceId)
+   - clientId
+   - institutionId
+   - reminderType (due_soon / overdue_1day / overdue_7days / 
+     overdue_30days)
+   - channel (in_app / sms / email)
+   - message
+   - scheduledAt
+   - sentAt
+   - status (pending / sent / failed)
+   - createdAt
+
+═══════════════════════════════════════════════════════════════
+PART B: AUTO-DISBURSEMENT PIPELINE
+═══════════════════════════════════════════════════════════════
+
+After an IPN confirms a successful client payment, automatically 
+disburse to the institution.
+
+FLOW:
+1. IPN received → transaction marked completed
+2. Calculate:
+   - Fee = amount * (institution.service_fee_percentage / 100)
+   - Net = amount - fee
+3. Look up institution_beneficiaries by institutionId
+4. If beneficiary exists AND isActive:
+   - Call disbursement function
+5. If no beneficiary OR beneficiary inactive:
+   - Hold funds in AppShule account
+   - Notify Super Admin: "Disbursement blocked — no beneficiary"
+   - Status: transaction = completed, disbursement = pending
+
+DISBURSEMENT FUNCTION (backend):
+1. Build Yo! XML request based on beneficiary type:
+
+TYPE A — Yo! Account (internal transfer):
+<?xml version="1.0" encoding="UTF-8"?>
+<AutoCreate>
+  <Request>
+    <APIUsername>{YO_API_USERNAME}</APIUsername>
+    <APIpassword>{YO_API_PASSWORD}</APIPassword>
+    <Method>acinternaltransfer</Method>
+    <CurrencyCode>UGX</CurrencyCode>
+    <Amount>{net}</Amount>
+    <BeneficiaryAccount>{institutionYoAccount}</BeneficiaryAccount>
+    <BeneficiaryEmail>{institutionEmail}</BeneficiaryEmail>
+    <Narrative>Payment disbursement {reference}</Narrative>
+    <ExternalReference>DISC-{reference}</ExternalReference>
+  </Request>
+</AutoCreate>
+
+TYPE B — Mobile Money (acwithdrawfunds):
+- Requires RSA signature (see Yo! docs Part 4.1)
+- Include PublicKeyAuthenticationNonce + Signature
+- Same structure as above but Method = acwithdrawfunds
+
+TYPE C — Bank Account (acwithdrawfundstobank):
+- Requires RSA signature
+- Include BankAccountName, BankAccountNumber, 
+  BankAccountIdentifier
+- TransferTransactionType = EFT or RTGS
+
+2. Send request to Yo! API
+3. Yo! returns:
+   - Success → yoTransactionId, settlement identifier
+   - Error → error code + message
+   - Pending → wait for webhook
+
+4. Create payment_disbursements doc:
+   - status = pending (initial) or completed
+   - Store yoTransactionId
+
+5. If success: notify institution "Funds sent"
+6. If pending: wait for disbursement webhook (Part C)
+7. If failed: 
+   - Retry up to 3 times
+   - After 3 failures: alert Super Admin
+   - Hold funds in master account
+
+RETRY LOGIC:
+- Exponential backoff: 30s, 2min, 10min
+- Log each attempt
+- After 3 failures, mark as "needs_manual_review"
+
+═══════════════════════════════════════════════════════════════
+PART C: DISBURSEMENT WEBHOOK HANDLER
+═══════════════════════════════════════════════════════════════
+
+Yo! also sends webhooks for disbursement (withdrawals):
+
+Setup:
+POST /api/webhooks/yo/disbursement
+
+HANDLER LOGIC:
+1. Verify signature
+2. Find disbursement by external_ref (DISC-{reference})
+3. Update payment_disbursements:
+   - status = completed / failed
+   - yoTransactionId = response reference
+   - disbursedAt = serverTimestamp()
+4. If success:
+   - Notify institution via SMS + in-app: "Funds received"
+   - Notify Super Admin
+5. If failed:
+   - Trigger retry logic
+   - Alert Super Admin if retries exhausted
+
+═══════════════════════════════════════════════════════════════
+PART D: PARTIAL PAYMENTS ACROSS SECTORS
+═══════════════════════════════════════════════════════════════
+
+After each successful payment, update the appropriate sector record.
+
+SECTOR 1 — Education (school_fees):
+- Find school_fees doc by billReference
+- Update:
+  * amount_paid += payment amount
+  * balance_remaining -= payment amount
+  * payment_status = Paid / Partially Paid / Overpaid
+  * last_payment_date = now
+
+SECTOR 2 — MFI (microfinance_loans):
+- Find loan by billReference
+- Update:
+  * amount_paid += payment amount
+  * balance_remaining -= payment amount
+  * repayment_status = On Track / Partially Paid / Fully Repaid / Overdue
+  * last_payment_date = now
+- If loan is in repayment schedule mode:
+  * Find next pending installment
+  * Mark it paid (or partially paid)
+  * Advance to next installment
+
+SECTOR 3 — Clinic (clinic_billing):
+- Find bill by billReference
+- Update:
+  * amount_paid += payment amount
+  * balance_remaining -= payment amount
+  * payment_status = Paid / Partial / Unpaid
+  * last_payment_date = now
+
+UNIFIED UPDATE FUNCTION:
+Add function updateSectorBalance(sector, referenceId, paymentAmount):
+1. Switch based on sector
+2. Get the sector doc
+3. Update amounts + status
+4. Write to sector_balances for unified view
+5. Return updated status
+
+═══════════════════════════════════════════════════════════════
+PART E: OVERPAYMENT + CREDIT NOTES
+═══════════════════════════════════════════════════════════════
+
+When a client pays MORE than the balance:
+
+EXAMPLE:
+- Bill total: UGX 300,000
+- Already paid: UGX 250,000
+- Balance: UGX 50,000
+- Client pays: UGX 80,000
+- Overpayment: UGX 30,000
+
+AUTOMATIC FLOW:
+1. Bill balance = 0 → status = "Paid"
+2. Create credit_notes doc:
+   - creditAmount = 30,000
+   - balanceRemaining = 30,000
+   - status = active
+   - expiryDate = +12 months
+3. Notify client:
+   "You overpaid UGX 30,000. A credit note has been created. 
+    It will apply to your next bill."
+4. Notify institution: "Overpayment received"
+5. Notify Super Admin
+
+CREDIT NOTE APPLICATION:
+When client has a new bill, system checks for active credit notes:
+1. Find credit_notes WHERE clientId == current user AND 
+   status == active AND balanceRemaining > 0
+2. If found, apply automatically:
+   - Reduce new bill by credit note amount
+   - Update credit note: usedAmount += applied, 
+     balanceRemaining -= applied
+   - If balanceRemaining == 0: status = "used"
+3. Notify client: "Your credit note of UGX X was applied to this bill"
+
+MANUAL CREDIT APPLICATION:
+- Client can also choose to apply credit at payment time
+- Show available credits in payment modal:
+  "You have UGX 30,000 credit available. Apply? [Yes] [No]"
+
+═══════════════════════════════════════════════════════════════
+PART F: NOTIFICATION SYSTEM
+═══════════════════════════════════════════════════════════════
+
+3-channel notifications (in-app + SMS + email where available):
+
+CLIENT NOTIFICATIONS:
+
+On payment success:
+├─ In-App: "✅ Payment confirmed. UGX X to {Institution}. 
+│           Balance: UGX Y"
+├─ SMS: "Payment of UGX X received. Bill: {ref}. 
+│         Balance: UGX Y. Thank you."
+└─ Email: (if available) Full receipt PDF
+
+On payment failure:
+├─ In-App: "❌ Payment failed. Try again or contact support."
+└─ SMS: "Payment of UGX X failed. Try again."
+
+On full payment (balance = 0):
+├─ In-App: "🎉 Congratulations! Your bill is fully paid."
+└─ SMS: "Bill {ref} fully paid. Thank you."
+
+On overpayment:
+├─ In-App: "You overpaid UGX X. Credit note issued."
+└─ SMS: "Credit note of UGX X created. Applies to next bill."
+
+On credit note applied:
+├─ In-App: "Your credit note of UGX X was applied."
+└─ SMS: "Credit of UGX X applied to bill {ref}."
+
+INSTITUTION NOTIFICATIONS:
+
+On payment received:
+├─ In-App: "Payment of UGX X received from {Client}"
+├─ SMS: "Received UGX X from {Client}. Ref: {transactionRef}"
+└─ Email: (if available) Payment detail
+
+On disbursement:
+├─ In-App: "Funds of UGX X disbursed to your account"
+└─ SMS: "UGX X disbursed to {beneficiaryAccount}"
+
+SUPER ADMIN NOTIFICATIONS:
+
+On every transaction:
+├─ In-App: "💳 Payment: UGX X from {Client} to {Institution}. 
+│           Fee: UGX Y. Net: UGX Z."
+└─ Dashboard badge update
+
+On disbursement failure:
+├─ In-App: "⚠️ Disbursement failed for {transactionRef}. 
+│           Retry {N}/3."
+└─ SMS (optional)
+
+On overpayment:
+├─ In-App: "⚠️ Client {Client} overpaid UGX X. Credit note created."
+
+NOTIFICATION ROUTING:
+- Use payment_notifications collection
+- Queue notification, then process via backend worker
+- Track delivery status (sent / failed)
+- Retry failed SMS up to 2 times
+
+═══════════════════════════════════════════════════════════════
+PART G: PAYMENT REMINDERS (AUTOMATED)
+═══════════════════════════════════════════════════════════════
+
+Auto-send reminders for unpaid/overdue balances:
+
+SCHEDULE:
+- Due in 7 days: gentle reminder
+- Due today: urgent reminder
+- 1 day overdue: first overdue notice
+- 7 days overdue: escalation to school admin/institution
+- 30 days overdue: final notice + manager alert
+
+SETUP:
+1. Cloud Function runs daily at 8 AM
+2. Query sector_balances WHERE status IN ('unpaid', 'partially_paid')
+3. For each:
+   - Compute days until/past due
+   - Find matching reminder template
+   - Queue notification (in-app + SMS)
+   - Log in payment_reminders
+
+REMINDER TEMPLATES:
+
+7 days before due:
+"Reminder: Your {bill type} of UGX X is due on {date}. Pay now to avoid late fees."
+
+Due today:
+"⚠️ Due today: Your {bill type} of UGX X is due today. Pay now."
+
+1 day overdue:
+"⚠️ Payment overdue: UGX X due. Please pay immediately."
+
+7 days overdue:
+"🚨 7-day overdue: UGX X due. Please contact {institution}."
+
+30 days overdue:
+"🚨 30-day overdue: UGX X due. Account may be suspended."
+
+Client can opt-out of reminders in Settings (Part J).
+
+═══════════════════════════════════════════════════════════════
+PART H: UNIFIED CLIENT PAYMENT VIEW
+═══════════════════════════════════════════════════════════════
+
+Update client Account page with unified payment center:
+
+┌─────────────────────────────────────────┐
+│ 💳 MY PAYMENTS                           │
+├─────────────────────────────────────────┤
+│ Total outstanding: UGX 177,000          │
+│ Across 3 bills                          │
+│                                          │
+│ 📚 EDUCATION (1 bill)                    │
+│ • Rose Junior School — UGX 100,000      │
+│   Balance: UGX 30,000 · Due: 30 Sep     │
+│   [Pay Now]                              │
+│                                          │
+│ 🏦 MFI (1 loan)                          │
+│ • Green Valley MFI — UGX 500,000        │
+│   Balance: UGX 147,000 · Next: 1 Oct    │
+│   [Pay Now]                              │
+│                                          │
+│ 🏥 CLINIC (1 bill)                       │
+│ • City Clinic — UGX 50,000              │
+│   Balance: UGX 0 · ✅ Paid              │
+│                                          │
+│ 💰 CREDIT NOTES                          │
+│ • UGX 30,000 available                  │
+│   From: Overpayment 12 Sep              │
+│   [Use on next bill]                    │
+│                                          │
+│ 📊 PAYMENT HISTORY                       │
+│ • 12 Sep — UGX 50,000 — ✅ Completed    │
+│ • 10 Sep — UGX 30,000 — ✅ Completed    │
+│ [View All]                              │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART I: SUPER ADMIN — DISBURSEMENT DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Command Center → Payments → new tab: 
+"💸 Disbursements"
+
+┌─────────────────────────────────────────┐
+│ 💸 DISBURSEMENTS                         │
+├─────────────────────────────────────────┤
+│ Today:                                   │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Pending  │ │ Completed│ │ Failed   │ │
+│ │ 3        │ │ 42       │ │ 1        │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 💰 Total Disbursed Today: UGX 845,000   │
+│ 💰 Total Fees Earned: UGX 42,250        │
+│                                          │
+│ 🚨 NEEDS ATTENTION                       │
+│ • 1 failed disbursement — retry 2/3     │
+│   [Retry Now] [Mark for Manual]        │
+│                                          │
+│ 📋 RECENT DISBURSEMENTS                  │
+│ • 12 Sep — UGX 95,000 to Rose Junior    │
+│    Status: ✅ Completed                  │
+│ • 12 Sep — UGX 47,500 to Green Valley   │
+│    Status: ✅ Completed                  │
+│ • 12 Sep — UGX 100,000 to City Clinic   │
+│    Status: ⏳ Pending                    │
+│                                          │
+│ [📥 Export Disbursement Report]         │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART J: CLIENT PAYMENT PREFERENCES
+═══════════════════════════════════════════════════════════════
+
+Add to client Settings (Account → Settings):
+
+PAYMENT PREFERENCES:
+- Auto-pay reminder: [7 days before] [1 day before] [Both]
+- Reminder channel: [✓] In-app [✓] SMS [ ] Email
+- Default payment method: ● MTN ○ Airtel
+- Save phone for payments: [✓] Yes
+- Auto-apply credit notes: [✓] Yes (default)
+
+Save to users/{uid}/paymentPreferences.
+
+═══════════════════════════════════════════════════════════════
+PART K: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Payment accent: #00A86B (money green)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Special styling:
+- Disbursement status badges
+- Credit note cards with gold accent
+- Unified payment view with sector color coding:
+  * Education: purple
+  * MFI: dark blue
+  * Clinic: teal
+
+═══════════════════════════════════════════════════════════════
+PART L: OFFLINE BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+Payment transactions require internet. But:
+
+- Client's payment history cached for offline viewing
+- Credit notes cached
+- Outstanding balances cached
+- All cached data shows "Last updated X ago"
+- Payment actions disabled when offline
+
+═══════════════════════════════════════════════════════════════
+PART M: SECURITY
+═══════════════════════════════════════════════════════════════
+
+1. Disbursement requires:
+   - Valid institution beneficiary
+   - Beneficiary isActive == true
+   - Amount > min_disbursement_amount
+   - Amount < max_disbursement_amount
+   - Signature verified on webhook
+
+2. Client cannot:
+   - Modify payment amount after initiation
+   - Cancel a completed payment
+   - Change beneficiary (only super admin can)
+   - Apply credit notes to other clients' bills
+
+3. Audit log captures every disbursement attempt.
+
+4. All amounts validated server-side (never trust client).
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. credit_notes: clientId (asc) + status (asc)
+2. credit_notes: institutionId (asc) + createdAt (desc)
+3. sector_balances: clientId (asc) + status (asc)
+4. sector_balances: institutionId (asc) + status (asc)
+5. sector_balances: dueDate (asc) + status (asc)
+6. payment_reminders: scheduledAt (asc) + status (asc)
+
+═══════════════════════════════════════════════════════════════
+PART O: TESTING (SANDBOX)
+═══════════════════════════════════════════════════════════════
+
+A. Beneficiary registration:
+   1. Super Admin adds beneficiary for test school
+   2. Set type = Mobile Money, account = 256705732540
+   3. Save
+   4. Verify: appears in beneficiaries list
+
+B. Full payment flow (sandbox):
+   1. Student has bill of UGX 10,000
+   2. Student pays full via sandbox
+   3. Verify: IPN processed
+   4. Verify: transaction status = completed
+   5. Verify: disbursement queued
+   6. Verify: payment_disbursements doc created
+   7. Verify: school_fees updated (balance = 0, status = Paid)
+   8. Verify: notifications sent to all 3 parties
+
+C. Partial payment:
+   1. Bill = UGX 300,000
+   2. Client pays UGX 123,000
+   3. Verify: transaction saved
+   4. Verify: sector_balances shows Partially Paid
+   5. Verify: client notified with balance UGX 177,000
+
+D. Overpayment + credit note:
+   1. Bill = UGX 100,000
+   2. Client pays UGX 150,000
+   3. Verify: bill status = Paid (not Overpaid)
+   4. Verify: credit_notes doc created for UGX 50,000
+   5. Verify: client notified
+
+E. Credit note application:
+   1. New bill = UGX 80,000
+   2. System finds credit note UGX 50,000
+   3. Auto-applies → new balance = UGX 30,000
+   4. Verify: credit note status = used
+   5. Verify: client notified
+
+F. Disbursement flow:
+   1. Check payment_disbursements for new entry
+   2. Verify: amount = net (after fee)
+   3. Verify: status = completed or pending
+   4. If completed: verify institution notified
+
+G. Failed disbursement retry:
+   1. Simulate Yo! API failure (sandbox error value)
+   2. Verify: retry logic triggered
+   3. Verify: after 3 failures → Super Admin alerted
+
+H. Reminders:
+   1. Create bill due in 7 days
+   2. Trigger reminder function manually
+   3. Verify: client gets reminder
+   4. Verify: payment_reminders doc created
+
+I. Unified client view:
+   1. Login as client with multiple bills
+   2. Verify: sees all bills (Education + MFI + Clinic)
+   3. Verify: totals correct
+   4. Verify: credit notes shown
+
+J. Super Admin disbursement dashboard:
+   1. Verify: today's stats
+   2. Verify: failed disbursement shown with retry button
+   3. Test [Retry Now]
+   4. Test [Mark for Manual]
+
+K. Client preferences:
+   1. Client sets auto-apply credit = OFF
+   2. New bill → credit NOT applied
+   3. Client manually applies credit
+   4. Verify: works
+
+L. Regression:
+   1. Tasks 1-11 all work
+   2. Step 1 payment flow still works
+   3. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-11 or Task 12 Step 1
+- Do NOT disburse to inactive beneficiaries
+- Do NOT disburse without valid institution_beneficiaries
+- Do NOT lose credit notes
+- Do NOT double-disburse (check transaction already disbursed)
+- Do NOT expose bank account numbers to unauthorized users
+- Do NOT skip audit log
+- Do NOT retry more than 3 times automatically
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 12 Step 2 complete — Disbursement + Partial Payments + 
+Balance Tracking + Notifications built"
+
+Report:
+- Which tests A through L passed
+- Any bugs found
+- Screenshots recommended: unified client view, credit notes, 
+  disbursement dashboard, notifications, preferences

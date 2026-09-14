@@ -165,6 +165,21 @@
         .command-primary-btn { color:#fff; background:#4B2E9E; }
         .command-secondary-btn { color:#4B2E9E; background:#eee9ff; }
         .command-danger-btn { color:#fff; background:#dc3545; }
+        .task12-payment-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 16px; }
+        .task12-payment-stat { padding:12px; border-radius:15px; background:#f5fff9; border:1px solid #d5f1df; }
+        .task12-payment-stat strong { display:block; color:#008a59; font-size:16px; }
+        .task12-payment-stat span,.task12-payment-row small,.task12-credit-card small,.task12-history-row small { display:block; color:#777; font-size:11px; margin-top:3px; }
+        .task12-payment-section { margin-top:15px; }
+        .task12-payment-section h4 { color:#4B2E9E; margin:0 0 8px; font-size:14px; }
+        .task12-payment-row,.task12-credit-card,.task12-history-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid #eeeaf5; }
+        .task12-payment-row > div:first-child,.task12-credit-card > div:first-child,.task12-history-row > span { min-width:0; }
+        .task12-payment-row strong,.task12-credit-card strong,.task12-history-row strong { display:block; color:#26202f; font-size:13px; }
+        .task12-payment-row-end { display:flex; align-items:flex-end; flex-direction:column; gap:5px; text-align:right; }
+        .task12-payment-row-end .clinic-primary-btn { padding:6px 10px; font-size:11px; }
+        .task12-sector-tag,.task12-status-badge { display:inline-block; color:#fff; border-radius:12px; padding:3px 7px; font-size:10px; font-weight:800; margin-right:6px; }
+        .task12-status-badge { color:#7a5500; background:#fff1bf; text-transform:capitalize; }
+        .task12-check { display:flex; align-items:center; gap:7px; font-size:12px; color:#4c4656; }
+        .task12-check input { width:auto; }
         .command-list { display:grid; gap:9px; }
         .command-list-card { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:13px; border:1px solid #eee; border-radius:15px; background:#fff; }
         .command-list-card h4 { margin:0 0 3px; color:#4B2E9E; font-size:14px; }
@@ -3334,6 +3349,32 @@
         <div id="accountPage" class="page">
             <div class="section-title">👤 My Account</div>
             <div id="accountInfo" class="account-card"></div>
+            <section id="task12PaymentCenter" class="settings-preferences-card" aria-labelledby="task12PaymentCenterTitle">
+                <div class="settings-preferences-head">
+                    <div><h3 id="task12PaymentCenterTitle">💳 My Payments</h3><p>View balances, payment history, and available credit notes across APSHULE services.</p></div>
+                    <span aria-hidden="true" style="font-size:24px;color:#00A86B;">₦</span>
+                </div>
+                <div id="task12PaymentCenterBody"><div class="clinic-empty">Loading payment center…</div></div>
+            </section>
+            <section id="task12PaymentPreferences" class="settings-preferences-card" aria-labelledby="task12PaymentPreferencesTitle">
+                <div class="settings-preferences-head">
+                    <div><h3 id="task12PaymentPreferencesTitle">🔔 Payment preferences</h3><p>Choose how payment reminders and credits should work for you.</p></div>
+                </div>
+                <form id="task12PaymentPreferencesForm" class="clinic-form">
+                    <div class="clinic-form-grid">
+                        <label>Reminder timing<select id="task12ReminderTiming"><option value="7_days">7 days before due</option><option value="1_day">1 day before due</option><option value="both">Both</option></select></label>
+                        <label>Default payment method<select id="task12DefaultPaymentMethod"><option value="MTN">MTN Mobile Money</option><option value="Airtel">Airtel Money</option></select></label>
+                        <label class="full">Reminder channels</label>
+                        <label class="task12-check"><input id="task12ReminderInApp" type="checkbox" checked> In-app</label>
+                        <label class="task12-check"><input id="task12ReminderSms" type="checkbox" checked> SMS</label>
+                        <label class="task12-check"><input id="task12ReminderEmail" type="checkbox"> Email</label>
+                        <label class="task12-check"><input id="task12SavePhone" type="checkbox" checked> Save my phone for payments</label>
+                        <label class="task12-check"><input id="task12AutoApplyCredit" type="checkbox" checked> Automatically apply credit notes</label>
+                    </div>
+                    <div id="task12PaymentPreferencesStatus" class="clinic-form-status" aria-live="polite"></div>
+                    <div class="clinic-form-actions"><button class="clinic-primary-btn" type="submit">Save payment preferences</button></div>
+                </form>
+            </section>
             <section id="connectionSettingsCard" class="settings-preferences-card" aria-labelledby="connectionSettingsTitle">
                 <div class="settings-preferences-head">
                     <div><h3 id="connectionSettingsTitle">⚙️ Settings &amp; Preferences</h3><p>Control your connection, language, storage, sync, and support options.</p></div>
@@ -12803,7 +12844,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     const commandModuleConfig={
         content:{title:'📚 Content Management',tabs:[['videos','Video Library'],['pdfs','PDF Library'],['uneb','UNEB Items'],['curriculum','Curriculum Links'],['subjects','Subjects & Classes']]},
-        payments:{title:'💰 Payments & Subscriptions',tabs:[['overview','Overview'],['plans','Subscription Plans'],['transactions','Transactions'],['approvals','Pending Approvals'],['beneficiaries','Beneficiaries'],['invoices','Invoices']]},
+        payments:{title:'💰 Payments & Subscriptions',tabs:[['overview','Overview'],['plans','Subscription Plans'],['transactions','Transactions'],['approvals','Pending Approvals'],['beneficiaries','Beneficiaries'],['disbursements','💸 Disbursements'],['invoices','Invoices']]},
         ncdc:{title:'🎓 NCDC / UNEB Control',tabs:[['overview','Overview'],['exports','CA Exports'],['certificates','CPD Certificates'],['progress','Retooling Progress'],['duplicates','Duplication Flags'],['repeat','Repeat Title Log']]},
         live:{title:'📡 Live Lesson Control',tabs:[['scheduled','Scheduled Lessons'],['requests','Teacher Requests'],['attendance','Attendance'],['enrollments','Enrollments'],['tokens','Access Tokens']]},
         announce:{title:'📢 Communication',tabs:[['send','Send Announcement'],['history','Message History'],['scheduled','Scheduled Messages'],['templates','Templates'],['channels','Channels']]},
@@ -14303,7 +14344,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
              if(['clinicPatients','clinicAppointments','clinicWork','clinicPharmacy','clinicBilling','clinicPatientPortal','clinicPatientBilling'].includes(pageId)) return clinicPage(pageId);
          }
         if(pageId==='teacher') loadTeacherDashboard();
-        if(pageId==='account') loadMyVideoQuestions();
+        if(pageId==='account') { loadMyVideoQuestions(); window.task12LoadPaymentCenter?.(); }
         if(pageId==='about') loadAboutFromFirestore();
         if(pageId==='live') renderLivePage();
         if(pageId==='resources') {
@@ -16058,8 +16099,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const alreadyPaid = Number(document.getElementById('clientPaymentExistingPaid').value || 0);
         const balance = Math.max(0, totalAmount - alreadyPaid);
         const clientPhone = document.getElementById('clientPaymentPhone').value.trim();
-        if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
-            if (status) status.textContent = 'Enter an amount greater than zero and no more than the outstanding balance.';
+        if (!Number.isFinite(amount) || amount <= 0) {
+            if (status) status.textContent = 'Enter an amount greater than zero.';
             return;
         }
         if (!clientPhone) {
@@ -16251,6 +16292,137 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCommandModule('payments', 'beneficiaries');
     }
 
+    function task12PaymentSummaryMarkup(summary, offline = false) {
+        const balances = Array.isArray(summary?.balances) ? summary.balances : [];
+        const credits = Array.isArray(summary?.credits) ? summary.credits : [];
+        const history = Array.isArray(summary?.history) ? summary.history : [];
+        const balanceRows = balances.length ? balances.map(row => {
+            const remaining = Math.max(0, Number(row.balanceRemaining ?? row.balanceAmount ?? 0));
+            const total = Number(row.totalAmount || remaining);
+            const paid = Number(row.amountPaid || Math.max(0, total - remaining));
+            const sector = String(row.sector || 'Other');
+            const color = sector.toLowerCase().includes('education') ? '#4B2E9E' : sector.toLowerCase().includes('mfi') ? '#1A5490' : '#00897B';
+            return `<div class="task12-payment-row"><div><span class="task12-sector-tag" style="background:${color};">${escHtml(sector)}</span><strong>${escHtml(row.institutionName || row.institutionId || 'Institution')}</strong><small>${escHtml(row.referenceId || row.reference || row.id || 'Balance')} · ${row.dueDate ? `Due ${escHtml(new Date(row.dueDate).toLocaleDateString())}` : 'No due date'}</small></div><div class="task12-payment-row-end"><strong>${escHtml(money(remaining))}</strong><small>${escHtml(row.status || (remaining ? 'Partially paid' : 'Paid'))}</small>${remaining > 0 ? `<button class="clinic-primary-btn" data-unified-payment="${escHtml(row.id || row.referenceId || row.reference)}">Pay now</button>` : '✅ Paid'}</div></div>`;
+        }).join('') : '<div class="clinic-empty">No outstanding balances found.</div>';
+        const creditRows = credits.length ? credits.map(row => `<div class="task12-credit-card"><div><strong>💰 ${escHtml(money(row.balanceRemaining || row.creditAmount))}</strong><small>Credit from ${escHtml(row.originalBillReference || 'overpayment')} · expires ${row.expiryDate ? escHtml(new Date(row.expiryDate).toLocaleDateString()) : 'in 12 months'}</small></div><div style="text-align:right;"><span class="task12-status-badge">${escHtml(row.status || 'active')}</span>${balances.some(item => Number(item.balanceRemaining || item.balanceAmount || 0) > 0) ? `<button class="clinic-secondary-btn" data-credit-use="${escHtml(row.id)}" type="button">Use on next bill</button>` : ''}</div></div>`).join('') : '<div class="clinic-empty">No active credit notes.</div>';
+        const historyRows = history.length ? history.slice(0, 10).map(row => `<div class="task12-history-row"><span>${escHtml(row.reference || row.id || 'Payment')}<small>${escHtml(row.sector || 'Payment')} · ${escHtml(row.createdAt ? new Date(row.createdAt).toLocaleString() : '—')}</small></span><strong>${escHtml(money(row.amountPaid || row.amount || 0))}<small>${escHtml(row.status || 'pending')}</small></strong></div>`).join('') : '<div class="clinic-empty">No payment history yet.</div>';
+        return `<div class="task12-payment-summary"><div class="task12-payment-stat"><strong>${escHtml(money(summary?.totalOutstanding || balances.reduce((sum, row) => sum + Number(row.balanceRemaining || row.balanceAmount || 0), 0))}</strong><span>Total outstanding</span></div><div class="task12-payment-stat"><strong>${balances.filter(row => Number(row.balanceRemaining || row.balanceAmount || 0) > 0).length}</strong><span>Open balances</span></div><div class="task12-payment-stat"><strong>${escHtml(money(summary?.totalCredits || credits.reduce((sum, row) => sum + Number(row.balanceRemaining || row.creditAmount || 0), 0))}</strong><span>Available credits</span></div></div><div class="task12-payment-section"><h4>Balances across services${offline ? ' · cached' : ''}</h4>${balanceRows}</div><div class="task12-payment-section"><h4>💰 Credit notes</h4>${creditRows}</div><div class="task12-payment-section"><h4>📊 Payment history</h4>${historyRows}</div>`;
+    }
+
+    async function task12LoadPaymentSummary() {
+        const cacheKey = `apshule-payment-center-${currentUser?.uid}`;
+        if (!currentUser?.uid) return { balances: [], credits: [], history: [] };
+        if (!navigator.onLine) {
+            try { return JSON.parse(localStorage.getItem(cacheKey) || '{"balances":[],"credits":[],"history":[]}'); } catch (_) { return { balances: [], credits: [], history: [] }; }
+        }
+        try {
+            const data = await api('/api/payments/summary');
+            try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+            return data;
+        } catch (_) {
+            const [balances, credits, history] = await Promise.all([
+                getDocs(query(collection(db, 'sector_balances'), where('clientId', '==', currentUser.uid), limit(100))).then(snap => snap.docs.map(item => ({ id: item.id, ...item.data() }))).catch(() => []),
+                getDocs(query(collection(db, 'credit_notes'), where('clientId', '==', currentUser.uid), where('status', '==', 'active'), limit(100))).then(snap => snap.docs.map(item => ({ id: item.id, ...item.data() }))).catch(() => []),
+                getDocs(query(collection(db, 'payment_transactions'), where('clientId', '==', currentUser.uid), limit(100))).then(snap => snap.docs.map(item => ({ id: item.id, ...item.data() }))).catch(() => [])
+            ]);
+            const data = { balances, credits, history, totalOutstanding: balances.reduce((sum, row) => sum + Number(row.balanceRemaining || row.balanceAmount || 0), 0), totalCredits: credits.reduce((sum, row) => sum + Number(row.balanceRemaining || row.creditAmount || 0), 0) };
+            try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+            return data;
+        }
+    }
+
+    async function task12LoadPaymentCenter() {
+        const body = document.getElementById('task12PaymentCenterBody');
+        if (!body || !currentUser?.uid) return;
+        body.innerHTML = '<div class="clinic-empty">Loading payment center…</div>';
+        try {
+            const summary = await task12LoadPaymentSummary();
+            body.innerHTML = task12PaymentSummaryMarkup(summary, !navigator.onLine);
+            body.querySelectorAll('[data-unified-payment]').forEach(button => button.addEventListener('click', () => {
+                const row = (summary.balances || []).find(item => String(item.id || item.referenceId || item.reference) === String(button.dataset.unifiedPayment));
+                if (!row || !navigator.onLine) return;
+                openClientPayment({ institutionId: row.institutionId, institutionName: row.institutionName, sector: row.sector, billReference: row.referenceId || row.reference || row.id, totalAmount: row.totalAmount, alreadyPaid: row.amountPaid, clientPhone: currentUser.phone });
+            }));
+            body.querySelectorAll('[data-credit-use]').forEach(button => button.addEventListener('click', () => task12ApplyCredit(button.dataset.creditUse)));
+        } catch (error) {
+            body.innerHTML = `<div class="clinic-empty">${escHtml(task12Error(error))}</div>`;
+        }
+        task12LoadPaymentPreferences();
+    }
+
+    async function task12ApplyCredit(creditNoteId) {
+        const summary = await task12LoadPaymentSummary();
+        const balance = (summary.balances || []).find(row => Number(row.balanceRemaining || row.balanceAmount || 0) > 0);
+        if (!balance) { showNotification('There is no open balance for this credit note.', 'info'); return; }
+        const credit = (summary.credits || []).find(row => String(row.id) === String(creditNoteId));
+        if (!credit) { showNotification('Credit note is no longer available.', 'error'); return; }
+        try {
+            await api('/api/payments/credits/apply', { method: 'POST', body: JSON.stringify({ creditNoteId, balanceId: balance.id, amount: Math.min(Number(credit.balanceRemaining || 0), Number(balance.balanceRemaining || balance.balanceAmount || 0)) }) });
+            showNotification('Credit note applied to your next open balance.', 'success');
+            task12LoadPaymentCenter();
+        } catch (error) { showNotification(task12Error(error), 'error'); }
+    }
+
+    async function task12LoadPaymentPreferences() {
+        const form = document.getElementById('task12PaymentPreferencesForm');
+        if (!form || !currentUser?.uid) return;
+        const values = currentUser.paymentPreferences || (await getDoc(doc(db, 'users', currentUser.uid)).catch(() => null))?.data()?.paymentPreferences || {};
+        const setValue = (id, value) => { const element = document.getElementById(id); if (element && value !== undefined) element.value = value; };
+        const setChecked = (id, value) => { const element = document.getElementById(id); if (element && value !== undefined) element.checked = value; };
+        setValue('task12ReminderTiming', values.reminderTiming || 'both');
+        setValue('task12DefaultPaymentMethod', values.defaultPaymentMethod || 'MTN');
+        setChecked('task12ReminderInApp', values.channels?.inApp !== false);
+        setChecked('task12ReminderSms', values.channels?.sms !== false);
+        setChecked('task12ReminderEmail', values.channels?.email === true);
+        setChecked('task12SavePhone', values.savePhone !== false);
+        setChecked('task12AutoApplyCredit', values.autoApplyCredit !== false);
+    }
+
+    async function task12SavePaymentPreferences(event) {
+        event.preventDefault();
+        const status = document.getElementById('task12PaymentPreferencesStatus');
+        const preferences = {
+            reminderTiming: document.getElementById('task12ReminderTiming').value,
+            defaultPaymentMethod: document.getElementById('task12DefaultPaymentMethod').value,
+            channels: { inApp: document.getElementById('task12ReminderInApp').checked, sms: document.getElementById('task12ReminderSms').checked, email: document.getElementById('task12ReminderEmail').checked },
+            savePhone: document.getElementById('task12SavePhone').checked,
+            autoApplyCredit: document.getElementById('task12AutoApplyCredit').checked,
+            updatedAt: new Date().toISOString()
+        };
+        if (!navigator.onLine) { if (status) status.textContent = '⚠️ Connect to the internet to save payment preferences.'; return; }
+        try {
+            await setDoc(doc(db, 'users', currentUser.uid), { paymentPreferences: preferences }, { merge: true });
+            currentUser.paymentPreferences = preferences;
+            if (status) status.textContent = '✅ Payment preferences saved.';
+        } catch (error) { if (status) status.textContent = task12Error(error); }
+    }
+
+    async function task12RenderDisbursementsTab(target) {
+        const rows = await commandLoad('payment_disbursements', 300);
+        const today = new Date().toISOString().slice(0, 10);
+        const todayRows = rows.filter(row => String(row.createdAt || row.disbursedAt || '').slice(0, 10) === today);
+        const statusCount = status => rows.filter(row => String(row.status || '').toLowerCase() === status).length;
+        target.innerHTML = commandModuleCard('💸 Disbursements', `<div class="command-stats-grid"><div class="command-stat-card"><strong class="stat-value">${statusCount('pending')}</strong><span class="stat-label">Pending</span></div><div class="command-stat-card"><strong class="stat-value">${statusCount('completed')}</strong><span class="stat-label">Completed</span></div><div class="command-stat-card"><strong class="stat-value">${statusCount('failed')}</strong><span class="stat-label">Failed</span></div><div class="command-stat-card"><strong class="stat-value">${commandFormatMoney(todayRows.filter(row => row.status === 'completed').reduce((sum, row) => sum + Number(row.netAmount || row.amount || 0), 0))}</strong><span class="stat-label">Disbursed today</span></div></div><div class="command-toolbar"><select id="task12DisbursementStatus"><option value="">All statuses</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="needs_manual_review">Needs manual review</option></select><button id="task12ExportDisbursementsBtn" class="command-secondary-btn" type="button">📥 Export report</button></div><div id="task12DisbursementRows">${task12DisbursementRows(rows)}</div>`);
+        const rerender = () => { const value = document.getElementById('task12DisbursementStatus').value; document.getElementById('task12DisbursementRows').innerHTML = task12DisbursementRows(value ? rows.filter(row => row.status === value) : rows); };
+        document.getElementById('task12DisbursementStatus')?.addEventListener('change', rerender);
+        document.getElementById('task12ExportDisbursementsBtn')?.addEventListener('click', () => task12ExportTransactions(rows.map(row => ({ ...row, amountPaid: row.netAmount || row.amount }))));
+        target.querySelectorAll('[data-disbursement-action]').forEach(button => button.addEventListener('click', () => task12DisbursementAction(button.dataset.disbursementAction, button.dataset.disbursementId)));
+    }
+
+    function task12DisbursementRows(rows) {
+        return rows.length ? commandTable(['Date', 'Institution', 'Amount', 'Beneficiary', 'Status', 'Attempts', 'Actions'], rows.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map(row => commandRow([escHtml(row.createdAt ? new Date(row.createdAt).toLocaleString() : '—'), escHtml(row.institutionName || row.institutionId || '—'), commandFormatMoney(row.netAmount || row.amount || 0), escHtml(row.beneficiaryType || 'Held in master account'), escHtml(row.status || 'pending'), escHtml(`${Number(row.attemptCount || row.retryCount || 0)}/3`), row.status === 'failed' || row.status === 'needs_manual_review' ? `<button class="command-secondary-btn" data-disbursement-action="retry" data-disbursement-id="${escHtml(row.id)}">Retry</button><button class="command-danger-btn" data-disbursement-action="manual" data-disbursement-id="${escHtml(row.id)}">Manual review</button>` : '—'])), 'No disbursements recorded yet.') : '<div class="command-activity-item">No disbursements recorded yet.</div>';
+    }
+
+    async function task12DisbursementAction(action, id) {
+        if (!navigator.onLine) { showNotification('Connect to the internet to update a disbursement.', 'info'); return; }
+        try {
+            const path = action === 'retry' ? `/api/payments/disbursements/${encodeURIComponent(id)}/retry` : `/api/payments/disbursements/${encodeURIComponent(id)}/manual-review`;
+            await api(path, { method: 'POST', body: JSON.stringify({}) });
+            showNotification(action === 'retry' ? 'Disbursement retry queued.' : 'Disbursement marked for manual review.', 'success');
+            loadCommandModule('payments', 'disbursements');
+        } catch (error) { showNotification(task12Error(error), 'error'); }
+    }
+
     function wrapTask12CommandFunctions() {
         if (state.wrapped) return;
         state.wrapped = true;
@@ -16263,6 +16435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCommandPaymentsTab = async function (tab, target) {
                 if (tab === 'beneficiaries') return renderBeneficiariesTab(target);
                 if (tab === 'overview' || tab === 'transactions') return renderLivePaymentsTab(tab, target);
+                if (tab === 'disbursements') return task12RenderDisbursementsTab(target);
                 return basePayments(tab, target);
             };
         }
@@ -16279,6 +16452,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             openClientPayment({ institutionId: customer.institutionId || mfiInstitutionId(), institutionName: mfiInstitution?.name || 'MFI', sector: 'MFI', billReference: reference, totalAmount: Number(customer.loanAmount || outstanding), alreadyPaid: Math.max(0, Number(customer.loanAmount || outstanding) - outstanding), clientPhone: currentUser.phone });
         });
+        document.getElementById('task12PaymentPreferencesForm')?.addEventListener('submit', task12SavePaymentPreferences);
+        task12LoadPaymentCenter();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -16286,6 +16461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('clientPaymentForm')?.addEventListener('submit', submitClientPayment);
     });
     window.openClientPayment = openClientPayment;
+    window.task12LoadPaymentCenter = task12LoadPaymentCenter;
     window.task12LoadYoConfigPanel = loadYoConfigPanel;
 })();
 </script>

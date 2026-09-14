@@ -199,6 +199,24 @@ service cloud.firestore {
       allow create: if isSuperAdmin();
       allow update, delete: if false;
     }
+    match /credit_notes/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && resource.data.clientId == request.auth.uid);
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin()
+        || (signedIn() && resource.data.clientId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAmount', 'balanceRemaining', 'status', 'updatedAt']));
+      allow delete: if false;
+    }
+    match /sector_balances/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && (resource.data.clientId == request.auth.uid
+        || resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId));
+      allow write: if isSuperAdmin();
+    }
+    match /payment_reminders/{id} {
+      allow read: if isSuperAdmin() || (signedIn() && resource.data.clientId == request.auth.uid);
+      allow create, update: if isSuperAdmin();
+      allow delete: if false;
+    }
     match /mfi_collateral_types/{typeId} {
       allow read: if signedIn();
       allow write: if isSuperAdmin();

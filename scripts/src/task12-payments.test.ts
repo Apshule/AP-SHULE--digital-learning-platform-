@@ -10,7 +10,7 @@ const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"),
 
 describe("Task 12 payment backend contracts", () => {
   it("exposes authenticated payment and public webhook routes", () => {
-    for (const path of ["/payments/config/status", "/payments/config", "/payments/config/test", "/payments/beneficiaries/verify", "/payments/initiate", "/webhooks/yo/ipn", "/webhooks/yo/failure"]) expect(route).toContain(path);
+    for (const path of ["/payments/config/status", "/payments/config", "/payments/config/test", "/payments/beneficiaries/verify", "/payments/initiate", "/payments/summary", "/payments/credits/apply", "/payments/reminders/run", "/payments/disbursements", "/webhooks/yo/ipn", "/webhooks/yo/failure", "/webhooks/yo/disbursement"]) expect(route).toContain(path);
     expect(route).toContain("NonBlocking");
     expect(route).toContain("RSA-SHA1");
     expect(route).toContain("duplicate");
@@ -19,9 +19,20 @@ describe("Task 12 payment backend contracts", () => {
   it("keeps credentials server-side and protects payment collections", () => {
     for (const secret of ["YO_API_USERNAME", "YO_API_PASSWORD", "YO_API_PUBLIC_KEY"]) expect(route).toContain(secret);
     expect(firebaseAdminToken).toContain("FIREBASE_SERVICE_ACCOUNT_JSON");
-    for (const collection of ["payment_transactions", "institution_beneficiaries", "payment_disbursements", "payment_notifications", "payment_settings", "yo_webhook_logs", "payment_audit_log"]) expect(rules).toContain(`match /${collection}/`);
+    for (const collection of ["payment_transactions", "institution_beneficiaries", "payment_disbursements", "payment_notifications", "payment_settings", "yo_webhook_logs", "payment_audit_log", "credit_notes", "sector_balances", "payment_reminders"]) expect(rules).toContain(`match /${collection}/`);
+    expect(route).toContain("item.isActive === true");
+    expect(route).toContain("maxAttempts: 3");
+    expect(route).toContain("retryDelaysSeconds: [30, 120, 600]");
+    expect(route).toContain("beneficiaryType");
+    expect(route).toContain("beneficiaryAccount");
+    expect(route).toContain("transaction.amountPaid");
+    expect(route).toContain("reminderTypeFor");
+    expect(route).toContain("amountSource: stored ? \"server_bill_record\"");
+    expect(route).toContain("repaymentSchedule");
   });
   it("declares payment query indexes", () => {
+    const required = ["credit_notes", "sector_balances", "payment_reminders"];
+    for (const collection of required) expect(indexes.indexes.some((index) => index.collectionGroup === collection)).toBe(true);
     expect(indexes.indexes.filter((index) => ["payment_transactions", "institution_beneficiaries", "payment_disbursements", "payment_notifications", "yo_webhook_logs"].includes(index.collectionGroup)).length).toBeGreaterThanOrEqual(8);
   });
 });
