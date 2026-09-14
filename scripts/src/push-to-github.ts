@@ -40,6 +40,8 @@ const FILES = [
   "offline-manager.js",
   "scripts/src/ncdc-course.test.ts",
   "scripts/src/video-studio.test.ts",
+  "scripts/src/clinic.test.ts",
+  "scripts/src/task13-farm.test.ts",
   "scripts/src/settings.test.ts",
   "scripts/src/command-center.test.ts",
   "scripts/src/mfi.test.ts",
