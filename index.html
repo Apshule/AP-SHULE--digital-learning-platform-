@@ -1255,6 +1255,7 @@
                 <div class="curriculum-tabs" role="tablist" aria-label="Curriculum views">
                     <button class="curriculum-tab active" data-curriculum-tab="search" role="tab" aria-selected="true">🔎 Search</button>
                     <button class="curriculum-tab" data-curriculum-tab="favorites" role="tab" aria-selected="false">⭐ My Favorites <span id="curriculumFavoritesCount"></span></button>
+                    <button id="syncCurriculumFavoritesBtn" class="curriculum-action-btn" type="button" aria-label="Sync curriculum favorites">↻ Sync Now</button>
                 </div>
             </div>
             <div id="curriculumConnectionStatus" class="curriculum-status" role="status" aria-live="polite"></div>
@@ -3801,6 +3802,7 @@
         detailTab:'syllabus', matches:[], visibleCount:20, searchToken:0,
         favoriteIds:new Set(), recent:[], popular:[], activity:null
     };
+    let _curriculumPopularCache={items:[],expiresAt:0};
     const CURRICULUM_CLASS_LEVELS=['P1','P2','P3','P4','P5','P6','P7','S1','S2','S3','S4','S5','S6'];
 
     function generateSearchKeywords(topic,subject,classLevel) {
@@ -4089,6 +4091,30 @@
         await loadCurriculumFavorites();
     }
 
+    async function loadCurriculumPopularTopics(force=false) {
+        if(!force&&_curriculumPopularCache.expiresAt>Date.now()) {
+            _curriculumUi.popular=_curriculumPopularCache.items;
+            return _curriculumUi.popular;
+        }
+        let items=[];
+        if(navigator.onLine&&db) {
+            try {
+                const snap=await getDocs(query(collection(db,'curriculum_links'),orderBy('search_count','desc'),limit(8)));
+                items=snap.docs.map(item=>({docId:item.id,id:item.id,...item.data()}));
+            } catch(_){}
+        }
+        if(!items.length) {
+            const source=[...(_curriculumSearchCache||_curriculumLinks||[])];
+            const hasSearchCounts=source.some(item=>Number(item.search_count||item.searchCount||0)>0);
+            items=source.sort(hasSearchCounts
+                ? (a,b)=>Number(b.search_count||b.searchCount||0)-Number(a.search_count||a.searchCount||0)||String(a.topic||'').localeCompare(String(b.topic||''))
+                : ()=>Math.random()-.5).slice(0,8);
+        }
+        _curriculumPopularCache={items,expiresAt:Date.now()+5*60*1000};
+        _curriculumUi.popular=items;
+        return items;
+    }
+
     async function toggleCurriculumFavorite(record,event) {
         event?.stopPropagation();
         const docId=curriculumRecordDocId(record); if(!docId||!currentUser?.uid) return;
@@ -4144,10 +4170,7 @@
 
     function renderCurriculumSuggestions(records) {
         const container=document.getElementById('curriculumResults'); if(!container) return;
-        const source=[...(records||[])], hasSearchCounts=source.some(item=>Number(item.search_count||item.searchCount||0)>0);
-        const popular=source.sort(hasSearchCounts
-            ? (a,b)=>Number(b.search_count||b.searchCount||0)-Number(a.search_count||a.searchCount||0)||String(a.topic||'').localeCompare(String(b.topic||''))
-            : ()=>Math.random()-.5).slice(0,8);
+        const popular=_curriculumUi.popular?.length?_curriculumUi.popular:(records||[]).slice(0,8);
         const recent=_curriculumUi.recent||[];
         container.innerHTML=`<div class="curriculum-suggestions">
             <h3>🔥 Popular topics</h3>
@@ -4156,7 +4179,7 @@
         </div>
         <div class="curriculum-empty" style="margin-top:10px;"><span class="icon">🔎</span>Search by topic, subject, or class level to find a curriculum link.</div>`;
         container.querySelectorAll('[data-curriculum-suggestion]').forEach(button=>button.addEventListener('click',()=>{
-            const item=(records||[]).find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion)||recent.find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion);
+            const item=popular.find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion)||(records||[]).find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion)||recent.find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion);
             if(item){const input=document.getElementById('curriculumSearchInput');if(input)input.value=item.topic;_curriculumUi.query=item.topic;runCurriculumSearch();}
         }));
     }
@@ -4455,6 +4478,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         curriculumSetConnectionStatus();
         const records=await getCurriculumSearchCache();
         populateCurriculumFilters(records);
+        await loadCurriculumPopularTopics();
         _curriculumUi.recent=Offline?await Offline.listRecentCurriculum().catch(()=>[]):[];
         await loadCurriculumFavorites();
         await syncCurriculumFavorites();
@@ -4479,6 +4503,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('closeSuggestCurriculumBtn')?.addEventListener('click',()=>document.getElementById('suggestCurriculumModal')?.classList.remove('show'));
         document.getElementById('suggestCurriculumModal')?.addEventListener('click',event=>{if(event.target.id==='suggestCurriculumModal')event.currentTarget.classList.remove('show');});
         document.getElementById('suggestCurriculumForm')?.addEventListener('submit',submitCurriculumSuggestion);
+        document.getElementById('syncCurriculumFavoritesBtn')?.addEventListener('click',async()=>{
+            if(!navigator.onLine){showNotification('Offline — pending favorites will sync when you reconnect.','info');return;}
+            const button=document.getElementById('syncCurriculumFavoritesBtn');
+            if(button){button.disabled=true;button.textContent='Syncing…';}
+            try { await syncCurriculumFavorites();showNotification('Favorites synced','success'); }
+            finally { if(button){button.disabled=false;button.textContent='↻ Sync Now';} }
+        });
         document.getElementById('downloadActivityPdfBtn')?.addEventListener('click',generateActivityPdf);
         document.getElementById('copyActivityBtn')?.addEventListener('click',async()=>{
             const text=document.getElementById('generatedActivityOutput')?.textContent||'';
@@ -4508,7 +4539,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             runCurriculumSearch();
         }));
         document.getElementById('refreshCurriculumRequestsBtn')?.addEventListener('click',renderCurriculumRequests);
-        window.addEventListener('online',()=>{curriculumSetConnectionStatus();syncCurriculumFavorites().catch(()=>{});if(_curriculumUi.open){getCurriculumSearchCache(true).then(records=>{populateCurriculumFilters(records);runCurriculumSearch();});}});
+        window.addEventListener('online',()=>{curriculumSetConnectionStatus();syncCurriculumFavorites().catch(()=>{});if(_curriculumUi.open){getCurriculumSearchCache(true).then(async records=>{populateCurriculumFilters(records);await loadCurriculumPopularTopics(true);runCurriculumSearch();});}});
         window.addEventListener('offline',curriculumSetConnectionStatus);
         document.addEventListener('keydown',event=>{
             if(event.key==='Escape'){if(document.getElementById('generatedActivityModal')?.classList.contains('show'))document.getElementById('generatedActivityModal').classList.remove('show');else if(document.getElementById('suggestCurriculumModal')?.classList.contains('show'))document.getElementById('suggestCurriculumModal').classList.remove('show');else if(_curriculumUi.open)closeCurriculumLinker();}

@@ -175,11 +175,14 @@ describe("curriculum linker UI contract", () => {
       "downloadActivityPdfBtn",
       "suggestCurriculumModal",
       "superCurriculumRequestsSection",
+      "syncCurriculumFavoritesBtn",
     ]) {
       expect(indexHtml).toContain(`id="${id}"`);
     }
     expect(indexHtml).toContain("complianceApi('/curriculum-activity'");
     expect(indexHtml).toContain("activitySuggestion");
+    expect(indexHtml).toContain("orderBy('search_count','desc')");
+    expect(indexHtml).toContain("expiresAt:Date.now()+5*60*1000");
   });
 });
 

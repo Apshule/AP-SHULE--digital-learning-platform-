@@ -16,7 +16,7 @@ const context: { window: Record<string, unknown>; currentUser: null } = {
   currentUser: null,
 };
 runInNewContext(indexHtml.slice(start, end), context);
-const helpers = Object.assign({}, context, context.window) as {
+const helpers = Object.assign({}, context, context.window) as unknown as {
   rankCurriculumLinks: (
     records: Array<Record<string, unknown>>,
     query: string,
