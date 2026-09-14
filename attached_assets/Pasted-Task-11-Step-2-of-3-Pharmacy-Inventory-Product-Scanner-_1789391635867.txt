@@ -1,0 +1,745 @@
+Task 11 — Step 2 of 3: Pharmacy Inventory + Product Scanner + Billing + Insurance Claims
+
+CONTEXT:
+- Step 1 built: Clinic foundation, Patient records, Appointments, Visits, Prescriptions, all 6 clinic roles
+- Step 2 now adds the pharmacy, product scanning, billing, and insurance claims
+- This is the "money-making" part of the clinic module
+
+GOAL OF STEP 2:
+- Complete pharmacy inventory management (add/edit/restock/expiry alerts)
+- Product Scanner (camera-based item recognition for fast checkout)
+- Billing and payment tracking
+- Insurance claims
+- Patient self-checkout flow
+
+YOUTUBE / ToS NOTE: Not applicable — no video content here.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. clinic_pharmacy_inventory
+   Fields:
+   - itemId (auto)
+   - itemName (string — "Panadol 500mg")
+   - genericName (string — "Paracetamol")
+   - category (Medicines / Medical Supplies / Equipment / 
+     First Aid / Vaccines / Other)
+   - brand (string)
+   - unit (Tablet / Bottle / Box / Piece / Tube / Sachet)
+   - packSize (number — e.g. 10 tablets per pack)
+   - quantityInStock (number)
+   - reorderLevel (number — alert when below)
+   - unitPrice (number — purchase price UGX)
+   - sellingPrice (number — retail price UGX)
+   - expiryDate (date)
+   - batchNumber (string)
+   - supplierName (string)
+   - supplierContact (string)
+   - location (string — "Shelf A2", "Fridge", etc.)
+   - lastRestocked (timestamp)
+   - productImagePath (Firebase Storage URL)
+   - productEmbedding (array of numbers — for AI matching)
+   - barcode (string, optional)
+   - institutionId
+   - branchId
+   - status (active / discontinued / expired)
+   - createdBy (uid)
+   - createdAt
+   - updatedAt
+
+2. clinic_product_scans
+   Fields:
+   - scanId (auto)
+   - itemId (reference, nullable if product not found)
+   - scannedBy (uid)
+   - scanTime (timestamp)
+   - scanMethod (Manual / Facial Recognition / Barcode)
+   - quantity (number)
+   - confidence (number 0-100 — matching confidence)
+   - imagePath (Firebase Storage URL of scanned image)
+   - institutionId
+   - createdAt
+
+3. clinic_billing
+   Fields:
+   - billId (auto)
+   - invoiceNumber (auto — INV-{year}-{sequence})
+   - patientId (reference)
+   - patientName (denormalized)
+   - patientNumber
+   - visitId (reference, optional)
+   - billDate (date)
+   - dueDate (date)
+   - items (array of objects):
+     * itemType (Service / Pharmacy / Lab / Consultation)
+     * itemId (reference)
+     * itemName
+     * quantity
+     * unitPrice
+     * total
+   - subtotal (number)
+   - discount (number, default 0)
+   - tax (number, default 0)
+   - totalAmount (number)
+   - amountPaid (number, default 0)
+   - balanceRemaining (number)
+   - paymentStatus (Unpaid / Partial / Paid / Overdue / Cancelled)
+   - insuranceProvider (string, optional)
+   - insuranceCoverage (number — amount covered)
+   - patientPortion (number — amount patient pays)
+   - notes (text)
+   - institutionId
+   - branchId
+   - createdBy
+   - createdAt
+   - updatedAt
+
+4. clinic_payments
+   Fields:
+   - paymentId (auto)
+   - billId (reference)
+   - patientId
+   - amount (number)
+   - paymentDate (date)
+   - paymentMethod (Cash / MTN MoMo / Airtel Money / Bank Transfer / 
+     Insurance / Card)
+   - transactionId (string — for mobile money)
+   - referenceNumber (string)
+   - receivedBy (uid)
+   - notes (text)
+   - institutionId
+   - createdAt
+
+5. clinic_insurance_claims
+   Fields:
+   - claimId (auto)
+   - patientId
+   - patientName
+   - billId (reference)
+   - visitId (reference)
+   - insuranceProvider (string — NHIF, AAR, Jubilee, etc.)
+   - policyNumber (string)
+   - claimAmount (number)
+   - approvedAmount (number, default 0)
+   - patientCopay (number)
+   - status (Draft / Submitted / Under Review / Approved / 
+     Partially Approved / Rejected / Paid)
+   - submittedDate (date)
+   - approvedDate (date, optional)
+   - paidDate (date, optional)
+   - rejectionReason (text, optional)
+   - claimDocuments (array of Firebase Storage URLs)
+   - notes (text)
+   - institutionId
+   - createdBy
+   - createdAt
+   - updatedAt
+
+═══════════════════════════════════════════════════════════════
+PART B: PHARMACY DASHBOARD (Full)
+═══════════════════════════════════════════════════════════════
+
+Update Pharmacist Dashboard (from Step 1):
+
+Replace simple home with a fuller dashboard:
+
+┌─────────────────────────────────────────┐
+│ 💊 PHARMACY DASHBOARD                    │
+├─────────────────────────────────────────┤
+│ 📊 TODAY'S STATS                         │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Pending  │ │ Dispensed│ │ Today's  │ │
+│ │ Prescr.  │ │ Today    │ │ Revenue  │ │
+│ │ 12       │ │ 45       │ │ UGX 245K │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Low Stock│ │ Expiring │              │
+│ │ Alerts   │ │ Soon     │              │
+│ │ 5        │ │ 3        │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [💊 Dispense] [📷 Scan Product]         │
+│ [📦 Inventory] [➕ Add Item]            │
+│ [🧾 Sales] [📊 Reports]                │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 5 items below reorder level            │
+│ • 3 items expiring within 30 days        │
+│ • 2 prescriptions pending >24 hours      │
+│                                          │
+│ 📋 RECENT ACTIVITY                       │
+│ • Dispensed: John Kato (3 items)        │
+│ • Restocked: Paracetamol (100 packs)    │
+│ • Sold: Vitamin C (5 units)             │
+└─────────────────────────────────────────┘
+
+Bottom nav for Pharmacist:
+[🏠 Home] [💊 Dispense] [📷 Scan] [📦 Inventory] [👤 Account]
+
+═══════════════════════════════════════════════════════════════
+PART C: PHARMACY INVENTORY MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Pharmacist taps [📦 Inventory] tab:
+
+Full-screen modal (id="inventoryModal") with:
+
+1. Top summary bar:
+   - Total items: X
+   - Total value: UGX X
+   - Low stock: X
+   - Expiring: X
+
+2. Filters:
+   - Category (dropdown)
+   - Stock status: All / In Stock / Low Stock / Out of Stock
+   - Expiry: All / Expiring 30 days / Expired
+   - Search by name/brand/generic
+
+3. [+ Add New Item] button
+
+4. Inventory list:
+   ┌─────────────────────────────────────────┐
+   │ 💊 Panadol 500mg (Paracetamol)          │
+   │ 45 packs · Shelf A2                     │
+   │ Selling: UGX 5,000 · Expires: 2027-12  │
+   │ Status: ✅ In Stock                     │
+   │ [✏️ Edit] [📦 Restock] [⋮]             │
+   └─────────────────────────────────────────┘
+
+   Low stock badge: 🟡 "Low Stock"
+   Expiring badge: 🟠 "Expires in 25 days"
+   Out of stock: 🔴 "Out of Stock"
+
+5. Actions per item:
+   - Edit item details
+   - Restock (add quantity)
+   - Adjust stock (for discrepancies)
+   - Mark as discontinued
+   - Delete (with confirmation)
+
+═══════════════════════════════════════════════════════════════
+PART D: ADD/EDIT INVENTORY ITEM
+═══════════════════════════════════════════════════════════════
+
+When Pharmacist taps [+ Add New Item] or [✏️ Edit]:
+
+Full-screen modal (id="inventoryItemFormModal"):
+
+Section 1 — Basic Info:
+- Item Name (required — e.g. "Panadol 500mg")
+- Generic Name (optional — e.g. "Paracetamol")
+- Category (dropdown, required)
+- Brand (text)
+- Barcode (optional — scan button)
+
+Section 2 — Packaging:
+- Unit (dropdown: Tablet / Bottle / Box / Piece / Tube / Sachet)
+- Pack Size (number — e.g. 10)
+- Location (text — "Shelf A2")
+
+Section 3 — Pricing:
+- Unit Purchase Price (UGX, required)
+- Selling Price (UGX, required)
+- Auto-calculate margin %
+
+Section 4 — Stock:
+- Quantity in Stock (number, required)
+- Reorder Level (number, required — default 10)
+- Batch Number (text)
+- Expiry Date (date picker, required)
+
+Section 5 — Supplier:
+- Supplier Name (text)
+- Supplier Contact (text)
+
+Section 6 — Photo:
+- Product Image (camera/gallery)
+- Used for AI product recognition in Part E
+
+On Save:
+- Create/update clinic_pharmacy_inventory doc
+- If photo uploaded: compute productEmbedding (see Part E)
+- Show toast: "✅ Item saved"
+
+═══════════════════════════════════════════════════════════════
+PART E: PRODUCT SCANNER (CAMERA-BASED RECOGNITION)
+═══════════════════════════════════════════════════════════════
+
+When Pharmacist taps [📷 Scan] tab:
+
+Full-screen scanner modal (id="productScannerModal"):
+
+UI:
+┌─────────────────────────────────────────┐
+│ 📷 PRODUCT SCANNER                       │
+├─────────────────────────────────────────┤
+│                                          │
+│ [LIVE CAMERA VIEW]                       │
+│                                          │
+│ Point camera at product packaging       │
+│                                          │
+│ [🔦 Flash] [🎥 Switch Camera]           │
+│                                          │
+│ [📸 Capture] [📁 Upload Image]          │
+│                                          │
+│ [⌨️ Enter Manually]                     │
+└─────────────────────────────────────────┘
+
+Implementation:
+1. Request camera permission (reuse from Task 4 facial recognition)
+2. Show live video feed from device camera
+3. On [📸 Capture]:
+   - Take snapshot from video
+   - Compress to <500KB
+   - Send to product matching algorithm
+
+PRODUCT MATCHING ALGORITHM (lightweight, no external AI):
+
+Since this must work without paid APIs:
+1. Compute average color histogram of captured image
+2. Compare against stored product embeddings (color histogram) 
+   from clinic_pharmacy_inventory.productEmbedding
+3. Return top 3 closest matches by cosine similarity
+4. Show results:
+   ┌─────────────────────────────────────────┐
+   │ 🎯 MATCHES FOUND                        │
+   ├─────────────────────────────────────────┤
+   │ 1. Panadol 500mg                        │
+   │    Confidence: 92%                       │
+   │    Stock: 45 packs · UGX 5,000          │
+   │    [✅ Select]                           │
+   │                                          │
+   │ 2. Panadol Extra                        │
+   │    Confidence: 78%                       │
+   │    Stock: 20 packs · UGX 7,000          │
+   │    [✅ Select]                           │
+   │                                          │
+   │ 3. Paracetamol Generic                  │
+   │    Confidence: 65%                       │
+   │    Stock: 100 packs · UGX 2,000         │
+   │    [✅ Select]                           │
+   │                                          │
+   │ [❌ No Match — Search Manually]        │
+   └─────────────────────────────────────────┘
+
+5. On [✅ Select] a match:
+   - Ask for quantity (default 1)
+   - Show total price
+   - [➕ Add to Cart]
+
+6. Cart can hold multiple items → checkout → create bill
+
+COLOR HISTOGRAM STORAGE:
+When a product image is uploaded:
+- Compute 16-bin RGB histogram (48 numbers total)
+- Store in productEmbedding field
+- Used for future matching
+
+This is a lightweight, offline-friendly approach that doesn't 
+require Gemini Vision or any paid API.
+
+FALLBACK:
+If matching confidence < 40%:
+- Show "No good match found"
+- Show [⌨️ Enter Manually] option
+- Log scan to clinic_product_scans with scanMethod="Manual"
+
+═══════════════════════════════════════════════════════════════
+PART F: PRODUCT SCANNER — QUICK CHECKOUT
+═══════════════════════════════════════════════════════════════
+
+Combine scanner with sale flow:
+
+After [➕ Add to Cart], show:
+
+┌─────────────────────────────────────────┐
+│ 🛒 CART                                  │
+├─────────────────────────────────────────┤
+│ 1. Panadol 500mg × 2 packs  = UGX 10,000│
+│ 2. Vitamin C × 1 bottle     = UGX 8,000 │
+│                                          │
+│ Subtotal: UGX 18,000                     │
+│ Discount: UGX 0                          │
+│ TOTAL: UGX 18,000                        │
+│                                          │
+│ Patient (optional):                      │
+│ [🔍 Search by patient number/name]       │
+│                                          │
+│ [💾 Save Bill] [💳 Pay Now]             │
+└─────────────────────────────────────────┘
+
+If [💾 Save Bill]: creates clinic_billing with status "Unpaid"
+If [💳 Pay Now]: opens payment modal (Part G)
+
+═══════════════════════════════════════════════════════════════
+PART G: BILLING & PAYMENTS
+═══════════════════════════════════════════════════════════════
+
+When Clinic Admin or Receptionist opens Billing:
+
+Full-screen modal (id="billingModal") with tabs:
+
+TAB 1 — UNPAID BILLS
+- List of bills with paymentStatus = Unpaid or Partial
+- Filters: date range, patient, amount range
+- Each row: invoice#, patient, date, amount, balance
+- [View] [Record Payment] [Send Reminder]
+
+TAB 2 — RECENT PAYMENTS
+- List of recent payments received
+- Show: patient, amount, method, date, received by
+- Export to CSV
+
+TAB 3 — ALL BILLS
+- Complete bill history
+- Filters: status, date, patient, insurance
+- Search by invoice number
+
+TAB 4 — CREATE BILL
+When manually creating a bill:
+- Select patient
+- Add items (services, pharmacy, lab)
+- Apply discount
+- Auto-calculate subtotal, tax, total
+- Save → creates clinic_billing doc
+
+TAB 5 — INSURANCE CLAIMS
+- List all insurance claims
+- Filter by status, provider
+- Each row: patient, provider, amount, status
+- [Submit to Insurer] [Record Approval] [Mark as Paid]
+
+TAB 6 — DAILY RECONCILIATION
+- Summary of today's transactions
+- Total collected by method (cash, momo, insurance)
+- [Print Daily Report] button
+
+═══════════════════════════════════════════════════════════════
+PART H: BILL DETAIL VIEW
+═══════════════════════════════════════════════════════════════
+
+When clicking a bill:
+
+Full-screen modal (id="billDetailModal"):
+
+Header:
+- Invoice Number
+- Date + due date
+- Patient name + number
+- Status badge (Unpaid / Partial / Paid / Overdue)
+
+Body:
+- Itemized list of services/products
+- Subtotal
+- Discount
+- Tax
+- Total
+- Amount Paid
+- Balance Remaining
+
+Insurance Section (if applicable):
+- Provider name
+- Policy number
+- Coverage amount
+- Patient copay
+
+Payment History:
+- List of all payments made against this bill
+
+Actions:
+- [💳 Record Payment]
+- [📄 Print Invoice] — PDF via jsPDF
+- [📧 Email Invoice] (if patient has email)
+- [📱 Send SMS Reminder]
+- [🏥 Submit to Insurance]
+
+═══════════════════════════════════════════════════════════════
+PART I: RECORD PAYMENT MODAL
+═══════════════════════════════════════════════════════════════
+
+When clicking [💳 Record Payment]:
+
+Modal (id="recordPaymentModal"):
+
+Fields:
+- Amount (number, required — default: balance remaining)
+- Payment Date (date, default today)
+- Payment Method (dropdown, required):
+  * Cash
+  * MTN Mobile Money
+  * Airtel Money
+  * Bank Transfer
+  * Card
+  * Insurance
+- Transaction ID (text — if momo)
+- Reference Number (text)
+- Notes (textarea)
+
+On Save:
+- Create clinic_payments doc
+- Update clinic_billing:
+  * amountPaid += payment amount
+  * balanceRemaining -= payment
+  * paymentStatus = recompute (Paid if balance == 0, Partial if >0 
+    and <total, Overdue if past due date)
+- Show toast: "✅ Payment recorded"
+- If fully paid: notify patient "Thank you, your bill is cleared"
+
+═══════════════════════════════════════════════════════════════
+PART J: INSURANCE CLAIM WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+When a patient has insurance:
+
+1. During billing, mark bill as insurance-covered:
+   - Insurance Provider
+   - Policy Number
+   - Coverage % (e.g. 80%)
+   - Patient Copay % (e.g. 20%)
+
+2. Auto-calculate:
+   - Insurance Coverage = Total × 80%
+   - Patient Copay = Total × 20%
+
+3. Create insurance claim:
+   - Status: Draft
+   - Claim Amount = Insurance Coverage
+   - Patient Copay = Patient portion
+
+4. Workflow:
+   Draft → Submitted → Under Review → Approved / Rejected → Paid
+
+5. When [📤 Submit to Insurer]:
+   - Update status to Submitted
+   - Notify clinic admin
+   - Generate claim PDF
+
+6. When [✅ Record Approval]:
+   - Enter approved amount (may be less than claimed)
+   - Enter approval date
+   - Update bill:
+     * If approved fully: bill.paymentStatus = "Paid"
+     * If approved partially: remaining becomes patient's responsibility
+   - Notify patient of approval
+
+7. When [💰 Mark as Paid]:
+   - Insurance payment arrives
+   - Create clinic_payments with method = "Insurance"
+   - Update bill
+
+═══════════════════════════════════════════════════════════════
+PART K: PATIENT PAYMENT VIEW
+═══════════════════════════════════════════════════════════════
+
+When a patient logs in and taps their billing:
+
+Shows:
+- Outstanding bills (with amounts)
+- Payment history
+- [💳 Pay Now] button for each unpaid bill
+
+Pay Now flow:
+1. Patient taps [💳 Pay Now]
+2. Modal opens with:
+   - Bill details
+   - Amount due
+   - Payment method: MTN / Airtel
+   - Phone number (pre-filled)
+   - [Send Payment Request]
+3. Sends request (via Yo! Payments once Task 12 is done)
+4. For now: shows "Contact clinic reception to pay" message
+
+═══════════════════════════════════════════════════════════════
+PART L: INVENTORY ALERTS
+═══════════════════════════════════════════════════════════════
+
+Automatic alerts for Pharmacist + Clinic Admin:
+
+1. Low Stock Alert:
+   - Daily check (on app open)
+   - Query items where quantityInStock <= reorderLevel
+   - Notify: "5 items below reorder level. View in Inventory."
+   - Badge on Pharmacist dashboard
+
+2. Expiry Alert:
+   - Items expiring within 30 days
+   - Items already expired
+   - Notify: "3 items expiring soon. Remove from shelf."
+
+3. Out of Stock Alert:
+   - Items with quantityInStock = 0
+   - Block dispense for these items
+
+═══════════════════════════════════════════════════════════════
+PART M: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E
+- Clinic accent: #0D7377 (teal)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Special styling:
+- Inventory status badges: green/yellow/red
+- Expiry warnings in orange
+- Bill status badges: Paid=green, Partial=yellow, Unpaid=red, 
+  Overdue=dark red
+
+Mobile-first:
+- Full-screen modals on phone
+- Product scanner uses camera view naturally
+- Tables become stacked cards on mobile
+
+═══════════════════════════════════════════════════════════════
+PART N: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Pharmacist must work offline:
+
+1. Inventory data cached in IndexedDB:
+   - offline_clinic_inventory
+   - Sync on first load + when items change
+
+2. Product scanner works offline:
+   - Uses cached product embeddings
+   - Matching happens locally
+
+3. Dispensing works offline:
+   - Save dispense to IndexedDB
+   - Queue for sync
+   - Reduce local stock counts
+
+4. Sales/billing works offline:
+   - Save bill to offline queue
+   - Sync when online
+
+5. Sync:
+   - Uses Task 2's system
+   - Sync button in Pharmacist dashboard shows pending count
+
+═══════════════════════════════════════════════════════════════
+PART O: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. clinic_pharmacy_inventory: institutionId (asc) + category (asc)
+2. clinic_pharmacy_inventory: institutionId (asc) + quantityInStock (asc)
+3. clinic_pharmacy_inventory: institutionId (asc) + expiryDate (asc)
+4. clinic_billing: institutionId (asc) + paymentStatus (asc) + billDate (desc)
+5. clinic_billing: patientId (asc) + billDate (desc)
+6. clinic_payments: institutionId (asc) + paymentDate (desc)
+7. clinic_insurance_claims: institutionId (asc) + status (asc)
+8. clinic_product_scans: institutionId (asc) + scanTime (desc)
+
+═══════════════════════════════════════════════════════════════
+PART P: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with: 1 Clinic Admin + 1 Pharmacist + 1 Receptionist + 1 Patient
+
+A. Add inventory items:
+   1. Pharmacist → Inventory → [+ Add Item]
+   2. Add 5 test items with prices + expiry + photo
+   3. Verify: items appear in list
+   4. Verify: product embeddings computed
+
+B. Low stock alert:
+   1. Add item with quantity=3 and reorder=10
+   2. Verify: item shows "Low Stock" badge
+   3. Verify: alert appears on dashboard
+
+C. Expiry alert:
+   1. Add item with expiry date 15 days from now
+   2. Verify: item shows "Expires soon" badge
+
+D. Product scanner:
+   1. Pharmacist → Scan tab
+   2. Grant camera permission
+   3. Point at product image → Capture
+   4. Verify: shows 3 matches with confidence scores
+   5. Select correct item → add to cart with quantity
+   6. Verify: total calculated
+
+E. Quick sale:
+   1. After scanning + selecting items
+   2. Save bill → creates clinic_billing
+   3. Verify: bill shows in Billing → Unpaid
+
+F. Billing flow:
+   1. Clinic Admin → Billing → Unpaid Bills
+   2. Open the bill
+   3. Record payment (UGX 15,000)
+   4. Verify: balance updated
+   5. Record remaining payment
+   6. Verify: status → Paid
+
+G. Partial payment:
+   1. Create bill of UGX 50,000
+   2. Record UGX 20,000
+   3. Verify: status → Partial
+   4. Verify: balance = UGX 30,000
+
+H. Insurance:
+   1. Create patient with NHIF insurance
+   2. Create bill for that patient
+   3. Mark as insurance-covered (80%)
+   4. Verify: claim created automatically
+   5. Submit claim → status changes
+   6. Record approval → bill updated
+   7. Verify: patient sees remaining copay
+
+I. Dispense with inventory:
+   1. Doctor prescribes 2 items
+   2. Pharmacist dispenses
+   3. Verify: stock reduced for both items
+   4. Verify: prescriptions marked dispensed
+
+J. Patient view:
+   1. Login as patient
+   2. Verify: sees their unpaid bills
+   3. Verify: sees payment history
+
+K. Offline:
+   1. Turn off WiFi
+   2. Pharmacist adds sale → saved offline
+   3. Turn on WiFi → syncs to Firestore
+   4. Verify: bill appears in cloud
+
+L. Regression:
+   1. Tasks 1-10 all work
+   2. Task 11 Step 1 (patients/appointments) still works
+   3. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART Q: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-10 or Task 11 Step 1
+- Do NOT allow non-Pharmacist to dispense
+- Do NOT allow editing a Paid bill (create reversal instead)
+- Do NOT delete inventory items with existing sales history 
+  (mark as discontinued instead)
+- Do NOT allow negative stock
+- Do NOT lose offline sales
+- Do NOT use external AI for product matching (use local histograms)
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 11 Step 2 complete — Pharmacy Inventory + Product Scanner + 
+Billing + Insurance built"
+
+Report:
+- Which tests A through L passed
+- Any bugs found
+- Screenshots recommended: Pharmacy dashboard, inventory list with 
+  badges, product scanner UI with matches, bill detail view, 
+  payment modal, insurance claim flow, patient billing view
