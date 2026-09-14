@@ -1,0 +1,551 @@
+Task 10 — Step 2 of 3: Manager Review + Verification Workflow + Document Storage
+
+CONTEXT:
+- Step 1 built: MFI foundation, Customer registration, Collateral capture, 
+  Auto-scoring engine (0-100)
+- Now we build the manager review workflow, verification process, and 
+  document management that MFIs need for UMRA compliance
+
+GOAL OF STEP 2:
+Enable Loan Managers to review collateral scores, approve/reject loans,
+schedule field visits, request valuer reports, and store all documents
+securely. This creates the full audit trail UMRA requires.
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. mfi_collateral_verification
+   Fields:
+   - verificationId (auto)
+   - collateralId (reference to mfi_collateral)
+   - activity (Desk Review / Field Visit / Valuer Report / Legal Check)
+   - assignedTo (user uid — Loan Officer or Valuer)
+   - assignedToName (string)
+   - scheduledDate (date)
+   - completedDate (date)
+   - notes (text)
+   - status (pending / in_progress / completed / cancelled)
+   - attachments (array of Firebase Storage URLs)
+   - createdBy (uid)
+   - createdAt (timestamp)
+
+2. mfi_collateral_decisions
+   Fields:
+   - decisionId (auto)
+   - collateralId (reference)
+   - decision (approved / rejected / topup_requested)
+   - managerComments (text)
+   - requiredTopupAmount (number — if topup_requested)
+   - requiredTopupType (string — what kind of additional collateral needed)
+   - decidedBy (manager uid)
+   - decidedByName (string)
+   - decidedAt (timestamp)
+   - status (final / under_appeal)
+
+3. mfi_valuers (registry of certified valuers)
+   Fields:
+   - valuerId (auto)
+   - fullName (string)
+   - company (string)
+   - licenseNumber (string)
+   - phone (string)
+   - email (string)
+   - specialization (Land / Vehicles / Business Assets / General)
+   - institutionId (which MFI they work with)
+   - isActive (boolean, default true)
+   - createdAt (timestamp)
+
+4. mfi_legal_officers (registry of lawyers)
+   Fields:
+   - officerId (auto)
+   - fullName
+   - lawFirm
+   - licenseNumber
+   - phone
+   - email
+   - institutionId
+   - isActive
+   - createdAt
+
+═══════════════════════════════════════════════════════════════
+PART B: EXTEND EXISTING COLLATERAL COLLECTION
+═══════════════════════════════════════════════════════════════
+
+Add these fields to mfi_collateral (add if not present):
+
+- verificationStage (string: 'not_started' | 'desk_review' | 
+  'field_visit' | 'valuer_report' | 'legal_check' | 'complete')
+- verificationProgress (number, 0-4 — count of completed stages)
+- assignedManager (uid)
+- assignedManagerName (string)
+- submittedAt (timestamp)
+- lastVerifiedAt (timestamp)
+- fullyVerifiedAt (timestamp)
+- decisionId (reference to latest mfi_collateral_decisions)
+
+═══════════════════════════════════════════════════════════════
+PART C: LOAN MANAGER DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When a Loan Manager logs in:
+
+New bottom nav for Loan Manager:
+[🏠 Home] [📋 Reviews] [✅ Approvals] [📊 Reports] [👤 Account]
+
+Home screen shows:
+
+┌─────────────────────────────────────────┐
+│ 🏦 {MFI Name} — Manager View             │
+│ Welcome, {managerName}                   │
+├─────────────────────────────────────────┤
+│ 📊 QUICK STATS                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Pending  │ │ Approved │ │ Rejected │ │
+│ │ Reviews  │ │ This     │ │ This     │ │
+│ │ 12       │ │ Month    │ │ Month    │ │
+│ │          │ │ 45       │ │ 8        │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [📋 Review Collateral] [✅ Approvals]   │
+│ [📅 Schedule Visit] [📊 Reports]        │
+│                                          │
+│ 🚨 ATTENTION REQUIRED                    │
+│ • 3 collateral awaiting decision         │
+│ • 2 field visits overdue                 │
+│ • 1 valuer report pending >7 days       │
+│                                          │
+│ 📋 RECENT ACTIVITY                       │
+│ • Approved: John Doe — Land (98/100)    │
+│ • Rejected: Mary — Household (23/100)   │
+│ • Top-up requested: Peter — Vehicle     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART D: REVIEWS LIST
+═══════════════════════════════════════════════════════════════
+
+When manager taps [📋 Reviews] or [Review Collateral]:
+
+Full-screen modal (id="managerReviewsListModal"):
+
+Filter tabs:
+[All] [Pending] [Under Review] [Awaiting Verification] [Decided]
+
+Filters:
+- Score range: All / Excellent / Good / Fair / Weak
+- Collateral type: All / Land / Vehicle / Guarantor / etc.
+- Customer name search
+
+List item:
+┌─────────────────────────────────────────┐
+│ 🏠 Land — Plot 12 Nakasero              │
+│ Customer: John Doe                       │
+│ Value: UGX 80,000,000                    │
+│ Score: 98/100 ⭐ Excellent              │
+│ Submitted: 2 hours ago                   │
+│ Verification: 1 of 4 stages              │
+│ [📋 Review Now]                          │
+└─────────────────────────────────────────┘
+
+Sort by: Newest / Score (high-low) / Score (low-high) / Overdue
+
+═══════════════════════════════════════════════════════════════
+PART E: MANAGER REVIEW MODAL
+═══════════════════════════════════════════════════════════════
+
+When manager taps [📋 Review Now]:
+
+Full-screen modal (id="managerReviewModal"):
+
+SECTIONS:
+
+1. Header:
+- Collateral description
+- Customer name + photo
+- Score + grade badge
+
+2. Customer Details:
+- Name, phone, national ID
+- Monthly income
+- Business name
+
+3. Collateral Details:
+- Type, description, value, location
+- Ownership proof (preview thumbnail)
+- Upload timestamp + device
+
+4. Score Card (visual — from Step 1):
+┌─────────────────────────────────────┐
+│ Asset Type:      25/25 ████████████ │
+│ Ownership Proof: 25/25 ████████████ │
+│ Market Value:    20/20 ████████████ │
+│ Location:        15/15 ████████████ │
+│ Liquidity:       13/15 ██████████░░ │
+│ TOTAL:           98/100              │
+│ GRADE:           ⭐ Excellent        │
+└─────────────────────────────────────┘
+
+5. Documents Section:
+- All uploaded documents
+- Each: [👁 Preview] [📥 Download]
+- Group by type: Title Deed / ID / Guarantor Form / etc.
+
+6. Verification Progress:
+- Show 4 stages (from Part A's verification workflow)
+- Each shows: assigned, scheduled, completed status
+- [+ Schedule Verification Activity] button
+
+7. Similar Projects Check (from Task 4):
+- If similarity_flag on customer's projects, show warning
+
+8. Manager Decision:
+Radio buttons:
+○ ✅ Approve
+○ ❌ Reject  
+○ ⚠️ Request Top-up
+
+Comments textarea (required for Reject and Top-up)
+
+If [Request Top-up]:
+- Required Top-up Amount (UGX)
+- Additional Collateral Type (dropdown)
+
+9. Buttons:
+- [💾 Save Draft] (save decision but don't finalize)
+- [✅ Submit Decision] (finalize)
+
+═══════════════════════════════════════════════════════════════
+PART F: VERIFICATION WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+When manager clicks [+ Schedule Verification Activity]:
+
+Modal (id="scheduleVerificationModal"):
+
+Activity Type (dropdown):
+1. Desk Review (1 day)
+2. Field Visit (3-5 days)
+3. Valuer Report (7 days — required if asset > UGX 20M)
+4. Legal Check (3 days — required for Land)
+
+Fields:
+- Activity Type (dropdown)
+- Assign To (dropdown):
+  * Loan Officer
+  * Registered Valuer (if type == Valuer Report)
+  * Registered Legal Officer (if type == Legal Check)
+- Scheduled Date (date picker)
+- Notes (textarea)
+
+System logic:
+- If collateral value > UGX 20M: Valuer Report is REQUIRED
+- If collateral type == Land: Legal Check is REQUIRED
+- Show which activities are auto-added based on rules
+
+On save:
+- Create mfi_collateral_verification doc
+- Notify assigned person
+- Update collateral.verificationStage
+
+When assigned person completes activity:
+- Tap on notification → opens activity detail
+- Upload attachments (photos, documents)
+- Add completion notes
+- Mark as [✅ Complete]
+- Notifies manager
+
+═══════════════════════════════════════════════════════════════
+PART G: VALUER REGISTRY
+═══════════════════════════════════════════════════════════════
+
+MFI Admin can register valuers:
+
+In MFI Admin menu → Settings → Valuers
+
+Registry page (id="valuersRegistryModal"):
+- List of registered valuers
+- [+ Add Valuer] button
+
+Add Valuer form:
+- Full Name (required)
+- Company (required)
+- License Number (required)
+- Phone (required)
+- Email (optional)
+- Specialization (dropdown): Land / Vehicles / Business Assets / General
+- Active toggle
+
+Same pattern for Legal Officers.
+
+═══════════════════════════════════════════════════════════════
+PART H: LEGAL OFFICER REGISTRY
+═══════════════════════════════════════════════════════════════
+
+Same as valuers but for legal:
+- Full Name
+- Law Firm
+- License Number
+- Phone
+- Email
+- Active toggle
+
+Add to Settings → Legal Officers.
+
+═══════════════════════════════════════════════════════════════
+PART I: DECISION HISTORY
+═══════════════════════════════════════════════════════════════
+
+Every decision is logged in mfi_collateral_decisions.
+
+Add a "Decision History" view:
+- Accessible from collateral detail
+- Shows all decisions made (including top-up requests)
+- Each decision shows: manager, decision, comments, timestamp
+- [📥 Export audit trail] button (PDF)
+
+═══════════════════════════════════════════════════════════════
+PART J: CUSTOMER VIEW OF DECISION
+═══════════════════════════════════════════════════════════════
+
+When a decision is made, customer gets notified:
+
+If Approved:
+"✅ Your collateral '{description}' has been approved!"
+
+If Rejected:
+"❌ Your collateral '{description}' was not approved.
+Reason: {managerComments}"
+
+If Top-up Requested:
+"⚠️ Additional collateral required for '{description}'.
+Needed: {requiredTopupType} worth UGX {amount}.
+Please contact your loan officer."
+
+Customer sees this in their (borrower) notifications tab.
+
+═══════════════════════════════════════════════════════════════
+PART K: DOCUMENT STORAGE ENHANCEMENTS
+═══════════════════════════════════════════════════════════════
+
+Improve document management:
+
+1. Multi-file upload:
+   - Allow up to 10 files per collateral
+   - Each <5MB
+   - Types: PDF, JPG, PNG
+
+2. Document categorization:
+   Each document has a type label:
+   - Title Deed / Logbook / Sales Agreement
+   - National ID (Front / Back)
+   - Guarantor ID
+   - Guarantor Signed Form
+   - Valuation Report
+   - Legal Opinion
+   - Site Photos
+   - Other
+
+3. Preview:
+   - Images: inline preview
+   - PDFs: open in PDF viewer (from Task 1)
+   - Download button
+
+4. Archive after loan closure:
+   - When loan fully repaid (from Task 14), documents marked archived
+   - Still viewable but flagged
+   - Retained per UMRA requirements
+
+═══════════════════════════════════════════════════════════════
+PART L: BULK MANAGER ACTIONS
+═══════════════════════════════════════════════════════════════
+
+Add bulk actions in Reviews list:
+
+- Select multiple collateral
+- [📤 Batch Approve] (only for Excellent/Good scores)
+- [📤 Batch Reject] (with single reason)
+- [📤 Batch Request Top-up]
+
+Batch modal:
+- Enter comments once
+- Apply to all selected
+- Show list of items being affected
+- Confirm
+
+═══════════════════════════════════════════════════════════════
+PART M: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- MFI accent: #1A5490 (dark blue) — for MFI sector
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Review modal:
+- Score card prominent
+- Documents thumbnail grid
+- Verification stages as horizontal timeline
+
+Decision buttons:
+- ✅ Approve: green
+- ⚠️ Request Top-up: orange
+- ❌ Reject: red
+
+═══════════════════════════════════════════════════════════════
+PART N: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Loan Manager field visits work offline:
+
+1. Assigned verification activity can be opened offline
+2. Attachments (photos, notes) saved to IndexedDB
+3. Sync when back online
+4. Verification completion saves locally with timestamp
+5. Manager sees "Pending Sync" until uploaded
+
+═══════════════════════════════════════════════════════════════
+PART O: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. mfi_collateral_verification: collateralId (asc) + scheduledDate (asc)
+2. mfi_collateral_verification: assignedTo (asc) + status (asc)
+3. mfi_collateral_decisions: collateralId (asc) + decidedAt (desc)
+4. mfi_valuers: institutionId (asc) + isActive (asc)
+5. mfi_legal_officers: institutionId (asc) + isActive (asc)
+
+═══════════════════════════════════════════════════════════════
+PART P: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 MFI Admin + 1 Loan Officer + 1 Loan Manager:
+
+A. Manager dashboard:
+   1. Login as Loan Manager
+   2. Verify: manager-specific nav appears
+   3. Verify: stats show correct counts
+   4. Verify: attention required list shows pending items
+
+B. Reviews list:
+   1. Open Reviews modal
+   2. Verify: pending collateral shows
+   3. Test filters (score range, type, name search)
+   4. Test sort options
+
+C. Manager review:
+   1. Tap [Review Now] on any collateral
+   2. Verify: all sections load (customer, collateral, score, docs)
+   3. Verify: score card displays correctly
+   4. Verify: documents preview works
+   5. Test document download
+
+D. Approve flow:
+   1. Select ✅ Approve
+   2. Add comments (optional)
+   3. Click [Submit Decision]
+   4. Verify: mfi_collateral_decisions has new doc
+   5. Verify: collateral status changes to "approved"
+   6. Verify: customer gets notification
+   7. Verify: manager's dashboard stat updates
+
+E. Reject flow:
+   1. Select ❌ Reject
+   2. Add required comments
+   3. Submit
+   4. Verify: all above + comments saved
+
+F. Top-up request flow:
+   1. Select ⚠️ Request Top-up
+   2. Enter amount + type + comments
+   3. Submit
+   4. Verify: top-up fields saved
+   5. Verify: customer notified with top-up details
+
+G. Schedule verification activity:
+   1. In review modal, click [+ Schedule Verification]
+   2. Select "Field Visit"
+   3. Assign to Loan Officer
+   4. Set date
+   5. Save
+   6. Verify: verification doc created
+   7. Verify: Loan Officer notified
+
+H. Valuer Report requirement:
+   1. Create collateral worth UGX 25,000,000
+   2. Open review modal
+   3. Verify: system requires Valuer Report
+   4. Register a valuer first (Settings → Valuers)
+   5. Schedule valuer report → assign to registered valuer
+
+I. Legal Check requirement:
+   1. Open review for a Land collateral
+   2. Verify: system requires Legal Check
+   3. Register legal officer
+   4. Schedule legal check
+
+J. Document management:
+   1. Open any collateral
+   2. Verify: all documents list
+   3. Test document preview for image
+   4. Test document preview for PDF
+   5. Test download
+
+K. Valuer registry:
+   1. MFI Admin → Settings → Valuers
+   2. Add 2 valuers
+   3. Verify: they appear in dropdown when scheduling valuer report
+
+L. Decision history:
+   1. Open approved collateral
+   2. Verify: decision history shows
+   3. Test [Export audit trail] PDF
+
+M. Bulk actions:
+   1. In Reviews list, select 3+ items
+   2. Click [Batch Approve] (on Excellent ones)
+   3. Verify: all approved at once
+   4. Verify: notifications sent to all customers
+
+N. Offline:
+   1. Loan Officer assigned a field visit
+   2. Turn off WiFi
+   3. Open activity → upload photos → add notes → complete
+   4. Verify: saved offline
+   5. Turn on WiFi → syncs
+
+O. Regression:
+   1. Task 1-9 features still work
+   2. Task 10 Step 1 (customer/collateral capture) still works
+   3. Education sector unaffected
+
+═══════════════════════════════════════════════════════════════
+PART Q: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-9 or Task 10 Step 1
+- Do NOT allow Loan Officers to approve their own captured collateral
+- Do NOT allow decision without required fields (comments for reject)
+- Do NOT lose verification photos (save offline if needed)
+- Do NOT delete documents after decision (retain per UMRA)
+- Do NOT allow Land collateral without Legal Check in workflow
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 10 Step 2 complete — Manager Review + Verification + Document Storage built"
+
+Report:
+- Which tests A through O passed
+- Any bugs found
+- Screenshots recommended: manager dashboard, review modal 
+  (score card + documents), approve flow, schedule verification, 
+  valuer registry, decision history, bulk actions
