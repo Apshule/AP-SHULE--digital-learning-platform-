@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 19;
+  var DB_VERSION = 20;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -42,7 +42,9 @@
     'offline_clinic_dashboard',
     'offline_farm_movements',
     'offline_farm_attendance',
-    'offline_farm_reports'
+    'offline_farm_reports',
+    'offline_farm_egg_collections',
+    'offline_farm_feed_consumption'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -199,7 +201,9 @@
                    offline_clinic_billing: 'localId',
                    offline_clinic_payments: 'localId',
                     offline_clinic_claims: 'localId',
-                    offline_clinic_dashboard: 'institutionId'
+                    offline_clinic_dashboard: 'institutionId',
+                    offline_farm_egg_collections: 'localId',
+                    offline_farm_feed_consumption: 'localId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -336,6 +340,15 @@
             farmReportStore.createIndex('farmId', 'farmId', { unique: false });
             farmReportStore.createIndex('summaryDate', 'summaryDate', { unique: false });
           }
+        }
+        if (oldVersion < 20) {
+          ['offline_farm_egg_collections', 'offline_farm_feed_consumption'].forEach(function (name) {
+            var farmStepTwoStore = db.objectStoreNames.contains(name)
+              ? event.target.transaction.objectStore(name)
+              : db.createObjectStore(name, { keyPath: 'localId' });
+            if (!farmStepTwoStore.indexNames.contains('farmId')) farmStepTwoStore.createIndex('farmId', 'farmId', { unique: false });
+            if (!farmStepTwoStore.indexNames.contains('syncStatus')) farmStepTwoStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+          });
         }
       };
       request.onsuccess = function () {
@@ -810,6 +823,8 @@
           allRecords('offline_clinic_claims'),
           allRecords('offline_farm_movements'),
           allRecords('offline_farm_attendance'),
+      allRecords('offline_farm_egg_collections'),
+      allRecords('offline_farm_feed_consumption'),
       Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
     ])
       .then(function (records) {
@@ -832,8 +847,10 @@
            var clinicClaims = records[16].filter(function (item) { return item.syncStatus === 'pending'; });
            var farmMovements = records[17].filter(function (item) { return item.syncStatus === 'pending'; });
            var farmAttendance = records[18].filter(function (item) { return item.syncStatus === 'pending'; });
-           var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins, clinicInventory, clinicScans, clinicDispensing, clinicBilling, clinicPayments, clinicClaims, farmMovements, farmAttendance);
-           var cachedSize = records[19].reduce(function (total, items) {
+            var farmEggCollections = records[19].filter(function (item) { return item.syncStatus === 'pending'; });
+            var farmFeedConsumption = records[20].filter(function (item) { return item.syncStatus === 'pending'; });
+            var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins, clinicInventory, clinicScans, clinicDispensing, clinicBilling, clinicPayments, clinicClaims, farmMovements, farmAttendance, farmEggCollections, farmFeedConsumption);
+            var cachedSize = records[21].reduce(function (total, items) {
           return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         }, 0);
         return {
@@ -856,6 +873,8 @@
           clinicClaims: clinicClaims.length,
            farmMovements: farmMovements.length,
            farmAttendance: farmAttendance.length,
+            farmEggCollections: farmEggCollections.length,
+            farmFeedConsumption: farmFeedConsumption.length,
           total: pending.length,
           size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
           cachedSize: cachedSize
@@ -883,7 +902,9 @@
           allRecords('offline_clinic_payments'),
            allRecords('offline_clinic_claims'),
            allRecords('offline_farm_movements'),
-           allRecords('offline_farm_attendance')
+           allRecords('offline_farm_attendance'),
+           allRecords('offline_farm_egg_collections'),
+           allRecords('offline_farm_feed_consumption')
       ]).then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
@@ -902,14 +923,16 @@
            var clinicClaims = records[14].filter(function (item) { return item.syncStatus === 'pending'; });
            var farmMovements = records[15].filter(function (item) { return item.syncStatus === 'pending'; });
            var farmAttendance = records[16].filter(function (item) { return item.syncStatus === 'pending'; });
-           var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length + clinicVisits.length + clinicPrescriptions.length + clinicCheckins.length + clinicInventory.length + clinicScans.length + clinicDispensing.length + clinicBilling.length + clinicPayments.length + clinicClaims.length + farmMovements.length + farmAttendance.length;
+            var farmEggCollections = records[17].filter(function (item) { return item.syncStatus === 'pending'; });
+            var farmFeedConsumption = records[18].filter(function (item) { return item.syncStatus === 'pending'; });
+            var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length + clinicVisits.length + clinicPrescriptions.length + clinicCheckins.length + clinicInventory.length + clinicScans.length + clinicDispensing.length + clinicBilling.length + clinicPayments.length + clinicClaims.length + farmMovements.length + farmAttendance.length + farmEggCollections.length + farmFeedConsumption.length;
         if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
         if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
           return { status: 'mobile-paused', mode: mode, uploaded: 0, pending: total };
         }
         var context = { mode: mode, api: API };
         /* Every push completes before any pull begins. */
-          var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false, clinicVisits: false, clinicPrescriptions: false, clinicCheckins: false, clinicInventory: false, clinicScans: false, clinicDispensing: false, clinicBilling: false, clinicPayments: false, clinicClaims: false, farmMovements: false, farmAttendance: false };
+           var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false, clinicVisits: false, clinicPrescriptions: false, clinicCheckins: false, clinicInventory: false, clinicScans: false, clinicDispensing: false, clinicBilling: false, clinicPayments: false, clinicClaims: false, farmMovements: false, farmAttendance: false, farmEggCollections: false, farmFeedConsumption: false };
         return Promise.resolve()
           .then(function () {
             if (!syncHooks.pushProjects || !projects.length) return null;
@@ -996,6 +1019,16 @@
              return syncHooks.pushFarmAttendance(farmAttendance, context);
            })
            .then(function (result) { if (syncHooks.pushFarmAttendance && farmAttendance.length) pushed.farmAttendance = true; return result; })
+            .then(function () {
+              if (!syncHooks.pushFarmEggCollections || !farmEggCollections.length) return null;
+              return syncHooks.pushFarmEggCollections(farmEggCollections, context);
+            })
+            .then(function (result) { if (syncHooks.pushFarmEggCollections && farmEggCollections.length) pushed.farmEggCollections = true; return result; })
+            .then(function () {
+              if (!syncHooks.pushFarmFeedConsumption || !farmFeedConsumption.length) return null;
+              return syncHooks.pushFarmFeedConsumption(farmFeedConsumption, context);
+            })
+            .then(function (result) { if (syncHooks.pushFarmFeedConsumption && farmFeedConsumption.length) pushed.farmFeedConsumption = true; return result; })
           .then(function () {
             return Promise.all((pushed.projects ? projects.map(function (item) { return putRecord('offline_projects', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.caRecords ? caRecords.map(function (item) { return putRecord('offline_ca_records', Object.assign({}, item, { synced: true, syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
@@ -1013,7 +1046,9 @@
                 .concat(pushed.clinicPayments ? clinicPayments.map(function (item) { return putRecord('offline_clinic_payments', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                 .concat(pushed.clinicClaims ? clinicClaims.map(function (item) { return putRecord('offline_clinic_claims', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                 .concat(pushed.farmMovements ? farmMovements.map(function (item) { return putRecord('offline_farm_movements', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-                .concat(pushed.farmAttendance ? farmAttendance.map(function (item) { return putRecord('offline_farm_attendance', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
+                 .concat(pushed.farmAttendance ? farmAttendance.map(function (item) { return putRecord('offline_farm_attendance', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                 .concat(pushed.farmEggCollections ? farmEggCollections.map(function (item) { return putRecord('offline_farm_egg_collections', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                 .concat(pushed.farmFeedConsumption ? farmFeedConsumption.map(function (item) { return putRecord('offline_farm_feed_consumption', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
           })
           .then(function () {
             var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};

@@ -1,0 +1,706 @@
+Task 13 — Step 2 of 3: Egg Counting + Worker Attendance + Farm Inventory + Feed & Produce Tracking
+
+CONTEXT:
+- Task 13 Step 1 complete (published as commit 7917245)
+- Step 1 built: Farm foundation, animal types, cameras, animal movement tracking, daily summaries, worker management, missing animal alerts
+- Step 2 now adds: egg tray counting (camera-based), worker attendance (facial recognition), feed/supplies inventory, produce tracking, and financial tracking
+
+GOAL OF STEP 2:
+- Egg counting via camera (trays + broken eggs detection)
+- Worker attendance via facial recognition (reuse Task 4 face system)
+- Farm inventory (feed, medicine, equipment)
+- Feed consumption tracking per animal type
+- Produce tracking (milk, meat, eggs, wool, etc.)
+- Farm-level financials (revenue from produce, expenses from feed)
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. farm_egg_collections
+   Fields:
+   - collectionId (auto)
+   - farmId
+   - collectedBy (worker uid)
+   - collectedByName
+   - traysCollected (number)
+   - eggsPerTray (number, default 30)
+   - totalEggs (number)
+   - brokenEggs (number)
+   - goodEggs (number)
+   - collectedAt (timestamp)
+   - imagePath (Firebase Storage URL of eggs photo)
+   - cameraId (reference if auto-detected)
+   - verifiedByCamera (boolean)
+   - notes (text)
+   - sessionType (Morning / Afternoon / Evening)
+   - createdAt
+
+2. farm_worker_attendance
+   Fields:
+   - attendanceId (auto)
+   - farmId
+   - workerId (reference)
+   - workerName
+   - cameraId (reference)
+   - checkInTime (timestamp)
+   - checkOutTime (timestamp)
+   - date (date)
+   - status (present / absent / late / half_day)
+   - hoursWorked (number)
+   - faceMatchConfidence (0-100)
+   - verifiedByFace (boolean)
+   - manualOverride (boolean, if admin adjusted)
+   - notes (text)
+   - createdAt
+   - createdBy
+
+3. farm_inventory
+   Fields:
+   - itemId (auto)
+   - farmId
+   - itemName
+   - category (Feed / Medicine / Equipment / Supplies / Seeds / Other)
+   - unit (kg / litre / bag / piece / box / bale)
+   - quantityInStock (number)
+   - reorderLevel (number)
+   - unitPrice (number, UGX)
+   - totalValue (number, computed)
+   - supplierName
+   - supplierContact
+   - expiryDate (optional)
+   - location (Store A, Silo 1, etc.)
+   - lastRestocked (timestamp)
+   - isActive (boolean)
+   - createdBy
+   - createdAt
+   - updatedAt
+
+4. farm_feed_consumption
+   Fields:
+   - consumptionId (auto)
+   - farmId
+   - itemId (reference to farm_inventory — feed items)
+   - animalTypeId (reference)
+   - quantityConsumed (number)
+   - unit (kg)
+   - fedBy (worker uid)
+   - fedByName
+   - fedAt (timestamp)
+   - sessionType (Morning / Afternoon / Evening)
+   - notes
+   - createdAt
+
+5. farm_produce
+   Fields:
+   - produceId (auto)
+   - farmId
+   - produceType (Milk / Eggs / Meat / Chicken / Wool / Manure / Crops)
+   - animalTypeId (reference, if applicable)
+   - quantity (number)
+   - unit (litre / kg / tray / piece / bag)
+   - grade (Grade A / Grade B / Grade C)
+   - collectedAt (timestamp)
+   - collectedBy (worker uid)
+   - collectedByName
+   - quality (Excellent / Good / Fair / Poor)
+   - notes (text)
+   - storageLocation
+   - status (in_storage / sold / spoiled / used)
+   - createdAt
+
+6. farm_sales
+   Fields:
+   - saleId (auto)
+   - farmId
+   - produceId (reference — which produce item)
+   - produceType
+   - quantitySold (number)
+   - unit
+   - unitPrice (number, UGX)
+   - totalAmount (number)
+   - buyerName
+   - buyerPhone
+   - buyerAddress
+   - saleDate (timestamp)
+   - paymentStatus (paid / pending / partially_paid)
+   - paymentMethod (Cash / MTN / Airtel / Bank / Credit)
+   - amountPaid (number)
+   - balanceRemaining (number)
+   - recordedBy (uid)
+   - notes
+   - createdAt
+
+7. farm_expenses
+   Fields:
+   - expenseId (auto)
+   - farmId
+   - category (Feed / Labour / Medicine / Equipment / Utilities / 
+     Transport / Repair / Other)
+   - description (text)
+   - amount (number, UGX)
+   - expenseDate (date)
+   - paidTo (vendor/worker name)
+   - paymentMethod (Cash / MTN / Airtel / Bank)
+   - receiptPath (Firebase Storage URL, optional)
+   - recordedBy (uid)
+   - notes
+   - createdAt
+
+═══════════════════════════════════════════════════════════════
+PART B: EGG COUNTING FEATURE
+═══════════════════════════════════════════════════════════════
+
+When worker or Farm Admin taps [🥚 Egg Count] (from dashboard):
+
+Two modes:
+
+MODE 1 — MANUAL ENTRY:
+┌─────────────────────────────────────────┐
+│ 🥚 EGG COLLECTION                        │
+├─────────────────────────────────────────┤
+│ Session: ● Morning ○ Afternoon ○ Evening│
+│                                          │
+│ Trays Collected: [45]                   │
+│ Eggs per Tray: [30] (standard)          │
+│ Total Eggs: 1,350 (auto-calculated)     │
+│                                          │
+│ Broken Eggs: [12]                       │
+│ Good Eggs: 1,338 (auto-calculated)     │
+│                                          │
+│ Collected By: [Select worker ▼]         │
+│ Notes: [___________________]            │
+│                                          │
+│ [📸 Take Photo] (optional)              │
+│                                          │
+│ [💾 Save Collection]                    │
+└─────────────────────────────────────────┘
+
+MODE 2 — CAMERA-ASSISTED:
+- Points camera at egg trays
+- Auto-detects number of trays
+- Counts broken eggs (visually different)
+- Worker confirms count before saving
+
+CAMERA-BASED EGG COUNTING (lightweight):
+1. Capture image from egg room camera
+2. Detect circular/rectangular shapes (tray detection)
+3. Count distinct trays using contour detection
+4. Detect broken eggs by color/shape anomalies
+5. Return:
+   - trayCount
+   - brokenCount (estimated)
+   - confidence
+6. Worker reviews + confirms
+
+If confidence < 70%:
+- Show "Please verify count manually"
+- Pre-fill with detected values
+- Worker adjusts before saving
+
+EGG STORAGE LOGIC:
+- After collection, eggs enter storage
+- Track storage location
+- Mark as "in_storage"
+- Reduce by sales in Farm Sales
+
+EGG PRODUCTION TRENDS:
+- Daily total shown on dashboard
+- Weekly + monthly trends
+- Compare to previous periods
+- Best/worst days
+
+═══════════════════════════════════════════════════════════════
+PART C: WORKER ATTENDANCE VIA FACIAL RECOGNITION
+═══════════════════════════════════════════════════════════════
+
+Reuse facial recognition infrastructure from Task 4.
+
+WORKER ENROLLMENT:
+When Farm Admin adds a worker (Step 1) and uploads a face photo:
+1. Compute face embedding
+2. Save to farm_workers.faceEmbedding
+3. Worker is now recognized at any camera set to 
+   "worker_attendance" mode
+
+ATTENDANCE FLOW:
+
+Morning check-in:
+1. Worker approaches camera at gate or main entrance
+2. Camera captures face
+3. Match against farm_workers.faceEmbedding
+4. If matched with confidence > 85%:
+   - Create farm_worker_attendance doc
+   - checkInTime = now
+   - status = present (or late if after 8:30 AM)
+   - Send in-app notification to worker
+5. If matched with 60-85% confidence:
+   - Flag for manual review
+   - Notify Farm Manager
+6. If < 60% confidence:
+   - Show "Not recognized" to worker
+   - Provide fallback: manual check-in via PIN or manager approval
+
+Evening check-out:
+- Same process at end of day
+- Update attendance doc with checkOutTime
+- Compute hoursWorked
+
+ATTENDANCE DASHBOARD (for Farm Admin):
+
+┌─────────────────────────────────────────┐
+│ 👥 TODAY'S ATTENDANCE                    │
+├─────────────────────────────────────────┤
+│ Present: 8 of 9                          │
+│ Absent: 1 (John Doe — notified)         │
+│ Late: 2                                  │
+│ On-time: 6                               │
+│                                          │
+│ ✅ Present:                              │
+│ • Mary Nakato — 7:45 AM                 │
+│ • Peter Kato — 8:00 AM                  │
+│ • Sarah Namukasa — 8:15 AM              │
+│ ...                                      │
+│                                          │
+│ ⏰ Late:                                 │
+│ • John Okello — 9:20 AM                 │
+│ • Ruth Adongo — 9:45 AM                 │
+│                                          │
+│ ❌ Absent:                               │
+│ • David Mugisha — no check-in           │
+│   [Send SMS] [Mark Excused]            │
+│                                          │
+│ [📥 Export Attendance Report]           │
+│ [📊 View Monthly Attendance]            │
+└─────────────────────────────────────────┘
+
+ATTENDANCE REPORTS:
+- Daily (present/absent/late)
+- Weekly (per worker)
+- Monthly (summary + trends)
+- Salary calculation:
+  * daysPresent × dailyRate
+  * Deductions for absences
+  * Overtime hours
+  * Export to Excel for payroll
+
+═══════════════════════════════════════════════════════════════
+PART D: FARM INVENTORY MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [📦 Inventory]:
+
+Full-screen modal (id="farmInventoryModal"):
+
+Summary bar:
+┌─────────────────────────────────────────┐
+│ Total items: 45                          │
+│ Total value: UGX 2,450,000              │
+│ Low stock: 3                             │
+│ Expiring soon: 2                         │
+└─────────────────────────────────────────┘
+
+Filters:
+- Category (Feed / Medicine / Equipment / Supplies / Seeds / Other)
+- Stock status (All / In Stock / Low Stock / Out of Stock)
+- Expiry (All / Expiring 30 days / Expired)
+
+[+ Add Item] button top-right
+
+Inventory list:
+┌─────────────────────────────────────────┐
+│ 🌾 Dairy Meal Pellets                    │
+│ Feed · 50 kg bags                        │
+│ Stock: 25 bags                          │
+│ Value: UGX 1,250,000                    │
+│ Expires: 2027-03-15                     │
+│ Status: ✅ In Stock                      │
+│ [✏️ Edit] [📦 Restock] [➖ Use] [⋮]    │
+└─────────────────────────────────────────┘
+
+Actions:
+- Edit item details
+- Restock (add quantity)
+- Use (for feed consumption — see Part E)
+- Adjust stock (discrepancy)
+- Mark as inactive
+- View usage history
+
+═══════════════════════════════════════════════════════════════
+PART E: FEED CONSUMPTION TRACKING
+═══════════════════════════════════════════════════════════════
+
+When worker feeds animals:
+
+Tap [+ Feed Animals] from dashboard or inventory:
+
+Modal (id="feedConsumptionModal"):
+
+┌─────────────────────────────────────────┐
+│ 🌾 FEED ANIMALS                          │
+├─────────────────────────────────────────┤
+│ Session: ● Morning ○ Afternoon ○ Evening│
+│                                          │
+│ Animal Group: [Cows ▼]                  │
+│                                          │
+│ Feed Type: [Dairy Meal Pellets ▼]       │
+│ (dropdown of Feed category from inventory)│
+│                                          │
+│ Quantity: [5] kg                        │
+│                                          │
+│ Fed By: [Select worker ▼]               │
+│                                          │
+│ Notes: [___________________]            │
+│                                          │
+│ [💾 Save Feed Record]                    │
+└─────────────────────────────────────────┘
+
+On save:
+- Create farm_feed_consumption doc
+- Reduce farm_inventory.quantityInStock
+- Update farm_inventory.updatedAt
+- If stock falls below reorderLevel → low stock alert
+- Log to activity feed
+
+FEED COST TRACKING:
+- Compute cost per feeding: quantity × unitPrice
+- Total feed cost per day / week / month
+- Feed cost per animal type
+- Feed cost per litre of milk produced (efficiency metric)
+
+═══════════════════════════════════════════════════════════════
+PART F: PRODUCE TRACKING
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [🥛 Produce]:
+
+Full-screen modal (id="farmProduceModal"):
+
+Tabs:
+[All] [Milk] [Eggs] [Meat] [Other]
+
+[+ Add Produce] button
+
+List of produce entries:
+┌─────────────────────────────────────────┐
+│ 🥛 Fresh Milk                            │
+│ 200 litres · Grade A                    │
+│ Quality: Excellent                      │
+│ Collected: Today 6:30 AM                │
+│ By: Mary Nakato                         │
+│ Status: 📦 In Storage                   │
+│ [Sell] [Edit] [View History]           │
+└─────────────────────────────────────────┘
+
+Add Produce form:
+- Produce Type (dropdown)
+- Animal Type (if applicable)
+- Quantity (number)
+- Unit (litre/kg/tray/piece/bag)
+- Grade (A/B/C)
+- Quality (Excellent/Good/Fair/Poor)
+- Collected By (worker)
+- Storage Location
+- Notes
+
+PRODUCE STATUS FLOW:
+- In Storage → Sold / Spoiled / Used internally
+- When sold: link to farm_sales
+- When spoiled: log waste
+- When used internally: log internal consumption
+
+═══════════════════════════════════════════════════════════════
+PART G: FARM SALES TRACKING
+═══════════════════════════════════════════════════════════════
+
+When produce is sold:
+
+Tap [Sell] on any produce item:
+
+Modal (id="farmSaleModal"):
+
+┌─────────────────────────────────────────┐
+│ 💰 SELL PRODUCE                          │
+├─────────────────────────────────────────┤
+│ Produce: Fresh Milk                      │
+│ Available: 200 litres                    │
+│                                          │
+│ Quantity to Sell: [150] litres          │
+│ Unit Price: [1,500] UGX/litre           │
+│ Total: UGX 225,000 (auto-calculated)   │
+│                                          │
+│ Buyer Name: [Kampala Dairy]             │
+│ Buyer Phone: [+256...]                  │
+│                                          │
+│ Payment Method:                          │
+│ ● Cash ○ MTN ○ Airtel ○ Bank ○ Credit │
+│                                          │
+│ Amount Paid: [225,000]                  │
+│ Balance: UGX 0                          │
+│                                          │
+│ [💾 Record Sale]                        │
+└─────────────────────────────────────────┘
+
+On save:
+- Create farm_sales doc
+- Update produce status to "sold" (or partial)
+- Reduce produce quantity
+- If Credit: creates receivable
+- Update farm revenue
+
+═══════════════════════════════════════════════════════════════
+PART H: FARM EXPENSES
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [+ Add Expense]:
+
+Modal (id="farmExpenseModal"):
+
+┌─────────────────────────────────────────┐
+│ 💸 ADD EXPENSE                           │
+├─────────────────────────────────────────┤
+│ Category: [Feed ▼]                      │
+│ Description: [Bought 50 bags of dairy   │
+│  meal]                                   │
+│ Amount: [250,000] UGX                   │
+│ Date: [14 Sep 2026]                     │
+│ Paid To: [Agro Supplies Ltd]            │
+│ Payment Method: [Cash ▼]               │
+│ Upload Receipt: [📎 Choose File]        │
+│ Notes: [___________________]            │
+│                                          │
+│ [💾 Save Expense]                        │
+└─────────────────────────────────────────┘
+
+Categories:
+- Feed
+- Labour (salaries)
+- Medicine (vet, vaccines)
+- Equipment
+- Utilities (water, electricity)
+- Transport
+- Repair
+- Other
+
+═══════════════════════════════════════════════════════════════
+PART I: DAILY FINANCIAL SUMMARY
+═══════════════════════════════════════════════════════════════
+
+Add to Farm Daily Report (from Step 1):
+
+Enhanced report now includes:
+
+┌─────────────────────────────────────────┐
+│ 📊 DAILY FARM REPORT                     │
+│ Date: 14 September 2026                  │
+├─────────────────────────────────────────┤
+│ ANIMAL INVENTORY:                        │
+│ [same as Step 1]                         │
+│                                          │
+│ EGG PRODUCTION:                          │
+│ • Trays: 45 · Total: 1,350 · Good: 1,338│
+│ • Value: UGX 337,500 (@250/egg)        │
+│                                          │
+│ MILK PRODUCTION:                         │
+│ • 200 litres collected                  │
+│ • Value: UGX 300,000 (@1,500/litre)    │
+│                                          │
+│ FEED CONSUMED:                           │
+│ • Dairy Meal: 25 kg                     │
+│ • Cost: UGX 62,500                      │
+│                                          │
+│ WORKER ATTENDANCE:                       │
+│ • Present: 8 · Absent: 1 · Late: 2     │
+│                                          │
+│ FINANCIAL SUMMARY:                       │
+│ • Revenue today: UGX 637,500            │
+│ • Expenses today: UGX 187,500           │
+│ • Net profit: UGX 450,000               │
+│                                          │
+│ TOP PRODUCE:                             │
+│ • Milk: UGX 300,000 (47% of revenue)   │
+│ • Eggs: UGX 337,500 (53% of revenue)   │
+│                                          │
+│ [📥 Download PDF] [📤 Share]            │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Farm accent: #4CAF50
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Special UI:
+- Egg counting uses visual tray representation
+- Worker attendance shows check-in timeline
+- Financial summary uses income/expense columns
+- Produce uses color-coded cards (milk=blue, eggs=yellow, 
+  meat=red, chicken=orange)
+
+Mobile-first:
+- Full-screen modals
+- Egg counter uses big number inputs
+- Worker attendance uses camera-friendly layout
+
+═══════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════
+
+Worker attendance works offline:
+- Face matching runs on-device
+- Save to IndexedDB
+- Sync when online
+
+Feed consumption works offline:
+- Save local record
+- Update local stock count
+- Sync when online
+
+Egg collection works offline:
+- Save collection
+- Sync when connected
+
+Produce + sales require internet (financial data).
+
+═══════════════════════════════════════════
+PART L: FIRESTORE INDEXES
+═══════════════════════════════════════════
+
+Add composite indexes:
+1. farm_egg_collections: farmId (asc) + collectedAt (desc)
+2. farm_worker_attendance: farmId (asc) + date (desc)
+3. farm_worker_attendance: workerId (asc) + date (desc)
+4. farm_inventory: farmId (asc) + category (asc)
+5. farm_inventory: farmId (asc) + quantityInStock (asc)
+6. farm_feed_consumption: farmId (asc) + fedAt (desc)
+7. farm_produce: farmId (asc) + status (asc) + collectedAt (desc)
+8. farm_sales: farmId (asc) + saleDate (desc)
+9. farm_expenses: farmId (asc) + expenseDate (desc)
+
+═══════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════
+
+A. Egg counting (manual):
+   1. Login as Farm Admin
+   2. Dashboard → [🥚 Egg Count]
+   3. Session: Morning
+   4. Trays: 45, Broken: 12
+   5. Save
+   6. Verify: farm_egg_collections doc created
+   7. Verify: good eggs = 1,338
+
+B. Egg counting (camera):
+   1. Open camera-assisted mode
+   2. Point at egg trays
+   3. Verify: system detects trays
+   4. Adjust if needed → confirm
+   5. Verify: same record structure
+
+C. Worker attendance:
+   1. Enroll worker with face photo (Step 1)
+   2. Worker approaches camera
+   3. Verify: recognized, attendance recorded
+   4. Verify: check-in time correct
+   5. Test late check-in (>8:30 AM) → status = late
+   6. Test absence detection (no check-in) → alert
+
+D. Attendance report:
+   1. Open Dashboard → Attendance
+   2. Verify: today's list
+   3. Export monthly report
+   4. Verify: total days present per worker
+
+E. Farm inventory:
+   1. Open Inventory → [+ Add Item]
+   2. Add "Dairy Meal Pellets" as Feed
+   3. Stock: 25 bags, Unit: kg, Price: 2,500/kg
+   4. Save
+   5. Verify: appears in inventory
+   6. Test restocking (add 20 → 45)
+   7. Test low stock alert (set to 3, reorder 10)
+
+F. Feed consumption:
+   1. Tap [+ Feed Animals]
+   2. Animal Group: Cows
+   3. Feed: Dairy Meal Pellets
+   4. Quantity: 25 kg
+   5. Save
+   6. Verify: farm_feed_consumption doc created
+   7. Verify: inventory reduced by 25 kg
+   8. Verify: cost computed (25 × 2,500 = UGX 62,500)
+
+G. Produce tracking:
+   1. Open Produce → [+ Add]
+   2. Type: Milk, Quantity: 200, Unit: litre, Grade: A
+   3. Save
+   4. Verify: produce appears
+   5. Add egg produce: 45 trays
+   6. Verify: both in list
+
+H. Farm sales:
+   1. Tap [Sell] on Milk produce
+   2. Quantity: 150 litres @ 1,500 = 225,000
+   3. Buyer: Kampala Dairy
+   4. Payment: Cash, Full
+   5. Verify: farm_sales doc created
+   6. Verify: produce reduced to 50 litres
+
+I. Farm expenses:
+   1. Add expense: Feed category, UGX 250,000
+   2. Save
+   3. Verify: appears in expenses list
+
+J. Daily financial summary:
+   1. Trigger daily report generation
+   2. Verify: revenue = sum of sales
+   3. Verify: expenses = sum of expenses
+   4. Verify: net profit correct
+   5. Download PDF
+
+K. Offline worker attendance:
+   1. Turn off WiFi
+   2. Worker face scan → check-in recorded locally
+   3. Turn on WiFi → syncs to Firestore
+   4. Verify: attendance appears
+
+L. Regression:
+   1. Tasks 1-12 still work
+   2. Task 13 Step 1 (animal movement) still works
+   3. Institution Management shows all 4 types
+   4. No console errors
+
+═══════════════════════════════════════════
+PART N: DO NOT
+═══════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-12 or Task 13 Step 1
+- Do NOT lose offline attendance records
+- Do NOT allow inventory to go negative
+- Do NOT skip face verification for attendance
+- Do NOT auto-approve attendance with low confidence
+- Do NOT delete inventory items with history (mark inactive)
+- Do NOT allow financial records to be edited after 7 days (audit)
+- Do NOT use paid AI for egg counting (use lightweight detection)
+
+═══════════════════════════════════════════
+
+Confirm when done with:
+"Task 13 Step 2 complete — Egg Counting + Worker Attendance + 
+Farm Inventory + Produce + Sales + Expenses built"
+
+Report:
+- Which tests A through L passed
+- Any bugs found
+- Screenshots recommended: egg counting, worker attendance, 
+  inventory list, feed consumption, produce, sales, financial summary
