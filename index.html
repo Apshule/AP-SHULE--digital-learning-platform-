@@ -547,6 +547,75 @@
         .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 13px; padding: 8px 16px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; pointer-events: none; backdrop-filter: blur(6px); font-family: monospace; white-space: nowrap; }
         @media (max-width: 480px) { .demo-notice { font-size: 10px; bottom: 70px; } }
 
+        /* ===== NCDC COURSE INTEGRATION ===== */
+        .ncdc-modal { position:fixed; inset:0; z-index:8200; display:none; background:rgba(28,18,55,.74); padding:12px; align-items:center; justify-content:center; }
+        .ncdc-modal.show { display:flex; }
+        .ncdc-shell { width:min(900px,100%); max-height:calc(100vh - 24px); overflow:auto; background:#fff; border-radius:22px; box-shadow:0 22px 80px rgba(0,0,0,.32); }
+        .ncdc-header { position:sticky; top:0; z-index:2; background:linear-gradient(135deg,#4B2E9E,#7B5FCF); color:#fff; padding:18px 20px; }
+        .ncdc-header-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .ncdc-header h2 { margin:0; font-size:21px; }
+        .ncdc-header small { opacity:.82; display:block; margin-top:4px; }
+        .ncdc-close { width:36px; height:36px; border:0; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; font-size:24px; cursor:pointer; }
+        .ncdc-summary { display:grid; grid-template-columns:1.5fr repeat(3,1fr); gap:10px; margin-top:16px; }
+        .ncdc-summary-stat { background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.18); border-radius:13px; padding:10px; }
+        .ncdc-summary-stat strong { display:block; font-size:18px; }
+        .ncdc-summary-stat span { font-size:11px; opacity:.85; }
+        .ncdc-progress-track { height:9px; background:rgba(255,255,255,.2); border-radius:10px; overflow:hidden; margin-top:8px; }
+        .ncdc-progress-fill { height:100%; background:linear-gradient(90deg,#FFB74D,#FF8C42); border-radius:10px; transition:width .25s ease; }
+        .ncdc-body { padding:16px; }
+        .ncdc-module-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .ncdc-module-card { border:1px solid #e8e2f6; border-radius:16px; padding:14px; background:#fff; box-shadow:0 3px 12px rgba(75,46,158,.06); transition:transform .15s,box-shadow .15s; }
+        .ncdc-module-card:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(75,46,158,.12); }
+        .ncdc-module-card.locked { opacity:.62; background:#f8f8fa; }
+        .ncdc-module-top { display:flex; gap:10px; align-items:flex-start; }
+        .ncdc-module-icon { width:34px; height:34px; display:flex; align-items:center; justify-content:center; flex:0 0 34px; border-radius:11px; background:#f0ebff; color:#4B2E9E; }
+        .ncdc-module-card h3 { margin:0; color:#332064; font-size:14px; line-height:1.3; }
+        .ncdc-module-meta { font-size:11px; color:#758092; margin-top:4px; }
+        .ncdc-status-badge { display:inline-flex; align-items:center; gap:4px; border-radius:20px; padding:4px 8px; font-size:10px; font-weight:700; margin-top:10px; }
+        .ncdc-status-badge.available { background:#f0ebff; color:#4B2E9E; }
+        .ncdc-status-badge.in-progress { background:#fff3dd; color:#a36100; }
+        .ncdc-status-badge.completed { background:#e6f6e9; color:#2e7d32; }
+        .ncdc-status-badge.locked { background:#edf0f3; color:#667085; }
+        .ncdc-module-action { width:100%; border:0; border-radius:20px; padding:9px 12px; margin-top:10px; background:#4B2E9E; color:#fff; font-weight:700; cursor:pointer; min-height:40px; }
+        .ncdc-module-action.secondary { background:#fff; color:#4B2E9E; border:1px solid #cfc2f4; }
+        .ncdc-module-action:disabled { cursor:not-allowed; background:#d7d9df; color:#69707d; }
+        .ncdc-detail-header { display:flex; align-items:flex-start; gap:10px; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:12px; margin-bottom:12px; }
+        .ncdc-back { border:0; background:#f1edff; color:#4B2E9E; border-radius:20px; padding:8px 12px; cursor:pointer; font-weight:700; }
+        .ncdc-lesson { display:flex; gap:10px; align-items:center; padding:12px 0; border-bottom:1px solid #f0eef5; }
+        .ncdc-lesson-icon { width:34px; height:34px; flex:0 0 34px; border-radius:10px; background:#fff4e9; display:flex; align-items:center; justify-content:center; }
+        .ncdc-lesson-copy { flex:1; min-width:0; }
+        .ncdc-lesson-copy strong { display:block; font-size:13px; color:#332064; }
+        .ncdc-lesson-copy span { display:block; color:#778092; font-size:11px; margin-top:3px; }
+        .ncdc-lesson button { flex:0 0 auto; border:0; background:#4B2E9E; color:#fff; border-radius:18px; padding:8px 10px; font-weight:700; cursor:pointer; min-height:38px; }
+        .ncdc-lesson button:disabled { background:#ddd; color:#777; cursor:not-allowed; }
+        .ncdc-check { color:#2e7d32; font-size:16px; }
+        .ncdc-quiz-option { display:flex; gap:8px; align-items:flex-start; border:1px solid #e5e0f2; border-radius:11px; padding:10px; margin:7px 0; cursor:pointer; }
+        .ncdc-quiz-option:hover { border-color:#4B2E9E; background:#faf8ff; }
+        .ncdc-editor-module { border:1px solid #e2ddf0; border-radius:14px; margin-bottom:10px; overflow:hidden; }
+        .ncdc-editor-module > button { width:100%; border:0; background:#faf8ff; padding:12px; text-align:left; font-weight:700; color:#332064; cursor:pointer; }
+        .ncdc-editor-lessons { padding:10px; display:none; background:#fff; }
+        .ncdc-editor-lessons.open { display:block; }
+        .ncdc-editor-lesson { border-top:1px solid #eee; padding:10px 0; }
+        .ncdc-editor-lesson:first-child { border-top:0; }
+        .ncdc-editor-lesson label { display:block; font-size:11px; color:#687385; margin:5px 0 3px; }
+        .ncdc-editor-lesson input,.ncdc-editor-lesson textarea { width:100%; box-sizing:border-box; padding:8px 9px; border:1px solid #d7d2e5; border-radius:9px; font:inherit; font-size:12px; }
+        .ncdc-editor-quiz { display:grid; gap:5px; margin-top:5px; }
+        .ncdc-editor-quiz input { font-size:11px; }
+        .ncdc-admin-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+        .ncdc-admin-toolbar select,.ncdc-admin-toolbar input { padding:8px; border:1px solid #ddd; border-radius:10px; }
+        .ncdc-report-table { width:100%; border-collapse:collapse; font-size:11px; }
+        .ncdc-report-table th,.ncdc-report-table td { padding:8px; border-bottom:1px solid #eee; text-align:left; }
+        .ncdc-report-table th { color:#4B2E9E; background:#faf8ff; }
+        .ncdc-certificate-card { border:2px solid #d9c76a; background:linear-gradient(145deg,#fffdf0,#fff); border-radius:18px; padding:16px; margin-bottom:16px; }
+        .ncdc-certificate-card h4 { color:#8a6a00; margin:0 0 6px; }
+        .ncdc-certificate-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+        .ncdc-certificate-actions button { border:0; border-radius:20px; padding:9px 12px; cursor:pointer; font-weight:700; background:#4B2E9E; color:#fff; }
+        .ncdc-certificate-actions button.secondary { background:#fff; color:#4B2E9E; border:1px solid #cfc2f4; }
+        .ncdc-celebration { text-align:center; padding:24px 16px; }
+        .ncdc-celebration .trophy { font-size:46px; }
+        @media(max-width:700px){ .ncdc-summary{grid-template-columns:repeat(2,1fr)} .ncdc-summary-stat:first-child{grid-column:1/-1} .ncdc-module-grid{grid-template-columns:1fr} .ncdc-modal{padding:0;align-items:stretch} .ncdc-shell{max-height:100vh;border-radius:0} .ncdc-header{padding-top:calc(16px + env(safe-area-inset-top))} }
+        @media(min-width:901px){ .ncdc-shell{max-height:calc(100vh - 60px)} }
+
         /* ===== NEW STYLES (added features) ===== */
 
         /* PDF inline viewer modal */
@@ -1369,6 +1438,69 @@
         </div>
     </div>
 
+    <!-- NCDC COURSE MODALS -->
+    <div id="ncdcCourseModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="ncdcCourseTitle">
+        <div class="ncdc-shell">
+            <div class="ncdc-header">
+                <div class="ncdc-header-row">
+                    <div><h2 id="ncdcCourseTitle">NCDC Teacher Retooling Course</h2><small>10 modules · Aligned to NCDC curriculum</small></div>
+                    <button id="closeNcdcCourseBtn" class="ncdc-close" type="button" aria-label="Close NCDC course">&times;</button>
+                </div>
+                <div id="ncdcCourseSummary" class="ncdc-summary"></div>
+            </div>
+            <div id="ncdcCourseBody" class="ncdc-body"></div>
+        </div>
+    </div>
+    <div id="ncdcModuleDetailModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="ncdcModuleDetailTitle">
+        <div class="ncdc-shell">
+            <div class="ncdc-header">
+                <div class="ncdc-header-row">
+                    <div><h2 id="ncdcModuleDetailTitle">Module detail</h2><small id="ncdcModuleDetailSubtitle"></small></div>
+                    <button id="closeNcdcModuleBtn" class="ncdc-close" type="button" aria-label="Close module detail">&times;</button>
+                </div>
+            </div>
+            <div id="ncdcModuleDetailBody" class="ncdc-body"></div>
+        </div>
+    </div>
+    <div id="ncdcQuizModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="ncdcQuizTitle">
+        <div class="ncdc-shell" style="max-width:620px;">
+            <div class="ncdc-header">
+                <div class="ncdc-header-row">
+                    <div><h2 id="ncdcQuizTitle">Module quiz</h2><small id="ncdcQuizProgress"></small></div>
+                    <button id="closeNcdcQuizBtn" class="ncdc-close" type="button" aria-label="Close quiz">&times;</button>
+                </div>
+            </div>
+            <div id="ncdcQuizBody" class="ncdc-body"></div>
+        </div>
+    </div>
+    <div id="ncdcCelebrationModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="ncdcCelebrationTitle">
+        <div class="ncdc-shell" style="max-width:500px;">
+            <div id="ncdcCelebrationBody" class="ncdc-celebration"></div>
+        </div>
+    </div>
+    <div id="editCourseContentModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="editCourseContentTitle">
+        <div class="ncdc-shell">
+            <div class="ncdc-header">
+                <div class="ncdc-header-row">
+                    <div><h2 id="editCourseContentTitle">Edit Course Content</h2><small>Update videos, PDFs, quizzes, and practical tasks</small></div>
+                    <button id="closeEditCourseContentBtn" class="ncdc-close" type="button" aria-label="Close course editor">&times;</button>
+                </div>
+            </div>
+            <div id="editCourseContentBody" class="ncdc-body"></div>
+        </div>
+    </div>
+    <div id="teacherProgressModal" class="ncdc-modal" role="dialog" aria-modal="true" aria-labelledby="teacherProgressTitle">
+        <div class="ncdc-shell" style="max-width:650px;">
+            <div class="ncdc-header">
+                <div class="ncdc-header-row">
+                    <div><h2 id="teacherProgressTitle">Teacher progress</h2><small id="teacherProgressSubtitle"></small></div>
+                    <button id="closeTeacherProgressBtn" class="ncdc-close" type="button" aria-label="Close teacher progress">&times;</button>
+                </div>
+            </div>
+            <div id="teacherProgressBody" class="ncdc-body"></div>
+        </div>
+    </div>
+
     <!-- GLOBAL SEARCH OVERLAY -->
     <div id="globalSearchOverlay" class="global-search-overlay">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -1831,6 +1963,13 @@
                         <div class="compliance-panel" id="schoolCompliancePanel">
                             <div class="compliance-note">Choose a compliance workspace above to begin.</div>
                         </div>
+                        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e6e1f0;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <strong style="color:#4B2E9E;">🎓 Teacher NCDC progress</strong>
+                                <button id="schoolNcdcProgressBtn" class="compliance-action" type="button">View teacher progress</button>
+                            </div>
+                            <div id="schoolNcdcProgressPanel" class="compliance-panel" style="margin-top:8px;display:none;"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1890,6 +2029,15 @@
                         <div id="ncdcSeedProgressText" class="cbc-status" role="status" aria-live="polite"></div>
                     </div>
                     <div id="ncdcSeedStatus" class="cbc-status" role="status" aria-live="polite"></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        <button id="editNcdcCourseBtn" type="button" class="admin-toggle" style="background:#fff;color:#4B2E9E;border:1px solid #b9a6ef;">✏️ Edit Course Content</button>
+                        <button id="refreshNcdcAdminOverviewBtn" type="button" class="admin-toggle" style="background:#fff;color:#4B2E9E;border:1px solid #b9a6ef;">↻ Refresh Overview</button>
+                    </div>
+                    <div id="ncdcAdminOverview" style="margin-top:10px;"></div>
+                    <div class="ncdc-admin-toolbar">
+                        <button id="exportNcdcCsvBtn" type="button" class="admin-toggle" style="background:#2e7d32;">📥 Export CSV</button>
+                        <button id="exportNcdcPdfBtn" type="button" class="admin-toggle">📥 Export PDF</button>
+                    </div>
                 </div>
 
                 <div class="admin-section" id="superProjectOverviewSection" style="display:none;background:#f7f2ff;border:1.5px solid #cdbdf8;border-radius:16px;padding:16px;">
@@ -2014,13 +2162,32 @@
                 <h4 style="color:#E67E00;">🧰 CBC Teaching Tools (Earn More)</h4>
                 <p style="font-size:12px;color:#666;margin:0;">Use the new competency tools, save your progress, and turn classroom evidence into useful records.</p>
                 <div class="cbc-actions">
-                    <button class="cbc-action primary" id="openRetoolingBtn">🎓 NCDC 10 Modules</button>
+                    <button class="cbc-action primary" id="openRetoolingBtn">🎓 NCDC 10 Modules <span id="ncdcCourseProgressBadge" style="display:none;margin-left:5px;padding:2px 7px;border-radius:12px;background:#fff;color:#4B2E9E;font-size:10px;">0/10</span></button>
                     <button class="cbc-action" id="openLessonPlanBtn">🗒 Lesson Plan Generator</button>
                     <button class="cbc-action" id="openTriangulationBtn">📊 Triangulation Assessment</button>
                     <button class="cbc-action" id="openCurriculumLinkerBtn">🔎 Curriculum Linker</button>
                 </div>
                 <div id="teacherCbcPanel" style="display:none;"></div>
             </div>
+
+             <div class="teacher-card" id="ncdcProgressCard" style="border:2px solid #6d52bd;background:linear-gradient(145deg,#faf8ff,#fff);">
+                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                     <h4 style="color:#4B2E9E;margin:0;">📊 My Retooling Progress</h4>
+                     <span id="ncdcProgressCardStatus" class="cbc-status">Loading…</span>
+                 </div>
+                 <div id="ncdcProgressCardBody" style="margin-top:10px;"></div>
+             </div>
+
+             <div class="ncdc-certificate-card" id="ncdcCertificateCard" style="display:none;">
+                 <h4>🏆 CPD Certificate Earned</h4>
+                 <div id="ncdcCertificateCardBody" class="cbc-status"></div>
+                 <div class="ncdc-certificate-actions">
+                     <button type="button" id="downloadNcdcCertificateBtn">📥 Download PDF</button>
+                     <button type="button" id="copyNcdcCertificateLinkBtn" class="secondary">🔗 Copy Verify Link</button>
+                     <button type="button" id="shareNcdcCertificateBtn" class="secondary">📤 Share</button>
+                     <button type="button" id="printNcdcCertificateBtn" class="secondary">🖨 Print</button>
+                 </div>
+             </div>
 
             <div class="teacher-card" id="teacherProjectVerificationCard" style="border:2px solid #4B2E9E;background:linear-gradient(145deg,#f7f2ff,#fff);">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
@@ -3230,7 +3397,10 @@
         await refreshOfflineUi(mode);
         Offline.onConnectionChange(async(next,previous)=>{
             await refreshOfflineUi(next);
-            if(previous==='offline' && next!=='offline') runOfflineSync(false).catch(console.error);
+            if(previous==='offline' && next!=='offline') {
+                runOfflineSync(false).catch(console.error);
+                syncNcdcProgressQueue().catch(console.error);
+            }
         });
         ['downloadHdWifiToggle','autoSyncWifiToggle','autoSyncMobileToggle','preferredLanguage'].forEach(id=>document.getElementById(id)?.addEventListener('change',()=>saveConnectionSettings().catch(console.error)));
         document.getElementById('headerSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
@@ -3343,6 +3513,7 @@
     }
 
     let vqBoxShown = false;
+    let _ncdcActiveVideoLesson = null;
     function startProgressTracking() {
         stopProgressTracking();
         vqBoxShown = false;
@@ -3376,6 +3547,15 @@
 
     // When student watches ≥90%, record teacher earning (once per student per video)
     async function checkAndRecordCompletion(pct) {
+        if(_ncdcActiveVideoLesson) {
+            if(pct < 0.9 || _ncdcActiveVideoLesson.completed) return;
+            _ncdcActiveVideoLesson.completed = true;
+            const lesson = _ncdcActiveVideoLesson;
+            _ncdcActiveVideoLesson = null;
+            await saveNcdcLessonCompletion(lesson.moduleNumber,lesson.lessonOrder,{watchPercentage:Math.round(pct*100)});
+            showNotification("✅ NCDC video lesson completed","success");
+            return;
+        }
         if(earningRecorded) return;
         if(pct < 0.9) return;
         earningRecorded = true;
@@ -3405,6 +3585,7 @@
     }
 
     function closeVideoModal() {
+        _ncdcActiveVideoLesson = null;
         stopProgressTracking();
         stopOfflineViewTracking();
         stopVcTimer();
@@ -4741,7 +4922,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         try {
             const existing=await getDoc(enrollmentRef);
             if(existing.exists()) return existing.data();
-            const enrollment={type:'course_enrollment',teacherId:currentUser.uid,enrolledAt:serverTimestamp(),modulesCompleted:0,totalModules:10,lastActivityAt:serverTimestamp(),updatedAt:serverTimestamp()};
+            const enrollment={type:'course_enrollment',teacherId:currentUser.uid,enrolledAt:serverTimestamp(),modulesCompleted:0,totalModules:10,cpdPointsEarned:0,cpdPointsTotal:20,averageQuizScore:0,lastActivityAt:serverTimestamp(),updatedAt:serverTimestamp()};
             await setDoc(enrollmentRef,enrollment,{merge:true});
             return enrollment;
         } catch(error) { console.warn('NCDC enrollment initialization unavailable:',error); return null; }
@@ -4783,6 +4964,426 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     window.ncdcCourseSeedRecords=ncdcCourseSeedRecords;
     window.createNcdcProgressRecord=createNcdcProgressRecord;
     window.syncNcdcCourse=syncNcdcCourse;
+
+    // NCDC Step 4 state and persistence. Progress is stored per teacher/module so
+    // offline edits can be merged safely when the connection returns.
+    let _ncdcState={modules:[],progress:{},enrollment:null,currentModule:null,quiz:null};
+    const NCDC_LESSON_ICONS={video:'🎬',pdf:'📄',quiz:'❓',practical:'📸'};
+    function ncdcDateValue(value) {
+        if(!value) return null;
+        if(typeof value.toDate==='function') return value.toDate();
+        const date=new Date(value);
+        return Number.isNaN(date.getTime())?null:date;
+    }
+    function ncdcDateText(value) {
+        const date=ncdcDateValue(value);
+        return date?date.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'Not yet';
+    }
+    function ncdcProgressRecord(moduleNumber) {
+        const id=String(moduleNumber);
+        return _ncdcState.progress[id]||{
+            progressKey:`${currentUser?.uid||''}_${id}`,teacherId:currentUser?.uid||'',moduleNumber:Number(moduleNumber),
+            lessonCompletions:[],moduleCompleted:false,quizScores:[],updatedAt:null
+        };
+    }
+    function ncdcLessonDone(progress,order) {
+        return (progress?.lessonCompletions||[]).some(item=>Number(item.lessonOrder)===Number(order)&&item.completedAt);
+    }
+    function ncdcCompletedCount() {
+        return Object.values(_ncdcState.progress).filter(item=>item.moduleCompleted===true).length;
+    }
+    function ncdcQuizAverage() {
+        const scores=[];
+        Object.values(_ncdcState.progress).forEach(item=>{
+            (item.quizScores||[]).forEach(score=>{if(Number.isFinite(Number(score.score))) scores.push(Number(score.score)/5*100);});
+            if(!scores.length&&Number.isFinite(Number(item.quizScore))) scores.push(Number(item.quizScore)/5*100);
+        });
+        return scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+    }
+    function ncdcModuleStatus(moduleNumber) {
+        const progress=ncdcProgressRecord(moduleNumber), previous=moduleNumber>1&&ncdcProgressRecord(moduleNumber-1).moduleCompleted;
+        if(progress.moduleCompleted) return 'completed';
+        if(moduleNumber>1&&!previous) return 'locked';
+        return (progress.lessonCompletions||[]).length?'in-progress':'available';
+    }
+    function ncdcLessonReady(moduleNumber,order) {
+        return order===1||ncdcLessonDone(ncdcProgressRecord(moduleNumber),order-1);
+    }
+    function ncdcProgressPayload(moduleNumber,extra={}) {
+        const existing=ncdcProgressRecord(moduleNumber);
+        return {...existing,...extra,teacherId:currentUser?.uid||existing.teacherId,moduleNumber:Number(moduleNumber),
+            progressKey:existing.progressKey||`${currentUser?.uid}_${moduleNumber}`,
+            updatedAt:new Date().toISOString()};
+    }
+    async function saveNcdcProgressRecord(record) {
+        const local={...record,updatedAt:new Date().toISOString(),syncStatus:'pending'};
+        _ncdcState.progress[String(record.moduleNumber)]=local;
+        if(!navigator.onLine||offlineSession||!db) {
+            if(Offline) await Offline.queueTeacherProgress(local);
+            renderNcdcProgressCard();
+            return local;
+        }
+        const firestoreRecord={...local,updatedAt:serverTimestamp()};
+        await setDoc(doc(db,'teacher_retooling_progress',local.progressKey),firestoreRecord,{merge:true});
+        _ncdcState.progress[String(record.moduleNumber)]={...local,syncStatus:'synced'};
+        renderNcdcProgressCard();
+        return local;
+    }
+    async function syncNcdcProgressQueue() {
+        if(!navigator.onLine||!Offline||!db||!currentUser?.uid) return;
+        const queued=await Offline.listTeacherProgress(currentUser.uid).catch(()=>[]);
+        for(const item of queued.filter(value=>value.syncStatus!=='synced')) {
+            const copy={...item}; delete copy.progressKey; delete copy.syncStatus; delete copy.queuedAt;
+            await setDoc(doc(db,'teacher_retooling_progress',item.progressKey),{...copy,updatedAt:serverTimestamp()},{merge:true});
+            await Offline.markTeacherProgressSynced(item.progressKey).catch(()=>{});
+        }
+        if(queued.length) await loadNcdcTeacherState();
+    }
+    async function loadNcdcTeacherState() {
+        if(!currentUser?.uid) return _ncdcState;
+        const modules=await syncNcdcCourse();
+        let enrollment=null,rows=[];
+        if(navigator.onLine&&db&&!offlineSession) {
+            try {
+                const [enrollmentSnap,progressSnap]=await Promise.all([
+                    getDoc(doc(db,'teacher_retooling_progress',`${currentUser.uid}_course_enrollment`)),
+                    getDocs(query(collection(db,'teacher_retooling_progress'),where('teacherId','==',currentUser.uid)))
+                ]);
+                enrollment=enrollmentSnap.exists()?enrollmentSnap.data():null;
+                rows=progressSnap.docs.map(item=>({progressKey:item.id,...item.data()})).filter(item=>Number(item.moduleNumber)>0);
+            } catch(error) { console.warn('NCDC progress unavailable:',error); }
+        }
+        if(Offline) {
+            const local=await Offline.listTeacherProgress(currentUser.uid).catch(()=>[]);
+            const merged=new Map(rows.map(item=>[String(item.moduleNumber),item]));
+            local.forEach(item=>{if(item.syncStatus==='pending'||!merged.has(String(item.moduleNumber))) merged.set(String(item.moduleNumber),item);});
+            rows=[...merged.values()];
+        }
+        const progress={};
+        rows.forEach(item=>{progress[String(item.moduleNumber)]={...item,lessonCompletions:item.lessonCompletions||[],quizScores:item.quizScores||[]};});
+        _ncdcState={..._ncdcState,modules,progress,enrollment};
+        renderNcdcProgressCard();
+        return _ncdcState;
+    }
+    async function recalcNcdcEnrollment(teacherId=currentUser?.uid) {
+        if(!teacherId||!db||!navigator.onLine||offlineSession) return null;
+        const rows=await getDocs(query(collection(db,'teacher_retooling_progress'),where('teacherId','==',teacherId)));
+        const progress=rows.docs.map(item=>item.data()).filter(item=>Number(item.moduleNumber)>0);
+        const completed=progress.filter(item=>item.moduleCompleted).length;
+        const scores=progress.flatMap(item=>(item.quizScores||[]).map(score=>Number(score.score)).filter(Number.isFinite));
+        const average=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length/5*100):0;
+        const values={teacherId,modulesCompleted:completed,totalModules:10,cpdPointsEarned:completed*2,cpdPointsTotal:20,averageQuizScore:average,lastActivityAt:serverTimestamp(),updatedAt:serverTimestamp()};
+        await setDoc(doc(db,'teacher_retooling_progress',`${teacherId}_course_enrollment`),values,{merge:true});
+        _ncdcState.enrollment={...(_ncdcState.enrollment||{}),...values};
+        return values;
+    }
+    async function saveNcdcLessonCompletion(moduleNumber,lessonOrder,details={}) {
+        const existing=ncdcProgressRecord(moduleNumber);
+        const list=[...(existing.lessonCompletions||[])].filter(item=>Number(item.lessonOrder)!==Number(lessonOrder));
+        list.push({lessonOrder:Number(lessonOrder),completedAt:new Date().toISOString(),...details});
+        const record=ncdcProgressPayload(moduleNumber,{lessonCompletions:list});
+        await saveNcdcProgressRecord(record);
+        return record;
+    }
+    async function completeNcdcModule(moduleNumber) {
+        const progress=ncdcProgressRecord(moduleNumber);
+        if([1,2,3,4].some(order=>!ncdcLessonDone(progress,order))) {
+            showNotification('Complete all four lessons in order first.','info'); return;
+        }
+        const record=await saveNcdcProgressRecord(ncdcProgressPayload(moduleNumber,{moduleCompleted:true,moduleCompletedAt:new Date().toISOString()}));
+        if(navigator.onLine&&!offlineSession) {
+            await recalcNcdcEnrollment();
+            await recordNcdcModuleEarning(moduleNumber).catch(error=>console.warn('NCDC earning record unavailable:',error));
+        } else {
+            showNotification('Module saved offline. Earnings and CPD will sync when connected.','info');
+        }
+        renderNcdcModuleDetail(moduleNumber);
+        showNcdcCompletion(moduleNumber);
+        await loadNcdcTeacherState();
+    }
+    async function recordNcdcModuleEarning(moduleNumber) {
+        if(!currentUser?.uid||!db) return;
+        const configSnap=await getDoc(doc(db,'settings','ncdcConfig')).catch(()=>null);
+        const amount=Number(configSnap?.data()?.moduleBonusAmount||500);
+        const earningRef=doc(db,'teacherEarnings',`ncdc-${currentUser.uid}-${moduleNumber}`);
+        const userRef=doc(db,'users',currentUser.uid);
+        await db.runTransaction(async transaction=>{
+            const existing=await transaction.get(earningRef);
+            if(existing.exists) return;
+            transaction.set(earningRef,{teacherId:currentUser.uid,moduleNumber:Number(moduleNumber),type:'ncdc_module_completion',amount,paid:false,earnedAt:serverTimestamp()},{merge:true});
+            transaction.set(userRef,{pendingEarnings:increment(amount)},{merge:true});
+        });
+    }
+    function ncdcCourseSummaryHtml() {
+        const completed=ncdcCompletedCount(), percent=Math.round(completed/10*100), enrollment=_ncdcState.enrollment||{};
+        return `<div class="ncdc-summary-stat"><strong>${completed}/10</strong><span>Modules complete</span><div class="ncdc-progress-track"><div class="ncdc-progress-fill" style="width:${percent}%"></div></div></div>
+            <div class="ncdc-summary-stat"><strong>${percent}%</strong><span>Complete</span></div>
+            <div class="ncdc-summary-stat"><strong>${Number(enrollment.cpdPointsEarned??completed*2)}/20</strong><span>CPD points</span></div>
+            <div class="ncdc-summary-stat"><strong>${ncdcQuizAverage()}%</strong><span>Quiz average</span></div>`;
+    }
+    function renderNcdcCourseOverview() {
+        const summary=document.getElementById('ncdcCourseSummary'),body=document.getElementById('ncdcCourseBody');
+        if(summary) summary.innerHTML=ncdcCourseSummaryHtml();
+        if(!body) return;
+        if(!_ncdcState.modules.length) { body.innerHTML='<div class="cbc-status">Course content is not available yet. Ask a Super Admin to seed the course.</div>'; return; }
+        body.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px;"><strong style="color:#4B2E9E;">Course modules</strong><span class="cbc-status">${navigator.onLine?'Online':'Offline — cached content'}</span></div><div class="ncdc-module-grid">${_ncdcState.modules.map(module=>{
+            const status=ncdcModuleStatus(Number(module.moduleNumber)), locked=status==='locked';
+            const label={completed:'✅ Completed','in-progress':'⏳ In progress',available:'🔓 Available',locked:'🔒 Locked'}[status];
+            const action=status==='completed'?'Review':status==='in-progress'?'Continue':'Start module';
+            return `<article class="ncdc-module-card ${locked?'locked':''}"><div class="ncdc-module-top"><div class="ncdc-module-icon">📘</div><div><h3>Module ${module.moduleNumber} · ${escHtml(module.title||'NCDC module')}</h3><div class="ncdc-module-meta">${Number(module.durationMinutes||0)} min · ${(module.lessons||[]).length||4} lessons</div></div></div><span class="ncdc-status-badge ${status}">${label}</span>${locked?`<div class="cbc-status">Complete Module ${Number(module.moduleNumber)-1} first</div>`:''}<button class="ncdc-module-action" data-ncdc-open-module="${module.moduleNumber}" ${locked?'disabled':''}>${action}</button></article>`;
+        }).join('')}</div>`;
+        body.querySelectorAll('[data-ncdc-open-module]').forEach(button=>button.addEventListener('click',()=>openNcdcModule(Number(button.dataset.ncdcOpenModule))));
+    }
+    async function openNcdcCourse() {
+        if(currentUser?.role!=='teacher') return;
+        const modal=document.getElementById('ncdcCourseModal');
+        if(modal) modal.classList.add('show');
+        const body=document.getElementById('ncdcCourseBody'); if(body) body.innerHTML='<div class="cbc-status">Loading course…</div>';
+        await ensureNcdcTeacherEnrollment();
+        await syncNcdcProgressQueue().catch(()=>{});
+        await loadNcdcTeacherState();
+        renderNcdcCourseOverview();
+    }
+    function closeNcdcModal(id) { document.getElementById(id)?.classList.remove('show'); }
+    function openNcdcModule(moduleNumber) {
+        if(ncdcModuleStatus(moduleNumber)==='locked') { showNotification(`Complete Module ${moduleNumber-1} first.`,'info'); return; }
+        _ncdcState.currentModule=moduleNumber;
+        document.getElementById('ncdcCourseModal')?.classList.remove('show');
+        document.getElementById('ncdcModuleDetailModal')?.classList.add('show');
+        renderNcdcModuleDetail(moduleNumber);
+    }
+    function renderNcdcModuleDetail(moduleNumber) {
+        const module=_ncdcState.modules.find(item=>Number(item.moduleNumber)===Number(moduleNumber)), body=document.getElementById('ncdcModuleDetailBody');
+        if(!module||!body) return;
+        const progress=ncdcProgressRecord(moduleNumber), completeCount=[1,2,3,4].filter(order=>ncdcLessonDone(progress,order)).length;
+        document.getElementById('ncdcModuleDetailTitle').textContent=`Module ${moduleNumber}: ${module.title||''}`;
+        document.getElementById('ncdcModuleDetailSubtitle').textContent=`${module.durationMinutes||0} minutes · ${(module.lessons||[]).length||4} sequential lessons`;
+        const lessons=[...(module.lessons||[])].sort((a,b)=>Number(a.lessonOrder)-Number(b.lessonOrder));
+        body.innerHTML=`<div class="ncdc-detail-header"><div><p style="margin:0;color:#596579;font-size:13px;line-height:1.5;">${escHtml(module.description||'Complete the lessons in order to unlock the next module.')}</p><div class="cbc-status" style="margin-top:6px;">${completeCount} of 4 lessons complete</div></div><button class="ncdc-back" id="ncdcBackToModulesBtn" type="button">← Modules</button></div><div>${lessons.map(lesson=>{
+            const order=Number(lesson.lessonOrder), done=ncdcLessonDone(progress,order), ready=ncdcLessonReady(moduleNumber,order);
+            const label=done?'Completed':order===1?'Open':order===2?'Open':order===3?'Take quiz':'Upload evidence';
+            return `<div class="ncdc-lesson"><div class="ncdc-lesson-icon">${NCDC_LESSON_ICONS[lesson.lessonType]||'📘'}</div><div class="ncdc-lesson-copy"><strong>Lesson ${order} — ${escHtml(lesson.title||lesson.lessonType)}</strong><span>${escHtml(lesson.description||'')} ${lesson.lessonType==='quiz'?'· 5 questions · Pass 3/5':''}</span></div>${done?'<span class="ncdc-check" aria-label="Completed">✓</span>':`<button type="button" data-ncdc-lesson="${order}" ${ready?'':'disabled'}>${ready?label:'Locked'}</button>`}</div>`;
+        }).join('')}</div><div style="margin-top:16px;padding-top:12px;border-top:1px solid #eee;"><button id="markNcdcModuleCompleteBtn" class="ncdc-module-action" type="button" ${completeCount===4?'':'disabled'}>${progress.moduleCompleted?'✅ Module completed':'Mark module complete'}</button></div>`;
+        body.querySelector('#ncdcBackToModulesBtn')?.addEventListener('click',()=>{closeNcdcModal('ncdcModuleDetailModal');openNcdcCourse();});
+        body.querySelectorAll('[data-ncdc-lesson]').forEach(button=>button.addEventListener('click',()=>handleNcdcLesson(module,Number(button.dataset.ncdcLesson))));
+        body.querySelector('#markNcdcModuleCompleteBtn')?.addEventListener('click',()=>completeNcdcModule(moduleNumber));
+    }
+    async function handleNcdcLesson(module,order) {
+        const lesson=(module.lessons||[]).find(item=>Number(item.lessonOrder)===order);
+        if(!lesson||!ncdcLessonReady(Number(module.moduleNumber),order)) return;
+        if(lesson.lessonType==='video') {
+            if(!navigator.onLine) { showNotification('Video unavailable offline. Connect to watch.','info'); return; }
+            const videoId=extractVideoId(lesson.contentUrl||'');
+            if(!videoId||videoId.toLowerCase().includes('placeholder')) { showNotification('Video unavailable. Contact admin.','info'); return; }
+            openNcdcVideo(videoId,lesson.title||module.title,{moduleNumber:module.moduleNumber,lessonOrder:order});
+        } else if(lesson.lessonType==='pdf') {
+            if(!lesson.contentUrl) { showNotification('PDF not available. Contact admin.','info'); return; }
+            if(navigator.onLine) openPdfInline(lesson.contentUrl,lesson.title||'NCDC module summary',`ncdc_${module.moduleNumber}`);
+            else showNotification('This PDF is not cached yet. Connect once to open it.','info');
+            setTimeout(async()=>{await saveNcdcLessonCompletion(module.moduleNumber,2,{readDuration:30});renderNcdcModuleDetail(module.moduleNumber);showNotification('✅ PDF lesson marked read','success');},navigator.onLine?30000:0);
+        } else if(lesson.lessonType==='quiz') {
+            openNcdcQuiz(module,lesson);
+        } else if(lesson.lessonType==='practical') {
+            openNcdcPracticalPicker(module);
+        }
+    }
+    function openNcdcQuiz(module,lesson) {
+        const questions=lesson.contentData?.questions||[];
+        if(questions.length<5) { showNotification('Quiz being updated. Try again later.','info'); return; }
+        _ncdcState.quiz={module,lesson,index:0,answers:[],attempts:0};
+        document.getElementById('ncdcModuleDetailModal')?.classList.remove('show');
+        document.getElementById('ncdcQuizModal')?.classList.add('show');
+        renderNcdcQuizQuestion();
+    }
+    function renderNcdcQuizQuestion() {
+        const quiz=_ncdcState.quiz, body=document.getElementById('ncdcQuizBody'); if(!quiz||!body) return;
+        const question=quiz.lesson.contentData.questions[quiz.index], chosen=quiz.answers[quiz.index];
+        document.getElementById('ncdcQuizProgress').textContent=`Question ${quiz.index+1} of ${quiz.lesson.contentData.questions.length}`;
+        body.innerHTML=`<div class="ncdc-progress-track" style="background:#eee;margin-bottom:14px;"><div class="ncdc-progress-fill" style="width:${(quiz.index+1)/5*100}%;background:linear-gradient(90deg,#4B2E9E,#FF8C42);"></div></div><h3 style="color:#332064;font-size:16px;">${escHtml(question.q||question.question||'Question')}</h3><div>${(question.options||[]).map((option,index)=>`<label class="ncdc-quiz-option"><input type="radio" name="ncdcQuizAnswer" value="${index}" ${Number(chosen)===index?'checked':''}> <span>${String.fromCharCode(65+index)}. ${escHtml(option)}</span></label>`).join('')}</div><button id="ncdcQuizNextBtn" class="ncdc-module-action" type="button" ${chosen==null?'disabled':''}>${quiz.index===4?'Finish quiz':'Next question'}</button>`;
+        body.querySelectorAll('input[name="ncdcQuizAnswer"]').forEach(input=>input.addEventListener('change',()=>{quiz.answers[quiz.index]=Number(input.value);document.getElementById('ncdcQuizNextBtn').disabled=false;}));
+        body.querySelector('#ncdcQuizNextBtn').addEventListener('click',()=>{if(quiz.index<4){quiz.index++;renderNcdcQuizQuestion();}else finishNcdcQuiz();});
+    }
+    async function finishNcdcQuiz() {
+        const quiz=_ncdcState.quiz, questions=quiz.lesson.contentData.questions, score=questions.reduce((total,question,index)=>total+(Number(quiz.answers[index])===Number(question.correct)?1:0),0), passed=score>=Number(quiz.lesson.contentData.passingScore||3);
+        const body=document.getElementById('ncdcQuizBody');
+        body.innerHTML=`<div style="text-align:center;"><div style="font-size:42px;">${passed?'✅':'🔄'}</div><h3 style="color:${passed?'#2e7d32':'#a36100'};">You scored ${score}/5</h3><p class="cbc-status">${passed?'You passed the quiz.':'You need at least 3/5. Review the lesson and try again.'}</p></div><div>${questions.map((question,index)=>`<div style="padding:8px;border-bottom:1px solid #eee;font-size:12px;"><strong>${index+1}. ${escHtml(question.q||question.question||'')}</strong><div style="color:${Number(quiz.answers[index])===Number(question.correct)?'#2e7d32':'#c62828'};">${Number(quiz.answers[index])===Number(question.correct)?'Correct':'Correct answer: '+escHtml(question.options?.[question.correct]||'')}</div></div>`).join('')}</div><button id="ncdcQuizResultBtn" class="ncdc-module-action">${passed?'✅ Return to module':'🔄 Retake quiz'}</button>`;
+        document.getElementById('ncdcQuizResultBtn').onclick=async()=>{
+            if(passed) {
+                const progress=ncdcProgressRecord(quiz.module.moduleNumber),scores=[...(progress.quizScores||[])].filter(item=>Number(item.lessonOrder)!==3);
+                scores.push({lessonOrder:3,score,passed:true,completedAt:new Date().toISOString()});
+                await saveNcdcLessonCompletion(quiz.module.moduleNumber,3,{score,passed:true});
+                await saveNcdcProgressRecord(ncdcProgressPayload(quiz.module.moduleNumber,{quizScores:scores,quizScore:score}));
+            } else if(++quiz.attempts>=3) showNotification('Maximum attempts reached for this session.','info');
+            else {quiz.index=0;quiz.answers=[];renderNcdcQuizQuestion();return;}
+            closeNcdcModal('ncdcQuizModal');document.getElementById('ncdcModuleDetailModal')?.classList.add('show');renderNcdcModuleDetail(quiz.module.moduleNumber);
+        };
+    }
+    function openNcdcPracticalPicker(module) {
+        const input=document.createElement('input'); input.type='file'; input.accept='image/*,.pdf,.doc,.docx'; input.click();
+        input.onchange=async()=>{
+            const file=input.files?.[0]; if(!file) return;
+            const max=500*1024;
+            if(file.size>max&&file.type.startsWith('image/')) showNotification('Large photo selected; it will be compressed before upload.','info');
+            try {
+                let fileToUpload=file;
+                if(!navigator.onLine||!storage) {
+                    const data=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.readAsDataURL(file);});
+                    await saveNcdcLessonCompletion(module.moduleNumber,4,{practicalName:file.name,practicalSize:file.size,practicalData:data});
+                    showNotification('✅ Practical saved offline — upload will retry when connected','success');
+                } else {
+                    const path=`teacher_retooling/${currentUser.uid}/module_${module.moduleNumber}_practical_${Date.now()}_${file.name.replace(/[^a-z0-9_.-]/gi,'_')}`;
+                    const task=uploadBytesResumable(storageRef(storage,path),fileToUpload);
+                    await new Promise((resolve,reject)=>task.on('state_changed',null,reject,resolve));
+                    const url=await getDownloadURL(task.snapshot.ref);
+                    await saveNcdcLessonCompletion(module.moduleNumber,4,{practicalUrl:url,practicalSize:file.size,practicalName:file.name});
+                    showNotification('✅ Practical uploaded','success');
+                }
+                renderNcdcModuleDetail(module.moduleNumber);
+            } catch(error) { showNotification('Save failed. Your practical can be retried when connected.','error'); }
+        };
+    }
+    function showNcdcCompletion(moduleNumber) {
+        const next=_ncdcState.modules.find(item=>Number(item.moduleNumber)===Number(moduleNumber)+1), final=moduleNumber===10;
+        const body=document.getElementById('ncdcCelebrationBody'); if(!body) return;
+        body.innerHTML=`<div class="trophy">${final?'🏆':'🎉'}</div><h2 id="ncdcCelebrationTitle" style="color:#4B2E9E;">${final?'Course complete!':`Module ${moduleNumber} complete!`}</h2><p>${final?'You completed all 10 modules and earned 20 CPD points.':'You earned +2 CPD points. The next module is now unlocked.'}</p>${final?'<button id="generateNcdcCertificateBtn" class="ncdc-module-action">Generate certificate</button>':next?`<button id="startNextNcdcModuleBtn" class="ncdc-module-action">Start Module ${next.moduleNumber}</button>`:''}<button id="closeNcdcCelebrationBtn" class="ncdc-module-action secondary">Close</button>`;
+        document.getElementById('ncdcCelebrationModal')?.classList.add('show');
+        document.getElementById('closeNcdcCelebrationBtn').onclick=()=>closeNcdcModal('ncdcCelebrationModal');
+        document.getElementById('startNextNcdcModuleBtn')?.addEventListener('click',()=>{closeNcdcModal('ncdcCelebrationModal');openNcdcModule(next.moduleNumber);});
+        document.getElementById('generateNcdcCertificateBtn')?.addEventListener('click',generateNcdcCertificate);
+    }
+    function openNcdcVideo(videoId,title,lessonInfo) {
+        const modal=document.getElementById('videoModal');
+        if(!modal) return;
+        _ncdcActiveVideoLesson=lessonInfo||null;
+        document.getElementById('currentVideoTitle').innerText=title||'NCDC lesson';
+        document.getElementById('videoTitle').innerHTML=`<i class="fab fa-youtube"></i> ${escHtml(title||'NCDC lesson')}`;
+        document.getElementById('feedbackSection').style.display='none';
+        modal.classList.add('show');
+        createYTPlayer(videoId);
+    }
+    function renderNcdcProgressCard() {
+        const card=document.getElementById('ncdcProgressCard'), body=document.getElementById('ncdcProgressCardBody'), badge=document.getElementById('ncdcCourseProgressBadge');
+        if(!card||!body||!currentUser?.uid) return;
+        const completed=ncdcCompletedCount(), percent=Math.round(completed/10*100), status=completed===10?'Complete':completed?'In progress':'Not started';
+        if(badge){badge.textContent=`${completed}/10`;badge.style.display='inline-block';}
+        const statusEl=document.getElementById('ncdcProgressCardStatus'); if(statusEl) statusEl.textContent=status;
+        body.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:12px;color:#5d6677;"><span>${completed} of 10 modules</span><strong style="color:#4B2E9E;">${percent}%</strong></div><div class="ncdc-progress-track" style="background:#e9e5f3;margin-top:6px;"><div class="ncdc-progress-fill" style="width:${percent}%;background:linear-gradient(90deg,#4B2E9E,#FF8C42);"></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:#6a7484;"><span>⭐ ${Number((_ncdcState.enrollment||{}).cpdPointsEarned??completed*2)}/20 CPD points</span><span>📝 ${ncdcQuizAverage()}% quiz average</span><span>💰 UGX ${(completed*500).toLocaleString()} earned</span></div>`;
+        if(completed===10) loadNcdcCertificate().catch(()=>{});
+    }
+    async function loadNcdcCertificate() {
+        if(!currentUser?.uid||!db) return null;
+        try {
+            const snap=await getDocs(query(collection(db,'ncdc_cpd_certificates'),where('teacherId','==',currentUser.uid),where('status','==','active'),limit(1)));
+            if(snap.empty) { document.getElementById('ncdcCertificateCard').style.display='none'; return null; }
+            const certificate={id:snap.docs[0].id,...snap.docs[0].data()}; _ncdcState.certificate=certificate;
+            const card=document.getElementById('ncdcCertificateCard'),body=document.getElementById('ncdcCertificateCardBody');
+            if(card&&body){card.style.display='block';body.innerHTML=`${escHtml(certificate.teacherName||currentUser.name||'Teacher')} · Issued ${ncdcDateText(certificate.issuedAt)} · Certificate ID <strong>${escHtml(certificate.certificateId||certificate.id)}</strong>`;}
+            return certificate;
+        } catch(error) { return null; }
+    }
+    async function generateNcdcCertificate() {
+        if(ncdcCompletedCount()<10) return showNotification('Complete all 10 modules before generating a certificate.','info');
+        if(!db||!currentUser?.uid) return showNotification('Certificate service is unavailable.','error');
+        const existing=await loadNcdcCertificate();
+        if(existing) { showNotification('Your active certificate is ready to download.','info'); return downloadNcdcCertificate(existing); }
+        const certificateId=`NCDC-${String(currentUser.uid).slice(0,8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+        const verificationUrl=`${location.origin}${location.pathname}?ncdcCertificate=${encodeURIComponent(certificateId)}`;
+        const certificate={certificateId,teacherId:currentUser.uid,teacherName:currentUser.name||currentUser.email||'APSHULE teacher',courseTitle:'NCDC Teacher Retooling Course',modulesCompleted:10,cpdPoints:20,status:'active',issuedAt:serverTimestamp(),verificationUrl,createdAt:serverTimestamp(),version:1};
+        await setDoc(doc(db,'ncdc_cpd_certificates',certificateId),certificate);
+        await loadNcdcCertificate();
+        showNotification('✅ Certificate generated.','success');
+        downloadNcdcCertificate({...certificate,issuedAt:new Date().toISOString()});
+    }
+    async function downloadNcdcCertificate(certificate=_ncdcState.certificate) {
+        const pdfApi=window.jspdf;
+        if(!pdfApi?.jsPDF||!certificate) return showNotification('PDF exporter is still loading. Please try again.','info');
+        const pdf=new pdfApi.jsPDF({orientation:'landscape',unit:'mm',format:'a4'}), width=pdf.internal.pageSize.getWidth(),height=pdf.internal.pageSize.getHeight();
+        pdf.setFillColor(250,248,255);pdf.rect(0,0,width,height,'F');pdf.setDrawColor(75,46,158);pdf.setLineWidth(2);pdf.rect(10,10,width-20,height-20);
+        pdf.setTextColor(75,46,158);pdf.setFontSize(28);pdf.text('APSHULE',width/2,38,{align:'center'});pdf.setFontSize(20);pdf.text('CERTIFICATE OF COMPLETION',width/2,55,{align:'center'});
+        pdf.setTextColor(50,32,100);pdf.setFontSize(13);pdf.text('This certifies that',width/2,76,{align:'center'});pdf.setFontSize(25);pdf.text(certificate.teacherName||currentUser?.name||'Teacher',width/2,91,{align:'center'});pdf.setFontSize(13);pdf.text('has successfully completed the',width/2,108,{align:'center'});pdf.setFontSize(18);pdf.text('NCDC Teacher Retooling Course',width/2,121,{align:'center'});pdf.setFontSize(12);pdf.text('10 modules  •  20 CPD points  •  NCDC / UNEB aligned',width/2,136,{align:'center'});pdf.setFontSize(10);pdf.text(`Certificate ID: ${certificate.certificateId||certificate.id||''}`,width/2,153,{align:'center'});pdf.text(`Issued: ${ncdcDateText(certificate.issuedAt||new Date())}`,width/2,161,{align:'center'});
+        const qr=await qrDataUrl(certificate.verificationUrl||'');if(qr) try{pdf.addImage(qr,'PNG',width-52,120,30,30);}catch(_){}
+        pdf.save(`APSHULE-NCDC-${certificate.certificateId||'certificate'}.pdf`);
+    }
+    async function copyNcdcCertificateLink() {
+        const certificate=_ncdcState.certificate;if(!certificate) return;
+        try { await navigator.clipboard.writeText(certificate.verificationUrl);showNotification('Verification link copied.','success'); } catch(_) { showNotification(certificate.verificationUrl,'info'); }
+    }
+    function printNcdcCertificate() { const certificate=_ncdcState.certificate;if(!certificate)return; const win=window.open('','_blank');win.document.write(`<html><head><title>APSHULE certificate</title></head><body style="font:18px system-ui;text-align:center;padding:100px;"><h1>APSHULE</h1><h2>Certificate of Completion</h2><p>This certifies that <strong>${escHtml(certificate.teacherName||'Teacher')}</strong> completed the NCDC Teacher Retooling Course.</p><p>${escHtml(certificate.certificateId||'')}</p></body></html>`);win.document.close();win.print(); }
+    async function shareNcdcCertificate() {
+        const certificate=_ncdcState.certificate;if(!certificate)return;
+        if(navigator.share) await navigator.share({title:'My APSHULE NCDC certificate',text:'I completed the NCDC Teacher Retooling Course.',url:certificate.verificationUrl}).catch(()=>{});
+        else copyNcdcCertificateLink();
+    }
+    async function verifyNcdcCertificateFromUrl() {
+        const certificateId=new URLSearchParams(location.search).get('ncdcCertificate');
+        if(!certificateId||!db) return;
+        try {
+            const snap=await getDoc(doc(db,'ncdc_cpd_certificates',certificateId)), certificate=snap.exists()?snap.data():null;
+            const body=document.getElementById('ncdcCelebrationBody');if(!body)return;
+            body.innerHTML=certificate&&certificate.status==='active'
+                ? `<div class="trophy">✅</div><h2 id="ncdcCelebrationTitle" style="color:#2e7d32;">Certificate verified</h2><p><strong>${escHtml(certificate.teacherName||'APSHULE teacher')}</strong> completed the NCDC Teacher Retooling Course.</p><p class="cbc-status">Issued ${ncdcDateText(certificate.issuedAt)} · ${escHtml(certificate.certificateId||certificateId)}</p><button id="closeNcdcCelebrationBtn" class="ncdc-module-action secondary">Close</button>`
+                : `<div class="trophy">⚠️</div><h2 id="ncdcCelebrationTitle" style="color:#c62828;">Certificate not valid</h2><p>This certificate is missing, revoked, or no longer active.</p><button id="closeNcdcCelebrationBtn" class="ncdc-module-action secondary">Close</button>`;
+            document.getElementById('ncdcCelebrationModal')?.classList.add('show');
+            document.getElementById('closeNcdcCelebrationBtn').onclick=()=>closeNcdcModal('ncdcCelebrationModal');
+        } catch(error) { console.warn('NCDC certificate verification unavailable:',error); }
+    }
+    if(typeof setTimeout==='function') setTimeout(verifyNcdcCertificateFromUrl,1200);
+    let _ncdcAdminRows=[];
+    async function loadNcdcAdminRows() {
+        if(!db) return [];
+        const snap=await getDocs(query(collection(db,'teacher_retooling_progress'),where('type','==','course_enrollment')));
+        const rows=snap.docs.map(item=>({id:item.id,...item.data()}));
+        _ncdcAdminRows=rows;return rows;
+    }
+    async function renderNcdcAdminOverview() {
+        const container=document.getElementById('ncdcAdminOverview');if(!container||currentUser?.role!=='superadmin')return;
+        container.innerHTML='<div class="cbc-status">Loading teacher progress…</div>';
+        try {
+            const rows=await loadNcdcAdminRows(), total=rows.length, complete=rows.filter(row=>Number(row.modulesCompleted)===10).length, avg=total?Math.round(rows.reduce((sum,row)=>sum+Number(row.modulesCompleted||0),0)/total):0;
+            container.innerHTML=`<div class="compliance-metrics"><div class="compliance-metric"><strong>${total}</strong><span>Enrolled teachers</span></div><div class="compliance-metric"><strong>${complete}</strong><span>Course complete</span></div><div class="compliance-metric"><strong>${avg}/10</strong><span>Average modules</span></div><div class="compliance-metric"><strong>${complete*20}</strong><span>CPD points issued</span></div></div><table class="ncdc-report-table"><thead><tr><th>Teacher</th><th>Progress</th><th>CPD</th><th>Updated</th><th></th></tr></thead><tbody>${rows.map(row=>`<tr><td>${escHtml(row.teacherName||row.teacherId||'Teacher')}</td><td>${Number(row.modulesCompleted||0)}/10</td><td>${Number(row.cpdPointsEarned||0)}/20</td><td>${ncdcDateText(row.updatedAt||row.lastActivityAt)}</td><td><button class="compliance-link" data-ncdc-teacher="${escHtml(row.teacherId)}">View</button></td></tr>`).join('')||'<tr><td colspan="5">No enrollments yet.</td></tr>'}</tbody></table>`;
+            container.querySelectorAll('[data-ncdc-teacher]').forEach(button=>button.onclick=()=>openTeacherNcdcProgress(button.dataset.ncdcTeacher));
+        } catch(error) {container.innerHTML=`<div class="cbc-status" style="color:#c62828;">Could not load teacher progress: ${escHtml(error.message||error)}</div>`;}
+    }
+    async function openTeacherNcdcProgress(teacherId) {
+        const modal=document.getElementById('teacherProgressModal'),body=document.getElementById('teacherProgressBody');if(!modal||!body)return;
+        modal.classList.add('show');body.innerHTML='<div class="cbc-status">Loading…</div>';
+        try {
+            const snap=await getDocs(query(collection(db,'teacher_retooling_progress'),where('teacherId','==',teacherId)));
+            const rows=snap.docs.map(item=>item.data()), enrollment=rows.find(row=>row.type==='course_enrollment')||{}, modules=rows.filter(row=>Number(row.moduleNumber)>0).sort((a,b)=>Number(a.moduleNumber)-Number(b.moduleNumber));
+            const certificates=await getDocs(query(collection(db,'ncdc_cpd_certificates'),where('teacherId','==',teacherId))).catch(()=>({docs:[]}));
+            const activeCertificate=certificates.docs.find(item=>item.data().status==='active');
+            const teacher=allTeachers?.find(item=>item.uid===teacherId);document.getElementById('teacherProgressTitle').textContent=teacher?.name||enrollment.teacherName||'Teacher progress';document.getElementById('teacherProgressSubtitle').textContent=teacher?.email||teacherId;
+            body.innerHTML=`<div class="compliance-metrics"><div class="compliance-metric"><strong>${Number(enrollment.modulesCompleted||modules.filter(row=>row.moduleCompleted).length)}/10</strong><span>Modules</span></div><div class="compliance-metric"><strong>${Number(enrollment.cpdPointsEarned||0)}/20</strong><span>CPD points</span></div><div class="compliance-metric"><strong>UGX ${(modules.filter(row=>row.moduleCompleted).length*500).toLocaleString()}</strong><span>Earned</span></div></div><div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>Certificate</strong><div class="cbc-status">${activeCertificate?`Active · ${escHtml(activeCertificate.data().certificateId||activeCertificate.id)} <button class="compliance-link" id="revokeNcdcCertificateBtn">Revoke</button>`:'No active certificate'}</div><button class="compliance-action" id="regenerateNcdcCertificateBtn" style="margin-top:6px;">Regenerate certificate</button></div><table class="ncdc-report-table"><thead><tr><th>Module</th><th>Lessons</th><th>Quiz</th><th>Status</th><th></th></tr></thead><tbody>${modules.map(row=>`<tr><td>Module ${row.moduleNumber}</td><td>${(row.lessonCompletions||[]).length}/4</td><td>${row.quizScore==null?'—':row.quizScore+'/5'}</td><td>${row.moduleCompleted?'✅ Complete':'In progress'}</td><td>${row.moduleCompleted?'<button class="compliance-link" data-revoke-module="'+row.moduleNumber+'">Reset</button>':''}</td></tr>`).join('')||'<tr><td colspan="5">No module progress.</td></tr>'}</tbody></table>`;
+            body.querySelector('#revokeNcdcCertificateBtn')?.addEventListener('click',async()=>{if(!confirm('Revoke this certificate?'))return;await updateDoc(doc(db,'ncdc_cpd_certificates',activeCertificate.id),{status:'revoked',revokedAt:serverTimestamp(),revokedBy:currentUser.uid});showNotification('Certificate revoked.','success');openTeacherNcdcProgress(teacherId);});
+            body.querySelector('#regenerateNcdcCertificateBtn')?.addEventListener('click',async()=>{if(!confirm('Issue a replacement certificate?'))return;if(activeCertificate)await updateDoc(doc(db,'ncdc_cpd_certificates',activeCertificate.id),{status:'revoked',revokedAt:serverTimestamp(),revokedBy:currentUser.uid});const id=`NCDC-${String(teacherId).slice(0,8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;await setDoc(doc(db,'ncdc_cpd_certificates',id),{certificateId:id,teacherId,teacherName:teacher?.name||enrollment.teacherName||'Teacher',courseTitle:'NCDC Teacher Retooling Course',modulesCompleted:10,cpdPoints:20,status:'active',issuedAt:serverTimestamp(),verificationUrl:`${location.origin}${location.pathname}?ncdcCertificate=${id}`,createdAt:serverTimestamp(),version:1});showNotification('Replacement certificate issued.','success');openTeacherNcdcProgress(teacherId);});
+            body.querySelectorAll('[data-revoke-module]').forEach(button=>button.onclick=async()=>{if(!confirm('Reset this module progress?'))return;await updateDoc(doc(db,'teacher_retooling_progress',`${teacherId}_${button.dataset.revokeModule}`),{moduleCompleted:false,moduleCompletedAt:null},{merge:true});showNotification('Module progress reset.','success');openTeacherNcdcProgress(teacherId);});
+        }catch(error){body.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(error.message||error)}</div>`;}
+    }
+    async function openNcdcCourseEditor() {
+        const modal=document.getElementById('editCourseContentModal'),body=document.getElementById('editCourseContentBody');if(!modal||!body)return;
+        modal.classList.add('show');body.innerHTML='<div class="cbc-status">Loading course content…</div>';
+        const state=await loadNcdcTeacherState().catch(()=>_ncdcState),modules=state.modules||[];
+        body.innerHTML=`<p class="cbc-status">Changes apply to new and existing teacher lesson viewers. Keep video URLs public or accessible to enrolled teachers.</p><div>${modules.map(module=>`<div class="ncdc-editor-module"><button type="button" data-editor-module="${module.moduleNumber}">Module ${module.moduleNumber}: ${escHtml(module.title||'')}</button><div class="ncdc-editor-lessons" id="editorModule${module.moduleNumber}">${(module.lessons||[]).map(lesson=>`<div class="ncdc-editor-lesson" data-editor-lesson="${lesson.docId||lesson.id}"><strong>${escHtml(lesson.title||lesson.lessonType)}</strong><label>Title</label><input data-field="title" value="${escHtml(lesson.title||'')}"><label>Description</label><textarea data-field="description">${escHtml(lesson.description||'')}</textarea><label>Video / PDF URL</label><input data-field="contentUrl" value="${escHtml(lesson.contentUrl||'')}"><button type="button" class="ncdc-module-action secondary" data-save-lesson="${lesson.docId||lesson.id}" style="margin-top:8px;">Save lesson</button></div>`).join('')}</div></div>`).join('')}</div>`;
+        body.querySelectorAll('[data-editor-module]').forEach(button=>button.onclick=()=>document.getElementById(`editorModule${button.dataset.editorModule}`).classList.toggle('open'));
+        body.querySelectorAll('[data-save-lesson]').forEach(button=>button.onclick=async()=>{const row=button.closest('[data-editor-lesson]'),payload={title:row.querySelector('[data-field="title"]').value.trim(),description:row.querySelector('[data-field="description"]').value.trim(),contentUrl:row.querySelector('[data-field="contentUrl"]').value.trim(),updatedAt:serverTimestamp(),updatedBy:currentUser.uid};await setDoc(doc(db,'ncdc_module_lessons',button.dataset.saveLesson),payload,{merge:true});showNotification('Lesson saved.','success');});
+    }
+    function exportNcdcCsv() {
+        const header=['Teacher','Teacher ID','Modules completed','CPD points','Average quiz','Last activity'],rows=_ncdcAdminRows.map(row=>[row.teacherName||'',row.teacherId||'',row.modulesCompleted||0,row.cpdPointsEarned||0,row.averageQuizScore||0,ncdcDateText(row.lastActivityAt)]),csv=[header,...rows].map(row=>row.map(value=>`"${String(value).replace(/"/g,'""')}"`).join(',')).join('\n'),blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download='APSHULE-NCDC-progress.csv';anchor.click();URL.revokeObjectURL(url);
+    }
+    function exportNcdcPdf() {
+        const pdfApi=window.jspdf;if(!pdfApi?.jsPDF)return showNotification('PDF exporter is still loading.','info');
+        const pdf=new pdfApi.jsPDF(),lines=['APSHULE NCDC Teacher Progress Report','',..._ncdcAdminRows.map(row=>`${row.teacherName||row.teacherId||'Teacher'} — ${row.modulesCompleted||0}/10 modules — ${row.cpdPointsEarned||0}/20 CPD — ${ncdcDateText(row.lastActivityAt)}`)];pdf.setFontSize(16);pdf.text(lines,14,20);pdf.save('APSHULE-NCDC-progress.pdf');
+    }
+    async function renderSchoolNcdcProgress() {
+        const panel=document.getElementById('schoolNcdcProgressPanel');if(!panel||currentUser?.role!=='school')return;
+        panel.style.display='block';panel.innerHTML='<div class="cbc-status">Loading school teachers…</div>';
+        try {
+            const teacherRows=(allTeachers||[]).filter(teacher=>teacher.schoolId&&currentUser.schoolId&&teacher.schoolId===currentUser.schoolId);
+            const data=await Promise.all(teacherRows.map(async teacher=>{const snap=await getDocs(query(collection(db,'teacher_retooling_progress'),where('teacherId','==',teacher.uid)));const rows=snap.docs.map(item=>item.data());return {teacher,modules:rows.filter(row=>Number(row.moduleNumber)>0).filter(row=>row.moduleCompleted).length,points:(rows.find(row=>row.type==='course_enrollment')||{}).cpdPointsEarned||0};}));
+            panel.innerHTML=`<table class="ncdc-report-table"><thead><tr><th>Teacher</th><th>Progress</th><th>CPD</th><th></th></tr></thead><tbody>${data.map(row=>`<tr><td>${escHtml(row.teacher.name||row.teacher.email||'Teacher')}</td><td>${row.modules}/10</td><td>${row.points}/20</td><td><button class="compliance-link" data-school-teacher="${escHtml(row.teacher.uid)}">Details</button></td></tr>`).join('')||'<tr><td colspan="4">No teachers found for this school.</td></tr>'}</tbody></table>`;
+            panel.querySelectorAll('[data-school-teacher]').forEach(button=>button.onclick=()=>openTeacherNcdcProgress(button.dataset.schoolTeacher));
+        }catch(error){panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(error.message||error)}</div>`;}
+    }
     const DEFAULT_SUBSCRIPTION_PLANS = [
         { id:'default-daily', name:'Daily', price:500, duration:'1 day' },
         { id:'default-weekly', name:'Weekly', price:3000, duration:'1 week' },
@@ -5108,12 +5709,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('closeProjectDetailBtn').onclick = () => closeProjectModal('projectDetailModal');
         document.getElementById('openScenarioPracticeBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('practice'));
         document.getElementById('openCompetencyBtn')?.addEventListener('click', ()=>renderStudentCbcPanel('passport'));
-        document.getElementById('openRetoolingBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('modules'));
+         document.getElementById('openRetoolingBtn')?.addEventListener('click', openNcdcCourse);
         document.getElementById('openLessonPlanBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('lesson-plan'));
         document.getElementById('openTriangulationBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('triangulation'));
         document.getElementById('openCurriculumLinkerBtn')?.addEventListener('click', ()=>renderTeacherCbcPanel('curriculum'));
         document.getElementById('refreshTeacherProjectsBtn')?.addEventListener('click', loadTeacherProjectQueue);
-        if(teacher) loadTeacherProjectQueue();
+         if(teacher) {
+             loadTeacherProjectQueue();
+             loadNcdcTeacherState().then(()=>loadNcdcCertificate()).catch(error=>console.warn('NCDC dashboard unavailable:',error));
+         }
         if(!student && studentSection) studentSection.style.display = 'none';
         if(!teacher) document.querySelector('.cbc-card[style*="FFB74D"]')?.remove();
          const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
@@ -5139,7 +5743,24 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
              catch(error) { if(status) status.textContent=`Could not seed course: ${error.message||error}`; }
              finally { if(button) button.disabled=false; }
          });
+          document.getElementById('editNcdcCourseBtn')?.addEventListener('click',openNcdcCourseEditor);
+          document.getElementById('refreshNcdcAdminOverviewBtn')?.addEventListener('click',renderNcdcAdminOverview);
+          document.getElementById('exportNcdcCsvBtn')?.addEventListener('click',exportNcdcCsv);
+          document.getElementById('exportNcdcPdfBtn')?.addEventListener('click',exportNcdcPdf);
+          document.getElementById('schoolNcdcProgressBtn')?.addEventListener('click',renderSchoolNcdcProgress);
+          document.getElementById('closeNcdcCourseBtn')?.addEventListener('click',()=>closeNcdcModal('ncdcCourseModal'));
+          document.getElementById('closeNcdcModuleBtn')?.addEventListener('click',()=>closeNcdcModal('ncdcModuleDetailModal'));
+          document.getElementById('closeNcdcQuizBtn')?.addEventListener('click',()=>closeNcdcModal('ncdcQuizModal'));
+          document.getElementById('closeNcdcCelebrationBtn')?.addEventListener('click',()=>closeNcdcModal('ncdcCelebrationModal'));
+          document.getElementById('closeEditCourseContentBtn')?.addEventListener('click',()=>closeNcdcModal('editCourseContentModal'));
+          document.getElementById('closeTeacherProgressBtn')?.addEventListener('click',()=>closeNcdcModal('teacherProgressModal'));
+          document.getElementById('downloadNcdcCertificateBtn')?.addEventListener('click',()=>downloadNcdcCertificate());
+          document.getElementById('copyNcdcCertificateLinkBtn')?.addEventListener('click',copyNcdcCertificateLink);
+          document.getElementById('shareNcdcCertificateBtn')?.addEventListener('click',shareNcdcCertificate);
+          document.getElementById('printNcdcCertificateBtn')?.addEventListener('click',printNcdcCertificate);
          if(currentUser?.role==='superadmin') { loadCurriculumLinksAdmin(); renderCurriculumRequests(); }
+         if(currentUser?.role==='superadmin') renderNcdcAdminOverview();
+         if(currentUser?.role==='school') renderSchoolNcdcProgress();
         if(currentUser?.role==='superadmin') renderSuperProjectOverview();
     }
 
@@ -6349,6 +6970,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         loadTeacherVideoQuestions();
         loadMyLessonRequests();
         loadTeacherWeakAreas();
+        loadNcdcTeacherState().then(()=>loadNcdcCertificate()).catch(error=>console.warn('NCDC progress load failed:',error));
     }
 
     function loadTeacherEarnings() {
