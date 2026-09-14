@@ -475,10 +475,9 @@ service cloud.firestore {
     match /farm_produce/{produceId} {
       allow read: if isFarmManager() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
-      allow update: if isFarmManager() && sameFarm(resource.data.farmId)
-        && (resource.data.createdAt is timestamp
-          ? request.time < resource.data.createdAt + duration.value(7, 'd')
-          : true);
+      // Produce records are append-only in the current UI; corrections use a
+      // new audited record rather than mutating historical financial data.
+      allow update: if false;
       allow delete: if false;
     }
     match /farm_sales/{saleId} {
@@ -493,10 +492,8 @@ service cloud.firestore {
       allow read: if isFarmManager() && sameFarm(resource.data.farmId);
       allow create: if isFarmManager() && sameFarm(request.resource.data.farmId)
         && request.resource.data.amount >= 0;
-      allow update: if isFarmManager() && sameFarm(resource.data.farmId)
-        && (resource.data.createdAt is timestamp
-          ? request.time < resource.data.createdAt + duration.value(7, 'd')
-          : true);
+      // Expense records are append-only so historical costs cannot be changed.
+      allow update: if false;
       allow delete: if false;
     }
     match /farm_lost_animals/{lostAnimalId} {
