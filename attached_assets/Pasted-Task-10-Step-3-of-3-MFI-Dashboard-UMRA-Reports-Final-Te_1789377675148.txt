@@ -1,0 +1,606 @@
+Task 10 — Step 3 of 3: MFI Dashboard + UMRA Reports + Final Testing
+
+CONTEXT:
+- Step 1 built: MFI foundation, Customer registration, Collateral capture, Auto-scoring (0-100)
+- Step 2 built: Manager Review workflow, Verification stages, Document storage, Valuer/Legal registries
+- Step 3 completes Task 10 with: MFI Dashboard, UMRA compliance reports, and full regression testing
+
+GOAL OF STEP 3:
+- Build a comprehensive MFI Dashboard for Loan Director (management view)
+- Generate all UMRA-compliant reports
+- Add portfolio monitoring and risk analytics
+- Complete Task 10 with full regression (Tasks 1-10)
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: LOAN DIRECTOR DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Add new role: Loan Director (already created in Step 1 role list)
+
+When a Loan Director logs in:
+
+New bottom nav for Loan Director:
+[🏠 Home] [📊 Portfolio] [⚠️ Risk] [📈 Reports] [👤 Account]
+
+Home screen shows:
+
+┌─────────────────────────────────────────┐
+│ 🏦 {MFI Name} — Director View            │
+│ Welcome, {directorName}                  │
+├─────────────────────────────────────────┤
+│ 📊 KEY METRICS                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Total    │ │ Total    │ │ Collateral│ │
+│ │Customers │ │Collateral│ │Coverage  │ │
+│ │ 1,245    │ │ Value    │ │ Ratio    │ │
+│ │          │ │ UGX 45M  │ │ 185%     │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Pending  │ │ Approved │              │
+│ │ Reviews  │ │ This     │              │
+│ │ 12       │ │ Month:45 │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 📈 TRENDS (Last 6 Months)               │
+│ [Line chart: Collateral volume]         │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [📊 Full Portfolio] [⚠️ Risk Alerts]    │
+│ [📥 UMRA Report] [📈 Performance]       │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 3 collateral expiring soon            │
+│ • 2 loans pending valuation >7 days     │
+│ • 1 duplicate flagged (similar to       │
+│   previous customer)                     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART B: FULL PORTFOLIO VIEW
+═══════════════════════════════════════════════════════════════
+
+When Director taps [📊 Portfolio] or Portfolio tab:
+
+Full-screen modal (id="portfolioModal") with tabs:
+
+TAB 1 — SUMMARY
+- Total customers: X
+- Total collateral items: X
+- Total collateral value: UGX X
+- Average score: X/100
+- Total loans approved this month: X
+- Portfolio growth vs last month: +X%
+
+TAB 2 — BY TYPE
+Breakdown by collateral type:
+┌─────────────────────────────────────────┐
+│ 🏠 Land: 45 items · UGX 22M (49%)       │
+│ 🚗 Vehicles: 32 items · UGX 15M (33%)   │
+│ 👥 Guarantors: 28 items · UGX 5M (11%)  │
+│ 💼 Business: 15 items · UGX 2M (5%)     │
+│ 🏦 Bank Guarantees: 5 · UGX 1M (2%)    │
+└─────────────────────────────────────────┘
+
+TAB 3 — BY SCORE GRADE
+┌─────────────────────────────────────────┐
+│ ⭐ Excellent (80-100): 60 items (48%)   │
+│ ✅ Good (60-79):      42 items (34%)    │
+│ 🟡 Fair (40-59):      15 items (12%)    │
+│ 🔴 Weak (0-39):        8 items (6%)     │
+└─────────────────────────────────────────┘
+
+TAB 4 — BY BRANCH (if MFI has multiple)
+┌─────────────────────────────────────────┐
+│ Kampala Branch: 65 items · UGX 30M      │
+│ Wakiso Branch: 45 items · UGX 12M       │
+│ Mukono Branch: 20 items · UGX 3M        │
+└─────────────────────────────────────────┘
+
+TAB 5 — BY AGE
+- 0-30 days: X items
+- 31-90 days: X items
+- 91-180 days: X items
+- 180+ days: X items
+
+TAB 6 — TOP CUSTOMERS
+- Top 10 customers by collateral value
+- Show name, total value, item count
+
+═══════════════════════════════════════════════════════════════
+PART C: RISK ANALYTICS VIEW
+═══════════════════════════════════════════════════════════════
+
+When Director taps [⚠️ Risk Alerts]:
+
+Full-screen modal (id="riskAnalyticsModal") with tabs:
+
+TAB 1 — VALUATION GAPS
+Loans where collateral value is BELOW 80% of loan amount:
+
+┌─────────────────────────────────────────┐
+│ ⚠️ VALUATION GAPS (Risk Level: HIGH)     │
+├─────────────────────────────────────────┤
+│ Customer: John Doe                       │
+│ Loan Amount: UGX 50M                     │
+│ Collateral Value: UGX 30M                │
+│ Coverage: 60% ⚠️                         │
+│ [Request More Collateral]                │
+└─────────────────────────────────────────┘
+
+Note: Loan data comes from Task 14 (Full MFI System). For now, 
+track loans in a temporary field on mfi_customers or skip this tab 
+with a message: "Loan data will be available in Task 14."
+
+TAB 2 — OVERDUE VERIFICATIONS
+- Collateral where verification >7 days pending
+- Show: customer, collateral, stage, days overdue
+- [Reassign] [Escalate] buttons
+
+TAB 3 — EXPIRING COLLATERAL
+- Land documents expiring soon
+- Vehicle registrations expiring
+- Guarantor forms expiring
+- Show days until expiry
+
+TAB 4 — DUPLICATE FLAGS
+- Collateral flagged as duplicates (text match / photo hash)
+- From Task 4's anti-cheating logic
+- Show: both parties, similarity score
+- [Review] [Clear flag]
+
+TAB 5 — BLACKLISTED CUSTOMERS
+- Customers marked as blacklisted
+- Reason, date, added by
+- [Remove from blacklist] button
+
+TAB 6 — SCORE DISTRIBUTION
+- Bar chart showing scores across all collateral
+- Identifies low-quality patterns
+
+═══════════════════════════════════════════════════════════════
+PART D: UMRA COMPLIANCE REPORTS
+═══════════════════════════════════════════════════════════════
+
+When Director taps [📥 UMRA Report]:
+
+Full-screen modal (id="umraReportsModal"):
+
+List of report types:
+
+1. 📄 Collateral Register
+   - Complete list of all collateral with scores, grades
+   - Fields: Date, Customer, Type, Value, Score, Grade, 
+     Status, Verified By
+   - Filter by date range, branch, type
+   - Export as PDF + Excel
+
+2. 📄 Collateral Valuation Report
+   - Detailed report per loan/customer
+   - Includes: customer info, collateral details, valuation, 
+     verification status
+   - One page per customer
+   - Export as PDF
+
+3. 📄 Collateral Coverage Summary
+   - Portfolio-level aggregates
+   - Total collateral value vs total loans
+   - Coverage ratio by branch, by type
+   - Export as PDF + Excel
+
+4. 📄 Loan Register (placeholder until Task 14)
+   - All active loans with collateral linkage
+   - Fields: Loan ID, Customer, Amount, Collateral, Score, Status
+   - Export as PDF
+
+5. 📄 Overdue Report
+   - Overdue loans with collateral details
+   - Days overdue, contact attempts, collateral status
+   - Export as PDF
+
+6. 📄 Branch Performance Report
+   - Per-branch metrics
+   - Collateral approved, rejected, pending
+   - Average scores
+   - Export as PDF
+
+7. 📄 Quarterly Compliance Report
+   - UMRA-required quarterly summary
+   - All above metrics consolidated
+   - Export as PDF (landscape)
+
+Each report has:
+- Date range selector
+- Branch filter
+- Format selector (PDF / Excel / CSV)
+- [📥 Generate Report] button
+- Preview panel before export
+
+═══════════════════════════════════════════════════════════════
+PART E: REPORT GENERATION IMPLEMENTATION
+═══════════════════════════════════════════════════════════════
+
+Use jsPDF (already loaded) + jsPDF-AutoTable.
+
+Add helper function generateUmraReport(reportType, filters):
+1. Fetch data from Firestore
+2. Build PDF structure:
+   - Header: MFI name + logo + "UMRA Compliance Report"
+   - Sub-header: report type + date range
+   - Body: tables with data
+   - Footer: page number, generated date, "For UMRA submission"
+3. Save with filename: UMRA_{reportType}_{date}.pdf
+
+For Excel: use SheetJS (add if not loaded):
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+Add helper function generateUmraExcel(reportType, filters):
+- Same data, exported as .xlsx
+
+═══════════════════════════════════════════════════════════════
+PART F: MFI PERFORMANCE ANALYTICS
+═══════════════════════════════════════════════════════════════
+
+When Director taps [📈 Performance]:
+
+Full-screen modal (id="mfiPerformanceModal"):
+
+Section 1 — Approval Trends
+- Line chart: Approvals vs Rejections (last 6 months)
+- Rates: 85% approval, 10% rejection, 5% top-up
+
+Section 2 — Processing Time
+- Average time from submission to decision
+- By stage (Desk / Field / Valuer / Legal)
+- Identifies bottlenecks
+
+Section 3 — Officer Performance
+- Top performing Loan Officers
+- Metrics: customers registered, collateral captured
+- Quality: average score of their submissions
+
+Section 4 — Customer Growth
+- New customers per month
+- Retention rate
+- Repeat customers
+
+Section 5 — Collateral Turnover
+- Average time collateral stays on books
+- Release rate (when loan repaid)
+
+═══════════════════════════════════════════════════════════════
+PART G: DASHBOARD WIDGETS FOR MFI ADMIN
+═══════════════════════════════════════════════════════════════
+
+Update MFI Admin dashboard (from Step 1) with new widgets:
+
+Add to MFI Admin Home screen:
+
+- "📊 This Month at a Glance" card:
+  * New customers: X
+  * Collateral captured: X
+  * Approved: X
+  * Rejected: X
+  * Pending: X
+
+- "📋 Verification Queue" card:
+  * X awaiting desk review
+  * X awaiting field visit
+  * X awaiting valuer report
+  * X awaiting legal check
+
+- "🚨 Attention Required" card:
+  * Overdue verifications: X
+  * Pending manager reviews: X
+  * Flagged duplicates: X
+
+═══════════════════════════════════════════════════════════════
+PART H: NOTIFICATIONS FOR MFI WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+Set up notifications for key events:
+
+1. Collateral submitted → notifies assigned Loan Manager
+2. Manager requests verification → notifies assigned Officer
+3. Verification activity completed → notifies Manager
+4. Manager makes decision → notifies:
+   - Customer
+   - Capturing Loan Officer
+   - Director (if rejected or top-up)
+5. Top-up received → notifies Manager
+6. Collateral expiring soon (30 days) → notifies Director + Officer
+
+Use existing notifications collection pattern.
+
+═══════════════════════════════════════════════════════════════
+PART I: EXPORT INVOICE / RECEIPT (For MFI)
+═══════════════════════════════════════════════════════════════
+
+When MFI collects collateral fees or loan processing fees:
+
+Add "💰 Generate Fee Receipt" button in collateral detail.
+
+Receipt contains:
+- MFI name + logo
+- Customer name
+- Fee amount
+- Reason (Collateral valuation, Legal check, etc.)
+- Receipt number (auto-generated)
+- Date
+- Signature line
+- [📥 Download PDF] button
+
+Store receipt in Firestore: mfi_receipts
+
+═══════════════════════════════════════════════════════════════
+PART J: CUSTOMER PORTAL (Borrower View)
+═══════════════════════════════════════════════════════════════
+
+When a customer (borrower) logs into their account:
+
+Simple view:
+┌─────────────────────────────────────────┐
+│ 👤 Welcome, John Doe                     │
+├─────────────────────────────────────────┤
+│ 📋 MY COLLATERAL                         │
+│                                          │
+│ 🏠 Land — Plot 12 Nakasero              │
+│ Value: UGX 80M · Score: 98/100 ⭐      │
+│ Status: ✅ Approved                      │
+│                                          │
+│ 🚗 Vehicle — Toyota Hilux               │
+│ Value: UGX 30M · Score: 85/100 ✅      │
+│ Status: ⏳ Under Review                  │
+│                                          │
+│ [📥 Download Statement]                 │
+└─────────────────────────────────────────┘
+
+Borrower CANNOT:
+- Edit collateral
+- Score themselves
+- Approve anything
+
+Borrower CAN:
+- View their collateral
+- Download statement
+- Update contact info
+- Request document download
+
+═══════════════════════════════════════════════════════════════
+PART K: MULTI-BRANCH SUPPORT
+═══════════════════════════════════════════════════════════════
+
+For MFIs with multiple branches:
+
+Add "Branches" management:
+- MFI Admin → Settings → Branches
+- Add/Edit/Delete branches
+- Each branch has: name, location, manager, phone
+
+When creating a customer:
+- Add "Branch" field (dropdown, required)
+
+When viewing reports:
+- Filter by branch
+- Compare branches
+- Branch-level permissions (branch manager sees only their branch)
+
+Firestore update:
+- Add branchId field to mfi_customers, mfi_collateral
+- Add branches collection
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- MFI accent: #1A5490 (dark blue)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Director dashboard uses:
+- Larger stat cards (2x2 grid on phone)
+- Charts use Chart.js (add CDN if not loaded):
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+- Clean, executive-style interface
+
+UMRA reports:
+- Formal, professional layout
+- MFI logo header
+- Data tables with clear headers
+- Footer with "For UMRA submission — Not for public distribution"
+
+═══════════════════════════════════════════════════════════════
+PART M: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Director/Admin views require internet for fresh data.
+
+Cache strategy:
+- Cache portfolio data in IndexedDB
+- Show cached values with "Last updated X ago" note
+- Disable actions that need live data (approve/reject)
+
+Reports:
+- Generated reports cached in IndexedDB
+- Can re-download without regenerating
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. mfi_collateral: institutionId (asc) + status (asc) + createdAt (desc)
+2. mfi_collateral: institutionId (asc) + typeId (asc)
+3. mfi_customers: institutionId (asc) + branchId (asc)
+4. mfi_collateral_decisions: institutionId (asc) + decidedAt (desc)
+5. mfi_receipts: institutionId (asc) + createdAt (desc)
+
+═══════════════════════════════════════════════════════════════
+PART O: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 MFI Admin + 1 Loan Director + 1 Loan Officer + 1 Loan Manager:
+
+A. Director dashboard:
+   1. Login as Loan Director
+   2. Verify: director-specific nav appears
+   3. Verify: metrics cards show real numbers
+   4. Verify: alerts section populated
+
+B. Portfolio view:
+   1. Open Portfolio modal
+   2. Test all 6 tabs (Summary, By Type, By Grade, By Branch, By Age, Top Customers)
+   3. Verify: data accuracy
+
+C. Risk analytics:
+   1. Open Risk modal
+   2. Test filters (overdue, expiring, duplicates)
+   3. Verify: flagged items shown correctly
+   4. Test [Review] [Clear flag] actions
+
+D. UMRA reports:
+   1. Open UMRA Reports modal
+   2. Select "Collateral Register"
+   3. Set date range
+   4. Click [Generate Report]
+   5. Verify: PDF downloads with correct data
+   6. Test "Collateral Valuation Report"
+   7. Test "Coverage Summary"
+   8. Verify: all fields present in PDFs
+
+E. Excel export:
+   1. Generate same reports as Excel
+   2. Open in Excel viewer
+   3. Verify: data structured correctly
+
+F. Performance analytics:
+   1. Open Performance modal
+   2. Verify: charts render
+   3. Verify: officer metrics show
+
+G. MFI Admin dashboard update:
+   1. Login as MFI Admin
+   2. Verify: new widgets appear (This Month, Verification Queue, Attention Required)
+
+H. Notifications:
+   1. Submit a new collateral
+   2. Verify: manager gets notification
+   3. Complete verification
+   4. Verify: notification flows
+
+I. Fee receipt:
+   1. Open any collateral
+   2. Generate Fee Receipt
+   3. Verify: PDF downloads with correct info
+
+J. Customer portal:
+   1. Login as a customer (borrower)
+   2. Verify: simple view shows their collateral
+   3. Verify: cannot edit
+   4. Test statement download
+
+K. Multi-branch:
+   1. Create 2 branches
+   2. Create customer with branch
+   3. Filter reports by branch
+   4. Verify: branch manager sees only their branch
+
+L. Offline:
+   1. Turn off WiFi
+   2. Try to generate report → "requires internet" message
+   3. Show cached portfolio stats
+
+M. Full regression (Tasks 1-10):
+   TASK 1-9 checks: all still pass
+   TASK 10 checks:
+   ☐ MFI institution type
+   ☐ Customer registration
+   ☐ Collateral capture
+   ☐ Auto-scoring (0-100)
+   ☐ Manager review
+   ☐ Verification workflow
+   ☐ Valuer/Legal registries
+   ☐ Director dashboard
+   ☐ Portfolio analytics
+   ☐ Risk analytics
+   ☐ UMRA reports
+   ☐ Multi-branch support
+
+═══════════════════════════════════════════════════════════════
+PART P: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add code comments for:
+   - MFI workflow (Customer → Collateral → Score → Review → Verify → Decide)
+   - UMRA report generation
+   - Risk analytics algorithms
+3. Check for unused imports
+4. Verify no syntax errors
+5. Ensure no memory leaks from charts
+
+═══════════════════════════════════════════════════════════════
+PART Q: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 10 feature completeness:
+   ☐ MFI foundation (Step 1)
+   ☐ Customer registration
+   ☐ Collateral capture
+   ☐ Auto-scoring (0-100)
+   ☐ Manager review
+   ☐ Approval/Reject/Top-up workflow
+   ☐ Verification workflow (4 stages)
+   ☐ Valuer registry
+   ☐ Legal officer registry
+   ☐ Document storage
+   ☐ Director dashboard
+   ☐ Portfolio analytics
+   ☐ Risk analytics
+   ☐ UMRA reports (7 types)
+   ☐ Performance analytics
+   ☐ Fee receipts
+   ☐ Customer portal
+   ☐ Multi-branch support
+
+2. Regression: Tasks 1-9 still pass? ✅/❌
+3. Performance benchmarks met?
+4. Recommendations for Task 11
+
+If all pass:
+"Task 10 fully complete — MFI Collateral Management ready. 
+Ready for Task 11 (Clinic/Pharmacy)."
+
+═══════════════════════════════════════════════════════════════
+PART R: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-9 or Steps 1-2 of Task 10
+- Do NOT allow borrowers to edit their own collateral
+- Do NOT lose documents after decisions
+- Do NOT allow unauthorized access to UMRA reports
+- Do NOT remove Education sector features
+- Do NOT delete Firestore data
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-L, run regression (Part O), report (Part Q).
+
+Confirm when done with:
+"Task 10 fully complete — MFI Collateral Management ready. 
+Ready for Task 11."
+
+Report:
+- Feature checklist
+- Regression results
+- Performance benchmarks
+- Screenshots: director dashboard, portfolio analytics, 
+  risk analytics, UMRA reports, customer portal, multi-branch
