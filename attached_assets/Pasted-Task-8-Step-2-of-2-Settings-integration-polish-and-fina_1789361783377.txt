@@ -1,0 +1,375 @@
+Task 8 — Step 2 of 2: Settings integration, polish, and final testing
+
+CONTEXT:
+- Task 8 Step 1 built the Settings & Preferences page in Account
+- Now we integrate it across all screens, polish UX, and run full 
+  regression for Tasks 1-8
+
+GOAL:
+Make Connection Settings production-ready:
+- Settings link accessible from header (not just Account page)
+- Preferences applied across the entire app
+- Sync status badge visible globally
+- About & Help content completed
+- Full regression across Tasks 1-8
+
+═══════════════════════════════════════════════════════════════
+PART A: GLOBAL SETTINGS ACCESS
+═══════════════════════════════════════════════════════════════
+
+Add quick access to Settings from multiple places:
+
+1. Header (all users):
+   - Add small gear icon ⚙️ in top-right header
+   - Tap → opens Settings modal (not the full Account page)
+   - Settings modal shows the same 5 sections from Step 1
+
+2. Bottom navigation (optional):
+   - Long-press "Account" tab → opens Settings directly
+
+3. Account page:
+   - Keep the existing Settings card (as built in Step 1)
+
+Behavior:
+- Header gear icon uses a full-screen modal
+- Closes with X button or swipe-down (mobile)
+
+═══════════════════════════════════════════════════════════════
+PART B: GLOBAL SYNC STATUS BADGE
+═══════════════════════════════════════════════════════════════
+
+Add a small sync status badge to the header (next to gear icon):
+
+Status states:
+- 🟢 All synced — green dot, no text
+- 🟡 3 pending — yellow dot + count
+- 🔴 Sync failed — red dot (tap to retry)
+- 📴 Offline — grey dot
+
+When tapped:
+- Opens a small popover showing:
+  * Last sync time
+  * Pending items count
+  * [Sync Now] button
+
+Updates live as:
+- New items are added offline
+- Sync completes
+- Connection changes
+
+═══════════════════════════════════════════════════════════════
+PART C: APPLY LANGUAGE PREFERENCE APP-WIDE
+═══════════════════════════════════════════════════════════════
+
+Ensure language preference from Step 1 actually applies:
+
+1. Create a translations object:
+   {
+     en: { welcome: "Welcome", projects: "My Projects", ... },
+     lg: { welcome: "Tukusanyukidde", projects: "Projekiti Zange", ... },
+     // ... for all 7 languages
+   }
+
+2. Add function t(key):
+   - Reads current language from offline_settings
+   - Returns translations[lang][key] || translations.en[key] || key
+
+3. Apply to key UI strings:
+   - Home screen headers
+   - Bottom navigation labels
+   - Button labels
+   - Form placeholders
+   - Toast messages
+
+4. Fallback:
+   - If translation missing → show English
+   - If browser doesn't support language → default to English
+
+Note: Full app translation is a big task. Start with 30-50 key strings, 
+expand later.
+
+═══════════════════════════════════════════════════════════════
+PART D: APPLY CONNECTION PREFERENCES
+═══════════════════════════════════════════════════════════════
+
+Ensure connection preferences from Step 1 are respected:
+
+1. "Download HD videos only on WiFi":
+   - When ON: on mobile data, block HD downloads
+   - When OFF: allow HD downloads with warning
+
+2. "Auto-sync on WiFi":
+   - When ON: trigger sync when connection switches to WiFi
+   - When OFF: require manual sync
+
+3. "Auto-sync on mobile data":
+   - When ON: auto-sync on mobile data
+   - When OFF: only sync on WiFi or manual trigger
+
+4. Add a settings listener:
+   - Watch offline_settings for changes
+   - Apply immediately without page reload
+
+═══════════════════════════════════════════════════════════════
+PART E: ABOUT & HELP CONTENT
+═══════════════════════════════════════════════════════════════
+
+Complete the About & Help section (from Step 1):
+
+1. USER GUIDE MODAL:
+   Full content with sections:
+   - Getting Started
+   - Watching Videos
+   - My Projects (for students)
+   - Teaching Tools (for teachers)
+   - Admin Panel (for school admins)
+   - Offline Mode
+   - Troubleshooting
+
+   Each section: heading + 3-5 bullet points.
+
+2. FAQs MODAL:
+   Expandable Q&A with 10 common questions:
+   - How do I watch videos offline?
+   - How do I upload a project?
+   - How do I take the NCDC course?
+   - How does offline sync work?
+   - What if I forgot my password?
+   - How do I change my language?
+   - How do I clear storage?
+   - How do I contact support?
+   - What is the CPD certificate?
+   - How do I report a bug?
+
+3. BUG REPORT FORM:
+   Modal with:
+   - Description (required, min 20 chars)
+   - Category (dropdown: Video / Project / Login / Offline / Other)
+   - Auto-attached: user email, device, browser, app version
+   - [Submit] → writes to bug_reports collection
+   - Show toast: "Thank you! We'll look into it."
+
+4. FEATURE REQUEST FORM:
+   Modal with:
+   - Feature title (required)
+   - Description (required)
+   - Priority (Nice to have / Important / Critical)
+   - [Submit] → writes to feature_requests collection
+   - Show toast: "Thanks for the suggestion!"
+
+5. PRIVACY POLICY / TERMS:
+   - Link opens a modal with scrolling legal text
+   - Or link to https://appshule.com/privacy and /terms
+
+═══════════════════════════════════════════════════════════════
+PART F: APP VERSION DISPLAY
+═══════════════════════════════════════════════════════════════
+
+Add version info to About section:
+
+- App version: 1.0.0 (hardcoded, update manually)
+- Build: 2026-09-14 (use current date)
+- Last update: when GitHub Pages rebuilt
+
+Behavior:
+- Store version in a const at top of script
+- Increment when major features ship
+
+═══════════════════════════════════════════════════════════════
+PART G: SUPERVISOR VIEW - SETTINGS ACROSS USERS
+═══════════════════════════════════════════════════════════════
+
+Add a small section in Super Admin Admin Panel:
+
+⚙️ USER PREFERENCES OVERVIEW
+- Total users with custom settings: X
+- Most common language: English (X users)
+- Users with data saver ON: X
+- Users with auto-sync OFF: X
+
+Data source:
+- Query users collection
+- Count preferences.language, preferences.dataSaver
+
+Only visible to superadmin.
+
+═══════════════════════════════════════════════════════════════
+PART H: PERSIST SETTINGS ACROSS DEVICES
+═══════════════════════════════════════════════════════════════
+
+When user logs in on a new device:
+
+1. Fetch users/{uid}/preferences from Firestore
+2. If preferences exist:
+   - Merge with local offline_settings
+   - Firestore wins for account-level prefs (language, theme)
+   - IndexedDB wins for device-level prefs (data saver, download quality)
+3. Apply all preferences immediately
+4. Show toast if settings were synced: "Settings synced from your account"
+
+When user changes a setting:
+1. Save to IndexedDB immediately
+2. Save to Firestore users/{uid}/preferences
+3. If offline, queue for sync
+
+═══════════════════════════════════════════════════════════════
+PART I: PERFORMANCE
+═══════════════════════════════════════════════════════════════
+
+Ensure Settings page is fast:
+
+1. Load time: <500ms
+2. Toggles respond instantly (<100ms)
+3. Storage calculation: <1 second
+4. No blocking of UI thread
+
+Optimizations:
+- Lazy-load User Guide content (only when modal opens)
+- Cache storage size calculation for 30 seconds
+- Use requestIdleCallback for non-critical tasks
+
+═══════════════════════════════════════════════════════════════
+PART J: ACCESSIBILITY
+═══════════════════════════════════════════════════════════════
+
+Add:
+1. aria-labels to all toggles
+2. Keyboard navigation (Tab, Enter, Space)
+3. Screen reader support for accordion sections
+4. High contrast mode support
+5. Large text mode support
+
+═══════════════════════════════════════════════════════════════
+PART K: FULL REGRESSION TESTING (Tasks 1-8)
+═══════════════════════════════════════════════════════════════
+
+Run this complete regression:
+
+TASK 1 — NCDC/UNEB:
+☐ Student CBC & UNEB section
+☐ Teacher CBC Teaching Tools
+☐ NCDC/UNEB Control (admin)
+☐ NCDC Compliance (school admin)
+
+TASK 2 — Offline PWA:
+☐ Offline badge shows
+☐ Offline login works
+☐ Sync works
+☐ Connection detection
+
+TASK 3 — Offline Earnings:
+☐ Teacher earnings summary
+☐ PDF report
+☐ Super admin overview
+
+TASK 4 — Project Integrity:
+☐ My Projects
+☐ QR generation
+☐ Teacher verification
+☐ Evidence Folder
+☐ Duplicate detection
+
+TASK 5 — Curriculum Linker:
+☐ Search
+☐ 3-tab detail
+☐ AI activity
+☐ Favorites
+
+TASK 6 — NCDC Course:
+☐ 10 modules
+☐ Video/PDF/Quiz/Practical
+☐ CPD certificate
+
+TASK 7 — Video Studio:
+☐ Cartoon Studio
+☐ AI Auto-Video
+☐ Series Mode
+☐ Digital Twin UI
+☐ Student/Teacher libraries
+☐ Cost dashboard
+
+TASK 8 — Settings:
+☐ Settings page loads
+☐ Toggles save
+☐ Language switch works
+☐ Storage management works
+☐ Sync works
+☐ User guide opens
+☐ Bug report submits
+☐ Sync badge shows in header
+☐ Settings sync across devices
+
+═══════════════════════════════════════════════════════════════
+PART L: FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Verify these new collections exist:
+1. bug_reports (from bug report form)
+2. feature_requests (from feature request form)
+3. users/{uid}/preferences (nested — or use fields in user doc)
+
+Add indexes:
+- bug_reports: createdAt (desc)
+- feature_requests: createdAt (desc)
+
+═══════════════════════════════════════════════════════════════
+PART M: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+1. Remove console.log debug statements
+2. Add comments documenting:
+   - Translation system
+   - Sync status logic
+   - Settings persistence flow
+3. Verify no syntax errors
+4. Check bundle size impact
+
+═══════════════════════════════════════════════════════════════
+PART N: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 8 features complete:
+   ☐ Settings page (Step 1)
+   ☐ Global header access
+   ☐ Sync status badge
+   ☐ Language applied
+   ☐ Connection prefs applied
+   ☐ User Guide
+   ☐ FAQs
+   ☐ Bug report form
+   ☐ Feature request form
+   ☐ Privacy/Terms
+   ☐ Cross-device sync
+
+2. Regression: Tasks 1-7 still work? ✅/❌
+3. Performance benchmarks met?
+4. Recommendations for Task 9
+
+If all pass:
+"Task 8 fully complete — Settings & Preferences live. Ready for Task 9."
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-7 or Task 8 Step 1
+- Do NOT require internet for Settings page
+- Do NOT lose user preferences
+- Do NOT auto-sync on mobile data unless user allowed
+- Do NOT expose internal test/dev settings to end users
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-J, run regression (Part K), report (Part N).
+
+Confirm when done with:
+"Task 8 fully complete — Settings & Preferences ready. Ready for Task 9."
+
+Report:
+- Feature checklist
+- Regression results
+- Screenshots: header gear icon, sync badge, user guide, 
+  FAQs, bug report form, cross-device sync
