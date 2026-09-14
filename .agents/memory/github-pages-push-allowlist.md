@@ -8,3 +8,9 @@ The authenticated GitHub Pages push helper uses an explicit file allowlist rathe
 **Why:** The project publishes the browser site through GitHub Pages, but the same repository also carries the Firebase and test contracts. A successful site push can otherwise leave those supporting files uncommitted.
 
 **How to apply:** When a feature changes non-site repository files that must be shared on `main`, update the push helper allowlist before running the authenticated push path, then verify `git status` is clean.
+
+For non-interactive release runs, set `PUSH_CONFIRM=y` and provide `PUSH_MESSAGE` so the helper skips both the diff confirmation and commit-message prompts.
+
+**Why:** Piping stdin is not reliable for the helper's top-level readline prompts under `tsx`; the explicit environment path completes the authenticated push consistently.
+
+**How to apply:** Use those two environment variables only for an intentional verified release, then confirm the pushed commit and a clean working tree.
