@@ -14,7 +14,7 @@ if (start < 0 || end < 0) {
 }
 
 function loadCurriculumHelpers() {
-  const context: { window: Record<string, unknown> } = { window: {} };
+  const context: { window: Record<string, unknown>; currentUser: null } = { window: {}, currentUser: null };
   const escaper = `
     function escHtml(value) {
       return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -22,7 +22,7 @@ function loadCurriculumHelpers() {
     }
   `;
   runInNewContext(`${escaper}\n${indexHtml.slice(start, end)}`, context);
-  return context.window;
+  return Object.assign({}, context, context.window) as Record<string, unknown>;
 }
 
 describe("curriculum keyword generation", () => {
@@ -84,6 +84,41 @@ describe("curriculum record validation", () => {
   });
 });
 
+describe("curriculum search and activity contracts", () => {
+  it("ranks exact and prefix topic matches ahead of keyword matches and applies filters", () => {
+    const helpers = loadCurriculumHelpers();
+    const rank = helpers.rankCurriculumLinks as (
+      records: Array<Record<string, unknown>>,
+      query: string,
+      options?: Record<string, string>,
+    ) => Array<Record<string, unknown>>;
+    const records = [
+      { id: "keyword", topic: "Plant Nutrition", subject: "Biology", classLevel: "S2" },
+      { id: "prefix", topic: "Photosynthesis in plants", subject: "Biology", classLevel: "S2" },
+      { id: "exact", topic: "Photosynthesis", subject: "Agriculture", classLevel: "S3" },
+    ];
+    expect(rank(records, "photosynthesis").map(item => item.id)).toEqual(["exact", "prefix"]);
+    expect(rank(records, "photosynthesis", { subject: "Agriculture" }).map(item => item.id)).toEqual(["exact"]);
+  });
+
+  it("keeps the result renderer capped at 20 and exposes load-more for remaining matches", () => {
+    expect(indexHtml).toContain("const visible=matches.slice(0,_curriculumUi.visibleCount)");
+    expect(indexHtml).toContain("_curriculumUi.visibleCount+=20");
+    expect(indexHtml).toContain("loadMoreCurriculumBtn");
+  });
+
+  it("uses stable activity cache IDs and safe favorite document IDs", () => {
+    const helpers = loadCurriculumHelpers();
+    const cacheId = helpers.curriculumActivityCacheId as (record: object) => string;
+    const favoriteId = helpers.curriculumFavoriteDocId as (docId: string) => string;
+    const first = cacheId({ topic: "Fractions", subject: "Mathematics", classLevel: "P5" });
+    const second = cacheId({ topic: "Fractions", subject: "Mathematics", classLevel: "P5" });
+    expect(first).toBe(second);
+    expect(first).toMatch(/^activity-[0-9a-f]+$/);
+    expect(favoriteId("curriculum/topic 1")).toMatch(/^guest_curriculum-topic-1$/);
+  });
+});
+
 describe("curriculum import fixtures", () => {
   it("parses quoted CSV values containing commas", () => {
     const helpers = loadCurriculumHelpers();
@@ -113,5 +148,37 @@ describe("offline curriculum cache contract", () => {
     expect(source).toContain("offline_curriculum_links");
     expect(source).toContain("if (links.length > 2000)");
     expect(source).toContain("listCurriculumLinks");
+  });
+
+  it("declares offline favorite queue and recently viewed topic persistence", () => {
+    const source = readFileSync(new URL("offline-manager.js", projectRoot), "utf8");
+    expect(source).toContain("offline_favorites");
+    expect(source).toContain("queueFavorite");
+    expect(source).toContain("markFavoriteSynced");
+    expect(source).toContain("offline_recent_curriculum");
+    expect(source).toContain("recordRecentCurriculum");
+    expect(source).toContain("listRecentCurriculum");
+  });
+});
+
+describe("curriculum linker UI contract", () => {
+  it("contains the required search, detail, AI, suggestion, and admin controls", () => {
+    for (const id of [
+      "curriculumLinkerModal",
+      "curriculumSearchInput",
+      "curriculumSubjectFilter",
+      "curriculumClassFilter",
+      "curriculumResults",
+      "curriculumDetailPanel",
+      "generatedActivityModal",
+      "generateCurriculumActivityBtn",
+      "downloadActivityPdfBtn",
+      "suggestCurriculumModal",
+      "superCurriculumRequestsSection",
+    ]) {
+      expect(indexHtml).toContain(`id="${id}"`);
+    }
+    expect(indexHtml).toContain("complianceApi('/curriculum-activity'");
+    expect(indexHtml).toContain("activitySuggestion");
   });
 });
