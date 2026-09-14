@@ -64,6 +64,38 @@
         { "fieldPath": "subject", "order": "ASCENDING" },
         { "fieldPath": "classLevel", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "ncdc_course_modules",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isPublished", "order": "ASCENDING" },
+        { "fieldPath": "moduleNumber", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ncdc_module_lessons",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "moduleNumber", "order": "ASCENDING" },
+        { "fieldPath": "lessonOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "teacher_retooling_progress",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ncdc_cpd_certificates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "issueDate", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -4638,6 +4638,151 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         'Familiarisation','Curriculum Documents','Learner-Centred Methods','Assessment in CBC',
         'Planning/Monitoring','Projects & PBL','ICT Integration','Inclusion','Record Keeping','Ethics'
     ];
+    const NCDC_MODULE_DEFINITIONS = [
+        { moduleNumber:1, title:'Familiarisation with Course and LMS', durationMinutes:30, description:'Learn how the NCDC retooling course is organised, navigate the APSHULE learning workspace, and complete the first practical task.', learningOutcomes:['Understand the course structure','Navigate the LMS confidently','Complete a first practical task'] },
+        { moduleNumber:2, title:'Curriculum Documents and Linkages', durationMinutes:45, description:'Use the NCDC syllabus, learner book, and teacher guide together when preparing competency-based lessons.', learningOutcomes:['Understand NCDC syllabus documents','Locate learner book and teacher guide references','Link the three documents in lesson planning'] },
+        { moduleNumber:3, title:'Learner-Centred Methods', durationMinutes:60, description:'Plan lessons that make learners active participants through collaboration, inquiry, projects, and critical thinking.', learningOutcomes:['Apply Think-Pair-Share','Use productive group work','Plan project-based learning activities','Foster critical thinking'] },
+        { moduleNumber:4, title:'Assessment in CBC', durationMinutes:60, description:'Strengthen classroom assessment using formative, summative, criterion-referenced assessment, evaluation grids, and triangulation.', learningOutcomes:['Apply formative and summative assessment','Use criterion-referenced assessment','Create evaluation grids','Use triangulation evidence'] },
+        { moduleNumber:5, title:'Planning, Monitoring and Evaluation', durationMinutes:45, description:'Turn CBC outcomes into practical lesson plans, monitor learner progress, and evaluate whether activities achieved their purpose.', learningOutcomes:['Create CBC lesson plans','Monitor learner progress','Evaluate learning outcomes'] },
+        { moduleNumber:6, title:'Projects and Project-Based Learning', durationMinutes:50, description:'Design meaningful CBC projects, guide learners through milestones, and assess project evidence fairly.', learningOutcomes:['Design CBC projects','Guide learners through milestones','Assess project work'] },
+        { moduleNumber:7, title:'ICT Integration', durationMinutes:45, description:'Choose appropriate digital and offline tools and apply the four levels of ICT integration in teaching and learning.', learningOutcomes:['Apply substitution, augmentation, modification, and redefinition','Use online tools safely','Use offline learning tools'] },
+        { moduleNumber:8, title:'Inclusion and Special Needs', durationMinutes:40, description:'Create inclusive classrooms by differentiating instruction and supporting learners with diverse needs.', learningOutcomes:['Differentiate instruction','Support learners with special needs','Create inclusive classroom routines'] },
+        { moduleNumber:9, title:'Record Keeping and Reporting', durationMinutes:35, description:'Maintain continuous assessment files, submit UNEB reports, and organise evidence folders for accountability.', learningOutcomes:['Maintain CA files','Submit UNEB reports','Keep organised evidence folders'] },
+        { moduleNumber:10, title:'Professional Ethics and Community Engagement', durationMinutes:30, description:'Apply professional ethics, work with families and communities, and contribute positively to school development.', learningOutcomes:['Apply professional ethics','Engage parents and community','Contribute to school development'] }
+    ];
+    const NCDC_CPD_CERTIFICATE_COLLECTION = 'ncdc_cpd_certificates';
+    const NCDC_CPD_CERTIFICATE_FIELDS = ['teacherId','teacherName','schoolId','cpdPoints','certificateUrl','certificateId','issueDate','verificationState'];
+
+    function createNcdcProgressRecord(teacherId,moduleNumber,patch={}) {
+        const number=Number(moduleNumber);
+        return {
+            progressKey:`${teacherId}_${number}`,
+            teacherId:String(teacherId||''),
+            moduleNumber:number,
+            lessonCompletion:{video:false,pdf:false,quiz:false,practical:false,...(patch.lessonCompletion||{})},
+            moduleCompleted:Boolean(patch.moduleCompleted),
+            quizScores:patch.quizScores||{},
+            practicalUpload:patch.practicalUpload||null,
+            startedAt:patch.startedAt||null,
+            completedAt:patch.completedAt||null,
+            updatedAt:patch.updatedAt||new Date().toISOString(),
+            syncStatus:patch.syncStatus||'pending'
+        };
+    }
+
+    function validateNcdcModule(module) {
+        const errors=[], value=module||{};
+        const number=Number(value.moduleNumber);
+        if(!Number.isInteger(number)||number<1||number>10) errors.push('moduleNumber must be an integer from 1 to 10');
+        if(!String(value.title||'').trim()) errors.push('title is required');
+        if(!String(value.description||'').trim()) errors.push('description is required');
+        if(!(Number(value.durationMinutes)>0)) errors.push('durationMinutes must be greater than 0');
+        return {valid:errors.length===0,errors};
+    }
+
+    function validateNcdcLesson(lesson) {
+        const errors=[], value=lesson||{}, number=Number(value.moduleNumber), order=Number(value.lessonOrder);
+        if(!Number.isInteger(number)||number<1||number>10) errors.push('moduleNumber must be an integer from 1 to 10');
+        if(!Number.isInteger(order)||order<1||order>4) errors.push('lessonOrder must be an integer from 1 to 4');
+        if(!['video','pdf','quiz','practical'].includes(value.lessonType)) errors.push('lessonType must be video, pdf, quiz, or practical');
+        if(!String(value.title||'').trim()) errors.push('title is required');
+        return {valid:errors.length===0,errors};
+    }
+
+    function ncdcQuizQuestions(module) {
+        const outcome=module.learningOutcomes[0]||'the module outcomes';
+        return [
+            {q:`What is the main focus of ${module.title}?`,options:[outcome,'Memorising unrelated facts','Avoiding learner participation','Removing assessment'],correct:0},
+            {q:'Which approach best supports competency-based learning?',options:['A practical learner-centred task','A silent lecture only','Copying notes without discussion','Skipping reflection'],correct:0},
+            {q:`Which outcome belongs to this module?`,options:[module.learningOutcomes[0], 'Ignoring evidence','Avoiding collaboration','Using no learning materials'],correct:0},
+            {q:'What should a teacher do after a learning activity?',options:['Check evidence and give useful feedback','Discard learner work','Assess without criteria','Wait until the end of the year'],correct:0},
+            {q:'Which principle applies across NCDC modules?',options:['Connect learning to relevant classroom practice','Use one method for every learner','Treat errors as failure','Avoid local examples'],correct:0}
+        ];
+    }
+
+    function buildNcdcModuleLessons(module) {
+        const prefix=module.title;
+        return [
+            {moduleNumber:module.moduleNumber,lessonOrder:1,lessonType:'video',title:`${prefix} — Introduction`,description:`Overview of what ${prefix.toLowerCase()} covers and how it supports classroom practice.`,contentUrl:`https://www.youtube.com/watch?v=PLACEHOLDER_NCDC_${module.moduleNumber}`,contentData:{},requiredForCompletion:true},
+            {moduleNumber:module.moduleNumber,lessonOrder:2,lessonType:'pdf',title:`${prefix} — Module Summary`,description:'One-page summary of the key concepts. An administrator can replace this placeholder with a Firebase Storage PDF.',contentUrl:'',contentData:{},requiredForCompletion:true},
+            {moduleNumber:module.moduleNumber,lessonOrder:3,lessonType:'quiz',title:`${prefix} — Knowledge Check`,description:'Five-question knowledge check. A score of 3 out of 5 is required to pass.',contentUrl:'',contentData:{questions:ncdcQuizQuestions(module),passingScore:3},requiredForCompletion:true},
+            {moduleNumber:module.moduleNumber,lessonOrder:4,lessonType:'practical',title:`${prefix} — Practical Task`,description:`Apply ${prefix.toLowerCase()} in your classroom and upload evidence such as a lesson plan, learner work, or reflection.`,contentUrl:'',contentData:{},requiredForCompletion:true}
+        ];
+    }
+
+    function ncdcCourseSeedRecords() {
+        const createdAt=serverTimestamp();
+        return NCDC_MODULE_DEFINITIONS.flatMap(module=>[
+            {kind:'module',id:`module-${module.moduleNumber}`,data:{...module,createdAt,isPublished:false}},
+            ...buildNcdcModuleLessons(module).map(lesson=>({kind:'lesson',id:`module-${module.moduleNumber}-lesson-${lesson.lessonOrder}`,data:{...lesson,createdAt}}))
+        ]);
+    }
+
+    async function syncNcdcCourse() {
+        if(navigator.onLine&&db) {
+            try {
+                const [moduleSnap,lessonSnap]=await Promise.all([
+                    getDocs(query(collection(db,'ncdc_course_modules'),orderBy('moduleNumber','asc'),limit(10))),
+                    getDocs(query(collection(db,'ncdc_module_lessons'),orderBy('moduleNumber','asc'),orderBy('lessonOrder','asc'),limit(40)))
+                ]);
+                const lessonsByModule={};
+                lessonSnap.docs.forEach(item=>{const lesson=item.data(),key=String(lesson.moduleNumber);(lessonsByModule[key]||(lessonsByModule[key]=[])).push({docId:item.id,id:item.id,...lesson});});
+                const modules=moduleSnap.docs.map(item=>{const module={docId:item.id,id:item.id,...item.data()};return {...module,lessons:lessonsByModule[String(module.moduleNumber)]||[]};});
+                if(Offline&&modules.length) await Offline.cacheNcdcModules(modules).catch(()=>{});
+                return modules;
+            } catch(error) { console.warn('NCDC course sync unavailable:',error); }
+        }
+        return Offline?Offline.listNcdcModules().catch(()=>[]):[];
+    }
+
+    async function ensureNcdcTeacherEnrollment() {
+        if(!currentUser?.uid||!db) return null;
+        const enrollmentRef=doc(db,'teacher_retooling_progress',`${currentUser.uid}_course_enrollment`);
+        try {
+            const existing=await getDoc(enrollmentRef);
+            if(existing.exists()) return existing.data();
+            const enrollment={type:'course_enrollment',teacherId:currentUser.uid,enrolledAt:serverTimestamp(),modulesCompleted:0,totalModules:10,lastActivityAt:serverTimestamp(),updatedAt:serverTimestamp()};
+            await setDoc(enrollmentRef,enrollment,{merge:true});
+            return enrollment;
+        } catch(error) { console.warn('NCDC enrollment initialization unavailable:',error); return null; }
+    }
+
+    function setNcdcSeedProgress(completed,total,message) {
+        const wrapper=document.getElementById('ncdcSeedProgress'),bar=document.getElementById('ncdcSeedProgressBar'),text=document.getElementById('ncdcSeedProgressText');
+        if(wrapper) wrapper.style.display='block';
+        if(bar) bar.style.width=`${total?Math.round(completed/total*100):0}%`;
+        if(text) text.textContent=message;
+    }
+
+    async function seedNcdcCourseContent() {
+        if(currentUser?.role!=='superadmin') throw new Error('Only superadmins can seed NCDC course content');
+        if(!db) throw new Error('Firestore is not available');
+        const status=document.getElementById('ncdcSeedStatus');
+        const existing=await getDocs(collection(db,'ncdc_course_modules'));
+        if(existing.size&&!window.confirm('Course already seeded. Re-seed? (will overwrite)')) return {seeded:false};
+        const records=ncdcCourseSeedRecords(), batchSize=50;
+        if(status) status.textContent='Preparing 10 modules and 40 lessons…';
+        for(let start=0;start<records.length;start+=batchSize) {
+            const chunk=records.slice(start,start+batchSize),batch=db.batch();
+            chunk.forEach(record=>batch.set(doc(db,record.kind==='module'?'ncdc_course_modules':'ncdc_module_lessons',record.id),record.data));
+            await batch.commit();
+            setNcdcSeedProgress(Math.min(start+chunk.length,records.length),records.length,`Seeded ${Math.min(start+chunk.length,records.length)} of ${records.length} records…`);
+        }
+        if(status) status.textContent='✅ Seeded 10 modules + 40 lessons';
+        await syncNcdcCourse();
+        return {seeded:true,modules:10,lessons:40};
+    }
+
+    function renderNcdcOfflineModuleList(panel,modules) {
+        const list=modules.length?modules.map(module=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;"><span style="flex:1;font-size:13px;">${module.moduleNumber}. ${escHtml(module.title||CBC_MODULES[module.moduleNumber-1]||'Module')}<small style="display:block;color:#777;">${module.lessons?.length||0} lessons · ${Number(module.durationMinutes||0)} minutes</small></span><span class="cbc-status">Offline</span></div>`).join(''):'<div class="cbc-status">No course modules are cached yet. Connect once to load the course.</div>';
+        panel.innerHTML=`<strong style="color:#E67E00;">NCDC 10 Modules Course</strong><div class="cbc-status">Offline course data. Video playback requires a connection.</div>${list}`;
+    }
+
+    window.validateNcdcModule=validateNcdcModule;
+    window.validateNcdcLesson=validateNcdcLesson;
+    window.ncdcCourseSeedRecords=ncdcCourseSeedRecords;
+    window.createNcdcProgressRecord=createNcdcProgressRecord;
+    window.syncNcdcCourse=syncNcdcCourse;
     const DEFAULT_SUBSCRIPTION_PLANS = [
         { id:'default-daily', name:'Daily', price:500, duration:'1 day' },
         { id:'default-weekly', name:'Weekly', price:3000, duration:'1 week' },
@@ -4976,6 +5121,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          if(curriculumSection) curriculumSection.style.display=currentUser?.role==='superadmin'?'block':'none';
          const curriculumRequestsSection=document.getElementById('superCurriculumRequestsSection');
          if(curriculumRequestsSection) curriculumRequestsSection.style.display=currentUser?.role==='superadmin'?'block':'none';
+         const ncdcCourseSection=document.getElementById('superNcdcCourseSection');
+         if(ncdcCourseSection) ncdcCourseSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         const superProjectSection=document.getElementById('superProjectOverviewSection');
         if(superProjectSection) superProjectSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
@@ -4985,6 +5132,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('complianceDuplicateBtn')?.addEventListener('click',renderComplianceDuplicateAlerts);
         document.getElementById('complianceRepeatBtn')?.addEventListener('click',renderComplianceRepeatTitles);
          document.getElementById('refreshSuperProjectOverviewBtn')?.addEventListener('click',renderSuperProjectOverview);
+         document.getElementById('seedNcdcCourseBtn')?.addEventListener('click',async()=>{
+             const button=document.getElementById('seedNcdcCourseBtn'),status=document.getElementById('ncdcSeedStatus');
+             if(button) button.disabled=true;
+             try { await seedNcdcCourseContent(); }
+             catch(error) { if(status) status.textContent=`Could not seed course: ${error.message||error}`; }
+             finally { if(button) button.disabled=false; }
+         });
          if(currentUser?.role==='superadmin') { loadCurriculumLinksAdmin(); renderCurriculumRequests(); }
         if(currentUser?.role==='superadmin') renderSuperProjectOverview();
     }
@@ -5594,16 +5748,29 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         panel.innerHTML='<div class="cbc-status">Loading…</div>';
         if(mode==='modules') {
             try {
+                const course=await syncNcdcCourse();
+                await ensureNcdcTeacherEnrollment();
+                if(!navigator.onLine) {
+                    renderNcdcOfflineModuleList(panel,course);
+                    return;
+                }
                 const data=await complianceApi('/retooling');
                 const progress=Object.fromEntries((data.progress||[]).map(p=>[p.moduleId,p]));
+                const moduleTitles=course.length?course.sort((a,b)=>Number(a.moduleNumber)-Number(b.moduleNumber)).map(module=>module.title):CBC_MODULES;
                 panel.innerHTML=`<strong style="color:#E67E00;">NCDC 10 Modules Course</strong><div class="cbc-status">Complete each module and save your progress.</div>
-                    ${CBC_MODULES.map((name,i)=>{const id=String(i+1), done=progress[id]?.completed; return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;"><span style="flex:1;font-size:13px;">${i+1}. ${name}</span><button class="cbc-action ${done?'':'primary'}" data-module-id="${id}" style="padding:7px 10px;">${done?'Completed':'Mark complete'}</button></div>`}).join('')}
+                    ${moduleTitles.map((name,i)=>{const id=String(i+1), done=progress[id]?.completed; return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;"><span style="flex:1;font-size:13px;">${i+1}. ${escHtml(name)}</span><button class="cbc-action ${done?'':'primary'}" data-module-id="${id}" style="padding:7px 10px;">${done?'Completed':'Mark complete'}</button></div>`}).join('')}
                     <div class="cbc-status">${Object.values(progress).filter(p=>p.completed).length}/10 modules complete. Certificate unlocks after all ten.</div>`;
                 panel.querySelectorAll('[data-module-id]').forEach(btn=>btn.addEventListener('click',async()=>{
                     await complianceApi('/retooling',{method:'POST',body:JSON.stringify({moduleId:btn.dataset.moduleId,completed:true})});
                     renderTeacherCbcPanel('modules');
                 }));
-            } catch(e) { panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(e.message)}</div>`; }
+            } catch(e) {
+                if(!navigator.onLine&&Offline) {
+                    renderNcdcOfflineModuleList(panel,await Offline.listNcdcModules().catch(()=>[]));
+                } else {
+                    panel.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(e.message)}</div>`;
+                }
+            }
         } else if(mode==='lesson-plan') {
             panel.innerHTML=`<strong style="color:#E67E00;">Auto Lesson Plan Generator</strong><form class="cbc-form" id="lessonPlanForm">
                 <input name="subject" placeholder="Subject" required><input name="classLevel" placeholder="Class (S1-S4 or A-Level)" required>
