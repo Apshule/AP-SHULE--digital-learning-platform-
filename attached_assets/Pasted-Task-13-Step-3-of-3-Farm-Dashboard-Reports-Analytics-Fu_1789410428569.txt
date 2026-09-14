@@ -1,0 +1,597 @@
+Task 13 — Step 3 of 3: Farm Dashboard + Reports + Analytics + Full Regression Testing
+
+CONTEXT:
+- Task 13 Steps 1 & 2 complete and published:
+  * Step 1 (commit 7917245): Farm foundation, animal types, cameras, movement tracking
+  * Step 2 (commit 5b116c4): Egg counting, worker attendance, inventory, produce, sales, expenses
+- Step 3 completes Task 13 with: comprehensive Farm Dashboard, Reports, Analytics, and Full Regression (Tasks 1-13)
+
+GOAL OF STEP 3:
+- Build a comprehensive Farm Dashboard for Farm Admin
+- Generate all farm reports (animal, egg, worker, financial, compliance)
+- Farm analytics with charts
+- Full regression across all 13 tasks
+- Task 13 complete
+
+═══════════════════════════════════════════════════════════════
+PART A: FARM DASHBOARD (Enhanced Management View)
+═══════════════════════════════════════════════════════════════
+
+Update Farm Admin home screen with comprehensive dashboard:
+
+┌─────────────────────────────────────────┐
+│ 🌾 {Farm Name}                           │
+│ Welcome, {adminName}                     │
+├─────────────────────────────────────────┤
+│ 📊 TODAY                                │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Animals  │ │ Eggs     │ │ Milk     │ │
+│ │ 455 total│ │ 45 trays │ │ 200 L    │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Workers  │ │ Today's  │              │
+│ │ 8 of 9   │ │ Revenue  │              │
+│ │ present  │ │ UGX 637K │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 📈 THIS MONTH                            │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Revenue  │ │ Expenses │ │ Net      │ │
+│ │ UGX 12.5M│ │ UGX 4.2M │ │ UGX 8.3M │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [🐄 Animals] [👥 Workers]               │
+│ [🥚 Egg Count] [🌾 Feed]                │
+│ [🥛 Produce] [💰 Sales]                 │
+│ [📷 Cameras] [📊 Reports]               │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 1 cow missing (since 5 PM)            │
+│ • 2 chickens not returned to coop       │
+│ • 1 worker absent today                  │
+│ • 3 inventory items low stock           │
+│ • 2 items expiring within 30 days       │
+│                                          │
+│ 📋 TODAY'S ACTIVITY                      │
+│ • 6:00 AM — 50 cows OUT                 │
+│ • 6:15 AM — 85 goats OUT                │
+│ • 7:45 AM — Mary checked in             │
+│ • 8:00 AM — 25 kg feed given to cows    │
+│ • 10:00 AM — 45 trays eggs collected    │
+│ • 5:00 PM — 49 cows IN (1 missing)     │
+│ [View All Activity]                     │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART B: FARM REPORTS MODAL
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [📊 Reports]:
+
+Full-screen modal (id="farmReportsModal") with tabs:
+
+TAB 1 — ANIMAL REPORTS
+
+Sub-reports:
+1. Animal Inventory Report
+   - Current count per animal type
+   - Morning vs evening counts
+   - Missing animals (past 7 days)
+   - Trend over time
+   - [📥 Export PDF] [📥 Export Excel]
+
+2. Animal Movement Report
+   - All IN/OUT movements
+   - Filter by date range, animal type, camera
+   - Group by day
+   - Average daily movement per animal type
+   - Anomalies flagged (unusual times, directions)
+
+3. Missing Animals Report
+   - All missing animals logged
+   - Status: recovered / still missing / lost
+   - Days missing
+   - Reported by
+
+TAB 2 — PRODUCTION REPORTS
+
+Sub-reports:
+1. Egg Production Report
+   - Daily/weekly/monthly egg counts
+   - Broken egg rate (should stay under 2%)
+   - Trays per hen per day (efficiency metric)
+   - Peak production days
+   - [📥 Export PDF]
+
+2. Milk Production Report
+   - Daily/weekly/monthly litres
+   - Milk per cow per day (efficiency)
+   - Morning vs evening yield
+   - Grade breakdown (A/B/C)
+
+3. Feed Consumption Report
+   - Total feed consumed per animal type
+   - Feed cost per day/week/month
+   - Feed conversion ratio (kg feed per litre milk / kg meat)
+   - Waste analysis
+
+4. Produce Sales Report
+   - All sales by produce type
+   - Buyer analysis (top 10 buyers)
+   - Revenue trends
+   - Outstanding receivables
+
+TAB 3 — WORKER REPORTS
+
+Sub-reports:
+1. Attendance Summary
+   - Per worker: days present, absent, late
+   - Attendance rate %
+   - Monthly view
+   - Export for payroll
+
+2. Payroll Report
+   - Base salary + days worked
+   - Deductions for absences
+   - Overtime (if tracked)
+   - Net pay per worker
+   - [📥 Export Excel for Payroll]
+
+3. Worker Performance
+   - Tasks completed per worker
+   - Assigned animals
+   - Productivity metrics (eggs collected, milk recorded)
+
+TAB 4 — FINANCIAL REPORTS
+
+Sub-reports:
+1. Revenue Report
+   - Daily/weekly/monthly revenue
+   - By produce type
+   - By buyer
+   - Payment method breakdown
+
+2. Expense Report
+   - All expenses by category
+   - Monthly trend
+   - Top vendors
+
+3. Profit & Loss Statement
+   - Revenue − Expenses
+   - Monthly + yearly
+   - Net profit margin
+   - Comparison to previous periods
+   - [📥 Export PDF]
+
+4. Cash Flow Report
+   - Money in (sales)
+   - Money out (expenses, payroll)
+   - Net cash position
+   - Outstanding receivables
+
+TAB 5 — COMPLIANCE REPORTS
+
+Sub-reports:
+1. Animal Health Records
+   - Vaccinations given
+   - Vet visits
+   - Illnesses treated
+   - Mortality records
+   - [📥 Export for MoA]
+
+2. Milk Quality Log
+   - Daily milk tests
+   - Antibiotic residue records
+   - Delivery to processors
+
+3. Environmental Compliance
+   - Waste management log
+   - Water usage
+   - Manure disposal
+
+TAB 6 — CUSTOM REPORTS
+
+Build custom:
+- Select data source
+- Select fields
+- Apply filters
+- Group by
+- Sort by
+- Preview
+- [📥 Export PDF] [Excel] [CSV]
+- [💾 Save as Template]
+
+═══════════════════════════════════════════════════════════════
+PART C: REPORT GENERATION IMPLEMENTATION
+═══════════════════════════════════════════════════════════════
+
+Use jsPDF + jsPDF-AutoTable (already loaded).
+
+Add helper function generateFarmReport(reportType, filters):
+1. Fetch data from Firestore
+2. Build PDF:
+   - Header: Farm name + logo + report title
+   - Sub-header: Date range + filters
+   - Body: Data tables
+   - Summary section
+   - Footer: Page number + "Generated on {date}"
+3. Save as: {ReportName}_{dateRange}.pdf
+
+Excel export uses SheetJS.
+
+═══════════════════════════════════════════════════════════════
+PART D: FARM ANALYTICS DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [📈 Analytics]:
+
+Full-screen modal (id="farmAnalyticsModal"):
+
+Uses Chart.js (already loaded).
+
+Section 1 — Animal Population Trends
+- Line chart: Total animals over last 12 months
+- Bar chart: By type
+- Growth rate
+
+Section 2 — Production Trends
+- Line chart: Daily egg production (last 30 days)
+- Line chart: Daily milk production (last 30 days)
+- Bar chart: Monthly totals (last 6 months)
+
+Section 3 — Financial Trends
+- Line chart: Daily revenue (last 30 days)
+- Line chart: Daily expenses (last 30 days)
+- Bar chart: Monthly profit (last 6 months)
+- Pie chart: Revenue by produce type
+
+Section 4 — Efficiency Metrics
+- Feed conversion ratio (kg feed per litre milk)
+- Milk per cow per day
+- Eggs per hen per day
+- Mortality rate
+- Show trend arrows
+
+Section 5 — Worker Productivity
+- Bar chart: Eggs collected per worker
+- Bar chart: Milk recorded per worker
+- Attendance rate per worker
+
+Section 6 — Alerts & Anomalies
+- Timeline of missing animals
+- Feed waste incidents
+- Unusual movement patterns
+
+═══════════════════════════════════════════════════════════════
+PART E: FARM STAFF MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [👥 Staff]:
+
+Full-screen modal (id="farmStaffModal"):
+
+- List of all farm workers
+- Filter by role: Herder / Milker / Egg Collector / Manager etc.
+- Filter by status: Active / Inactive
+- Sort: Name / Date joined / Attendance rate
+
+Each worker card:
+┌─────────────────────────────────────────┐
+│ 👤 Mary Nakato                           │
+│ Role: Egg Collector · Joined: 1 May 2026│
+│ Salary: UGX 300,000/month               │
+│ This month: 22/22 days present           │
+│ Today: ✅ Checked in at 7:45 AM         │
+│ [👁 View] [✏️ Edit] [📊 Attendance]    │
+└─────────────────────────────────────────┘
+
+Worker detail view shows:
+- Full profile
+- Face enrollment status
+- Attendance history (calendar)
+- Tasks completed
+- Monthly salary + attendance-based pay
+- Contact info
+
+═══════════════════════════════════════════════════════════════
+PART F: FARM SETTINGS
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin opens Settings (in Account tab):
+
+Farm-specific settings:
+- Farm name + tagline (links to Institution Branding)
+- Farm type
+- Owner information
+- Location + GPS
+- Working hours
+- Feed schedule
+- Milking schedule
+- Egg collection schedule
+- Default egg price
+- Default milk price
+- Notification preferences
+- Worker salary defaults
+
+═══════════════════════════════════════════════════════════════
+PART G: INTEGRATION WITH SUPER ADMIN COMMAND CENTER
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Command Center (Task 9):
+
+Analytics tab → add Farm section:
+- Total farms: X
+- Total animals tracked: X
+- Total revenue from farms: X
+- Top performing farms
+
+Institution Management:
+- Farm institutions show with badge "🌾 Farm"
+- Filters include Farm type
+
+Payments:
+- Farm subscription payments tracked
+- Farm revenue share (if any)
+
+═══════════════════════════════════════════════════════════════
+PART H: FARM WORKER MOBILE EXPERIENCE
+═══════════════════════════════════════════════════════════════
+
+When a Farm Worker logs in:
+
+Simplified view:
+┌─────────────────────────────────────────┐
+│ 👤 Hello, Mary!                          │
+│ Farm: Green Acres                        │
+├─────────────────────────────────────────┤
+│ ✅ CHECKED IN at 7:45 AM                │
+│                                          │
+│ 🎯 MY TASKS TODAY                        │
+│ ☐ Collect eggs (Morning session)        │
+│ ☑ Feed chickens                         │
+│ ☐ Clean coop                            │
+│                                          │
+│ 🐔 ASSIGNED ANIMALS                      │
+│ • Chickens (200)                         │
+│                                          │
+│ [🥚 Egg Count] [🌾 Feed]                │
+│ [✅ Mark Task Done]                     │
+│                                          │
+│ 📋 TODAY'S RECORD                        │
+│ • 45 trays collected                    │
+│ • 25 kg feed given                      │
+│                                          │
+│ [⏰ Check Out]                          │
+└─────────────────────────────────────────┘
+
+Worker CAN:
+- Check in/out via face
+- Mark tasks complete
+- Record egg counts
+- Record feed consumption
+- View own attendance
+
+Worker CANNOT:
+- View financial data
+- View other workers' data
+- Manage inventory
+- Add sales
+
+═══════════════════════════════════════════════════════════════
+PART I: MULTI-FARM MANAGEMENT (for Farm Directors)
+═══════════════════════════════════════════════════════════════
+
+If the farm institution has multiple farms:
+
+Add Farm Director role:
+- Views all farms under the institution
+- Compare farm performance
+- Aggregate reports across farms
+- Farm-level filtering
+
+Dashboard shows:
+- All farms list with key metrics
+- Best/worst performing farms
+- Aggregate revenue + expenses
+
+═══════════════════════════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Farm accent: #4CAF50 (green)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Special:
+- Animal stats use large icons (emoji)
+- Reports use professional financial layout
+- Analytics use color-coded charts
+- Worker view is minimal + task-focused
+
+═══════════════════════════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Reports require internet for fresh data.
+
+Cache strategy:
+- Dashboard stats cached
+- Latest reports cached (last 24 hours)
+- Analytics charts can render from cached data
+- Show "Last updated X ago" when offline
+
+═══════════════════════════════════════════════════════════════
+PART L: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. farm_animal_movements: farmId (asc) + detectedAt (desc) + animalTypeId (asc)
+2. farm_egg_collections: farmId (asc) + sessionType (asc) + collectedAt (desc)
+3. farm_produce: farmId (asc) + produceType (asc) + collectedAt (desc)
+4. farm_sales: farmId (asc) + saleDate (desc) + paymentStatus (asc)
+5. farm_expenses: farmId (asc) + category (asc) + expenseDate (desc)
+6. farm_worker_attendance: farmId (asc) + workerId (asc) + date (desc)
+
+═══════════════════════════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════════════════════════
+
+A. Farm dashboard:
+   1. Login as Farm Admin
+   2. Verify: dashboard shows today + this month stats
+   3. Verify: quick actions work
+   4. Verify: today's activity feed
+
+B. Animal reports:
+   1. Open Reports → Animal Reports
+   2. Test Animal Inventory Report
+   3. Test Animal Movement Report
+   4. Test Missing Animals Report
+   5. Export PDF for each
+
+C. Production reports:
+   1. Egg Production Report
+   2. Milk Production Report
+   3. Feed Consumption Report
+   4. Produce Sales Report
+
+D. Worker reports:
+   1. Attendance Summary
+   2. Payroll Report
+   3. Worker Performance
+
+E. Financial reports:
+   1. Revenue Report
+   2. Expense Report
+   3. **Profit & Loss Statement** — verify revenue − expenses = profit
+   4. Cash Flow Report
+
+F. Compliance reports:
+   1. Animal Health Records
+   2. Milk Quality Log
+   3. Environmental Compliance
+
+G. Custom reports:
+   1. Build a custom report
+   2. Save as template
+   3. Regenerate from template
+
+H. Analytics:
+   1. Open Analytics modal
+   2. Verify: all 6 sections render
+   3. Verify: charts load correctly
+
+I. Farm staff:
+   1. Open Staff modal
+   2. View worker profile
+   3. Check attendance calendar
+
+J. Farm worker view:
+   1. Login as Farm Worker
+   2. Verify: simple view with tasks
+   3. Complete a task
+   4. Record egg count
+   5. Check out
+
+K. Farm settings:
+   1. Change default egg price
+   2. Save
+   3. Verify: new records use new price
+
+L. Super Admin view:
+   1. Login as Super Admin
+   2. Command Center → Analytics → see Farm section
+   3. Verify: farm statistics
+
+M. Offline:
+   1. Turn off WiFi
+   2. Reports show cached data
+   3. Charts render from cache
+
+N. Full regression (Tasks 1-13):
+   TASK 1-12: all pass
+   TASK 13:
+   ☐ Farm institution type
+   ☐ Farm Animal Types (7)
+   ☐ Farm Cameras
+   ☐ Animal movement tracking
+   ☐ Missing animal alerts
+   ☐ Daily farm summary
+   ☐ Egg counting (manual + camera)
+   ☐ Worker attendance (facial recognition)
+   ☐ Farm inventory
+   ☐ Feed consumption
+   ☐ Produce tracking
+   ☐ Farm sales
+   ☐ Farm expenses
+   ☐ Farm dashboard
+   ☐ Reports (6 tabs)
+   ☐ Analytics
+   ☐ Farm Staff management
+   ☐ Worker mobile view
+
+═══════════════════════════════════════════════════════════════
+PART N: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add code comments for:
+   - Farm lifecycle flows
+   - Analytics calculations
+   - Report generation logic
+3. Check for unused imports
+4. Verify no syntax errors
+5. Ensure no memory leaks from charts (destroy on modal close)
+
+═══════════════════════════════════════════════════════════════
+PART O: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 13 feature completeness:
+   ☐ Step 1: Foundation + Animals + Cameras + Movement
+   ☐ Step 2: Eggs + Attendance + Inventory + Produce + Sales
+   ☐ Step 3: Dashboard + Reports + Analytics + Staff
+
+2. Regression: Tasks 1-12 still pass? ✅/❌
+3. Performance benchmarks met?
+4. Recommendations for Task 14
+
+If all pass:
+"Task 13 fully complete — Farming Module ready. Ready for Task 14 
+(Full MFI System — final task!)."
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-12 or Steps 1-2 of Task 13
+- Do NOT allow workers to view financial data
+- Do NOT lose animal movement records
+- Do NOT delete inventory with history (mark inactive)
+- Do NOT lose worker attendance records
+- Do NOT allow reports to expose cross-farm data
+- Do NOT skip face verification for attendance
+- Do NOT allow negative animal counts
+- Do NOT lose any farm data
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-J, run regression (Part M), report (Part O).
+
+Confirm when done with:
+"Task 13 fully complete — Farming Module ready. Ready for Task 14."
+
+Report:
+- Feature checklist
+- Regression results
+- Screenshots recommended: farm dashboard, animal reports, 
+  financial reports (P&L), analytics charts, worker view, 
+  Super Admin integration
