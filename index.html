@@ -12848,7 +12848,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         ncdc:{title:'🎓 NCDC / UNEB Control',tabs:[['overview','Overview'],['exports','CA Exports'],['certificates','CPD Certificates'],['progress','Retooling Progress'],['duplicates','Duplication Flags'],['repeat','Repeat Title Log']]},
         live:{title:'📡 Live Lesson Control',tabs:[['scheduled','Scheduled Lessons'],['requests','Teacher Requests'],['attendance','Attendance'],['enrollments','Enrollments'],['tokens','Access Tokens']]},
         announce:{title:'📢 Communication',tabs:[['send','Send Announcement'],['history','Message History'],['scheduled','Scheduled Messages'],['templates','Templates'],['channels','Channels']]},
-        reports:{title:'📊 Reports',tabs:[['overview','Reports Overview']]}
+         reports:{title:'📊 Payment Reports & Reconciliation',tabs:[['transactions','Transactions'],['revenue','Revenue & Analytics'],['disbursements','Disbursements'],['clients','Client Balances'],['tax','Tax Summary']]}
     };
     let commandModuleKind='', commandModuleTab='', commandModuleRows=[];
     function commandModuleTabs(config) {
@@ -12888,8 +12888,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(kind==='payments') return await renderCommandPaymentsTab(tab,target);
             if(kind==='ncdc') return await renderCommandNcdcTab(tab,target);
             if(kind==='live') return await renderCommandLiveTab(tab,target);
-            if(kind==='announce') return renderCommandCommunicationTab(tab,target);
-            target.innerHTML=commandModuleCard('Step 3 reports','Advanced exports and cross-platform reporting will be added in Step 3. Existing analytics, attendance, feedback, and NCDC exports remain available in the legacy Admin Panel.','<button type="button" class="command-primary-btn" id="commandSubModalLegacyBtn">Open legacy Admin Panel</button>');
+             if(kind==='announce') return renderCommandCommunicationTab(tab,target);
+             if(kind==='reports') return renderTask12ReportTab(tab,target);
+             target.innerHTML=commandModuleCard('Step 3 reports','Advanced exports and cross-platform reporting will be added in Step 3. Existing analytics, attendance, feedback, and NCDC exports remain available in the legacy Admin Panel.','<button type="button" class="command-primary-btn" id="commandSubModalLegacyBtn">Open legacy Admin Panel</button>');
             document.getElementById('commandSubModalLegacyBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();});
         } catch(error) { console.error('Command module failed:',error); target.innerHTML=commandModuleCard('Unable to load this view',`<div style="color:#c62828;">${escHtml(error?.message||'Try again when connected.')}</div>`); commandSetModuleStatus('The list could not be loaded.',true); }
     }
