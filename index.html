@@ -3859,6 +3859,19 @@
         } finally { if(btn) btn.disabled=false; }
     }
     function initSettingsInteractions() {
+        document.getElementById('globalSettingsBtn')?.addEventListener('click',openGlobalSettings);
+        document.getElementById('globalSettingsCloseBtn')?.addEventListener('click',closeGlobalSettings);
+        document.getElementById('globalSettingsModal')?.addEventListener('click',event=>{ if(event.target.id==='globalSettingsModal') closeGlobalSettings(); });
+        document.getElementById('globalSyncStatusBtn')?.addEventListener('click',()=>{
+            const popover=document.getElementById('globalSyncPopover'), button=document.getElementById('globalSyncStatusBtn');
+            const open=popover?.classList.toggle('show'); button?.setAttribute('aria-expanded',open?'true':'false');
+        });
+        document.getElementById('globalSyncPopoverBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(()=>{}));
+        document.addEventListener('keydown',event=>{ if(event.key==='Escape') { closeGlobalSettings(); document.querySelectorAll('.settings-modal.show').forEach(modal=>modal.classList.remove('show')); } });
+        const globalShell=document.querySelector('.global-settings-shell');
+        let swipeStartY=0;
+        globalShell?.addEventListener('touchstart',event=>{ swipeStartY=event.touches[0]?.clientY||0; },{passive:true});
+        globalShell?.addEventListener('touchend',event=>{ const endY=event.changedTouches[0]?.clientY||0; if(endY-swipeStartY>80 && globalShell.scrollTop<8) closeGlobalSettings(); },{passive:true});
         document.querySelectorAll('.settings-panel').forEach(panel=>panel.addEventListener('toggle',()=>{
             if(panel.open) document.querySelectorAll('.settings-panel').forEach(other=>{ if(other!==panel) other.open=false; });
         }));
@@ -3889,6 +3902,7 @@
             catch(error) { console.error('Language save failed:',error); showNotification('Unable to save language settings','error'); }
         });
         document.getElementById('refreshSettingsUsageBtn')?.addEventListener('click',()=>refreshSettingsDashboard().catch(()=>showNotification('Unable to refresh storage data','error')));
+        applyTranslations(currentAppLanguage);
     }
     async function syncOfflineViews(items) {
         if(!Offline || !navigator.onLine || !auth?.currentUser) return {synced:0,failed:0};
@@ -4275,7 +4289,9 @@
         Offline.onConnectionChange(async(next,previous)=>{
             await refreshOfflineUi(next);
             if(previous==='offline' && next!=='offline') {
-                runOfflineSync(false).catch(console.error);
+                const settings=await Offline.getSettings(currentUser?.uid);
+                const allowed=next==='wifi' ? settings.autoSyncWifi!==false : settings.autoSyncMobile===true;
+                if(allowed) runOfflineSync(false).catch(console.error);
                 syncNcdcProgressQueue().catch(console.error);
             }
         });
@@ -4286,7 +4302,10 @@
         document.getElementById('teacherOfflineSyncNowBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(e=>showNotification(e.message,'error')));
         clearInterval(window._appShuleAutoSyncTimer);
         window._appShuleAutoSyncTimer=setInterval(()=>{
-            if(navigator.onLine && currentUser) runOfflineSync(false).catch(console.error);
+            if(navigator.onLine && currentUser) Offline.getConnectionMode().then(mode=>Offline.getSettings(currentUser.uid).then(settings=>{
+                const allowed=mode==='wifi' ? settings.autoSyncWifi!==false : settings.autoSyncMobile===true;
+                if(allowed) runOfflineSync(false).catch(console.error);
+            })).catch(console.error);
         },30*60*1000);
     }
 
@@ -11371,6 +11390,32 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 </div>`).join('');
         } catch(e){ console.error('Weak areas overview failed:', e.code || 'unknown', e.message || e); el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(e.message || 'Weak areas are unavailable right now.')}</div>`; }
     }
+    async function loadPreferencesOverview() {
+        const section=document.getElementById('superadminPreferencesOverview'), container=document.getElementById('preferencesOverviewContent');
+        if(!section || !container || currentUser?.role!=='superadmin' || !db) return;
+        section.style.display='block';
+        try {
+            const snapshot=await getDocs(query(collection(db,'users'),limit(200)));
+            const counts={users:0, languages:{}, videoLanguages:{}, modes:{}, mobileSync:0, wifiSync:0};
+            snapshot.forEach(docSnap=>{
+                const data=docSnap.data()||{}, prefs=data.preferences||{}, offline=data.offlineSettings||{};
+                counts.users++;
+                const language=prefs.language||prefs.languagePreference||offline.languagePreference||'English';
+                const videoLanguage=prefs.videoLanguage||offline.videoLanguage||'English';
+                const mode=offline.connectionMode||'unknown';
+                counts.languages[language]=(counts.languages[language]||0)+1;
+                counts.videoLanguages[videoLanguage]=(counts.videoLanguages[videoLanguage]||0)+1;
+                counts.modes[mode]=(counts.modes[mode]||0)+1;
+                if(offline.autoSyncMobile===true) counts.mobileSync++;
+                if(offline.autoSyncWifi!==false) counts.wifiSync++;
+            });
+            const list=items=>Object.entries(items).sort((a,b)=>b[1]-a[1]).map(([name,count])=>`<span style="display:inline-flex;justify-content:space-between;gap:14px;background:#f7f5ff;border-radius:12px;padding:6px 9px;font-size:12px;"><span>${name}</span><strong>${count}</strong></span>`).join('');
+            container.innerHTML=`<div class="analytics-grid"><div class="analytics-card"><div class="a-value">${counts.users}</div><div class="a-label">Users sampled</div></div><div class="analytics-card"><div class="a-value">${counts.mobileSync}</div><div class="a-label">Mobile sync enabled</div></div><div class="analytics-card"><div class="a-value">${counts.wifiSync}</div><div class="a-label">WiFi sync enabled</div></div></div><div style="display:grid;gap:8px;margin-top:10px;"><strong style="font-size:12px;color:#4B2E9E;">App languages</strong>${list(counts.languages)||'<span style="font-size:12px;color:#999;">No preference data yet.</span>'}<strong style="font-size:12px;color:#4B2E9E;margin-top:4px;">Connection modes</strong>${list(counts.modes)||'<span style="font-size:12px;color:#999;">No device mode data yet.</span>'}</div>`;
+        } catch(error) {
+            console.error('Preference overview failed:',error);
+            container.innerHTML='<div style="font-size:12px;color:#a33;">Preference analytics are temporarily unavailable.</div>';
+        }
+    }
 
     // =====================================================================
     // ===== FEATURE 4: GLOBAL IN-APP SEARCH ===============================
@@ -12145,7 +12190,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     });
     document.getElementById('adminMenuItem')?.addEventListener('click', ()=>{
         let ap = document.getElementById('adminPanel');
-        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') { renderSchoolEventsList(); loadMyStudents(); } else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); loadOfflineViewsOverview(); } } }
+        if(ap) { ap.classList.toggle('show'); if(ap.classList.contains('show')) { renderPdfAdmin(); if(currentUser?.role==='school') { renderSchoolEventsList(); loadMyStudents(); } else renderEventsAdmin(); renderSchoolsAdmin(); populateVideoMappingDropdowns(); renderExistingMappings(); navigateTo('home'); ap.scrollIntoView({behavior:'smooth'}); if(currentUser?.role==='superadmin') { loadAnalytics(); renderTeachersAdmin(); renderSubscriptionPlansAdmin(); loadAboutEditorData(); loadLiveLessonsAdmin(); loadAdminActiveTokens(); loadAdminPaymentRequests(); loadScheduledNotifs(); loadLiveAdminSections(); loadAdmissionFormsAdmin(); loadOfflineViewsOverview(); loadPreferencesOverview(); } } }
     });
     document.getElementById('offlineViewsRefreshBtn')?.addEventListener('click', ()=>loadOfflineViewsOverview());
     document.getElementById('downloadOfflineEarningsPdfBtn')?.addEventListener('click', ()=>generateOfflineEarningsPdf());

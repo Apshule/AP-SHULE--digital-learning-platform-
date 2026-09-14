@@ -70,6 +70,16 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
+    match /bug_reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    match /feature_requests/{requestId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
       allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews)(/.*)?$');

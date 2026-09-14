@@ -200,6 +200,22 @@ for (const file of FILES) {
   });
 }
 
+// Some Linux/filesystem combinations do not emit fs.watchFile callbacks for a
+// path that did not exist when the watcher was registered. Keep a small
+// existence poll for those paths so a newly created site file is detected
+// without restarting the watcher.
+const missingFilePoll = setInterval(() => {
+  for (const file of FILES) {
+    if (fsWatched.has(file)) continue;
+    const absPath = resolve(WORKSPACE_ROOT, file);
+    if (!existsSync(absPath)) continue;
+    startFsWatch(file, absPath);
+    console.log(`[${timestamp()}] ${file} created — now watching it ✓`);
+    schedulePush(file);
+  }
+}, POLL_MS);
+missingFilePoll.unref();
+
 // Print a single startup summary showing watched vs pending files.
 const pendingAtStart = FILES.filter((f) => !fsWatched.has(f));
 if (pendingAtStart.length === 0) {
