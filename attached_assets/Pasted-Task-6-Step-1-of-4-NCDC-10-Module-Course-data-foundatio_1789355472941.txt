@@ -1,0 +1,304 @@
+Task 6 — Step 1 of 4: NCDC 10-Module Course data foundation
+
+CONTEXT:
+- Task 1 already created the teacher_retooling_progress Firestore collection
+- The "NCDC 10 Modules Course" sub-button exists in Teacher Dashboard 
+  (CBC Teaching Tools card) but shows a placeholder
+- Task 5 built Curriculum Linker with AI content
+
+GOAL:
+Build the DATA LAYER for the NCDC 10-module teacher retooling course:
+- Module definitions (titles, order, description)
+- Lesson structure per module (video, PDF, quiz, practical)
+- Progress tracking per teacher
+- Seed initial content so teachers can start immediately
+
+═══════════════════════════════════════════════════════════════
+PART A: COURSE STRUCTURE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these Firestore collections:
+
+1. ncdc_course_modules
+   Fields:
+   - moduleNumber (number 1-10)
+   - title (string)
+   - description (string, 200 words)
+   - durationMinutes (number, e.g. 45)
+   - learningOutcomes (array of strings)
+   - createdAt (timestamp)
+   - isPublished (boolean, default false)
+
+2. ncdc_module_lessons
+   Fields:
+   - moduleNumber (number 1-10)
+   - lessonOrder (number, 1-4)
+   - lessonType (string: 'video' | 'pdf' | 'quiz' | 'practical')
+   - title (string)
+   - description (string)
+   - contentUrl (string — YouTube URL for video, Firebase Storage URL for PDF, or empty for quiz/practical)
+   - contentData (object — for quiz: { questions: [...] })
+   - requiredForCompletion (boolean, default true)
+   - createdAt (timestamp)
+
+3. teacher_retooling_progress
+   (Task 1 already created basic version — extend with these fields)
+   Fields:
+   - teacherId (string)
+   - moduleNumber (number)
+   - lessonCompletions (array of objects: { lessonOrder, completedAt, score })
+   - moduleCompleted (boolean)
+   - moduleCompletedAt (timestamp)
+   - quizScore (number, average)
+   - practicalUploadUrl (string)
+   - practicalUploadedAt (timestamp)
+   - updatedAt (timestamp)
+
+4. ncdc_cpd_certificates
+   Fields:
+   - teacherId (string)
+   - teacherName (string)
+   - teacherEmail (string)
+   - issuedAt (timestamp)
+   - cpdPoints (number, default 20)
+   - certificateUrl (string — Firebase Storage URL of PDF)
+   - certificateId (string — unique ID for verification)
+   - verified (boolean, default true)
+
+═══════════════════════════════════════════════════════════════
+PART B: MODULE DEFINITIONS (Seed Data)
+═══════════════════════════════════════════════════════════════
+
+Add a seed function that creates the 10 modules:
+
+1. Familiarisation with Course and LMS
+   - Duration: 30 min
+   - Outcomes: Understand the course structure, navigate the LMS, 
+     complete first practical
+
+2. Curriculum Documents and Linkages
+   - Duration: 45 min
+   - Outcomes: Understand NCDC syllabus, learner book, teacher guide,
+     link the three in lesson planning
+
+3. Learner-Centred Methods
+   - Duration: 60 min
+   - Outcomes: Apply Think-Pair-Share, group work, project-based 
+     learning, foster critical thinking
+
+4. Assessment in CBC
+   - Duration: 60 min
+   - Outcomes: Apply formative, summative, criterion-referenced 
+     assessment, use evaluation grids, triangulation
+
+5. Planning, Monitoring and Evaluation
+   - Duration: 45 min
+   - Outcomes: Create CBC lesson plans, monitor learner progress, 
+     evaluate outcomes
+
+6. Projects and Project-Based Learning
+   - Duration: 50 min
+   - Outcomes: Design CBC projects, guide learners through 
+     milestones, assess project work
+
+7. ICT Integration
+   - Duration: 45 min
+   - Outcomes: Use 4 levels of ICT integration (Substitution, 
+     Augmentation, Modification, Redefinition), online/offline tools
+
+8. Inclusion and Special Needs
+   - Duration: 40 min
+   - Outcomes: Differentiate instruction, support learners with 
+     special needs, create inclusive classrooms
+
+9. Record Keeping and Reporting
+   - Duration: 35 min
+   - Outcomes: Maintain CA files, submit UNEB reports, keep 
+     evidence folders
+
+10. Professional Ethics and Community Engagement
+    - Duration: 30 min
+    - Outcomes: Apply professional ethics, engage with parents and 
+      community, contribute to school development
+
+═══════════════════════════════════════════════════════════════
+PART C: LESSON STRUCTURE PER MODULE
+═══════════════════════════════════════════════════════════════
+
+For EACH module, create these 4 lessons:
+
+LESSON 1 — VIDEO (3-5 minutes)
+- lessonType: 'video'
+- title: "{Module Title} — Introduction"
+- contentUrl: YouTube unlisted URL (placeholder for now)
+- description: Overview of what the module covers
+
+LESSON 2 — PDF SUMMARY
+- lessonType: 'pdf'
+- title: "{Module Title} — Module Summary"
+- contentUrl: Firebase Storage URL (placeholder — admin uploads)
+- description: One-page summary of key concepts
+
+LESSON 3 — QUIZ (5 questions)
+- lessonType: 'quiz'
+- title: "{Module Title} — Knowledge Check"
+- contentData: {
+    questions: [
+      { q: "...", options: ["A", "B", "C", "D"], correct: 0 },
+      ... 5 questions total
+    ],
+    passingScore: 3  // 3 out of 5 to pass
+  }
+
+LESSON 4 — PRACTICAL UPLOAD
+- lessonType: 'practical'
+- title: "{Module Title} — Practical Task"
+- description: e.g. "Upload a photo of your CBC lesson plan"
+- requiredForCompletion: true
+
+═══════════════════════════════════════════════════════════════
+PART D: SEED SCRIPT
+═══════════════════════════════════════════════════════════════
+
+Add a Super Admin button "🌱 Seed NCDC Course Content":
+
+- Visible ONLY to superadmin
+- Location: Admin Panel → NCDC/UNEB Control → new button
+- On click:
+  1. Check if ncdc_course_modules is empty
+  2. If not empty: ask "Course already seeded. Re-seed? (will overwrite)"
+  3. Seed 10 modules + 40 lessons (4 per module) into Firestore
+  4. Show progress bar
+  5. On completion: "✅ Seeded 10 modules + 40 lessons"
+
+Do this in batches of 50 to avoid Firestore limits.
+
+═══════════════════════════════════════════════════════════════
+PART E: TEACHER PROGRESS INITIALIZATION
+═══════════════════════════════════════════════════════════════
+
+When a teacher opens the NCDC course for the first time:
+
+1. Check teacher_retooling_progress for their teacherId
+2. If no records exist:
+   - Create a "course_enrollment" doc:
+     {
+       teacherId: uid,
+       enrolledAt: serverTimestamp(),
+       modulesCompleted: 0,
+       totalModules: 10,
+       lastActivityAt: serverTimestamp()
+     }
+3. Show them "Module 1 — Start here"
+
+═══════════════════════════════════════════════════════════════
+PART F: DATA VALIDATION
+═══════════════════════════════════════════════════════════════
+
+Add helper validateModule(module):
+- moduleNumber is 1-10
+- title is non-empty
+- description is non-empty
+- durationMinutes > 0
+
+Add helper validateLesson(lesson):
+- moduleNumber is 1-10
+- lessonOrder is 1-4
+- lessonType is one of: 'video', 'pdf', 'quiz', 'practical'
+- title is non-empty
+
+═══════════════════════════════════════════════════════════════
+PART G: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. ncdc_course_modules: moduleNumber (asc)
+2. ncdc_module_lessons: moduleNumber (asc) + lessonOrder (asc)
+3. teacher_retooling_progress: teacherId (asc) + moduleNumber (asc)
+4. ncdc_cpd_certificates: teacherId (asc) + issuedAt (desc)
+
+Replit will flag if indexes are needed.
+
+═══════════════════════════════════════════════════════════════
+PART H: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Add to IndexedDB "appshule-offline" database:
+
+Object store: offline_ncdc_modules
+- Keys: moduleNumber
+- Fields: all module fields + lessons (array)
+
+Object store: offline_teacher_progress
+- Keys: teacherId + "_" + moduleNumber
+- Fields: all progress fields
+
+Sync function syncNcdcCourse():
+- Query ncdc_course_modules + ncdc_module_lessons
+- Cache all modules + lessons for offline access
+- Run on first app load (async, don't block UI)
+
+Teachers can:
+- View module list offline
+- Read PDF summaries offline (if previously loaded)
+- Take quizzes offline (results sync later)
+- Video playback requires online (per YouTube ToS from Task 2)
+
+═══════════════════════════════════════════════════════════════
+PART I: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 super admin account:
+
+A. Verify collections:
+   1. Open Firebase Console
+   2. Confirm ncdc_course_modules, ncdc_module_lessons, 
+      teacher_retooling_progress, ncdc_cpd_certificates exist
+
+B. Seed test:
+   1. Login as super admin
+   2. Open Admin Panel → NCDC/UNEB Control
+   3. Click "🌱 Seed NCDC Course Content"
+   4. Verify: 10 modules + 40 lessons added to Firestore
+   5. Check ncdc_course_modules has 10 docs
+   6. Check ncdc_module_lessons has 40 docs (4 per module)
+
+C. Re-seed test:
+   1. Click seed button again
+   2. Verify: confirmation dialog appears
+   3. Cancel → no changes
+   4. Confirm → re-seeds (overwrites existing)
+
+D. Enrollment test:
+   1. Login as teacher
+   2. (Enrollment creation will be tested in Step 2 when UI is built)
+
+E. Offline test:
+   1. Open DevTools → Application → IndexedDB
+   2. Verify offline_ncdc_modules and offline_teacher_progress exist
+   3. Verify modules are cached after seeding
+
+F. Index check:
+   1. Check Firestore console for composite indexes
+   2. If any are missing, Firestore will show a link to create them
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-5
+- Do NOT auto-enroll teachers without their consent
+- Do NOT upload actual NCDC videos/PDFs (just placeholders in this step)
+- Do NOT exceed Firestore write limits (batch writes)
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 6 Step 1 complete — NCDC Course data foundation and seed script built"
+
+Report:
+- Which tests A through F passed
+- Any bugs found
+- Screenshots recommended: Firebase Console collections, 
+  seed button in Admin Panel, seed completion message

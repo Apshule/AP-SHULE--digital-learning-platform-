@@ -1879,6 +1879,19 @@
                     <div id="curriculumRequestsList"><div class="cbc-status">Loading requests…</div></div>
                 </div>
 
+                <div class="admin-section" id="superNcdcCourseSection" style="display:none;background:#f3efff;border:1.5px solid #b9a6ef;border-radius:16px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                        <h4 style="margin:0;color:#4B2E9E;">🎓 NCDC / UNEB Course Data</h4>
+                        <button id="seedNcdcCourseBtn" type="button" class="admin-toggle" style="background:#4B2E9E;color:#fff;">🌱 Seed NCDC Course Content</button>
+                    </div>
+                    <p style="font-size:12px;color:#625878;margin:6px 0 10px;">Create the 10 modules and 40 starter lessons. Videos and PDFs remain placeholders for admin upload.</p>
+                    <div id="ncdcSeedProgress" style="display:none;margin-top:8px;">
+                        <div style="height:8px;background:#e4dcfb;border-radius:99px;overflow:hidden;"><div id="ncdcSeedProgressBar" style="height:100%;width:0;background:#4B2E9E;transition:width .2s;"></div></div>
+                        <div id="ncdcSeedProgressText" class="cbc-status" role="status" aria-live="polite"></div>
+                    </div>
+                    <div id="ncdcSeedStatus" class="cbc-status" role="status" aria-live="polite"></div>
+                </div>
+
                 <div class="admin-section" id="superProjectOverviewSection" style="display:none;background:#f7f2ff;border:1.5px solid #cdbdf8;border-radius:16px;padding:16px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                         <h4 style="margin:0;color:#4B2E9E;">📚 Project Integrity Overview</h4>

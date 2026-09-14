@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 6;
+  var DB_VERSION = 7;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -17,7 +17,9 @@
     'offline_settings',
     'offline_curriculum_links',
     'offline_favorites',
-    'offline_recent_curriculum'
+    'offline_recent_curriculum',
+    'offline_ncdc_modules',
+    'offline_teacher_progress'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -146,7 +148,9 @@
               offline_settings: 'userId',
                offline_curriculum_links: 'docId',
                offline_favorites: 'favoriteKey',
-               offline_recent_curriculum: 'docId'
+               offline_recent_curriculum: 'docId',
+               offline_ncdc_modules: 'moduleNumber',
+               offline_teacher_progress: 'progressKey'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -178,6 +182,17 @@
             ? event.target.transaction.objectStore('offline_recent_curriculum')
             : db.createObjectStore('offline_recent_curriculum', { keyPath: 'docId' });
           if (!recentStore.indexNames.contains('viewedAt')) recentStore.createIndex('viewedAt', 'viewedAt', { unique: false });
+        }
+        if (oldVersion < 7) {
+          var modulesStore = db.objectStoreNames.contains('offline_ncdc_modules')
+            ? event.target.transaction.objectStore('offline_ncdc_modules')
+            : db.createObjectStore('offline_ncdc_modules', { keyPath: 'moduleNumber' });
+          if (!modulesStore.indexNames.contains('isPublished')) modulesStore.createIndex('isPublished', 'isPublished', { unique: false });
+          var progressStore = db.objectStoreNames.contains('offline_teacher_progress')
+            ? event.target.transaction.objectStore('offline_teacher_progress')
+            : db.createObjectStore('offline_teacher_progress', { keyPath: 'progressKey' });
+          if (!progressStore.indexNames.contains('teacherId')) progressStore.createIndex('teacherId', 'teacherId', { unique: false });
+          if (!progressStore.indexNames.contains('moduleNumber')) progressStore.createIndex('moduleNumber', 'moduleNumber', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -789,6 +804,41 @@
     listRecentCurriculum: function () {
       return allRecords('offline_recent_curriculum').then(function (items) {
         return items.sort(function (left, right) { return Number(right.viewedAt || 0) - Number(left.viewedAt || 0); }).slice(0, 5);
+      });
+    },
+    cacheNcdcModules: function (modules) {
+      modules = Array.isArray(modules) ? modules : [];
+      return transaction('offline_ncdc_modules', 'readwrite', function (tx) {
+        var store = tx.objectStore('offline_ncdc_modules');
+        store.clear();
+        modules.forEach(function (module) {
+          if (!module || !module.moduleNumber) return;
+          store.put(Object.assign({}, module, { moduleNumber: Number(module.moduleNumber), cachedAt: Date.now() }));
+        });
+        return modules.length;
+      }).then(function () { return modules; });
+    },
+    listNcdcModules: function () { return allRecords('offline_ncdc_modules'); },
+    queueTeacherProgress: function (progress) {
+      progress = progress || {};
+      if (!progress.teacherId || !progress.moduleNumber) return fail('A teacher and module number are required');
+      var value = Object.assign({}, progress, {
+        teacherId: String(progress.teacherId),
+        moduleNumber: Number(progress.moduleNumber),
+        progressKey: String(progress.teacherId) + '_' + String(progress.moduleNumber),
+        syncStatus: 'pending',
+        queuedAt: progress.queuedAt || Date.now()
+      });
+      return putRecord('offline_teacher_progress', value).then(function () { return value; });
+    },
+    listTeacherProgress: function (teacherId) {
+      return allRecords('offline_teacher_progress').then(function (items) {
+        return items.filter(function (item) { return !teacherId || item.teacherId === teacherId; });
+      });
+    },
+    markTeacherProgressSynced: function (progressKey) {
+      return getRecord('offline_teacher_progress', progressKey).then(function (item) {
+        return item ? putRecord('offline_teacher_progress', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
       });
     },
     listCARecords: function () { return allRecords('offline_ca_records'); },
