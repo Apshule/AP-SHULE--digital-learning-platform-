@@ -1,0 +1,175 @@
+Implement ALL STEPS of Task 7 (Video Studio) — Steps 1, 2, 3, and 4.
+
+DO NOT wait for ElevenLabs or D-ID APIs to be configured.
+Build everything WITHOUT requiring live APIs.
+
+═══════════════════════════════════════════════════════════════
+STEP 1: FOUNDATION + CARTOON STUDIO (Tab 1)
+═══════════════════════════════════════════════════════════════
+
+- Create Firestore collections: video_studio_projects, cartoon_assets, 
+  video_generation_queue, video_library
+- Seed 20 cartoon assets (4 characters × 5 poses)
+- Add "Video Studio" card in Super Admin Admin Panel
+- Modal with 4 tabs: Cartoon Studio, AI Auto-Video, Digital Twin, Library
+- Cartoon Studio form:
+  * Topic, Type, Subject, Class, Language, Character, Duration, Script
+- 5-step pipeline: Translate → Audio → Images → Captions → Compile
+- Preview modal (slideshow + audio + captions)
+- Publish to Schools button
+- Video Library tab with filters and pagination
+
+═══════════════════════════════════════════════════════════════
+STEP 2: AI AUTO-VIDEO + SERIES MODE (Tab 2)
+═══════════════════════════════════════════════════════════════
+
+- AI Auto-Video form:
+  * Topic, Subject, Class, Language
+  * Duration Mode: Single Video OR Series Mode
+  * If Single: 5/10/15 min
+  * If Series: Total time (30/45/60 min) + Segment length (5/8/10 min)
+  * Visual Style: Cartoon / Pixabay stock / Slideshow
+  * Difficulty: Standard / Beginner / Advanced
+- 6-step pipeline: Script → Translate → Audio → Visuals → Captions → Compile
+- Gemini API for script generation (uses free tier — already configured)
+- Google TTS (browser SpeechSynthesis — no API key needed)
+- Pixabay images (free tier, no key needed for demo)
+- Series Mode: splits 45-min lesson into 6 segments
+- Series playlist UI in Library
+- Cost tracker in header (shows monthly estimated spend)
+
+═══════════════════════════════════════════════════════════════
+STEP 3: DIGITAL TEACHER TWIN (Tab 3) — UI ONLY, NO LIVE APIS YET
+═══════════════════════════════════════════════════════════════
+
+IMPORTANT: Build the FULL UI for Digital Twin, but do NOT activate 
+the actual API calls until keys are entered.
+
+- Create Firestore collections: teacher_twins, twin_generation_jobs, 
+  twin_api_config
+- Digital Twin tab shows API Configuration panel:
+  * Status: ⚠️ Not configured (default)
+  * Two input fields: ElevenLabs API Key + D-ID API Key
+  * [Test Connection] buttons (disabled until key entered)
+  * [Save Configuration] button
+  * Monthly budget field (default 100,000 UGX)
+  * Current month spend tracker
+- When APIs NOT configured:
+  * Show message: "⚠️ Digital Twin disabled. Configure APIs first."
+  * [Create Digital Twin] button disabled
+- When APIs ARE configured (later):
+  * Full creation form appears
+  * Consent form upload
+  * Sample video upload
+  * Twin creation pipeline (ElevenLabs voice + D-ID avatar)
+- Twin management list (shows existing twins)
+- Teacher access to own twin (read-only)
+- Teacher earnings: 200 UGX per twin video view
+- Cost management + monthly budget alerts
+
+DO NOT make real API calls yet. Just build the UI and make it 
+ready for keys to be entered later.
+
+═══════════════════════════════════════════════════════════════
+STEP 4: INTEGRATION + STUDENT/TEACHER VIEWS + FINAL TESTING
+═══════════════════════════════════════════════════════════════
+
+- Student Video Library section on Home:
+  * Search bar, filter chips, language/subject filters
+  * Video cards with thumbnails
+  * Series shows as playlist
+- Teacher Video Library in Teacher Dashboard:
+  * Filter by subject/class
+  * "Assign to Class" button
+- Series Playlist Player:
+  * Auto-advance to next segment
+  * Playlist sidebar with progress
+  * Next segment preview overlay
+- Assigned Videos section for students
+- Cost Tracking Dashboard (Super Admin):
+  * Monthly spend by mode
+  * Yearly totals
+  * Top videos by views
+  * Budget usage bar
+- Video Analytics per video (views, completion, devices)
+- Video Recommendations (based on student weak areas)
+- Video Sharing (Web Share API)
+- Downloads Management (in Account page)
+- Performance optimization (pagination, caching, lazy load)
+- Accessibility (keyboard nav, captions toggle, aria-labels)
+- Mobile responsive at 3 breakpoints
+- Firestore indexes for all video queries
+- FULL REGRESSION: Verify Tasks 1-6 still work
+- Code cleanup (remove debug logs, add comments)
+
+═══════════════════════════════════════════════════════════════
+BUILD ORDER
+═══════════════════════════════════════════════════════════════
+
+1. Step 1 fully (Foundation + Cartoon Studio)
+2. Step 2 fully (AI Auto-Video + Series Mode)
+3. Step 3 fully (Digital Twin UI + config panel — no live APIs)
+4. Step 4 fully (Integration + testing)
+
+Do NOT wait for confirmation between steps. Implement all 4 steps 
+in sequence, one after another, until Task 7 is complete.
+
+═══════════════════════════════════════════════════════════════
+CONSTRAINTS
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-6
+- Do NOT download YouTube videos (ToS)
+- Do NOT make live API calls for Digital Twin (wait for keys)
+- Do NOT exceed Gemini free tier
+- Do NOT exceed monthly budget
+- Do NOT expose API keys in code
+- Compress all images and audio
+- Keep app size <30MB
+
+═══════════════════════════════════════════════════════════════
+TESTING
+═══════════════════════════════════════════════════════════════
+
+After building all 4 steps, run the full test suite:
+
+1. Cartoon Studio generates a video successfully
+2. AI Auto-Video generates from topic
+3. Series Mode creates 6 segments from 45-min lesson
+4. Digital Twin tab shows config panel (Not configured state)
+5. Student Video Library shows published videos
+6. Teacher Video Library works
+7. Series Playlist Player plays segments
+8. Cost Dashboard shows stats
+9. Regression: Tasks 1-6 still work
+
+═══════════════════════════════════════════════════════════════
+FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. All 4 steps completed: yes/no
+2. Feature list:
+   ☐ Cartoon Studio working
+   ☐ AI Auto-Video working
+   ☐ Series Mode working
+   ☐ Digital Twin UI ready (APIs disabled)
+   ☐ Student library
+   ☐ Teacher library
+   ☐ Assigned videos
+   ☐ Series playlist
+   ☐ Cost dashboard
+   ☐ Downloads management
+3. Regression: Tasks 1-6 all pass?
+4. Estimated cost when APIs are enabled later: UGX 73,000/month
+5. Any bugs found + fixes
+
+If everything passes:
+"Task 7 fully complete — Video Studio with Cartoon, AI Auto-Video, 
+Series Mode, and Digital Twin UI ready. Ready for Task 8."
+
+═══════════════════════════════════════════════════════════════
+
+Implement now. Do NOT wait for confirmation. Build all 4 steps.
