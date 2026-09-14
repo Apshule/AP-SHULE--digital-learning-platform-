@@ -1230,6 +1230,75 @@
         </div>
     </div>
 
+    <!-- CURRICULUM LINKER -->
+    <div id="curriculumLinkerModal" class="curriculum-modal" role="dialog" aria-modal="true" aria-labelledby="curriculumLinkerTitle">
+        <div class="curriculum-shell">
+            <div class="curriculum-header">
+                <div>
+                    <h2 id="curriculumLinkerTitle">📚 Curriculum Linker</h2>
+                    <small>Find NCDC-aligned references and classroom activities</small>
+                </div>
+                <button id="closeCurriculumLinkerBtn" class="curriculum-close" type="button" aria-label="Close Curriculum Linker">&times;</button>
+            </div>
+            <div class="curriculum-toolbar">
+                <div class="curriculum-search-wrap" role="search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input id="curriculumSearchInput" type="search" autocomplete="off" placeholder="Search topic (e.g. Photosynthesis, Fractions)" aria-label="Search curriculum topics" aria-controls="curriculumResults" aria-describedby="curriculumResultCount">
+                    <button id="clearCurriculumSearchBtn" class="curriculum-clear-search" type="button" aria-label="Clear search">×</button>
+                    <div id="curriculumTypeahead" class="curriculum-suggestions" style="display:none;position:absolute;left:0;right:0;top:52px;z-index:3;padding:8px;box-shadow:0 8px 20px rgba(0,0,0,.14);"></div>
+                </div>
+                <div class="curriculum-filters">
+                    <select id="curriculumSubjectFilter" aria-label="Filter by subject"><option value="">All subjects</option></select>
+                    <select id="curriculumClassFilter" aria-label="Filter by class level"><option value="">All classes</option></select>
+                    <button id="clearCurriculumFiltersBtn" type="button">Clear filters</button>
+                </div>
+                <div class="curriculum-tabs" role="tablist" aria-label="Curriculum views">
+                    <button class="curriculum-tab active" data-curriculum-tab="search" role="tab" aria-selected="true">🔎 Search</button>
+                    <button class="curriculum-tab" data-curriculum-tab="favorites" role="tab" aria-selected="false">⭐ My Favorites <span id="curriculumFavoritesCount"></span></button>
+                </div>
+            </div>
+            <div id="curriculumConnectionStatus" class="curriculum-status" role="status" aria-live="polite"></div>
+            <div id="curriculumResults" class="curriculum-body"></div>
+            <div id="curriculumDetailPanel" class="curriculum-body curriculum-detail" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <div id="generatedActivityModal" class="curriculum-generated-modal" role="dialog" aria-modal="true" aria-labelledby="generatedActivityTitle">
+        <div class="curriculum-dialog">
+            <div class="curriculum-dialog-header">
+                <h2 id="generatedActivityTitle">📄 CBC Activity</h2>
+                <button id="closeGeneratedActivityBtn" type="button" aria-label="Close generated activity">&times;</button>
+            </div>
+            <div class="curriculum-dialog-body">
+                <div id="generatedActivityStatus" class="curriculum-status" style="margin:-16px -16px 12px;"></div>
+                <div id="generatedActivityOutput" class="curriculum-activity-output" aria-live="polite"></div>
+                <div class="curriculum-dialog-actions">
+                    <button id="downloadActivityPdfBtn" class="curriculum-action-btn primary" type="button">📥 Download PDF</button>
+                    <button id="copyActivityBtn" class="curriculum-action-btn" type="button">📋 Copy</button>
+                    <button id="regenerateActivityBtn" class="curriculum-action-btn orange" type="button">🔄 Regenerate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="suggestCurriculumModal" class="curriculum-suggest-modal" role="dialog" aria-modal="true" aria-labelledby="suggestCurriculumTitle">
+        <div class="curriculum-dialog">
+            <div class="curriculum-dialog-header">
+                <h2 id="suggestCurriculumTitle">Suggest a topic</h2>
+                <button id="closeSuggestCurriculumBtn" type="button" aria-label="Close topic suggestion">&times;</button>
+            </div>
+            <div class="curriculum-dialog-body">
+                <form id="suggestCurriculumForm" class="curriculum-suggest-form">
+                    <input name="topic" required maxlength="120" placeholder="Topic name" aria-label="Topic name">
+                    <select name="subject" required aria-label="Subject"><option value="">Select subject</option></select>
+                    <select name="classLevel" required aria-label="Class level"><option value="">Select class level</option></select>
+                    <textarea name="reason" rows="3" maxlength="500" placeholder="Why is this topic needed? (optional)" aria-label="Reason"></textarea>
+                    <button class="curriculum-action-btn primary" type="submit">Submit Suggestion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- WEAK AREAS SELECTION MODAL -->
     <div id="weakAreasModal" class="weak-area-modal">
         <div class="weak-area-box">
@@ -1798,6 +1867,15 @@
                         <button type="button" id="importCurriculumPreviewBtn" class="admin-toggle" style="background:#1686ba;color:white;display:none;">⬆ Import Valid Preview Rows</button>
                         <button type="button" id="seedCurriculumSamplesBtn" class="admin-toggle">🌱 Seed Sample Topics</button>
                     </div>
+                </div>
+
+                <div class="admin-section" id="superCurriculumRequestsSection" style="display:none;background:#fff8ef;border:1.5px solid #f0c38a;border-radius:16px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                        <h4 style="margin:0;color:#8a4b08;">📝 Topic Requests</h4>
+                        <button id="refreshCurriculumRequestsBtn" type="button" class="admin-toggle">↻ Refresh</button>
+                    </div>
+                    <p style="font-size:12px;color:#8a6a42;margin:6px 0 10px;">Review missing topics submitted by teachers. Approving creates a placeholder for the curriculum team to complete.</p>
+                    <div id="curriculumRequestsList"><div class="cbc-status">Loading requests…</div></div>
                 </div>
 
                 <div class="admin-section" id="superProjectOverviewSection" style="display:none;background:#f7f2ff;border:1.5px solid #cdbdf8;border-radius:16px;padding:16px;">
@@ -3716,6 +3794,14 @@
     let _curriculumImportPreview={valid:[],invalid:[],source:''};
     let _curriculumRepairStarted=false;
     let _curriculumAdminReady=false;
+    let _curriculumSearchCache=null;
+    let _curriculumUiReady=false;
+    let _curriculumUi={
+        open:false, tab:'search', query:'', subject:'', classLevel:'', detail:null,
+        detailTab:'syllabus', matches:[], visibleCount:20, searchToken:0,
+        favoriteIds:new Set(), recent:[], popular:[], activity:null
+    };
+    const CURRICULUM_CLASS_LEVELS=['P1','P2','P3','P4','P5','P6','P7','S1','S2','S3','S4','S5','S6'];
 
     function generateSearchKeywords(topic,subject,classLevel) {
         const combined=`${topic||''} ${subject||''} ${classLevel||''}`.toLowerCase();
@@ -3886,14 +3972,18 @@
         if(_curriculumLinksUnsub||!db) return;
         _curriculumLinksUnsub=onSnapshot(collection(db,'curriculum_links'),async snap=>{
             _curriculumLinks=snap.docs.map(item=>({docId:item.id,id:item.id,...item.data()}));
+            _curriculumSearchCache=_curriculumLinks.slice(0,2000);
             window._curriculumLinks=_curriculumLinks;
             renderCurriculumLinksCount();
             if(Offline&&_curriculumLinks.length<=2000) await Offline.cacheCurriculumLinks(_curriculumLinks).catch(()=>{});
+            if(_curriculumUi.open){populateCurriculumFilters(_curriculumSearchCache);runCurriculumSearch();}
             repairCurriculumLinksDocuments(snap.docs).catch(()=>{});
         },async()=>{
             if(Offline) _curriculumLinks=await Offline.listCurriculumLinks().catch(()=>[]);
+            _curriculumSearchCache=_curriculumLinks.slice(0,2000);
             window._curriculumLinks=_curriculumLinks;
             renderCurriculumLinksCount();
+            if(_curriculumUi.open){populateCurriculumFilters(_curriculumSearchCache);runCurriculumSearch();}
         });
     }
 
@@ -3906,16 +3996,526 @@
         return links;
     }
 
-    async function searchCurriculumLinks(searchTerm='',options={}) {
-        let records=_curriculumLinks;
-        if(!records.length&&Offline) records=await Offline.listCurriculumLinks().catch(()=>[]);
+    function curriculumSearchWords(value) {
+        return String(value||'').toLowerCase().trim().match(/[a-z0-9]+/g)||[];
+    }
+
+    function scoreCurriculumRecord(record, queryText, words) {
+        const topic=String(record.topic||'').toLowerCase().trim();
+        const keywords=(record.searchKeywords||generateSearchKeywords(record.topic,record.subject,record.classLevel)).map(item=>String(item).toLowerCase());
+        if(!queryText) return 0;
+        let score=0;
+        if(topic===queryText) score+=100;
+        else if(topic.startsWith(queryText)) score+=80;
+        else if(topic.includes(queryText)) score+=60;
+        if(words.some(word=>keywords.includes(word))) score+=40;
+        if(words.length>1 && words.every(word=>keywords.some(keyword=>keyword.includes(word)))) score+=10;
+        return score;
+    }
+
+    function rankCurriculumLinks(records, searchTerm='', options={}) {
         const queryText=String(searchTerm||'').toLowerCase().trim();
-        return records.filter(record=>{
+        const words=curriculumSearchWords(queryText);
+        return (Array.isArray(records)?records:[]).filter(record=>{
             if(options.subject&&String(record.subject).toLowerCase()!==String(options.subject).toLowerCase()) return false;
             if(options.classLevel&&String(record.classLevel).toLowerCase()!==String(options.classLevel).toLowerCase()) return false;
             if(!queryText) return true;
-            const haystack=(record.searchKeywords||generateSearchKeywords(record.topic,record.subject,record.classLevel)).join(' ');
-            return haystack.includes(queryText)||String(record.topic||'').toLowerCase().includes(queryText);
+            return scoreCurriculumRecord(record,queryText,words)>0;
+        }).map(record=>Object.assign({},record,{_matchScore:scoreCurriculumRecord(record,queryText,words)}))
+          .sort((left,right)=>(right._matchScore-left._matchScore)||String(left.topic||'').localeCompare(String(right.topic||'')));
+    }
+
+    async function getCurriculumSearchCache(force=false) {
+        if(!force&&Array.isArray(_curriculumSearchCache)) return _curriculumSearchCache;
+        if(_curriculumLinks.length) {
+            _curriculumSearchCache=_curriculumLinks.slice(0,2000);
+            return _curriculumSearchCache;
+        }
+        if(navigator.onLine&&db&&typeof getDocs==='function') {
+            try {
+                const snap=await getDocs(query(collection(db,'curriculum_links'),limit(2000)));
+                _curriculumSearchCache=snap.docs.map(item=>({docId:item.id,id:item.id,...item.data()}));
+                if(Offline&&_curriculumSearchCache.length<=2000) await Offline.cacheCurriculumLinks(_curriculumSearchCache).catch(()=>{});
+                return _curriculumSearchCache;
+            } catch(_){}
+        }
+        _curriculumSearchCache=Offline?await Offline.listCurriculumLinks().catch(()=>[]):[];
+        return _curriculumSearchCache;
+    }
+
+    async function searchCurriculumLinks(searchTerm='',options={}) {
+        const records=await getCurriculumSearchCache(Boolean(options.refresh));
+        const ranked=rankCurriculumLinks(records,searchTerm,options);
+        return options.includeScore===false ? ranked.map(record=>{const copy=Object.assign({},record);delete copy._matchScore;return copy;}) : ranked;
+    }
+
+    function curriculumActivityCacheId(record) {
+        const value=`${record.topic||''}|${record.subject||''}|${record.classLevel||''}`.toLowerCase();
+        let hash=2166136261;
+        for(let i=0;i<value.length;i++){hash^=value.charCodeAt(i);hash=Math.imul(hash,16777619);}
+        return `activity-${(hash>>>0).toString(16)}`;
+    }
+
+    function curriculumFavoriteDocId(docId) {
+        return `${currentUser?.uid||'guest'}_${String(docId||'').replace(/[^a-zA-Z0-9_-]/g,'-')}`.slice(0,1500);
+    }
+
+    function curriculumRecordDocId(record) { return String(record?.docId||record?.id||''); }
+
+    async function loadCurriculumFavorites() {
+        if(!currentUser?.uid) return;
+        const local=Offline?await Offline.listFavorites(currentUser.uid).catch(()=>[]):[];
+        const merged=new Set(local.filter(item=>item.saved!==false).map(item=>String(item.curriculumDocId)));
+        if(navigator.onLine) {
+            try {
+                const snap=await getDocs(query(collection(db,'teacher_favorites'),where('teacherId','==',currentUser.uid),limit(2000)));
+                snap.docs.forEach(item=>{if(item.data().saved!==false) merged.add(String(item.data().curriculumDocId||item.id));});
+                for(const docId of merged) await setDoc(doc(db,'teacher_favorites',curriculumFavoriteDocId(docId)),{teacherId:currentUser.uid,curriculumDocId:docId,saved:true,savedAt:serverTimestamp()},{merge:true});
+            } catch(error) { console.warn('Curriculum favorite sync unavailable',error); }
+        }
+        _curriculumUi.favoriteIds=merged;
+        renderCurriculumFavoritesCount();
+    }
+
+    async function syncCurriculumFavorites() {
+        if(!navigator.onLine||!currentUser?.uid||!Offline) return;
+        const pending=await Offline.listFavorites(currentUser.uid).catch(()=>[]);
+        for(const item of pending.filter(value=>value.syncStatus==='pending')) {
+            const ref=doc(db,'teacher_favorites',curriculumFavoriteDocId(item.curriculumDocId));
+            if(item.saved===false) await deleteDoc(ref).catch(()=>{});
+            else await setDoc(ref,{teacherId:currentUser.uid,curriculumDocId:item.curriculumDocId,saved:true,savedAt:serverTimestamp()},{merge:true}).catch(()=>{});
+            await Offline.markFavoriteSynced(item.favoriteKey).catch(()=>{});
+        }
+        await loadCurriculumFavorites();
+    }
+
+    async function toggleCurriculumFavorite(record,event) {
+        event?.stopPropagation();
+        const docId=curriculumRecordDocId(record); if(!docId||!currentUser?.uid) return;
+        const saved=!_curriculumUi.favoriteIds.has(docId);
+        if(saved) _curriculumUi.favoriteIds.add(docId); else _curriculumUi.favoriteIds.delete(docId);
+        renderCurriculumFavoritesCount();
+        if(Offline) await Offline.queueFavorite({userId:currentUser.uid,curriculumDocId:docId,saved}).catch(()=>{});
+        if(navigator.onLine) {
+            const ref=doc(db,'teacher_favorites',curriculumFavoriteDocId(docId));
+            if(saved) await setDoc(ref,{teacherId:currentUser.uid,curriculumDocId:docId,saved:true,savedAt:serverTimestamp()},{merge:true}).catch(()=>{});
+            else await deleteDoc(ref).catch(()=>{});
+            if(Offline) await Offline.markFavoriteSynced(`${currentUser.uid}|${docId}`).catch(()=>{});
+        }
+        showNotification(saved?'Saved to favorites':'Removed from favorites','success');
+        if(_curriculumUi.open) renderCurriculumResults();
+    }
+
+    function renderCurriculumFavoritesCount() {
+        const count=document.getElementById('curriculumFavoritesCount');
+        if(count) count.textContent=_curriculumUi.favoriteIds.size?`(${_curriculumUi.favoriteIds.size})`:'';
+        if(count&&Offline&&currentUser?.uid) Offline.listFavorites(currentUser.uid).then(items=>{
+            const pending=items.filter(item=>item.syncStatus==='pending').length;
+            count.textContent=(_curriculumUi.favoriteIds.size?`(${_curriculumUi.favoriteIds.size})`:'')+(pending?` · ${pending} pending`:'');
+        }).catch(()=>{});
+    }
+
+    function curriculumListValue(value) {
+        return Array.isArray(value)?value.filter(Boolean):String(value||'').split(',').map(item=>item.trim()).filter(Boolean);
+    }
+
+    function curriculumSetConnectionStatus() {
+        const status=document.getElementById('curriculumConnectionStatus');
+        if(!status) return;
+        status.textContent=navigator.onLine?'Online — searching the curriculum library':'Offline Mode — searching cached topics';
+        status.className=`curriculum-status${navigator.onLine?'':' curriculum-offline'}`;
+    }
+
+    function populateCurriculumFilters(records) {
+        const subject=document.getElementById('curriculumSubjectFilter');
+        const classLevel=document.getElementById('curriculumClassFilter');
+        const suggestSubject=document.querySelector('#suggestCurriculumForm select[name="subject"]');
+        const suggestClass=document.querySelector('#suggestCurriculumForm select[name="classLevel"]');
+        const subjects=[...new Set((records||[]).map(item=>String(item.subject||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+        const subjectOptions='<option value="">All subjects</option>'+subjects.map(item=>`<option value="${escHtml(item)}">${escHtml(item)}</option>`).join('');
+        const classOptions='<option value="">All classes</option>'+CURRICULUM_CLASS_LEVELS.map(item=>`<option value="${item}">${item}</option>`).join('');
+        if(subject&&subject.options.length<=1) subject.innerHTML=subjectOptions;
+        if(classLevel&&classLevel.options.length<=1) classLevel.innerHTML=classOptions;
+        if(suggestSubject&&suggestSubject.options.length<=1) suggestSubject.innerHTML='<option value="">Select subject</option>'+subjects.map(item=>`<option value="${escHtml(item)}">${escHtml(item)}</option>`).join('');
+        if(suggestClass&&suggestClass.options.length<=1) suggestClass.innerHTML='<option value="">Select class level</option>'+CURRICULUM_CLASS_LEVELS.map(item=>`<option value="${item}">${item}</option>`).join('');
+        if(subject) subject.value=_curriculumUi.subject;
+        if(classLevel) classLevel.value=_curriculumUi.classLevel;
+    }
+
+    function renderCurriculumSuggestions(records) {
+        const container=document.getElementById('curriculumResults'); if(!container) return;
+        const source=[...(records||[])], hasSearchCounts=source.some(item=>Number(item.search_count||item.searchCount||0)>0);
+        const popular=source.sort(hasSearchCounts
+            ? (a,b)=>Number(b.search_count||b.searchCount||0)-Number(a.search_count||a.searchCount||0)||String(a.topic||'').localeCompare(String(b.topic||''))
+            : ()=>Math.random()-.5).slice(0,8);
+        const recent=_curriculumUi.recent||[];
+        container.innerHTML=`<div class="curriculum-suggestions">
+            <h3>🔥 Popular topics</h3>
+            <div class="curriculum-chip-list">${popular.map(item=>`<button class="curriculum-chip" type="button" data-curriculum-suggestion="${escHtml(curriculumRecordDocId(item))}">${escHtml(item.topic)}</button>`).join('')||'<span class="cbc-status">No topics cached yet.</span>'}</div>
+            ${recent.length?`<div class="curriculum-section-label">Recently viewed</div><div class="curriculum-chip-list">${recent.map(item=>`<button class="curriculum-chip" type="button" data-curriculum-suggestion="${escHtml(curriculumRecordDocId(item))}">${escHtml(item.topic)}</button>`).join('')}</div>`:''}
+        </div>
+        <div class="curriculum-empty" style="margin-top:10px;"><span class="icon">🔎</span>Search by topic, subject, or class level to find a curriculum link.</div>`;
+        container.querySelectorAll('[data-curriculum-suggestion]').forEach(button=>button.addEventListener('click',()=>{
+            const item=(records||[]).find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion)||recent.find(record=>curriculumRecordDocId(record)===button.dataset.curriculumSuggestion);
+            if(item){const input=document.getElementById('curriculumSearchInput');if(input)input.value=item.topic;_curriculumUi.query=item.topic;runCurriculumSearch();}
+        }));
+    }
+
+    function renderCurriculumSkeletons() {
+        const container=document.getElementById('curriculumResults');
+        if(container) container.innerHTML='<div class="curriculum-results">'+Array.from({length:3},()=>'<div class="curriculum-skeleton"></div>').join('')+'</div>';
+    }
+
+    function renderCurriculumResults() {
+        const container=document.getElementById('curriculumResults'); if(!container) return;
+        if(!_curriculumUi.query.trim()&&_curriculumUi.tab==='search'&&!_curriculumUi.subject&&!_curriculumUi.classLevel){
+            renderCurriculumSuggestions(_curriculumSearchCache||[]);
+            return;
+        }
+        let matches=_curriculumUi.matches||[];
+        if(_curriculumUi.tab==='favorites') matches=matches.filter(item=>_curriculumUi.favoriteIds.has(curriculumRecordDocId(item)));
+        const visible=matches.slice(0,_curriculumUi.visibleCount);
+        const query=_curriculumUi.query.trim();
+        container.innerHTML=`<div id="curriculumResultCount" class="curriculum-section-label" aria-live="polite">${matches.length} topic${matches.length===1?'':'s'} found${query?` for “${escHtml(query)}”`:''}</div>
+            <div class="curriculum-results">${visible.map(item=>{
+                const id=curriculumRecordDocId(item), saved=_curriculumUi.favoriteIds.has(id);
+                return `<article class="curriculum-result" tabindex="0" role="button" data-curriculum-result="${escHtml(id)}" aria-label="Open ${escHtml(item.topic)}">
+                    <button class="curriculum-fav" type="button" data-curriculum-favorite="${escHtml(id)}" aria-label="${saved?'Remove':'Save'} ${escHtml(item.topic)} ${saved?'from':'to'} favorites">${saved?'⭐':'☆'}</button>
+                    <h3>${escHtml(item.topic)}</h3>
+                    <span class="curriculum-badge">${escHtml(item.subject)}</span><span class="curriculum-badge">${escHtml(item.classLevel)}</span><span class="curriculum-score">${Number(item._matchScore||0)} pts</span>
+                    <p>${escHtml(String(item.summaryText||'').slice(0,100))}${String(item.summaryText||'').length>100?'…':''}</p>
+                </article>`;
+            }).join('')||`<div class="curriculum-empty"><span class="icon">📚</span>No topics found for “${escHtml(query||'your filters')}”.<br><button id="openSuggestCurriculumBtn" class="curriculum-action-btn primary" type="button" style="margin-top:12px;">Suggest a topic</button></div>`}</div>
+            ${matches.length>visible.length?'<button id="loadMoreCurriculumBtn" class="curriculum-action-btn" type="button" style="width:100%;margin-top:10px;">Load more topics</button>':''}`;
+        container.querySelectorAll('[data-curriculum-favorite]').forEach(button=>button.addEventListener('click',event=>{
+            const record=matches.find(item=>curriculumRecordDocId(item)===button.dataset.curriculumFavorite); if(record) toggleCurriculumFavorite(record,event);
+        }));
+        container.querySelectorAll('[data-curriculum-result]').forEach(card=>{
+            const open=()=>{const record=matches.find(item=>curriculumRecordDocId(item)===card.dataset.curriculumResult);if(record)openCurriculumDetail(record);};
+            card.addEventListener('click',event=>{if(!event.target.closest('[data-curriculum-favorite]'))open();});
+            card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}});
+        });
+        document.getElementById('loadMoreCurriculumBtn')?.addEventListener('click',()=>{_curriculumUi.visibleCount+=20;renderCurriculumResults();});
+        document.getElementById('openSuggestCurriculumBtn')?.addEventListener('click',()=>openCurriculumSuggestion(query));
+    }
+
+    async function runCurriculumSearch() {
+        const token=++_curriculumUi.searchToken;
+        renderCurriculumSkeletons();
+        try {
+            const matches=await searchCurriculumLinks(_curriculumUi.query,{subject:_curriculumUi.subject,classLevel:_curriculumUi.classLevel});
+            if(token!==_curriculumUi.searchToken) return;
+            _curriculumUi.matches=matches;
+            _curriculumUi.visibleCount=20;
+            renderCurriculumResults();
+        } catch(error) {
+            if(token!==_curriculumUi.searchToken) return;
+            const container=document.getElementById('curriculumResults');
+            if(container) container.innerHTML=`<div class="curriculum-empty"><span class="icon">⚠️</span>${escHtml(error.message||'Could not search curriculum links.')}</div>`;
+        }
+    }
+
+    function curriculumDetailTabContent(record) {
+        const tab=_curriculumUi.detailTab;
+        if(tab==='learner') return `<div class="curriculum-detail-card">
+            <h3>📖 Learner Book</h3><p><strong>${escHtml(record.learnerBookPage||'Learner book reference not yet added')}</strong></p>
+            ${record.learnerBookUrl?`<a class="curriculum-link-btn" href="${escHtml(record.learnerBookUrl)}" target="_blank" rel="noopener">Open learner book PDF</a>`:''}
+            <p style="margin-top:14px;color:#6e687a;">This is what the student reads.</p><p>${escHtml(record.summaryText||'No learner summary has been added yet.')}</p>
+        </div>`;
+        if(tab==='guide') return `<div class="curriculum-detail-card">
+            <h3>👨‍🏫 Teacher Guide</h3><p><strong>${escHtml(record.teacherGuidePage||'Teacher guide reference not yet added')}</strong></p>
+            ${record.teacherGuideUrl?`<a class="curriculum-link-btn" href="${escHtml(record.teacherGuideUrl)}" target="_blank" rel="noopener">Open teacher guide PDF</a>`:''}
+            <p style="margin-top:14px;color:#6e687a;">This is how to teach the topic.</p>
+            <div style="background:#fff8ed;border-left:4px solid #FF8C42;border-radius:10px;padding:12px;"><strong>💡 Suggested Activity</strong><br>${escHtml(record.activitySuggestion||'Add a practical, learner-centred activity for this topic.')}</div>
+        </div>`;
+        const list=(title,items)=>items.length?`<p><strong>${title}</strong></p><ul>${items.map(item=>`<li>${escHtml(item)}</li>`).join('')}</ul>`:'';
+        return `<div class="curriculum-detail-card">
+            <h3>📘 Syllabus</h3><p><strong>${escHtml(record.syllabusRef||'Syllabus reference not yet added')}</strong></p>
+            ${record.syllabusUrl?`<a class="curriculum-link-btn" href="${escHtml(record.syllabusUrl)}" target="_blank" rel="noopener">Open full syllabus PDF</a>`:''}
+            ${list('Competencies',curriculumListValue(record.competencies))}${list('Generic skills',curriculumListValue(record.genericSkills))}${list('Values',curriculumListValue(record.values))}
+            ${!curriculumListValue(record.competencies).length&&!curriculumListValue(record.genericSkills).length&&!curriculumListValue(record.values).length?'<p style="color:#6e687a;">Competencies, generic skills, and values will appear here when supplied by the curriculum team.</p>':''}
+        </div>`;
+    }
+
+    function renderCurriculumDetail() {
+        const panel=document.getElementById('curriculumDetailPanel'), record=_curriculumUi.detail;
+        if(!panel||!record) return;
+        const id=curriculumRecordDocId(record), saved=_curriculumUi.favoriteIds.has(id);
+        panel.innerHTML=`<button id="backToCurriculumResultsBtn" class="curriculum-back" type="button">← Back to results</button>
+            <div class="curriculum-detail-heading"><h2>${escHtml(record.topic)}</h2><span class="curriculum-badge">${escHtml(record.subject)}</span><span class="curriculum-badge">${escHtml(record.classLevel)}</span><p style="margin-top:9px;">${escHtml(record.summaryText||'')}</p></div>
+            <div class="curriculum-detail-tabs" role="tablist">${[['syllabus','📘 Syllabus'],['learner','📖 Learner Book'],['guide','👨‍🏫 Teacher Guide']].map(([key,label])=>`<button class="curriculum-detail-tab ${_curriculumUi.detailTab===key?'active':''}" type="button" data-detail-tab="${key}" role="tab" aria-selected="${_curriculumUi.detailTab===key}">${label}</button>`).join('')}</div>
+            ${curriculumDetailTabContent(record)}
+            <div class="curriculum-detail-actions">
+                <button id="generateCurriculumActivityBtn" class="curriculum-action-btn primary wide" type="button">📄 Generate CBC Activity (AI)</button>
+                <button id="favoriteCurriculumDetailBtn" class="curriculum-action-btn" type="button">${saved?'⭐ Saved to My Favorites':'☆ Save to My Favorites'}</button>
+                <button id="shareCurriculumDetailBtn" class="curriculum-action-btn" type="button">📤 Share</button>
+            </div>`;
+        document.getElementById('backToCurriculumResultsBtn').onclick=()=>showCurriculumResultsView();
+        panel.querySelectorAll('[data-detail-tab]').forEach(button=>button.onclick=()=>{_curriculumUi.detailTab=button.dataset.detailTab;renderCurriculumDetail();});
+        document.getElementById('favoriteCurriculumDetailBtn').onclick=event=>toggleCurriculumFavorite(record,event).then(renderCurriculumDetail);
+        document.getElementById('shareCurriculumDetailBtn').onclick=()=>shareCurriculumRecord(record);
+        document.getElementById('generateCurriculumActivityBtn').onclick=()=>openGeneratedActivity(record);
+    }
+
+    function showCurriculumResultsView() {
+        _curriculumUi.detail=null;
+        document.getElementById('curriculumDetailPanel')?.classList.remove('show');
+        const results=document.getElementById('curriculumResults'); if(results) results.style.display='block';
+        renderCurriculumResults();
+    }
+
+    async function openCurriculumDetail(record) {
+        _curriculumUi.detail=record; _curriculumUi.detailTab='syllabus';
+        document.getElementById('curriculumResults').style.display='none';
+        document.getElementById('curriculumDetailPanel')?.classList.add('show');
+        renderCurriculumDetail();
+        if(Offline) {
+            const recent=[record,...(_curriculumUi.recent||[]).filter(item=>curriculumRecordDocId(item)!==curriculumRecordDocId(record))].slice(0,5);
+            _curriculumUi.recent=recent;
+            await Offline.recordRecentCurriculum({docId:curriculumRecordDocId(record),topic:record.topic,subject:record.subject,classLevel:record.classLevel,viewedAt:Date.now()}).catch(()=>{});
+        }
+        if(navigator.onLine&&db) updateDoc(doc(db,'curriculum_links',curriculumRecordDocId(record)),{search_count:increment(1)}).catch(()=>{});
+    }
+
+    async function shareCurriculumRecord(record) {
+        const text=`${record.topic} — ${record.subject} ${record.classLevel}\n${record.summaryText||''}\nSyllabus: ${record.syllabusRef||'—'}`;
+        try {
+            if(navigator.share) await navigator.share({title:`${record.topic} · APSHULE`,text});
+            else { await navigator.clipboard.writeText(text); showNotification('Copied curriculum link','success'); }
+        } catch(error) { if(error?.name!=='AbortError') showNotification('Could not share this topic','error'); }
+    }
+
+    function curriculumActivityFallback(record, reason='') {
+        const prefix=reason?`${reason}\n\n`:'';
+        return `${prefix}CBC Activity: ${record.topic}
+
+Real-life Ugandan scenario
+Learners investigate ${record.topic} using a familiar school or community example. In groups, they observe, discuss, and present how the idea appears in daily life.
+
+CBC values
+• Responsibility
+• Cooperation
+• Respect for evidence
+
+Generic skills practiced
+Critical thinking, communication, collaboration, and problem solving.
+
+Assessment criteria
+Exceeds: explains the concept accurately and applies it to a new local example.
+Meets: explains the main idea and completes the group task.
+Approaching: identifies part of the idea with guided support.
+Needs Support: needs a worked example and one-to-one prompting.
+
+Time: 40 minutes
+
+Teacher note
+Use the saved activity suggestion: ${record.activitySuggestion||'Use locally available materials and invite learners to explain their reasoning.'}`;
+    }
+
+    function setGeneratedActivityStatus(message,type='') {
+        const status=document.getElementById('generatedActivityStatus');
+        if(status){status.textContent=message;status.className=`curriculum-status${type?' '+type:''}`;}
+    }
+
+    async function readCachedCurriculumActivity(record) {
+        if(!navigator.onLine||!db) return null;
+        try {
+            const cached=await getDoc(doc(db,'ai_activity_cache',curriculumActivityCacheId(record)));
+            const data=cached.exists()?cached.data():null;
+            const generatedAt=data?.generatedAt?.toDate?data.generatedAt.toDate():new Date(data?.generatedAt||0);
+            if(data?.activityText&&Date.now()-generatedAt.getTime()<30*24*60*60*1000) {
+                updateDoc(cached.ref,{hits:increment(1)}).catch(()=>{});
+                return data.activityText;
+            }
+        } catch(_){}
+        return null;
+    }
+
+    async function saveCurriculumActivityCache(record,activityText) {
+        if(!db||!currentUser?.uid) return;
+        await setDoc(doc(db,'ai_activity_cache',curriculumActivityCacheId(record)),{
+            topic:record.topic,subject:record.subject,classLevel:record.classLevel,activityText,
+            generatedAt:serverTimestamp(),generatedBy:currentUser.uid,hits:0
+        },{merge:true}).catch(()=>{});
+    }
+
+    async function requestCurriculumActivity(record,force=false) {
+        const cached=!force?await readCachedCurriculumActivity(record):null;
+        if(cached) return {text:cached,cached:true};
+        if(!navigator.onLine) return {text:curriculumActivityFallback(record,'Offline — showing pre-saved activity. Connect for AI generation.'),offline:true};
+        let lastError;
+        for(let attempt=0;attempt<3;attempt++) {
+            if(attempt>0) {
+                setGeneratedActivityStatus(`Retrying (${attempt}/2)…`,'curriculum-offline');
+                await new Promise(resolve=>setTimeout(resolve,2000));
+            }
+            const controller=new AbortController();
+            const timer=setTimeout(()=>controller.abort(),20000);
+            try {
+                setGeneratedActivityStatus(attempt?'Retrying…':'Generating an NCDC-aligned activity…');
+                const data=await complianceApi('/curriculum-activity',{method:'POST',signal:controller.signal,body:JSON.stringify({
+                    topic:record.topic,subject:record.subject,classLevel:record.classLevel,syllabusRef:record.syllabusRef,
+                    competencies:record.competencies,genericSkills:record.genericSkills,values:record.values
+                })});
+                clearTimeout(timer);
+                const text=String(data.content||'').trim();
+                if(!text) throw new Error('AI returned an empty activity');
+                await saveCurriculumActivityCache(record,text);
+                return {text,cached:false};
+            } catch(error) {
+                clearTimeout(timer);
+                lastError=error;
+            }
+        }
+        const timedOut=lastError?.name==='AbortError';
+        return {text:curriculumActivityFallback(record,timedOut?'AI took too long. Showing saved activity.':'AI generation is unavailable. Showing saved activity.'),fallback:true};
+    }
+
+    async function openGeneratedActivity(record,force=false) {
+        const modal=document.getElementById('generatedActivityModal');
+        const output=document.getElementById('generatedActivityOutput');
+        if(!modal||!output) return;
+        _curriculumUi.activity={record,force};
+        modal.classList.add('show');
+        output.textContent='Preparing activity…';
+        setGeneratedActivityStatus('');
+        const result=await requestCurriculumActivity(record,force);
+        if(!_curriculumUi.activity||_curriculumUi.activity.record!==record) return;
+        output.textContent=result.text;
+        setGeneratedActivityStatus(result.cached?'Loaded from the saved 30-day activity cache.':result.offline?'Offline — showing pre-saved activity. Connect for AI generation.':result.fallback?'Saved activity shown because AI could not respond.':'Generated by APSHULE AI Tutor — NCDC-aligned.',result.offline||result.fallback?'curriculum-offline':'');
+    }
+
+    function generateActivityPdf() {
+        const state=_curriculumUi.activity, output=document.getElementById('generatedActivityOutput');
+        const pdfApi=window.jspdf, record=state?.record;
+        if(!pdfApi?.jsPDF||!record||!output) return showNotification('PDF exporter is still loading. Please try again.','error');
+        const doc=new pdfApi.jsPDF(), margin=18, pageWidth=doc.internal.pageSize.getWidth();
+        const date=new Date().toISOString().slice(0,10), lines=doc.splitTextToSize(output.textContent||'',pageWidth-margin*2);
+        doc.setFillColor(75,46,158);doc.rect(0,0,pageWidth,30,'F');
+        doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont(undefined,'bold');doc.text(`CBC Activity — ${record.topic}`,margin,14);
+        doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text('APSHULE · NCDC-aligned learning support',margin,23);
+        doc.setTextColor(55,45,70);doc.setFontSize(10);doc.setFont(undefined,'normal');doc.text(`${record.subject} | ${record.classLevel} | Generated ${date}`,margin,42);
+        let y=54; lines.forEach(line=>{if(y>275){doc.addPage();y=20;}doc.text(line,margin,y);y+=5;});
+        const pageCount=doc.internal.getNumberOfPages();for(let page=1;page<=pageCount;page++){doc.setPage(page);doc.setFontSize(8);doc.setTextColor(110,100,125);doc.text('Generated by AppShule AI Tutor — NCDC-aligned',margin,288);doc.text(`${page}/${pageCount}`,pageWidth-margin,288,{align:'right'});}
+        const safeTopic=String(record.topic||'Activity').replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'');
+        doc.save(`CBC_Activity_${safeTopic}_${date}.pdf`);
+        showNotification('PDF downloaded','success');
+    }
+
+    function openCurriculumSuggestion(query='') {
+        const modal=document.getElementById('suggestCurriculumModal'), form=document.getElementById('suggestCurriculumForm');
+        if(!modal||!form) return;
+        form.reset();form.elements.topic.value=query||'';
+        modal.classList.add('show');form.elements.topic.focus();
+    }
+
+    async function submitCurriculumSuggestion(event) {
+        event.preventDefault();
+        if(!navigator.onLine||!currentUser?.uid) return showNotification('Connect to the internet and sign in before submitting a suggestion.','error');
+        const values=Object.fromEntries(new FormData(event.target).entries());
+        try {
+            await addDoc(collection(db,'topic_requests'),{topic:String(values.topic||'').trim(),subject:String(values.subject||''),classLevel:String(values.classLevel||''),reason:String(values.reason||'').trim(),requestedBy:currentUser.uid,requestedByName:currentUser.name||currentUser.email||'',status:'pending',createdAt:serverTimestamp()});
+            document.getElementById('suggestCurriculumModal').classList.remove('show');
+            showNotification('Suggestion submitted — admin will review.','success');
+        } catch(error) { showNotification(error.message||'Could not submit suggestion.','error'); }
+    }
+
+    async function renderCurriculumRequests() {
+        const container=document.getElementById('curriculumRequestsList');
+        if(!container||currentUser?.role!=='superadmin') return;
+        try {
+            const snap=await getDocs(query(collection(db,'topic_requests'),where('status','==','pending'),limit(100)));
+            const requests=snap.docs.map(item=>({id:item.id,...item.data()})).sort((a,b)=>String(b.createdAt?.toDate?.()||b.createdAt||'').localeCompare(String(a.createdAt?.toDate?.()||a.createdAt||'')));
+            container.innerHTML=requests.length?requests.map(item=>`<div class="curriculum-admin-request"><strong>${escHtml(item.topic)}</strong> · ${escHtml(item.subject)} ${escHtml(item.classLevel)}<br><span style="color:#777;">${escHtml(item.reason||'No reason supplied')} · ${escHtml(item.requestedByName||item.requestedBy||'Teacher')}</span><div class="curriculum-admin-request-actions"><button type="button" data-request-approve="${escHtml(item.id)}">Approve</button><button type="button" data-request-reject="${escHtml(item.id)}">Reject</button></div></div>`).join(''):'<div class="cbc-status">No pending topic requests.</div>';
+            container.querySelectorAll('[data-request-approve]').forEach(button=>button.onclick=()=>reviewCurriculumRequest(button.dataset.requestApprove,'approved'));
+            container.querySelectorAll('[data-request-reject]').forEach(button=>button.onclick=()=>reviewCurriculumRequest(button.dataset.requestReject,'rejected'));
+        } catch(error) { container.innerHTML=`<div class="cbc-status" style="color:#c62828;">${escHtml(error.message||'Could not load topic requests.')}</div>`; }
+    }
+
+    async function reviewCurriculumRequest(requestId,status) {
+        if(currentUser?.role!=='superadmin') return;
+        try {
+            const request=await getDoc(doc(db,'topic_requests',requestId));if(!request.exists()) return;
+            const data=request.data();
+            if(status==='approved') {
+                const placeholder=normalizeCurriculumRecord({subject:data.subject,classLevel:data.classLevel,topic:data.topic,syllabusRef:'',learnerBookPage:'',teacherGuidePage:'',summaryText:'Placeholder — curriculum team to complete.',activitySuggestion:'Add a learner-centred activity.'});
+                await addDoc(collection(db,'curriculum_links'),{...placeholder,createdBy:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),requestId});
+            }
+            await updateDoc(doc(db,'topic_requests',requestId),{status,reviewedBy:currentUser.uid,reviewedAt:serverTimestamp()});
+            showNotification(status==='approved'?'Topic approved and added as a placeholder.':'Topic request rejected.','success');
+            renderCurriculumRequests();
+        } catch(error) { showNotification(error.message||'Could not review topic request.','error'); }
+    }
+
+    async function openCurriculumLinker() {
+        const modal=document.getElementById('curriculumLinkerModal'); if(!modal) return;
+        _curriculumUi.open=true;_curriculumUi.tab='search';_curriculumUi.detail=null;_curriculumUi.query='';_curriculumUi.subject='';_curriculumUi.classLevel='';
+        modal.classList.add('show');document.body.style.overflow='hidden';
+        const input=document.getElementById('curriculumSearchInput');if(input)input.value='';
+        curriculumSetConnectionStatus();
+        const records=await getCurriculumSearchCache();
+        populateCurriculumFilters(records);
+        _curriculumUi.recent=Offline?await Offline.listRecentCurriculum().catch(()=>[]):[];
+        await loadCurriculumFavorites();
+        await syncCurriculumFavorites();
+        renderCurriculumResults();
+        requestAnimationFrame(()=>input?.focus());
+    }
+
+    function closeCurriculumLinker() {
+        _curriculumUi.open=false;
+        document.getElementById('curriculumLinkerModal')?.classList.remove('show');
+        document.body.style.overflow='';
+        document.getElementById('curriculumTypeahead')?.style.setProperty('display','none');
+    }
+
+    function bindCurriculumLinker() {
+        if(_curriculumUiReady) return;
+        _curriculumUiReady=true;
+        document.getElementById('closeCurriculumLinkerBtn')?.addEventListener('click',closeCurriculumLinker);
+        document.getElementById('curriculumLinkerModal')?.addEventListener('click',event=>{if(event.target.id==='curriculumLinkerModal')closeCurriculumLinker();});
+        document.getElementById('closeGeneratedActivityBtn')?.addEventListener('click',()=>document.getElementById('generatedActivityModal')?.classList.remove('show'));
+        document.getElementById('generatedActivityModal')?.addEventListener('click',event=>{if(event.target.id==='generatedActivityModal')event.currentTarget.classList.remove('show');});
+        document.getElementById('closeSuggestCurriculumBtn')?.addEventListener('click',()=>document.getElementById('suggestCurriculumModal')?.classList.remove('show'));
+        document.getElementById('suggestCurriculumModal')?.addEventListener('click',event=>{if(event.target.id==='suggestCurriculumModal')event.currentTarget.classList.remove('show');});
+        document.getElementById('suggestCurriculumForm')?.addEventListener('submit',submitCurriculumSuggestion);
+        document.getElementById('downloadActivityPdfBtn')?.addEventListener('click',generateActivityPdf);
+        document.getElementById('copyActivityBtn')?.addEventListener('click',async()=>{
+            const text=document.getElementById('generatedActivityOutput')?.textContent||'';
+            try { await navigator.clipboard.writeText(text);showNotification('Copied to clipboard','success'); } catch(_) { showNotification('Could not copy activity','error'); }
+        });
+        document.getElementById('regenerateActivityBtn')?.addEventListener('click',()=>{if(_curriculumUi.activity?.record)openGeneratedActivity(_curriculumUi.activity.record,true);});
+        document.getElementById('curriculumSearchInput')?.addEventListener('input',event=>{
+            _curriculumUi.query=event.target.value;
+            const typeahead=document.getElementById('curriculumTypeahead');
+            const records=_curriculumSearchCache||[];
+            const matches=rankCurriculumLinks(records,_curriculumUi.query,{subject:_curriculumUi.subject,classLevel:_curriculumUi.classLevel}).slice(0,5);
+            if(typeahead) { typeahead.innerHTML=matches.map(item=>`<button type="button" class="curriculum-chip" style="display:block;width:100%;text-align:left;border:0;border-radius:8px;" data-typeahead-id="${escHtml(curriculumRecordDocId(item))}">${escHtml(item.topic)} <small>${escHtml(item.subject)} · ${escHtml(item.classLevel)}</small></button>`).join('');typeahead.style.display=matches.length?'block':'none'; }
+            clearTimeout(_curriculumUi.searchTimer);_curriculumUi.searchTimer=setTimeout(runCurriculumSearch,300);
+        });
+        document.getElementById('curriculumTypeahead')?.addEventListener('click',event=>{
+            const button=event.target.closest('[data-typeahead-id]');if(!button)return;
+            const record=(_curriculumSearchCache||[]).find(item=>curriculumRecordDocId(item)===button.dataset.typeaheadId);
+            if(record){document.getElementById('curriculumSearchInput').value=record.topic;_curriculumUi.query=record.topic;document.getElementById('curriculumTypeahead').style.display='none';runCurriculumSearch();}
+        });
+        document.getElementById('clearCurriculumSearchBtn')?.addEventListener('click',()=>{const input=document.getElementById('curriculumSearchInput');if(input)input.value='';_curriculumUi.query='';runCurriculumSearch();input?.focus();});
+        document.getElementById('curriculumSubjectFilter')?.addEventListener('change',event=>{_curriculumUi.subject=event.target.value;runCurriculumSearch();});
+        document.getElementById('curriculumClassFilter')?.addEventListener('change',event=>{_curriculumUi.classLevel=event.target.value;runCurriculumSearch();});
+        document.getElementById('clearCurriculumFiltersBtn')?.addEventListener('click',()=>{_curriculumUi.subject='';_curriculumUi.classLevel='';document.getElementById('curriculumSubjectFilter').value='';document.getElementById('curriculumClassFilter').value='';runCurriculumSearch();});
+        document.querySelectorAll('[data-curriculum-tab]').forEach(button=>button.addEventListener('click',()=>{
+            _curriculumUi.tab=button.dataset.curriculumTab;
+            document.querySelectorAll('[data-curriculum-tab]').forEach(item=>{item.classList.toggle('active',item===button);item.setAttribute('aria-selected',item===button?'true':'false');});
+            runCurriculumSearch();
+        }));
+        document.getElementById('refreshCurriculumRequestsBtn')?.addEventListener('click',renderCurriculumRequests);
+        window.addEventListener('online',()=>{curriculumSetConnectionStatus();syncCurriculumFavorites().catch(()=>{});if(_curriculumUi.open){getCurriculumSearchCache(true).then(records=>{populateCurriculumFilters(records);runCurriculumSearch();});}});
+        window.addEventListener('offline',curriculumSetConnectionStatus);
+        document.addEventListener('keydown',event=>{
+            if(event.key==='Escape'){if(document.getElementById('generatedActivityModal')?.classList.contains('show'))document.getElementById('generatedActivityModal').classList.remove('show');else if(document.getElementById('suggestCurriculumModal')?.classList.contains('show'))document.getElementById('suggestCurriculumModal').classList.remove('show');else if(_curriculumUi.open)closeCurriculumLinker();}
+            if(_curriculumUi.open&&!_curriculumUi.detail&&(event.key==='ArrowDown'||event.key==='ArrowUp')){
+                const cards=[...document.querySelectorAll('#curriculumResults [data-curriculum-result]')];if(!cards.length)return;
+                event.preventDefault();const current=cards.indexOf(document.activeElement),next=event.key==='ArrowDown'?Math.min(cards.length-1,current+1):Math.max(0,current<0?0:current-1);cards[next].focus();
+            }
         });
     }
 
@@ -4330,6 +4930,8 @@
          const schoolSection=document.getElementById('schoolComplianceSection'); if(schoolSection) schoolSection.style.display=school?'block':'none';
          const curriculumSection=document.getElementById('superCurriculumLinksSection');
          if(curriculumSection) curriculumSection.style.display=currentUser?.role==='superadmin'?'block':'none';
+         const curriculumRequestsSection=document.getElementById('superCurriculumRequestsSection');
+         if(curriculumRequestsSection) curriculumRequestsSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         const superProjectSection=document.getElementById('superProjectOverviewSection');
         if(superProjectSection) superProjectSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
@@ -4339,7 +4941,7 @@
         document.getElementById('complianceDuplicateBtn')?.addEventListener('click',renderComplianceDuplicateAlerts);
         document.getElementById('complianceRepeatBtn')?.addEventListener('click',renderComplianceRepeatTitles);
          document.getElementById('refreshSuperProjectOverviewBtn')?.addEventListener('click',renderSuperProjectOverview);
-         if(currentUser?.role==='superadmin') loadCurriculumLinksAdmin();
+         if(currentUser?.role==='superadmin') { loadCurriculumLinksAdmin(); renderCurriculumRequests(); }
         if(currentUser?.role==='superadmin') renderSuperProjectOverview();
     }
 
@@ -5000,19 +5602,9 @@
                 }
             });
         } else {
-            panel.innerHTML=`<strong style="color:#E67E00;">Curriculum Linker Search</strong><form class="cbc-form" id="curriculumForm"><input name="q" placeholder="Search a topic, for example Photosynthesis" required><button class="cbc-action primary">Search curriculum links</button></form><div id="curriculumResults" class="cbc-status"></div>`;
-            document.getElementById('curriculumForm').addEventListener('submit',async e=>{
-                e.preventDefault(); const q=new FormData(e.target).get('q'); const results=document.getElementById('curriculumResults'); results.textContent='Searching…';
-                try {
-                    let links=await searchCurriculumLinks(q);
-                    if(!links.length&&navigator.onLine) {
-                        await pullCurriculumLinksOffline().catch(()=>{});
-                        links=await searchCurriculumLinks(q);
-                    }
-                    results.innerHTML=links.map(l=>`<div style="padding:10px 0;border-bottom:1px solid #eee;"><strong>${escHtml(l.topic)}</strong><br><small>${escHtml(l.subject)} · ${escHtml(l.classLevel)}</small><br>${escHtml(l.summaryText)}<br><small>${escHtml(l.syllabusRef)} · Learner book: ${escHtml(l.learnerBookPage||'—')}</small></div>`).join('')||'No matching curriculum link found.';
-                }
-                catch(err){ results.textContent=err.message; }
-            });
+            bindCurriculumLinker();
+            panel.style.display='none';
+            openCurriculumLinker();
         }
     }
 

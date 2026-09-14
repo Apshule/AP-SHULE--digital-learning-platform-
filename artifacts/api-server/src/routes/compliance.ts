@@ -231,7 +231,7 @@ function milestoneFields(milestone: string) {
   }[milestone] ?? null;
 }
 
-async function generateWithGemini(prompt: string): Promise<string> {
+async function generateWithGemini(prompt: string, signal?: AbortSignal): Promise<string> {
   if (!GOOGLE_API_KEY) throw new Error("GOOGLE_API_KEY is not configured");
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent" +
@@ -239,6 +239,7 @@ async function generateWithGemini(prompt: string): Promise<string> {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal,
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 8192, temperature: 0.35 },
@@ -873,6 +874,55 @@ Include learning outcomes, competency, values, generic skills, prior knowledge, 
     res.json({ ok: true, content });
   } catch (error) {
     res.status(502).json({ ok: false, error: error instanceof Error ? error.message : "AI generation failed" });
+  }
+});
+
+router.post("/compliance/curriculum-activity", async (req, res) => {
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  if (caller.role !== "teacher") {
+    res.status(403).json({ ok: false, error: "Only teachers can generate curriculum activities" });
+    return;
+  }
+  const topic = String(req.body?.topic ?? "").trim();
+  const subject = String(req.body?.subject ?? "").trim();
+  const classLevel = String(req.body?.classLevel ?? "").trim();
+  const syllabusRef = String(req.body?.syllabusRef ?? "").trim();
+  if (!topic || !subject || !classLevel) {
+    res.status(400).json({ ok: false, error: "topic, subject and classLevel are required" });
+    return;
+  }
+  const values = Array.isArray(req.body?.values) ? req.body.values.map(String).join(", ") : "";
+  const skills = Array.isArray(req.body?.genericSkills) ? req.body.genericSkills.map(String).join(", ") : "";
+  const competencies = Array.isArray(req.body?.competencies) ? req.body.competencies.map(String).join(", ") : "";
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  try {
+    const content = await generateWithGemini(
+      `You are a Ugandan CBC expert. Topic: ${topic}.
+Subject: ${subject}. Class: ${classLevel}.
+Syllabus reference: ${syllabusRef || "Not supplied"}.
+Known competencies: ${competencies || "Use the topic's appropriate CBC competencies"}.
+Known generic skills: ${skills || "communication, collaboration, critical thinking and problem solving"}.
+Known values: ${values || "responsibility, cooperation and respect"}.
+Generate a CBC activity with:
+- A real-life Ugandan scenario
+- 2-3 CBC values to demonstrate
+- Generic skills practiced
+- Assessment criteria (Exceeds/Meets/Approaching/Needs Support)
+- Time: 40 minutes
+Use only NCDC competency-based materials for Lower Secondary and New A-Level 2025. Cite NCDC page references only when supplied above; do not invent citations.
+Format: markdown with clear headings.`,
+      controller.signal,
+    );
+    res.json({ ok: true, content });
+  } catch (error) {
+    const message = error instanceof Error && error.name === "AbortError"
+      ? "AI generation timed out"
+      : error instanceof Error ? error.message : "AI generation failed";
+    res.status(502).json({ ok: false, error: message });
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
