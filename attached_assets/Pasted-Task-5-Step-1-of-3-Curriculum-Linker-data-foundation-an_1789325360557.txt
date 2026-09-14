@@ -1,0 +1,237 @@
+Task 5 — Step 1 of 3: Curriculum Linker data foundation and bulk import
+
+CONTEXT:
+- Task 1 created the curriculum_links Firestore collection with fields:
+  subject, classLevel, topic, syllabusRef, learnerBookPage, 
+  teacherGuidePage, summaryText, activitySuggestion, createdAt
+- Now we build the data entry and import tools so teachers can search
+
+GOAL:
+Ensure curriculum_links collection is properly structured and 
+provide admins a way to bulk import 800+ topics (NCDC curriculum).
+
+═══════════════════════════════════════════════════════════════
+PART A: VERIFY CURRICULUM_LINKS COLLECTION STRUCTURE
+═══════════════════════════════════════════════════════════════
+
+Ensure each curriculum_links document has these fields:
+
+Required:
+- subject (string) — e.g. "Mathematics", "Biology"
+- classLevel (string) — e.g. "P1" through "P7", "S1" through "S6"
+- topic (string) — e.g. "Fractions", "Photosynthesis"
+- syllabusRef (string) — e.g. "Mathematics Syllabus P5, p.34"
+- learnerBookPage (string) — e.g. "Learner Book P5, p.56-60"
+- teacherGuidePage (string) — e.g. "Teacher Guide P5, p.42-45"
+- summaryText (string) — 200-word max summary of the topic
+- activitySuggestion (string) — a suggested CBC activity
+
+Optional:
+- syllabusUrl (string) — link to full syllabus PDF if available
+- learnerBookUrl (string) — link to learner book PDF
+- teacherGuideUrl (string) — link to teacher guide PDF
+- competencies (array of strings) — CBC competencies covered
+- genericSkills (array of strings) — e.g. "critical thinking", "communication"
+- values (array of strings) — e.g. "respect", "responsibility"
+- createdBy (string) — uid of admin who added
+- createdAt (timestamp)
+- updatedAt (timestamp)
+- searchKeywords (array) — lowercase keywords for fast search
+  (auto-generated from topic + subject)
+
+Do NOT delete existing documents. ADD any missing fields to 
+existing records with sensible defaults.
+
+═══════════════════════════════════════════════════════════════
+PART B: CREATE SEARCH KEYWORDS AUTOMATICALLY
+═══════════════════════════════════════════════════════════════
+
+Add a helper function generateSearchKeywords(topic, subject, classLevel):
+
+1. Combine: topic + " " + subject + " " + classLevel
+2. Lowercase everything
+3. Split into individual words
+4. Remove common stop words (the, a, an, of, and, or, in, on, at, to, for)
+5. Remove duplicates
+6. Return as array of strings
+
+Example:
+Input: topic="Photosynthesis", subject="Biology", classLevel="S2"
+Output: ["photosynthesis", "biology", "s2", "photo", "synthesis"]
+
+Use this when creating or importing curriculum_links documents.
+Store the result in searchKeywords field.
+
+═══════════════════════════════════════════════════════════════
+PART C: BULK IMPORT UI FOR SUPER ADMIN
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Inside Super Admin Admin Panel
+PLACE IT: BELOW "NCDC/UNEB Control" card
+SHOW WHEN: user.role === 'superadmin'
+
+Add a new card "📚 Curriculum Links Import"
+
+Contents:
+1. Title: "Bulk Import Curriculum Topics"
+2. Description: "Upload a CSV or paste JSON to import multiple topics at once"
+3. Two import methods:
+
+METHOD A: CSV Upload
+- File input: accept=".csv"
+- Expected CSV columns:
+  subject,classLevel,topic,syllabusRef,learnerBookPage,teacherGuidePage,summaryText,activitySuggestion
+- Show template download button: "📥 Download CSV Template"
+- After file selected: parse, show preview table, [Import] button
+
+METHOD B: JSON Paste
+- Textarea: "Paste JSON array of curriculum topics"
+- Show sample format in placeholder
+- [Validate] button → shows record count
+- [Import] button → writes to Firestore
+
+IMPORT PROCESS:
+1. Parse input (CSV or JSON)
+2. Validate each row:
+   - Required fields present
+   - subject is not empty
+   - topic is not empty
+   - classLevel matches pattern (P1-P7 or S1-S6)
+3. Skip invalid rows (show count at end)
+4. Batch write to Firestore (max 500 docs per batch)
+5. Generate searchKeywords per record
+6. Show progress bar during import
+7. After import: show summary:
+   - Imported: X records
+   - Skipped: Y records (with reasons)
+   - Total in collection: Z
+
+═══════════════════════════════════════════════════════════════
+PART D: CSV TEMPLATE DOWNLOAD
+═══════════════════════════════════════════════════════════════
+
+Add a "📥 Download CSV Template" button that generates:
+
+subject,classLevel,topic,syllabusRef,learnerBookPage,teacherGuidePage,summaryText,activitySuggestion
+Mathematics,P5,Fractions,"Mathematics Syllabus P5, p.34","Learner Book P5, p.56-60","Teacher Guide P5, p.42-45","Fractions represent parts of a whole.","Use mangoes to demonstrate halves and quarters in class."
+
+Download as: curriculum_links_template.csv
+
+═══════════════════════════════════════════════════════════════
+PART E: SEED SAMPLE DATA FOR TESTING
+═══════════════════════════════════════════════════════════════
+
+Add a "🌱 Seed Sample Topics" button (visible only to superadmin):
+
+Seeds 10 sample curriculum_links documents:
+
+1. Mathematics P5 — Fractions
+2. Mathematics P5 — Decimals
+3. Mathematics S1 — Algebra Basics
+4. English P5 — Reading Comprehension
+5. English S1 — Essay Writing
+6. Science P5 — Photosynthesis (basic)
+7. Biology S2 — Photosynthesis (advanced)
+8. Biology S2 — Cell Structure
+9. Chemistry S3 — Periodic Table
+10. Physics S3 — Newton's Laws
+
+Each with:
+- All required fields filled with realistic content
+- searchKeywords auto-generated
+- createdBy = currentUser.uid
+
+This lets you test search immediately without needing real NCDC data.
+
+═══════════════════════════════════════════════════════════════
+PART F: DATA VALIDATION HELPERS
+═══════════════════════════════════════════════════════════════
+
+Add helper function validateCurriculumRecord(record):
+
+Returns { valid: boolean, errors: array }
+
+Checks:
+- subject is non-empty string
+- classLevel is non-empty string
+- topic is non-empty string
+- syllabusRef exists (can be empty string but field must exist)
+- summaryText is under 2000 characters
+- activitySuggestion is under 1000 characters
+
+If any check fails, add reason to errors array.
+
+═══════════════════════════════════════════════════════════════
+PART G: OFFLINE CACHING FOR CURRICULUM LINKS
+═══════════════════════════════════════════════════════════════
+
+Add a new object store to the "appshule-offline" IndexedDB 
+(created in Task 2):
+
+Store name: offline_curriculum_links
+Keys: docId (Firestore doc ID)
+Fields: same as curriculum_links + lastSyncedAt
+
+Add a sync function syncCurriculumLinks():
+1. Query all curriculum_links from Firestore
+2. Write each to offline_curriculum_links
+3. Run this on first app load AND when curriculum_links updates
+
+This lets curriculum search work OFFLINE.
+
+Limit: only sync if total records < 2000 (avoid huge downloads)
+
+═══════════════════════════════════════════════════════════════
+PART H: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 super admin account:
+
+A. Verify collection structure:
+   1. Open Firebase Console → Firestore → curriculum_links
+   2. Verify all required fields exist on sample docs
+
+B. CSV import test:
+   1. Download the CSV template
+   2. Add 3 test rows
+   3. Upload the CSV
+   4. Verify: 3 records appear in Firestore with searchKeywords
+
+C. JSON import test:
+   1. Paste a 2-record JSON array
+   2. Click Import
+   3. Verify: 2 records written
+
+D. Invalid records test:
+   1. Upload a CSV with 1 valid + 1 invalid record
+   2. Verify: 1 imported, 1 skipped with reason
+
+E. Seed sample data test:
+   1. Click "🌱 Seed Sample Topics"
+   2. Verify: 10 records added to Firestore
+   3. Verify: searchKeywords populated
+
+F. Offline cache test:
+   1. Open DevTools → Application → IndexedDB
+   2. Verify: offline_curriculum_links exists
+   3. Verify: sample records are cached
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1, 2, 3, 4
+- Do NOT delete existing curriculum_links records
+- Do NOT fetch NCDC content from external URLs (only store what admin provides)
+- Do NOT exceed 2000 records in the offline cache
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 5 Step 1 complete — Curriculum Links data foundation and bulk import built"
+
+Report:
+- Which tests A through F passed
+- Any bugs found
+- Screenshots recommended: CSV import card, seed button, sample docs in Firestore

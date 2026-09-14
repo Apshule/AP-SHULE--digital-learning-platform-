@@ -1,0 +1,313 @@
+Task 5 — Step 2 of 3: Curriculum Linker search UI, 3-tab results, offline
+
+CONTEXT:
+- Step 1 built the curriculum_links collection, bulk import UI, 
+  seed sample data, and offline caching (offline_curriculum_links 
+  in IndexedDB)
+- Now we build the actual search experience teachers use
+
+GOAL:
+Teachers type a topic (e.g. "Photosynthesis") → app shows 3 tabs 
+(Syllabus | Learner Book | Teacher Guide) + a summary. Works online 
+and offline. Includes a "Generate CBC Activity" button that calls 
+Gemini.
+
+═══════════════════════════════════════════════════════════════
+PART A: ADD "CURRICULUM LINKER SEARCH" SUB-BUTTON
+═══════════════════════════════════════════════════════════════
+
+In the Teacher Dashboard, inside the "CBC Teaching Tools (Earn More)" 
+card (from Task 1), the "Curriculum Linker Search" sub-button already 
+exists but shows a placeholder toast.
+
+Replace that placeholder with real functionality.
+
+When teacher taps "Curriculum Linker Search":
+- Open a full-screen modal (id="curriculumLinkerModal")
+- Close button top-right
+- Clean, mobile-friendly layout
+
+═══════════════════════════════════════════════════════════════
+PART B: SEARCH BAR + SUGGESTIONS
+═══════════════════════════════════════════════════════════════
+
+Top of modal — search interface:
+
+1. Search input:
+   - Placeholder: "Search topic (e.g. Photosynthesis, Fractions)"
+   - Auto-focus when modal opens
+   - Debounced search (300ms after typing stops)
+
+2. Filters (collapsible row):
+   - Subject dropdown: All + list of subjects from curriculum_links
+   - Class level dropdown: All + P1-P7 + S1-S6
+   - [Clear filters] button
+
+3. Suggestions (visible when input is empty):
+   - "🔥 Popular topics:" show 8 random topics from curriculum_links
+   - Tap a suggestion → fills search + triggers search
+
+═══════════════════════════════════════════════════════════════
+PART C: SEARCH LOGIC
+═══════════════════════════════════════════════════════════════
+
+Add function searchCurriculumLinks(query, filters):
+
+1. Normalize query: lowercase, trim, split into words
+
+2. If ONLINE:
+   - Query Firestore curriculum_links
+   - Use searchKeywords array-contains-any for each word
+   - Apply filters (subject, classLevel) if set
+   - Limit 20 results
+
+3. If OFFLINE:
+   - Query offline_curriculum_links in IndexedDB
+   - Filter locally by searchKeywords + filters
+   - Limit 20 results
+
+4. Ranking (client-side after fetching):
+   - Exact topic match: 100 points
+   - Topic starts with query: 80 points
+   - Topic contains query: 60 points
+   - Keyword match: 40 points
+   - Sort by score desc, then alphabetically
+
+5. Return array of matching records
+
+═══════════════════════════════════════════════════════════════
+PART D: RESULTS LIST
+═══════════════════════════════════════════════════════════════
+
+Below the search bar, show results as cards:
+
+Each result card shows:
+- Topic title (bold, larger)
+- Subject + Class level badges (small chips)
+- Short preview (first 100 chars of summaryText)
+- Match score indicator (optional, small)
+- Tap → open detail view (Part E)
+
+If no results:
+- Show message: "No topics found for '{query}'. Try a different keyword."
+- Show [Suggest a topic] button that opens a simple form
+  (stores into a "topic_requests" collection for super admin review)
+
+If search is empty:
+- Show suggestions section (Part B.3)
+
+═══════════════════════════════════════════════════════════════
+PART E: DETAIL VIEW WITH 3 TABS
+═══════════════════════════════════════════════════════════════
+
+When teacher taps a result card, open a detail panel 
+(id="curriculumDetailPanel") that slides in from right or replaces 
+the results list:
+
+Header:
+- [← Back to results]
+- Topic title
+- Subject badge + Class level badge
+
+Three tabs:
+┌───────────────────────────────────────┐
+│ [📘 Syllabus] [📖 Learner Book] [👨‍🏫 Teacher Guide] │
+└───────────────────────────────────────┘
+
+TAB 1 — SYLLABUS:
+- syllabusRef text (e.g. "Mathematics Syllabus P5, p.34")
+- If syllabusUrl exists: [Open full syllabus PDF] button
+- List of competencies (if present)
+- List of generic skills (if present)
+- List of values (if present)
+
+TAB 2 — LEARNER BOOK:
+- learnerBookPage (e.g. "Learner Book P5, p.56-60")
+- If learnerBookUrl exists: [Open learner book PDF] button
+- Short description: "This is what the student reads."
+- summaryText displayed in a readable card
+
+TAB 3 — TEACHER GUIDE:
+- teacherGuidePage (e.g. "Teacher Guide P5, p.42-45")
+- If teacherGuideUrl exists: [Open teacher guide PDF] button
+- activitySuggestion displayed prominently: "💡 Suggested Activity"
+- Short description: "This is how to teach the topic."
+
+BELOW TABS (always visible):
+- "📄 Generate CBC Activity" button (see Part F)
+- "📚 Save to My Favorites" button (see Part G)
+- "📤 Share" button (uses Web Share API if available)
+
+═══════════════════════════════════════════════════════════════
+PART F: GENERATE CBC ACTIVITY BUTTON
+═══════════════════════════════════════════════════════════════
+
+Below the tabs, add a big button:
+"📄 Generate CBC Activity (AI)"
+
+Behavior:
+1. If ONLINE:
+   - Call Gemini API with this prompt:
+     "You are Ugandan CBC expert. Topic: {topic}. 
+      Subject: {subject}. Class: {classLevel}.
+      Syllabus reference: {syllabusRef}.
+      Generate a CBC activity with:
+      - A real-life Ugandan scenario
+      - 2-3 CBC values to demonstrate
+      - Generic skills practiced
+      - Assessment criteria (Exceeds/Meets/Approaching/Needs Support)
+      - Time: 40 minutes
+      Use only NCDC competency-based materials for Lower Secondary 
+      and New A-Level 2025. Cite NCDC page references when applicable.
+      Format: markdown with clear headings."
+   - Show loading indicator
+   - Display result in a modal (id="generatedActivityModal")
+   - Modal has: [📥 Download PDF] [📋 Copy] [🔄 Regenerate] buttons
+
+2. If OFFLINE:
+   - Show cached activitySuggestion from curriculum_links
+   - Show banner: "Offline — showing pre-saved activity. 
+     Connect for AI generation."
+
+3. If Gemini API key not configured:
+   - Show fallback: use activitySuggestion
+   - Log warning
+
+═══════════════════════════════════════════════════════════════
+PART G: SAVE TO FAVORITES
+═══════════════════════════════════════════════════════════════
+
+Add favorite functionality:
+
+1. Add star icon to each result card
+2. When tapped → adds docId to teacher's favorites array
+   - Store in users/{uid} doc as favorites array
+   - Or create teacher_favorites collection:
+     { teacherId, curriculumDocId, savedAt }
+3. Toggle: tap again → remove from favorites
+4. Show filled star ⭐ for favorited, outline ☆ for not
+
+Add a "⭐ My Favorites" tab in the search modal:
+- Shows only favorited topics
+- Same result cards as main search
+
+═══════════════════════════════════════════════════════════════
+PART H: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+1. On modal open, check navigator.onLine:
+   - If OFFLINE: show badge "Offline Mode — searching cached topics"
+   - Search runs against offline_curriculum_links only
+   - AI activity generator disabled → uses cached activitySuggestion
+
+2. On connection restore:
+   - Auto-sync any favorites added offline
+   - Hide offline badge
+
+3. Favorites added while offline:
+   - Save to IndexedDB offline_favorites store
+   - Sync when online
+
+═══════════════════════════════════════════════════════════════
+PART I: CROSS-DEVICE FAVORITES
+═══════════════════════════════════════════════════════════════
+
+When teacher logs in on a new device:
+- Pull favorites from Firestore
+- Merge with local favorites (union)
+
+When favoriting:
+- Write to Firestore teacher_favorites
+- Also write to IndexedDB offline_favorites
+
+═══════════════════════════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Background: #f5f5f5 for modal
+- Cards: white, 14px radius, soft shadow
+- Tabs: pill style, active tab purple background
+- Buttons: rounded 20-25px, bold text
+
+Mobile-first design:
+- Full-screen modal on phone
+- Side panel (max 500px) on desktop
+- Touch-friendly targets (44px min height)
+
+═══════════════════════════════════════════════════════════════
+PART K: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 teacher account:
+
+A. Basic search:
+   1. Login as teacher
+   2. Teacher Dashboard → CBC Teaching Tools → Curriculum Linker
+   3. Type "Photosynthesis" in search
+   4. Verify: matching results appear within 1 second
+   5. Verify: result cards show topic, subject, class
+
+B. Filter test:
+   1. Search "Fractions"
+   2. Apply subject filter = "Mathematics"
+   3. Verify: only Mathematics results remain
+
+C. Detail view:
+   1. Tap a result
+   2. Verify: 3 tabs appear
+   3. Tap "Syllabus" tab → shows syllabusRef + competencies
+   4. Tap "Learner Book" tab → shows learnerBookPage + summary
+   5. Tap "Teacher Guide" tab → shows teacherGuidePage + activity
+
+D. AI activity generation (online):
+   1. Click "Generate CBC Activity"
+   2. Wait ~5 seconds
+   3. Verify: activity appears with headings + scenario + values
+   4. Test "Download PDF", "Copy", "Regenerate" buttons
+
+E. Offline test:
+   1. Turn off WiFi + data
+   2. Open Curriculum Linker
+   3. Search "Photosynthesis"
+   4. Verify: results appear from offline cache
+   5. Click "Generate CBC Activity" → shows cached suggestion with 
+      offline banner
+
+F. Favorites test:
+   1. Star a topic → verify it saves
+   2. Tap "⭐ My Favorites" tab → verify the topic appears
+   3. Unstar → verify it disappears
+
+G. Empty search:
+   1. Clear search
+   2. Verify: "Popular topics" suggestions appear
+
+H. No results:
+   1. Search "zxcvbnm"
+   2. Verify: "No topics found" message + "Suggest a topic" button
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1, 2, 3, 4 or Step 1 of Task 5
+- Do NOT fetch NCDC content from external URLs
+- Do NOT cache more than 2000 curriculum records offline
+- Do NOT block the UI while searching — use debounce
+- Do NOT lose favorites when offline
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 5 Step 2 complete — Curriculum Linker search UI with 3 tabs and offline support built"
+
+Report:
+- Which tests A through H passed
+- Any bugs found
+- Screenshots recommended: search modal, results list, 
+  detail view with 3 tabs, generated AI activity, offline mode
