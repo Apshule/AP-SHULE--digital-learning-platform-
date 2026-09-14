@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 20;
+  var DB_VERSION = 21;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -44,7 +44,8 @@
     'offline_farm_attendance',
     'offline_farm_reports',
     'offline_farm_egg_collections',
-    'offline_farm_feed_consumption'
+    'offline_farm_feed_consumption',
+    'offline_farm_inventory'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -203,7 +204,8 @@
                     offline_clinic_claims: 'localId',
                     offline_clinic_dashboard: 'institutionId',
                     offline_farm_egg_collections: 'localId',
-                    offline_farm_feed_consumption: 'localId'
+                    offline_farm_feed_consumption: 'localId',
+                    offline_farm_inventory: 'itemId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -349,6 +351,11 @@
             if (!farmStepTwoStore.indexNames.contains('farmId')) farmStepTwoStore.createIndex('farmId', 'farmId', { unique: false });
             if (!farmStepTwoStore.indexNames.contains('syncStatus')) farmStepTwoStore.createIndex('syncStatus', 'syncStatus', { unique: false });
           });
+        }
+        if (oldVersion < 21 && !db.objectStoreNames.contains('offline_farm_inventory')) {
+          var farmInventoryStore = db.createObjectStore('offline_farm_inventory', { keyPath: 'itemId' });
+          farmInventoryStore.createIndex('farmId', 'farmId', { unique: false });
+          farmInventoryStore.createIndex('updatedAt', 'updatedAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -825,6 +832,7 @@
           allRecords('offline_farm_attendance'),
       allRecords('offline_farm_egg_collections'),
       allRecords('offline_farm_feed_consumption'),
+      allRecords('offline_farm_inventory'),
       Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
     ])
       .then(function (records) {
@@ -850,7 +858,7 @@
             var farmEggCollections = records[19].filter(function (item) { return item.syncStatus === 'pending'; });
             var farmFeedConsumption = records[20].filter(function (item) { return item.syncStatus === 'pending'; });
             var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins, clinicInventory, clinicScans, clinicDispensing, clinicBilling, clinicPayments, clinicClaims, farmMovements, farmAttendance, farmEggCollections, farmFeedConsumption);
-            var cachedSize = records[21].reduce(function (total, items) {
+            var cachedSize = records[22].reduce(function (total, items) {
           return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         }, 0);
         return {
@@ -1475,6 +1483,77 @@
     markFarmAttendanceSynced: function (localId, extra) {
       return getRecord('offline_farm_attendance', localId).then(function (item) {
         return item ? putRecord('offline_farm_attendance', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueFarmEggCollection: function (collection) {
+      collection = collection || {};
+      if (!collection.farmId || !collection.collectedBy || !collection.collectedAt) return fail('A farm, collector, and collection time are required');
+      var trays = Math.max(0, Number(collection.traysCollected || 0));
+      var eggsPerTray = Math.max(1, Number(collection.eggsPerTray || 30));
+      var totalEggs = trays * eggsPerTray;
+      var brokenEggs = Math.min(totalEggs, Math.max(0, Number(collection.brokenEggs || 0)));
+      var value = Object.assign({}, collection, {
+        localId: collection.localId || randomId('farm-egg-'),
+        traysCollected: trays,
+        eggsPerTray: eggsPerTray,
+        totalEggs: totalEggs,
+        brokenEggs: brokenEggs,
+        goodEggs: Math.max(0, totalEggs - brokenEggs),
+        syncStatus: collection.syncStatus || 'pending',
+        queuedAt: collection.queuedAt || Date.now()
+      });
+      return putRecord('offline_farm_egg_collections', value).then(function () { return value; });
+    },
+    listFarmEggCollections: function (farmId, date) {
+      return allRecords('offline_farm_egg_collections').then(function (items) {
+        return items.filter(function (item) {
+          return (!farmId || item.farmId === farmId) && (!date || String(item.collectedAt || '').slice(0, 10) === date);
+        }).sort(function (left, right) {
+          return new Date(right.collectedAt || 0) - new Date(left.collectedAt || 0);
+        });
+      });
+    },
+    markFarmEggCollectionSynced: function (localId, extra) {
+      return getRecord('offline_farm_egg_collections', localId).then(function (item) {
+        return item ? putRecord('offline_farm_egg_collections', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    queueFarmFeedConsumption: function (consumption) {
+      consumption = consumption || {};
+      if (!consumption.farmId || !consumption.itemId || !consumption.quantityConsumed) return fail('A farm, feed item, and quantity are required');
+      var value = Object.assign({}, consumption, {
+        localId: consumption.localId || randomId('farm-feed-'),
+        quantityConsumed: Math.max(0, Number(consumption.quantityConsumed || 0)),
+        syncStatus: consumption.syncStatus || 'pending',
+        queuedAt: consumption.queuedAt || Date.now()
+      });
+      return putRecord('offline_farm_feed_consumption', value).then(function () { return value; });
+    },
+    listFarmFeedConsumption: function (farmId, date) {
+      return allRecords('offline_farm_feed_consumption').then(function (items) {
+        return items.filter(function (item) {
+          return (!farmId || item.farmId === farmId) && (!date || String(item.fedAt || '').slice(0, 10) === date);
+        }).sort(function (left, right) {
+          return new Date(right.fedAt || 0) - new Date(left.fedAt || 0);
+        });
+      });
+    },
+    markFarmFeedConsumptionSynced: function (localId, extra) {
+      return getRecord('offline_farm_feed_consumption', localId).then(function (item) {
+        return item ? putRecord('offline_farm_feed_consumption', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    cacheFarmInventory: function (item) {
+      item = item || {};
+      if (!item.itemId && !item.id) return fail('An inventory item id is required');
+      return putRecord('offline_farm_inventory', Object.assign({}, item, {
+        itemId: item.itemId || item.id,
+        cachedAt: Date.now()
+      }));
+    },
+    listFarmInventory: function (farmId) {
+      return allRecords('offline_farm_inventory').then(function (items) {
+        return items.filter(function (item) { return !farmId || item.farmId === farmId; });
       });
     },
     cacheFarmReport: function (report) {

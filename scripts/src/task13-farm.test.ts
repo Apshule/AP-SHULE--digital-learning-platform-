@@ -56,7 +56,7 @@ describe("Task 13 Step 1 farm foundation contracts", () => {
     expect(indexSource).toContain("faceEmbedding");
     expect(indexSource).toContain("OfflineManager.queueFarmMovement");
     expect(indexSource).toContain("OfflineManager.queueFarmAttendance");
-    expect(offlineSource).toContain("var DB_VERSION = 19");
+    expect(offlineSource).toContain("var DB_VERSION = 21");
     for (const value of ["offline_farm_movements", "offline_farm_attendance", "offline_farm_reports"]) {
       expect(offlineSource).toContain(value);
     }
@@ -76,5 +76,52 @@ describe("Task 13 Step 1 farm foundation contracts", () => {
     const movementIndexes = indexes.indexes.filter(index => index.collectionGroup === "farm_animal_movements");
     expect(movementIndexes.some(index => index.fields.some(field => field.fieldPath === "detectedAt"))).toBe(true);
     expect(movementIndexes.some(index => index.fields.some(field => field.fieldPath === "animalTypeId"))).toBe(true);
+  });
+
+  it("supports Step 2 egg, attendance, inventory, feed, produce, sales, and expenses", () => {
+    for (const value of [
+      "farm_egg_collections",
+      "farm_worker_attendance",
+      "farm_inventory",
+      "farm_feed_consumption",
+      "farm_produce",
+      "farm_sales",
+      "farm_expenses",
+      "farmOpenEggCount",
+      "farmEstimateEggs",
+      "farmOpenAttendance",
+      "farmOpenInventory",
+      "farmOpenFeed",
+      "farmOpenProduce",
+      "farmOpenSale",
+      "farmOpenExpense",
+      "OfflineManager.queueFarmEggCollection",
+      "OfflineManager.queueFarmFeedConsumption",
+      "faceEmbedding",
+      "farmGenerateSummary",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    for (const collection of [
+      "farm_egg_collections",
+      "farm_inventory",
+      "farm_feed_consumption",
+      "farm_produce",
+      "farm_sales",
+      "farm_expenses",
+    ]) {
+      expect(rulesSource).toContain(`match /${collection}/`);
+      expect(indexes.indexes.some(index => index.collectionGroup === collection)).toBe(true);
+    }
+  });
+
+  it("keeps Step 2 safety boundaries explicit", () => {
+    expect(indexSource).toContain("Sale quantity exceeds available produce");
+    expect(indexSource).toContain("Inventory cannot go below zero");
+    expect(indexSource).toContain("Manual review is required");
+    expect(indexSource).toContain("Produce requires an internet connection");
+    expect(rulesSource).toContain("request.resource.data.quantityInStock >= 0");
+    expect(rulesSource).toContain("request.resource.data.amountPaid <= request.resource.data.totalAmount");
+    expect(offlineSource).toContain("oldVersion < 21");
   });
 });

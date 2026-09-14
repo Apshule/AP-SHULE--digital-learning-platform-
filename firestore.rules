@@ -451,6 +451,54 @@ service cloud.firestore {
       allow update: if isFarmManager() && sameFarm(resource.data.farmId);
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
+    match /farm_egg_collections/{collectionId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
+        && (role() != 'farm_worker' || request.resource.data.collectedBy == request.auth.uid);
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
+    match /farm_inventory/{itemId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmAdmin() && sameFarm(request.resource.data.farmId)
+        && request.resource.data.quantityInStock >= 0;
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId)
+        && request.resource.data.quantityInStock >= 0;
+      allow delete: if false;
+    }
+    match /farm_feed_consumption/{consumptionId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
+        && (role() != 'farm_worker' || request.resource.data.fedBy == request.auth.uid);
+      allow update, delete: if false;
+    }
+    match /farm_produce/{produceId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId)
+        && (resource.data.createdAt is timestamp
+          ? request.time < resource.data.createdAt + duration.value(7, 'd')
+          : true);
+      allow delete: if false;
+    }
+    match /farm_sales/{saleId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmManager() && sameFarm(request.resource.data.farmId)
+        && request.resource.data.totalAmount >= 0
+        && request.resource.data.amountPaid >= 0
+        && request.resource.data.amountPaid <= request.resource.data.totalAmount;
+      allow update, delete: if false;
+    }
+    match /farm_expenses/{expenseId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmManager() && sameFarm(request.resource.data.farmId)
+        && request.resource.data.amount >= 0;
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId)
+        && (resource.data.createdAt is timestamp
+          ? request.time < resource.data.createdAt + duration.value(7, 'd')
+          : true);
+      allow delete: if false;
+    }
     match /farm_lost_animals/{lostAnimalId} {
       allow read: if isFarmManager() && sameFarm(resource.data.farmId);
       allow create, update: if isFarmManager() && sameFarm(request.resource.data.farmId);
