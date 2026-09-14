@@ -102,6 +102,24 @@ async function firestoreQuery(collectionId: string, fieldPath: string, fieldValu
   return await response.json() as Array<{ document?: FirestoreDocument }>;
 }
 
+/** Reports deliberately use the service account, then apply all filters server-side. */
+async function firestoreList(collectionId: string): Promise<Array<{ document?: FirestoreDocument }>> {
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) throw new Error("Firebase service-account secret is not configured");
+  const response = await fetch(`${firestoreBase}:runQuery`, {
+    method: "POST", headers: { Authorization: `Bearer ${adminToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId }] } }),
+  });
+  if (!response.ok) throw new Error(`Firestore query failed (${response.status})`);
+  return await response.json() as Array<{ document?: FirestoreDocument }>;
+}
+
+function documentRows(rows: Array<{ document?: FirestoreDocument }>): Array<Record<string, unknown> & { id: string }> {
+  return rows.filter((row) => row.document?.name).map((row) => ({
+    id: row.document?.name?.split("/").pop() ?? "", ...firestoreDocumentData(row.document),
+  }));
+}
+
 function admin(req: Request, res: Response) {
   return verifyFirebaseAdmin(req.headers.authorization).then((result) => {
     if (!result.ok) {
@@ -263,6 +281,10 @@ router.post("/payments/initiate", async (req, res) => {
     res.status(400).json({ ok: false, error: "Positive amount, outstanding balance, supported payment method, phone, institutionId, sector and billReference are required" });
     return;
   }
+  if (await lockedMonth(now().slice(0, 7))) {
+    res.status(423).json({ ok: false, error: "Payment month is locked; new edits are not permitted" });
+    return;
+  }
   const stored = await authoritativeBalance(sector, billReference, user.token).catch(() => null);
   const resolvedTotal = stored?.total || totalAmount;
   const resolvedPaid = stored ? stored.paid : alreadyPaid;
@@ -279,7 +301,7 @@ router.post("/payments/initiate", async (req, res) => {
   const grossAmount = amountPaid + fee;
   const paymentType = amountPaid > resolvedBalance ? "Overpayment" : amountPaid === resolvedBalance ? "Full Payment" : "Partial Payment";
   const reference = `PAY-${new Date().getUTCFullYear()}-${createHash("sha256").update(`${user.uid}:${Date.now()}`).digest("hex").slice(0, 12).toUpperCase()}`;
-  const transaction = {
+  const transaction: Record<string, unknown> = {
     reference,
     clientId: user.uid,
     clientName: String(body.clientName ?? "Client"),
@@ -299,6 +321,8 @@ router.post("/payments/initiate", async (req, res) => {
     createdBy: user.uid,
     amountSource: stored ? "server_bill_record" : "validated_request",
   };
+  transaction.receiptNumber = `RCP-${new Date().getUTCFullYear()}-${reference}`;
+  transaction.receiptHash = receiptHash(transaction);
   try {
     const document = await firestoreRequest("/payment_transactions", { method: "POST", body: JSON.stringify(firestoreFields(transaction)) }, user.token) as FirestoreDocument;
     const transactionId = document.name?.split("/documents/")[1] ?? "";
@@ -521,6 +545,11 @@ async function processWebhook(req: Request, res: Response, failed: boolean) {
     }
     const transactionPath = match.document.name.split("/documents/")[1];
     const transaction = firestoreDocumentData(match.document);
+    const transactionMonth = String(transaction.paymentDate ?? transaction.createdAt ?? "").slice(0, 7);
+    if (transactionMonth && await lockedMonth(transactionMonth)) {
+      res.status(423).json({ ok: false, error: "Payment month is locked; transaction cannot be edited" });
+      return;
+    }
     if (!failed && transaction.status === "completed") {
       res.status(200).json({ ok: true, duplicate: true });
       return;
@@ -774,6 +803,176 @@ router.post("/payments/disbursements/:id/manual-review", async (req, res) => {
   const id = String(req.params.id);
   await firestoreRequest(`/payment_disbursements/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "needs_manual_review", manualReviewBy: uid, manualReviewAt: now(), updatedAt: now() })) });
   res.json({ ok: true, status: "needs_manual_review" });
+});
+
+// Step 3 reporting and reconciliation APIs. These endpoints intentionally keep
+// the provider credentials in this module and never include them in responses.
+async function audit(action: string, actorId: string, details: Record<string, unknown> = {}) {
+  await firestoreRequest("/payment_audit_log", {
+    method: "POST", body: JSON.stringify(firestoreFields({ action, actorId, details, timestamp: now() })),
+  }).catch(() => undefined);
+}
+
+function inPeriod(item: Record<string, unknown>, from?: string, to?: string) {
+  const date = Date.parse(String(item.paymentDate ?? item.createdAt ?? item.disbursedAt ?? ""));
+  return (!from || date >= Date.parse(from)) && (!to || date <= Date.parse(to));
+}
+
+async function lockedMonth(value: string): Promise<boolean> {
+  const archive = await firestoreGet("payment_monthly_archives", value);
+  return archive?.locked === true || archive?.status === "locked";
+}
+
+async function institutionFor(user: { uid: string; role: string; token: string }) {
+  if (user.role === "superadmin") return null;
+  const profile = await firestoreGet("users", user.uid, user.token).catch(() => null);
+  return String(profile?.institutionId ?? profile?.schoolId ?? "");
+}
+
+router.get("/payments/reports", async (req, res) => {
+  const uid = await admin(req, res);
+  if (!uid) return;
+  try {
+    const all = documentRows(await firestoreList("payment_transactions"));
+    const rows = all.filter((item) => inPeriod(item, String(req.query.from ?? ""), String(req.query.to ?? "")))
+      .filter((item) => !req.query.sector || item.sector === req.query.sector)
+      .filter((item) => !req.query.status || item.status === req.query.status)
+      .filter((item) => !req.query.institutionId || item.institutionId === req.query.institutionId);
+    const total = rows.reduce((sum, item) => sum + Number(item.amountPaid ?? item.amount ?? 0), 0);
+    const fees = rows.reduce((sum, item) => sum + Number(item.fee ?? 0), 0);
+    const report = { generatedAt: now(), reportType: String(req.query.type ?? "transactions"), rows,
+      summary: { transactionCount: rows.length, totalAmount: total, fees, netAmount: total - fees } };
+    const cacheId = `${report.reportType}-${createHash("sha256").update(JSON.stringify(req.query)).digest("hex").slice(0, 16)}`;
+    await firestoreRequest(`/payment_reports_cache/${encodeURIComponent(cacheId)}`, {
+      method: "PATCH", body: JSON.stringify(firestoreFields({ ...report, cacheId })),
+    });
+    await audit("payment_report_generated", uid, { reportType: report.reportType, count: rows.length });
+    res.json({ ok: true, ...report, cacheId });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to generate payment report" });
+  }
+});
+
+router.get("/payments/inbox", async (req, res) => {
+  const user = await caller(req, res);
+  if (!user) return;
+  const institutionId = await institutionFor(user);
+  if (user.role !== "superadmin" && !institutionId) {
+    res.status(403).json({ ok: false, error: "Institution scope is required" }); return;
+  }
+  try {
+    const rows = documentRows(await firestoreList("payment_transactions"))
+      .filter((item) => user.role === "superadmin" || item.institutionId === institutionId)
+      .filter((item) => inPeriod(item, String(req.query.from ?? ""), String(req.query.to ?? "")))
+      .sort((a, b) => String(b.paymentDate ?? b.createdAt).localeCompare(String(a.paymentDate ?? a.createdAt)));
+    res.json({ ok: true, institutionId, transactions: rows, totalAmount: rows.reduce((s, x) => s + Number(x.amountPaid ?? 0), 0) });
+  } catch (error) { res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to load payment inbox" }); }
+});
+
+router.get("/payments/statements/:institutionId", async (req, res) => {
+  const user = await caller(req, res);
+  if (!user) return;
+  const institutionId = String(req.params.institutionId);
+  const ownedInstitution = await institutionFor(user);
+  if (user.role !== "superadmin" && ownedInstitution !== institutionId) {
+    res.status(403).json({ ok: false, error: "Institution access denied" }); return;
+  }
+  try {
+    const rows = documentRows(await firestoreList("payment_transactions")).filter((x) => x.institutionId === institutionId)
+      .filter((x) => inPeriod(x, String(req.query.from ?? ""), String(req.query.to ?? "")));
+    const received = rows.reduce((s, x) => s + Number(x.amountPaid ?? 0), 0);
+    const fees = rows.reduce((s, x) => s + Number(x.fee ?? 0), 0);
+    res.json({ ok: true, statementNumber: `STM-${new Date().getUTCFullYear()}-${institutionId}-${Date.now()}`,
+      institutionId, transactions: rows, summary: { totalReceived: received, totalFees: fees, netDisbursed: received - fees,
+        pending: rows.filter((x) => x.status === "pending").length } });
+  } catch (error) { res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to generate statement" }); }
+});
+
+function receiptHash(transaction: Record<string, unknown>) {
+  return createHash("sha256").update(JSON.stringify({
+    reference: transaction.reference, amountPaid: transaction.amountPaid, institutionId: transaction.institutionId,
+    paymentDate: transaction.paymentDate ?? transaction.createdAt,
+  })).digest("hex");
+}
+
+router.get("/payments/receipts/:id/verify", async (req, res) => {
+  try {
+    const transaction = await firestoreGet("payment_transactions", String(req.params.id));
+    if (!transaction) { res.status(404).json({ ok: false, error: "Receipt not found" }); return; }
+    const expected = receiptHash(transaction);
+    const supplied = String(req.query.hash ?? transaction.receiptHash ?? "");
+    res.json({ ok: true, authentic: supplied === expected, receiptNumber: transaction.receiptNumber ?? `RCP-${transaction.reference}`,
+      hash: expected, details: { reference: transaction.reference, amountPaid: transaction.amountPaid,
+        paymentDate: transaction.paymentDate, institutionId: transaction.institutionId, status: transaction.status } });
+  } catch (error) { res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to verify receipt" }); }
+});
+
+router.post("/payments/reconciliation", async (req, res) => {
+  const uid = await admin(req, res);
+  if (!uid) return;
+  const from = String(req.body?.from ?? req.body?.startDate ?? "");
+  const to = String(req.body?.to ?? req.body?.endDate ?? "");
+  if (!from || !to || !Number.isFinite(Date.parse(from)) || !Number.isFinite(Date.parse(to))) {
+    res.status(400).json({ ok: false, error: "Valid from and to dates are required" }); return;
+  }
+  try {
+    const local = documentRows(await firestoreList("payment_transactions")).filter((x) => inPeriod(x, from, to));
+    let provider: Array<Record<string, unknown>> = [];
+    let sandbox = false;
+    if (hasYoCredentials()) {
+      const xml = await yoCall("acgetministatement", { FromDate: from, ToDate: to }, configuredSettings());
+      const refs = [...xml.matchAll(/<(?:ExternalReference|external_ref|TransactionReference|reference)>([^<]+)</gi)];
+      provider = refs.map((m) => ({ externalRef: m[1], yoTransactionId: m[1] }));
+    } else sandbox = true;
+    const byRef = new Map(local.map((x) => [String(x.yoTransactionId ?? x.externalRef ?? x.reference), x]));
+    const mismatches: Array<Record<string, unknown>> = [];
+    let matched = 0;
+    for (const remote of provider) {
+      const localItem = byRef.get(String(remote.yoTransactionId ?? remote.externalRef));
+      if (localItem) { matched++; byRef.delete(String(remote.yoTransactionId ?? remote.externalRef)); }
+      else mismatches.push({ issueType: "missing_in_appshule", yo: remote });
+    }
+    for (const localItem of byRef.values()) mismatches.push({ issueType: "missing_in_yo", appshule: localItem });
+    const reconciliationId = `RECON-${Date.now()}`;
+    const result = { reconciliationId, from, to, sandbox, matched, mismatches, providerCount: provider.length, localCount: local.length, createdAt: now(), status: "open", createdBy: uid };
+    await firestoreRequest(`/payment_reconciliations/${reconciliationId}`, { method: "PATCH", body: JSON.stringify(firestoreFields(result)) });
+    await audit("reconciliation_run", uid, { reconciliationId, from, to, sandbox, mismatchCount: mismatches.length });
+    res.json({ ok: true, ...result });
+  } catch (error) { res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Reconciliation failed" }); }
+});
+
+router.post("/payments/reconciliation/:id/resolve", async (req, res) => {
+  const uid = await admin(req, res);
+  if (!uid) return;
+  const id = String(req.params.id);
+  const action = String(req.body?.action ?? "resolved");
+  const current = await firestoreGet("payment_reconciliations", id);
+  if (!current) { res.status(404).json({ ok: false, error: "Reconciliation not found" }); return; }
+  await firestoreRequest(`/payment_reconciliations/${id}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "resolved", resolutionAction: action, resolvedBy: uid, resolvedAt: now() })) });
+  await audit("reconciliation_mismatch_resolved", uid, { reconciliationId: id, action });
+  res.json({ ok: true, status: "resolved", action });
+});
+
+router.post("/payments/reconciliation/daily", async (req, res) => {
+  const uid = await admin(req, res); if (!uid) return;
+  const date = String(req.body?.date ?? now().slice(0, 10));
+  const record = { reconciliationDate: date, date, cashInHand: Number(req.body?.cashInHand ?? 0), mobileMoney: Number(req.body?.mobileMoney ?? 0),
+    bank: Number(req.body?.bank ?? 0), insuranceClaimsPending: Number(req.body?.insuranceClaimsPending ?? 0), variances: req.body?.variances ?? {}, createdBy: uid, createdAt: now() };
+  await firestoreRequest(`/payment_daily_reconciliations/${date}`, { method: "PATCH", body: JSON.stringify(firestoreFields(record)) });
+  await audit("daily_reconciliation_created", uid, { date }); res.json({ ok: true, ...record });
+});
+
+router.post("/payments/reconciliation/month-end/lock", async (req, res) => {
+  const uid = await admin(req, res); if (!uid) return;
+  const month = String(req.body?.month ?? "");
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) { res.status(400).json({ ok: false, error: "month must be YYYY-MM" }); return; }
+  if (await lockedMonth(month)) { res.status(409).json({ ok: false, error: "Payment month is already locked" }); return; }
+  const rows = documentRows(await firestoreList("payment_transactions")).filter((x) => String(x.paymentDate ?? x.createdAt).startsWith(month));
+  const archive = { month: Number(month.slice(5)), monthLabel: month, year: Number(month.slice(0, 4)), monthNumber: Number(month.slice(5)), locked: true, status: "locked", lockedAt: now(), lockedBy: uid,
+    transactionCount: rows.length, totalAmount: rows.reduce((s, x) => s + Number(x.amountPaid ?? 0), 0), totalFees: rows.reduce((s, x) => s + Number(x.fee ?? 0), 0) };
+  await firestoreRequest(`/payment_monthly_archives/${month}`, { method: "PATCH", body: JSON.stringify(firestoreFields(archive)) });
+  await audit("payment_month_locked", uid, { month, transactionCount: rows.length });
+  res.json({ ok: true, archive });
 });
 
 export default router;

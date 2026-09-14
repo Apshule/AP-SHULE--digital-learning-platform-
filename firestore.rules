@@ -217,6 +217,22 @@ service cloud.firestore {
       allow create, update: if isSuperAdmin();
       allow delete: if false;
     }
+    match /payment_reports_cache/{id} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+    match /payment_reconciliations/{id} {
+      allow read, create, update: if isSuperAdmin();
+      allow delete: if false;
+    }
+    match /payment_daily_reconciliations/{id} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+    match /payment_monthly_archives/{id} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
     match /mfi_collateral_types/{typeId} {
       allow read: if signedIn();
       allow write: if isSuperAdmin();

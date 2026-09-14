@@ -1,0 +1,581 @@
+Task 12 — Step 3 of 3: Reports + Reconciliation + Analytics + Full Regression Testing
+
+CONTEXT:
+- Step 1 built: Yo! API config, Beneficiary management, Client payment flow, IPN webhook handler
+- Step 2 built: Auto-disbursement, Partial payments, Credit notes, Notifications, Reminders
+- Step 3 completes Task 12 with: Financial Reports, Reconciliation, Analytics, and Full Regression (Tasks 1-12)
+
+GOAL OF STEP 3:
+- Build comprehensive financial reports for payments
+- Build reconciliation tools (matching Yo! records with AppShule records)
+- Payment analytics dashboard
+- Full regression across all 12 tasks
+- Task 12 complete
+
+═══════════════════════════════════════════════════════════════
+PART A: PAYMENT REPORTS MODAL
+═══════════════════════════════════════════════════════════════
+
+Add to Super Admin Command Center → Payments → new tab: "📊 Reports"
+
+Full-screen modal (id="paymentReportsModal") with tabs:
+
+TAB 1 — TRANSACTION REPORTS
+Filters: Date range (today/week/month/custom), Sector, Status, Institution
+
+Sub-reports:
+1. All Transactions Report
+   - Table: Date | Reference | Client | Institution | Amount | Fee | Net | Status
+   - Summary row at bottom with totals
+   - [📥 Export PDF] [📥 Export Excel] [📥 Export CSV]
+
+2. Successful Transactions
+   - Only completed + disbursed
+   - Show settlement details
+
+3. Failed Transactions
+   - Only failed
+   - Show failure reason
+   - [📧 Retry All] button (if applicable)
+
+4. Pending Transactions
+   - Transactions awaiting IPN or disbursement
+   - Show time since initiation
+   - Flag transactions pending > 30 minutes (possible stuck)
+
+TAB 2 — REVENUE REPORTS
+Sub-reports:
+1. Daily Summary
+   - Date | Transactions | Total Amount | Fees | Net to Institutions
+   - Grouped by day
+   - 30-day view by default
+
+2. Monthly Summary
+   - Same fields but grouped by month
+   - 12-month view
+
+3. By Sector
+   - Education: X transactions, UGX Y
+   - MFI: X transactions, UGX Y
+   - Clinic: X transactions, UGX Y
+   - Farm: X transactions, UGX Y
+
+4. By Institution
+   - Top 20 institutions by volume
+   - Table: Institution | Transactions | Volume | Avg Fee
+
+5. Fee Earnings
+   - Total fees collected (period)
+   - By sector, by institution
+   - Projected annual revenue
+
+TAB 3 — DISBURSEMENT REPORTS
+Sub-reports:
+1. Disbursement Summary
+   - Total disbursed (period)
+   - By type: Yo! / MoMo / Bank
+   - By status: Completed / Pending / Failed
+
+2. Failed Disbursements
+   - List with retry count
+   - Reason for failure
+   - [Retry] [Mark Manual] actions
+
+3. Beneficiary Performance
+   - Per beneficiary: total sent, success rate, last payout
+
+TAB 4 — CLIENT REPORTS
+Sub-reports:
+1. Top Payers
+   - Top 20 clients by payment volume
+   - Name | Total Paid | Transactions | Last Payment
+
+2. Credit Note Ledger
+   - All credit notes: active / used / expired
+   - Total outstanding credits
+
+3. Overpayment Report
+   - Clients with outstanding credits
+   - Amount owed to each client
+
+TAB 5 — TAX & COMPLIANCE
+Sub-reports:
+1. URA Tax Report (Uganda Revenue Authority)
+   - Total fees earned (for tax)
+   - Withholding tax summary
+   - [📥 Export URA Format]
+
+2. Transaction Audit Log
+   - Every action with timestamp + user
+   - Immutable
+   - [📥 Export Full Audit]
+
+═══════════════════════════════════════════════════════════════
+PART B: RECONCILIATION TOOLS
+═══════════════════════════════════════════════════════════════
+
+Add new tab: "🔄 Reconciliation"
+
+Purpose: Match AppShule's records with Yo! Payments' records
+
+TAB 1 — AUTO RECONCILIATION
+- [🔄 Run Auto Reconciliation] button
+- For selected date range:
+  * Fetch transactions from Yo! API (acgetministatement)
+  * Compare against AppShule payment_transactions
+  * Match by yoTransactionId or external_ref
+  * Flag mismatches:
+    - In Yo! but not in AppShule (missing records)
+    - In AppShule but not in Yo! (failed or fake)
+    - Amount mismatch
+    - Status mismatch
+- Show report:
+  ┌─────────────────────────────────────┐
+  │ RECONCILIATION SUMMARY              │
+  │ Period: 1 Sep - 14 Sep 2026         │
+  │                                     │
+  │ ✅ Matched: 145 transactions        │
+  │ ⚠️ Missing in AppShule: 2           │
+  │ ❌ Missing in Yo!: 1                │
+  │ ⚠️ Amount mismatch: 0               │
+  │ ⚠️ Status mismatch: 1               │
+  │                                     │
+  │ [View Details] [Export Report]     │
+  └─────────────────────────────────────┘
+
+TAB 2 — MISMATCH RESOLUTION
+- List of mismatches from auto reconciliation
+- Each row:
+  * Reference
+  * Issue type
+  * Yo! value vs AppShule value
+  * [Investigate] [Resolve Manually] [Ignore]
+
+Resolve actions:
+- Re-fetch from Yo! API
+- Update AppShule record
+- Create missing record
+- Mark as false positive
+
+TAB 3 — DAILY RECONCILIATION
+- Cash in hand reconciliation
+- Mobile money reconciliation
+- Bank reconciliation
+- Insurance claims pending
+- Show variances
+
+TAB 4 — MONTH-END RECONCILIATION
+- Formal month-end close
+- Lock transactions for the month
+- Generate reconciliation certificate PDF
+- [🔒 Lock Month]
+
+═══════════════════════════════════════════════════════════════
+PART C: PAYMENT ANALYTICS DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Add new tab: "📈 Analytics"
+
+Uses Chart.js (already loaded).
+
+Section 1 — Volume Trends
+- Line chart: Daily transaction count (last 30 days)
+- Line chart: Monthly transaction count (last 12 months)
+- Bar chart: By sector
+
+Section 2 — Revenue Trends
+- Line chart: Daily fees earned (last 30 days)
+- Bar chart: Monthly fees (last 12 months)
+- Pie chart: By sector share
+
+Section 3 — Success Rate
+- Gauge chart: Overall success rate
+- Table: Sector-wise success rate
+- Table: Institution-wise success rate
+
+Section 4 — Payment Method Mix
+- Pie chart: MTN vs Airtel
+- Trend over time
+
+Section 5 — Peak Usage
+- Heatmap: Transactions by hour of day, day of week
+- Peak times highlighted
+
+Section 6 — Geographic Distribution (if location tracked)
+- Which regions most active
+- Bar chart by region
+
+═══════════════════════════════════════════════════════════════
+PART D: INSTITUTION PAYMENT STATEMENTS
+═══════════════════════════════════════════════════════════════
+
+Super Admin can generate per-institution payment statements:
+
+In Payment Reports → Institution → click institution name:
+
+Full-screen modal (id="institutionStatementModal"):
+
+Header:
+- Institution name + logo
+- Statement period (date range picker)
+- Statement number (auto)
+
+Body:
+- Opening balance
+- All transactions in period
+- Closing balance
+- Summary:
+  * Total received
+  * Total fees
+  * Net disbursed
+  * Pending
+
+Actions:
+- [📥 Download PDF Statement]
+- [📧 Email to Institution]
+- [🖨 Print]
+
+═══════════════════════════════════════════════════════════════
+PART E: RECEIPTS & INVOICES
+═══════════════════════════════════════════════════════════════
+
+Generate professional receipts for every payment:
+
+RECEIPT PDF (via jsPDF):
+- AppShule logo + institution logo
+- Header: "PAYMENT RECEIPT"
+- Receipt number: RCP-{year}-{sequence}
+- Date
+- Client name + phone
+- Institution name
+- Amount paid (in words + figures)
+- Fee (if visible)
+- Net amount to institution
+- Payment method
+- Transaction reference
+- QR code (links to verification page)
+- Footer: "Thank you for your payment"
+- Signature area
+
+Add [📥 Download Receipt] button on every transaction row.
+
+VERIFICATION PAGE:
+- appshule.com/#verify-receipt/{receiptNumber}
+- Shows receipt details
+- Confirms authenticity via hash check
+
+═══════════════════════════════════════════════════════════════
+PART F: MONTH-END CLOSE WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+Add formal month-end process for Super Admin:
+
+Steps:
+1. On 1st of each month, system generates month-end summary
+2. Notify Super Admin: "Month {X} ready to close"
+3. Super Admin opens Reconciliation → Month-End
+4. Reviews:
+   - Total transactions
+   - Total revenue
+   - Outstanding items
+   - Any flagged issues
+5. Clicks [🔒 Lock Month]:
+   - Sets a lock flag on all transactions for that month
+   - Prevents edits
+   - Generates month-end reconciliation certificate PDF
+   - Archives summary to Firestore: payment_monthly_archives
+6. Notify accountant + director
+
+═══════════════════════════════════════════════════════════════
+PART G: INSTITUTION SELF-SERVICE PORTAL
+═══════════════════════════════════════════════════════════════
+
+Add payment view for institutions (School Admin, MFI Admin, Clinic Admin):
+
+In their Account page → "💰 Payment Inbox":
+
+┌─────────────────────────────────────────┐
+│ 💰 PAYMENT INBOX                         │
+├─────────────────────────────────────────┤
+│ Today: UGX 245,000 (3 payments)         │
+│ This month: UGX 4.5M (48 payments)      │
+│                                          │
+│ Recent payments:                         │
+│ • 12 Sep — UGX 50,000 from John Doe     │
+│   Ref: PAY-2026-00045                   │
+│   Status: ✅ Disbursed                   │
+│                                          │
+│ • 12 Sep — UGX 30,000 from Mary N       │
+│   Ref: PAY-2026-00046                   │
+│   Status: ⏳ Pending Disbursement        │
+│                                          │
+│ [📊 Full Statement] [📥 Export CSV]     │
+│ [💳 Manage Beneficiary]                 │
+└─────────────────────────────────────────┘
+
+Institution can:
+- See real-time payment arrivals
+- Download statements
+- Update their beneficiary details (goes to Super Admin for approval)
+- View pending disbursements
+
+═══════════════════════════════════════════════════════════════
+PART H: INTEGRATION WITH COMMAND CENTER
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Dashboard (Task 9) with payment widgets:
+
+Add to Dashboard home quick stats:
+- Payments Today: X (UGX Y)
+- Disbursements Pending: X
+- Failed Transactions: X
+- Total Fees This Month: UGX X
+
+Add to Quick Actions:
+- [💳 Payments] (already exists)
+- [🔄 Reconcile] (new — opens reconciliation)
+
+Add alert card:
+- ⚠️ 2 disbursements failed — retry needed
+- ⚠️ 1 month-end close pending
+
+═══════════════════════════════════════════════════════════════
+PART I: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Payment accent: #00A86B (green)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Reports:
+- Professional financial layout
+- Monospace for amounts
+- Clear header with date range
+- Alternating row colors in tables
+
+Receipts:
+- Professional look with logos
+- QR code bottom-right
+- "Official Receipt" styling
+
+═══════════════════════════════════════════════════════════════
+PART J: OFFLINE BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+Reports require internet (fresh data from Firestore + Yo! API).
+
+Cache strategy:
+- Latest reports cached in IndexedDB (last 24 hours)
+- Show "Last updated X ago" when offline
+- Disable [Run Reconciliation] when offline
+- Historical reports still viewable from cache
+
+═══════════════════════════════════════════════════════════════
+PART K: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. payment_transactions: paymentDate (desc) + sector (asc)
+2. payment_transactions: institutionId (asc) + status (asc) + paymentDate (desc)
+3. payment_transactions: status (asc) + createdAt (desc)
+4. payment_disbursements: status (asc) + disbursedAt (desc)
+5. payment_reports_cache: reportType (asc) + generatedAt (desc)
+6. payment_monthly_archives: year (asc) + month (asc)
+
+═══════════════════════════════════════════════════════════════
+PART L: SECURITY & AUDIT
+═══════════════════════════════════════════════════════════════
+
+1. Only Super Admin can:
+   - View all payment reports
+   - Run reconciliation
+   - Lock months
+   - View all institution statements
+   - Export tax reports
+
+2. Institutions can only:
+   - View their own payment inbox
+   - Download their own statements
+   - Update their own beneficiary (pending approval)
+
+3. Auditors log:
+   - Every report generation
+   - Every reconciliation run
+   - Every month lock
+   - Every export
+
+Store in audit_log collection (from Task 9).
+
+═══════════════════════════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════════════════════════
+
+A. Transaction reports:
+   1. Super Admin → Command Center → Payments → Reports
+   2. Filter by date range: Last 7 days
+   3. Verify: correct transactions
+   4. Export PDF → verify formatting
+   5. Export Excel → verify data
+
+B. Revenue reports:
+   1. Switch to Revenue tab
+   2. View Daily Summary
+   3. Verify: totals match sum of transactions
+   4. View By Sector
+   5. Verify: sector totals add to grand total
+
+C. Disbursement reports:
+   1. Open Disbursement tab
+   2. Verify: pending vs completed
+   3. Test failed disbursement list
+
+D. Client reports:
+   1. Top Payers → verify order
+   2. Credit Note Ledger → verify credits shown
+   3. Overpayment → verify accuracy
+
+E. Tax reports:
+   1. Generate URA Report
+   2. Verify: formatted correctly
+   3. Export
+
+F. Reconciliation:
+   1. Open Reconciliation tab
+   2. Click [🔄 Run Auto Reconciliation]
+   3. If Yo! API not configured: show "Sandbox mode — using mock data"
+   4. If configured: run real reconciliation
+   5. Verify: matches found
+   6. If mismatches: test resolution flow
+
+G. Analytics:
+   1. Open Analytics tab
+   2. Verify: charts render
+   3. Test all 6 sections
+
+H. Institution statements:
+   1. Select any institution
+   2. Generate statement PDF
+   3. Verify: all transactions included
+   4. Verify: totals correct
+   5. Download PDF
+
+I. Receipts:
+   1. Open any transaction
+   2. Click [📥 Download Receipt]
+   3. Verify: PDF contains all info
+   4. Scan QR code → opens verification page
+   5. Verification page confirms authentic
+
+J. Month-end close:
+   1. Simulate 1 Sep as month start
+   2. Open Reconciliation → Month-End
+   3. Review summary
+   4. Click [🔒 Lock Month]
+   5. Verify: transactions locked
+   6. Try to edit a locked transaction → blocked
+   7. Verify: certificate PDF generated
+
+K. Institution inbox:
+   1. Login as School Admin
+   2. Open Account → Payment Inbox
+   3. Verify: real-time payments shown
+   4. Test statement download
+   5. Test beneficiary update → goes to Super Admin
+
+L. Command Center integration:
+   1. Login as Super Admin
+   2. Dashboard shows payment widgets
+   3. Alerts show failed disbursements
+   4. Click alert → navigates to correct view
+
+M. Offline:
+   1. Turn off WiFi
+   2. Reports show cached data with warning
+   3. Reconciliation disabled
+   4. Institution inbox shows cached
+
+N. Full regression (Tasks 1-12):
+   TASK 1-11: all pass
+   TASK 12:
+   ☐ Yo! API config panel
+   ☐ Beneficiary management
+   ☐ Client payment initiation
+   ☐ IPN webhook handler
+   ☐ Auto-disbursement
+   ☐ Partial payments
+   ☐ Credit notes
+   ☐ Notifications (queued)
+   ☐ Reminders
+   ☐ Reports (5 tabs)
+   ☐ Reconciliation (4 tabs)
+   ☐ Analytics (6 sections)
+   ☐ Institution statements
+   ☐ Receipts + verification
+   ☐ Month-end close
+   ☐ Institution inbox
+
+═══════════════════════════════════════════════════════════════
+PART N: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add code comments for:
+   - Payment flow (initiate → IPN → disburse → notify)
+   - Reconciliation logic
+   - Credit note logic
+   - Month-end lock
+3. Check for unused imports
+4. Verify no syntax errors
+5. Ensure charts destroy on modal close
+
+═══════════════════════════════════════════════════════════════
+PART O: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 12 feature completeness:
+   ☐ Step 1: Foundation + Yo! + Beneficiaries + Collection
+   ☐ Step 2: Disbursement + Partial Payments + Balance + Notifications
+   ☐ Step 3: Reports + Reconciliation + Analytics + Final Testing
+
+2. Regression: Tasks 1-11 still pass? ✅/❌
+3. Performance benchmarks met?
+4. Recommendations for Task 13
+
+If all pass:
+"Task 12 fully complete — Automated Payments with Yo! integration, 
+reports, reconciliation, and analytics ready. Ready for Task 13 
+(Farming Module)."
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-11 or Steps 1-2 of Task 12
+- Do NOT allow non-superadmin to run reconciliation
+- Do NOT lose audit log entries
+- Do NOT expose payment data cross-institution
+- Do NOT allow editing locked months
+- Do NOT download YouTube videos
+- Do NOT expose Yo! API credentials
+- Do NOT skip signature verification on webhooks
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-K, run regression (Part M), report (Part O).
+
+Confirm when done with:
+"Task 12 fully complete — Automated Payments ready. Ready for Task 13."
+
+Report:
+- Feature checklist
+- Regression results
+- Screenshots recommended: transaction reports, revenue charts, 
+  reconciliation, analytics, institution statement, receipt PDF, 
+  month-end close, institution inbox
