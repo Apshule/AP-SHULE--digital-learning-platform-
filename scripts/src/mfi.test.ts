@@ -156,4 +156,51 @@ describe("Task 10 Step 1 MFI foundation contracts", () => {
       )).toBe(true);
     }
   });
+
+  it("implements Step 3 director, portfolio, risk, performance, and UMRA report surfaces", () => {
+    for (const value of [
+      "mfiDirectorHomePage",
+      "setupMfiDirectorNavigation",
+      "mfiOpenPortfolio",
+      "mfiOpenRiskAnalytics",
+      "mfiOpenPerformance",
+      "generateUmraReport",
+      "Collateral Register",
+      "Collateral Valuation Report",
+      "Collateral Coverage Summary",
+      "Loan Register",
+      "Overdue Report",
+      "Branch Performance Report",
+      "Quarterly Compliance Report",
+      "mfiExportUmraReport",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("supports borrower read-only access, receipts, branches, and offline report caches", () => {
+    for (const value of ["mfiBorrowerHomePage", "mfiDownloadBorrowerStatement", "mfi_receipts", "mfiSaveBranch", "cacheMfiPortfolio", "cacheMfiReport", "offline_mfi_portfolio", "offline_mfi_reports"]) {
+      expect(indexSource + offlineSource + rulesSource).toContain(value);
+    }
+    expect(rulesSource).toContain("role() == 'borrower'");
+    expect(rulesSource).toContain("request.resource.data.diff(resource.data).affectedKeys().hasOnly");
+  });
+
+  it("declares the Step 3 branch, expiry, decision, and receipt indexes", () => {
+    const required: Array<[string, string[]]> = [
+      ["mfi_collateral", ["institutionId", "branchId", "createdAt"]],
+      ["mfi_collateral", ["institutionId", "typeId", "estimatedValueUgx"]],
+      ["mfi_collateral", ["institutionId", "expiryDate"]],
+      ["mfi_customers", ["institutionId", "branchId", "createdAt"]],
+      ["mfi_collateral_decisions", ["institutionId", "decidedBy", "decidedAt"]],
+      ["mfi_receipts", ["institutionId", "createdAt"]],
+      ["mfi_receipts", ["customerId", "createdAt"]],
+    ];
+    for (const [collectionGroup, fields] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+  });
 });

@@ -137,15 +137,23 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
     match /mfi_customers/{customerId} {
-      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && (resource.data.customerId == request.auth.uid || customerId == request.auth.uid));
       allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
-      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update: if isSuperAdmin()
+        || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer']
+        || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_director'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'blacklistReason', 'blacklistedAt', 'blacklistRemovedAt', 'blacklistRemovedBy']);
       allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
     match /mfi_collateral/{collateralId} {
-      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
       allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
-      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update: if isSuperAdmin()
+        || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager']
+        || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_director'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['duplicateCleared', 'duplicateClearedAt', 'duplicateClearedBy']);
       allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
     match /mfi_collateral_scoring/{scoringId} {
@@ -161,7 +169,9 @@ service cloud.firestore {
     }
     match /mfi_branches/{branchId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
-      allow write: if isSuperAdmin();
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() == 'mfi_admin';
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+      allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
     match /mfi_collateral_verification/{verificationId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
@@ -184,10 +194,17 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
       allow create, update, delete: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() == 'mfi_admin';
     }
+    match /mfi_receipts/{receiptId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId)
+        && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
+      allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+    }
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts)(/.*)?$');
     }
   }
 }

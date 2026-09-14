@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 14;
+  var DB_VERSION = 15;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -27,7 +27,9 @@
     'offline_command_stats',
     'offline_mfi_customers',
     'offline_mfi_collateral',
-    'offline_mfi_verification'
+    'offline_mfi_verification',
+    'offline_mfi_portfolio',
+    'offline_mfi_reports'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -172,7 +174,9 @@
                  offline_command_stats: 'statsKey',
                  offline_mfi_customers: 'localId',
                  offline_mfi_collateral: 'localId',
-                 offline_mfi_verification: 'localId'
+                  offline_mfi_verification: 'localId',
+                  offline_mfi_portfolio: 'institutionId',
+                  offline_mfi_reports: 'localId'
             }[name];
             store = db.createObjectStore(name, { keyPath: keyPath });
           } else {
@@ -257,6 +261,17 @@
             : db.createObjectStore('offline_mfi_collateral', { keyPath: 'localId' });
           if (!mfiCollateralStore.indexNames.contains('institutionId')) mfiCollateralStore.createIndex('institutionId', 'institutionId', { unique: false });
           if (!mfiCollateralStore.indexNames.contains('syncStatus')) mfiCollateralStore.createIndex('syncStatus', 'syncStatus', { unique: false });
+        }
+        if (oldVersion < 15) {
+          var portfolioStore = db.objectStoreNames.contains('offline_mfi_portfolio')
+            ? event.target.transaction.objectStore('offline_mfi_portfolio')
+            : db.createObjectStore('offline_mfi_portfolio', { keyPath: 'institutionId' });
+          if (!portfolioStore.indexNames.contains('updatedAt')) portfolioStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+          var reportStore = db.objectStoreNames.contains('offline_mfi_reports')
+            ? event.target.transaction.objectStore('offline_mfi_reports')
+            : db.createObjectStore('offline_mfi_reports', { keyPath: 'localId' });
+          if (!reportStore.indexNames.contains('institutionId')) reportStore.createIndex('institutionId', 'institutionId', { unique: false });
+          if (!reportStore.indexNames.contains('createdAt')) reportStore.createIndex('createdAt', 'createdAt', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -1193,6 +1208,27 @@
     markMfiVerificationSynced: function (localId, extra) {
       return getRecord('offline_mfi_verification', localId).then(function (item) {
         return item ? putRecord('offline_mfi_verification', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    cacheMfiPortfolio: function (portfolio) {
+      portfolio = portfolio || {};
+      if (!portfolio.institutionId) return fail('An institution is required for portfolio caching');
+      return putRecord('offline_mfi_portfolio', Object.assign({}, portfolio, { updatedAt: portfolio.updatedAt || new Date().toISOString() }));
+    },
+    getMfiPortfolio: function (institutionId) {
+      return getRecord('offline_mfi_portfolio', institutionId);
+    },
+    listMfiPortfolio: function (institutionId) {
+      return getRecord('offline_mfi_portfolio', institutionId);
+    },
+    cacheMfiReport: function (report) {
+      report = report || {};
+      if (!report.institutionId || !report.report) return fail('An institution and report are required');
+      return putRecord('offline_mfi_reports', Object.assign({}, report, { localId: report.localId || randomId('mfi-report-'), cachedAt: Date.now() }));
+    },
+    listMfiReports: function (institutionId) {
+      return allRecords('offline_mfi_reports').then(function (items) {
+        return items.filter(function (item) { return !institutionId || item.institutionId === institutionId; }).sort(function (a, b) { return Number(b.cachedAt || 0) - Number(a.cachedAt || 0); });
       });
     },
     listCARecords: function () { return allRecords('offline_ca_records'); },
