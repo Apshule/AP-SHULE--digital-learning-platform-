@@ -37,6 +37,24 @@ service cloud.firestore {
         && institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId;
     }
 
+    function isFarmUser() {
+      return signedIn() && role() in ['farm_admin', 'farm_manager', 'farm_worker'];
+    }
+
+    function sameFarm(farmId) {
+      return isFarmUser()
+        && (farmId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.farmId
+          || farmId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+    }
+
+    function isFarmAdmin() {
+      return isSuperAdmin() || (isFarmUser() && role() == 'farm_admin');
+    }
+
+    function isFarmManager() {
+      return isFarmAdmin() || (isFarmUser() && role() == 'farm_manager');
+    }
+
     match /liveLessons/{lessonId} {
       allow read: if signedIn();
       allow create, update, delete: if signedIn()
@@ -387,6 +405,56 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || sameClinicAdminInstitution(resource.data.institutionId);
       allow create: if isSuperAdmin() || sameClinicAdminInstitution(request.resource.data.institutionId);
       allow update, delete: if false;
+    }
+
+    // Task 13 farm records are scoped to the user's farm. Worker face data is
+    // only readable by farm administrators and managers.
+    match /farms/{farmId} {
+      allow read: if isSuperAdmin() || sameFarm(farmId) || (signedIn() && resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+      allow create: if isSuperAdmin() || (signedIn() && role() == 'farm_admin' && request.resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
+      allow update: if isFarmAdmin() && (isSuperAdmin() || sameFarm(farmId));
+      allow delete: if isSuperAdmin();
+    }
+    match /farm_animal_types/{typeId} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin();
+    }
+    match /farm_workers/{workerId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmAdmin() && sameFarm(request.resource.data.farmId);
+      allow update: if isFarmAdmin() && sameFarm(resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
+    match /farm_cameras/{cameraId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create, delete: if isFarmAdmin() && sameFarm(request.resource.data.farmId);
+      allow update: if isFarmAdmin() && sameFarm(resource.data.farmId)
+        || isFarmManager() && sameFarm(resource.data.farmId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastHeartbeat', 'updatedAt', 'lastDetectionAt', 'isConnected']);
+    }
+    match /farm_animal_movements/{movementId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create: if isFarmManager() && sameFarm(request.resource.data.farmId);
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
+    match /farm_daily_summaries/{summaryId} {
+      allow read: if isFarmUser() && sameFarm(resource.data.farmId);
+      allow create, update: if isFarmManager() && sameFarm(request.resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
+    match /farm_worker_attendance/{attendanceId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId)
+        || signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isFarmUser() && sameFarm(request.resource.data.farmId)
+        && (role() != 'farm_worker' || request.resource.data.userId == request.auth.uid);
+      allow update: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
+    }
+    match /farm_lost_animals/{lostAnimalId} {
+      allow read: if isFarmManager() && sameFarm(resource.data.farmId);
+      allow create, update: if isFarmManager() && sameFarm(request.resource.data.farmId);
+      allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
 
     // Preserve access for the existing authenticated application collections.

@@ -1,0 +1,588 @@
+Task 13 — Step 1 of 3: Farming Foundation + Animal Types + Farm Cameras + Animal Movement Tracking
+
+CONTEXT:
+- Tasks 1-12 complete. AppShule serves Education + MFI + Clinic sectors
+- Task 13 introduces FARMING sector
+- This step builds the foundation: farms, workers, animal types, cameras, and animal movement tracking
+- Task 13 Step 2 will add egg counting + worker attendance + farm inventory
+- Task 13 Step 3 will add dashboard + reports + final testing
+
+GOAL OF STEP 1:
+- New "Farm" institution type (extends Institution Management from Task 9)
+- Farm worker management
+- Animal type registry (Cow, Goat, Sheep, Pig, Chicken, Cock)
+- Farm camera setup (gate, corners, egg room)
+- Animal movement tracking (IN/OUT at gate)
+- Auto-counting + missing animal alerts
+- Daily farm summary (auto-generated)
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. farms
+   Fields:
+   - farmId (auto — links to institution)
+   - farmName
+   - farmType (Dairy / Poultry / Mixed / Livestock / Piggery)
+   - location (district, village)
+   - physicalAddress
+   - size (acres or hectares)
+   - ownerName
+   - ownerPhone
+   - ownerEmail
+   - primaryProducts (array: Milk, Eggs, Meat, Chicken, etc.)
+   - animalCounts (object: { cows: 50, goats: 80, ... })
+   - institutionId (link to institutions collection)
+   - createdBy
+   - createdAt
+   - status (active / inactive)
+
+2. farm_workers
+   Fields:
+   - workerId (auto)
+   - farmId (reference)
+   - userId (Firebase uid, optional)
+   - fullName
+   - phone
+   - role (Herder / Milker / Egg Collector / Feeder / Manager / 
+     Security / Cleaner / Vet)
+   - assignedAnimals (array: ["cows", "goats"])
+   - monthlySalaryUgx (number)
+   - faceEmbedding (for facial recognition attendance)
+   - faceImagePath (Firebase Storage URL)
+   - dateJoined
+   - status (active / inactive)
+   - createdBy
+   - createdAt
+
+3. farm_animal_types
+   Fields:
+   - typeId (auto)
+   - name (Cow / Goat / Sheep / Pig / Chicken / Cock / Donkey)
+   - icon (emoji)
+   - detectionModel (name of model used for counting)
+   - defaultCountValue (for reporting)
+   - isActive
+   - sortOrder
+
+4. farm_cameras
+   Fields:
+   - cameraId (auto)
+   - farmId
+   - cameraName (Main Gate / Corner A / Egg Room / Feed Store)
+   - location
+   - deviceType (Built-in / USB / IP / CCTV)
+   - streamUrl (for IP/CCTV)
+   - detectionMode (animal_count / egg_count / worker_attendance)
+   - isActive
+   - lastHeartbeat
+   - createdBy
+   - createdAt
+
+5. farm_animal_movements
+   Fields:
+   - movementId (auto)
+   - farmId
+   - cameraId
+   - animalTypeId
+   - direction (IN / OUT)
+   - detectedAt (timestamp)
+   - imagePath (Firebase Storage URL of snapshot)
+   - confidenceScore (0-100)
+   - reviewedBy (uid, optional)
+   - reviewedAt
+   - createdAt
+
+6. farm_daily_summaries
+   Fields:
+   - summaryId (auto)
+   - farmId
+   - summaryDate (date)
+   - animalCounts (object):
+     {
+       cows: { morning: 50, evening: 49, missing: 1 },
+       goats: { morning: 80, evening: 79, missing: 1 },
+       ...
+     }
+   - eggTraysCollected (number)
+   - totalEggs (number)
+   - brokenEggs (number)
+   - goodEggs (number)
+   - workerAttendance (object): { present: 8, absent: 1, late: 2 }
+   - notes (text)
+   - alerts (array — missing animals, unusual movements)
+   - generatedAt
+   - generatedBy (system or user)
+
+═══════════════════════════════════════════════════════════════
+PART B: SEED ANIMAL TYPES
+═══════════════════════════════════════════════════════════════
+
+Add Super Admin button "🌱 Seed Farm Animal Types":
+
+Seed these 7 types:
+
+1. Cow — 🐄
+2. Goat — 🐐
+3. Sheep — 🐑
+4. Pig — 🐷
+5. Chicken — 🐔
+6. Cock — 🐓
+7. Donkey — 🐴
+
+Each with detectionModel = "generic", isActive = true.
+
+═══════════════════════════════════════════════════════════════
+PART C: FARM SECTOR IN INSTITUTION MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+Extend Institution Management (from Task 9):
+
+1. Add "Farm" to the institution type dropdown
+   Options: School / MFI / Clinic / Farm
+
+2. When Farm is selected, show additional fields:
+   - Farm Type (Dairy / Poultry / Mixed / Livestock / Piggery)
+   - Size (acres/hectares)
+   - Owner Name
+   - Owner Phone
+   - Primary Products (multi-select: Milk, Eggs, Meat, Chicken, 
+     Manure, Crops)
+   - Number of Workers
+   - Has Cameras? (Yes / No / Planning)
+
+3. When Farm institution is created:
+   - Set default admin role = "Farm Admin"
+   - Auto-create a farm doc linked to institution
+   - Seed default animal types if not present
+   - Link to existing institution_branding
+
+4. Super Admin sees Farm institutions with badge "🌾 Farm"
+
+═══════════════════════════════════════════════════════════════
+PART D: NEW USER ROLES
+═══════════════════════════════════════════════════════════════
+
+Add 3 new roles:
+
+1. Farm Admin (full access to one farm)
+   - Manages workers, animals, cameras
+   - Views all reports
+   - Cannot approve payments (that's Super Admin)
+
+2. Farm Manager (sub-role under Farm Admin)
+   - Manages daily operations
+   - Reviews animal movements
+   - Confirms egg counts
+   - Cannot add/remove workers
+
+3. Farm Worker (basic role)
+   - Views own tasks
+   - Marks attendance via face
+   - Records daily work
+   - Cannot view financial data
+
+Update User Management role dropdown to include these 3 roles.
+
+═══════════════════════════════════════════════════════════════
+PART E: FARM ADMIN DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin logs in:
+
+New bottom nav for Farm Admin:
+[🏠 Home] [🐄 Animals] [👥 Workers] [📊 Reports] [👤 Account]
+
+Home screen shows:
+
+┌─────────────────────────────────────────┐
+│ 🌾 {Farm Name}                           │
+│ Welcome, {adminName}                     │
+├─────────────────────────────────────────┤
+│ 📊 TODAY                                │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Cows     │ │ Goats    │ │ Chicken  │ │
+│ │ 50       │ │ 80       │ │ 200      │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Eggs     │ │ Workers  │              │
+│ │ 45 trays │ │ 8 active │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 1 cow missing (last seen 4 PM)        │
+│ • 2 chickens not returned to coop       │
+│ • 1 worker absent today                  │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [🐄 View Animals] [👥 Workers]          │
+│ [📷 Cameras] [📊 Daily Report]          │
+│ [🥚 Egg Count] [📋 Generate Report]     │
+│                                          │
+│ 📋 TODAY'S MOVEMENTS                     │
+│ • 6:00 AM — 50 cows OUT                 │
+│ • 6:30 AM — 80 goats OUT                │
+│ • 5:00 PM — 49 cows IN (1 missing)     │
+│ • 5:30 PM — 79 goats IN (1 missing)    │
+│ [View All]                               │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART F: ANIMAL TYPES MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [🐄 Animals]:
+
+Full-screen modal (id="farmAnimalsModal"):
+
+- List all animal types on this farm
+- Each animal type card:
+┌─────────────────────────────────────────┐
+│ 🐄 Cows (50)                             │
+│ Morning count: 50                        │
+│ Evening count: 49                        │
+│ Missing: 1 ⚠️                            │
+│ Last updated: 5:30 PM                    │
+│ [View Movements] [Edit Count]           │
+└─────────────────────────────────────────┘
+
+Actions:
+- View all movements for this animal type
+- Manually adjust count (with reason)
+- View historical trends
+- Add new animal type (from registry)
+
+═══════════════════════════════════════════════════════════════
+PART G: FARM CAMERA MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [📷 Cameras]:
+
+Full-screen modal (id="farmCamerasModal"):
+
+- List of cameras with status:
+┌─────────────────────────────────────────┐
+│ 📷 Main Gate                             │
+│ Type: CCTV (IP)                          │
+│ Status: ✅ Connected                     │
+│ Mode: Animal Counting                    │
+│ Last detection: 30 seconds ago          │
+│ [📊 View Detections] [⚙️ Settings]     │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ 📷 Egg Room                              │
+│ Type: Built-in                           │
+│ Status: ✅ Connected                     │
+│ Mode: Egg Tray Counting                  │
+│ Today's count: 45 trays                 │
+│ [📊 View Counts] [⚙️ Settings]          │
+└─────────────────────────────────────────┘
+
+Add New Camera form:
+- Camera Name (required)
+- Location (text)
+- Device Type (dropdown: Built-in / USB / IP / CCTV)
+- Stream URL (for IP/CCTV)
+- Detection Mode (dropdown: animal_count / egg_count / 
+  worker_attendance)
+- Test Connection button
+- Save
+
+Camera status monitoring:
+- Heartbeat check every 5 minutes
+- Show ⚠️ if no heartbeat in 10 minutes
+
+═══════════════════════════════════════════════════════════════
+PART H: ANIMAL MOVEMENT TRACKING
+═══════════════════════════════════════════════════════════════
+
+This is the CORE feature — detecting animals in/out.
+
+When camera detects an animal crossing (gate camera):
+1. Capture snapshot
+2. Detect animal type (Cow/Goat/etc.)
+3. Determine direction (IN/OUT)
+4. Save to farm_animal_movements
+5. Update today's running count
+
+DETECTION APPROACH (lightweight, no paid APIs):
+
+Since this must work without expensive AI:
+1. Motion detection in camera frame
+2. When motion > threshold → capture snapshot
+3. Basic animal classification by size + shape (pre-trained 
+   on-device model OR simple heuristics)
+4. Direction detection: track movement across 2-3 frames
+   - Object moving from left→right at gate = OUT
+   - Object moving right→left = IN
+5. Assign to animal type based on size:
+   - Large (Cow/Donkey): > 50% frame height
+   - Medium (Goat/Sheep/Pig): 20-50% frame height
+   - Small (Chicken/Cock): < 20% frame height
+
+FALLBACK:
+If detection confidence < 60%:
+- Save as "unclassified" movement
+- Flag for manual review
+- Farm Manager can reclassify
+
+MOVEMENT LIST:
+When Farm Admin opens a camera's movements:
+┌─────────────────────────────────────────┐
+│ 📋 MOVEMENTS — Main Gate                 │
+│ Date: Today                              │
+├─────────────────────────────────────────┤
+│ 6:00 AM — Cow OUT — Confidence 92%      │
+│ 6:01 AM — Cow OUT — Confidence 88%      │
+│ 6:02 AM — Cow OUT — Confidence 90%      │
+│ ... (12 cows total out)                  │
+│ 6:15 AM — Goat OUT — Confidence 85%     │
+│ ... (25 goats out)                       │
+│                                          │
+│ 5:00 PM — Cow IN — Confidence 90%       │
+│ ... (11 cows in — 1 MISSING)             │
+│                                          │
+│ ⚠️ 1 cow did not return. Alert sent.     │
+│ [Mark as Found] [Report Lost]            │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART I: WORKER MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Farm Admin taps [👥 Workers]:
+
+Full-screen modal (id="farmWorkersModal"):
+
+- [+ Add Worker] button
+- List of workers:
+┌─────────────────────────────────────────┐
+│ 👤 John Kato                             │
+│ Role: Herder                             │
+│ Phone: +256705732540                    │
+│ Assigned: Cows, Goats                    │
+│ Salary: UGX 300,000/month               │
+│ Status: ✅ Active                        │
+│ [👁 View] [✏️ Edit] [📸 Face] [⋮]      │
+└─────────────────────────────────────────┘
+
+Add Worker form:
+- Full Name (required)
+- Phone (required)
+- Role (dropdown)
+- Assigned Animals (multi-select)
+- Monthly Salary (UGX)
+- Date Joined
+- Upload Face Photo (for attendance)
+
+After adding: compute face embedding for attendance (reuse 
+facial recognition from Task 4).
+
+═══════════════════════════════════════════════════════════════
+PART J: DAILY FARM REPORT (AUTO-GENERATED)
+═══════════════════════════════════════════════════════════════
+
+Every night at 9 PM, auto-generate farm_daily_summaries:
+
+┌─────────────────────────────────────────┐
+│ 📊 DAILY FARM REPORT                     │
+│ Date: 14 September 2026                  │
+├─────────────────────────────────────────┤
+│ ANIMAL INVENTORY:                        │
+│ ┌────────────────────────────────────┐ │
+│ │ Cows:    Morning 50 | Evening 49   │ │
+│ │          Missing: 1 ⚠️              │ │
+│ │ Goats:   Morning 80 | Evening 79   │ │
+│ │          Missing: 1 ⚠️              │ │
+│ │ Sheep:   Morning 30 | Evening 30   │ │
+│ │ Chicken: Morning 200| Evening 198  │ │
+│ │          Missing: 2 ⚠️              │ │
+│ └────────────────────────────────────┘ │
+│                                          │
+│ EGG PRODUCTION:                          │
+│ • Trays Collected: 45                   │
+│ • Total Eggs: 1,350 (45 × 30)          │
+│ • Broken: 12                             │
+│ • Good: 1,338                            │
+│                                          │
+│ WORKER ATTENDANCE:                       │
+│ • Present: 8                             │
+│ • Absent: 1                              │
+│ • Late: 2                                │
+│                                          │
+│ ALERTS:                                  │
+│ ⚠️ 1 cow, 1 goat, 2 chickens missing    │
+│                                          │
+│ [📥 Download PDF] [📤 Share]            │
+└─────────────────────────────────────────┘
+
+Farm Admin can:
+- View historical reports
+- Download as PDF
+- Share via WhatsApp/email
+
+═══════════════════════════════════════════════════════════════
+PART K: MISSING ANIMAL ALERTS
+═══════════════════════════════════════════════════════════════
+
+When an animal goes OUT but doesn't return by end of day:
+
+1. System detects: OUT count > IN count for same animal type
+2. Creates alert in farm_daily_summaries.alerts
+3. Sends notification to:
+   - Farm Admin (in-app + SMS)
+   - Farm Manager (in-app)
+   - Assigned Herder (in-app)
+4. Alert message: 
+   "⚠️ {N} {animal type} missing. Last seen at {time}."
+
+Options:
+- [Mark as Found] — updates count, removes alert
+- [Report Lost] — logs lost animal in farm_lost_animals
+- [Ignore] — dismisses alert (with reason)
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Farm accent: #4CAF50 (green — nature)
+- Success: #4CAF50
+- Warning: #FF9800 (missing alerts)
+- Danger: #dc3545
+
+Special farm UI:
+- Animal icons (emoji-based for simplicity)
+- Movement timeline (chronological)
+- Camera status cards with live heartbeat
+- Report shows "This is an official farm record"
+
+Mobile-first:
+- Full-screen modals
+- Camera streams fill the screen
+- Reports scroll naturally
+
+═══════════════════════════════════════════════════════════════
+PART M: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Farm workers often in areas with poor connectivity:
+
+1. Worker attendance works offline:
+   - Face recognition runs locally
+   - Attendance saved to IndexedDB
+   - Syncs when online
+
+2. Animal movements logged locally if camera offline:
+   - Stored in IndexedDB
+   - Syncs to Firestore later
+
+3. Daily reports can be generated offline from local data
+
+4. Downloads of reports work offline (cached)
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. farm_workers: farmId (asc) + status (asc)
+2. farm_cameras: farmId (asc) + isActive (asc)
+3. farm_animal_movements: farmId (asc) + detectedAt (desc)
+4. farm_animal_movements: farmId (asc) + animalTypeId (asc) + detectedAt (desc)
+5. farm_daily_summaries: farmId (asc) + summaryDate (desc)
+
+═══════════════════════════════════════════════════════════════
+PART O: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Super Admin + 1 Farm Admin:
+
+A. Create Farm institution:
+   1. Super Admin → Command Center → Institutions → [+ Add]
+   2. Type: Farm
+   3. Fill all farm-specific fields
+   4. Save
+   5. Verify: farm doc created + linked to institution
+
+B. Seed animal types:
+   1. Super Admin → click [🌱 Seed Farm Animal Types]
+   2. Verify: 7 types appear
+
+C. Add farm workers:
+   1. Login as Farm Admin
+   2. Open Workers → [+ Add Worker]
+   3. Add 3 workers with different roles
+   4. Upload face photos
+   5. Verify: face embeddings computed
+
+D. Add cameras:
+   1. Open Cameras → [+ Add Camera]
+   2. Add "Main Gate" camera
+   3. Set detectionMode = animal_count
+   4. Save
+   5. Verify: camera appears with heartbeat
+
+E. Simulate animal movements:
+   1. Manually log movements for testing:
+      - 50 cows OUT at 6 AM
+      - 49 cows IN at 5 PM
+   2. Verify: movement log shows both
+   3. Verify: system detects 1 cow missing
+   4. Verify: alert sent
+
+F. Daily summary:
+   1. Trigger daily summary generation (or wait for 9 PM cron)
+   2. Verify: farm_daily_summaries has today's record
+   3. Verify: counts match
+   4. Download PDF report
+
+G. Missing animal alert:
+   1. Farm has 1 cow missing from step E
+   2. Verify: alert appears on dashboard
+   3. Click [Mark as Found] → alert cleared
+   4. Test [Report Lost] → logged
+
+H. Offline test:
+   1. Turn off WiFi
+   2. Worker marks attendance via face → saved offline
+   3. Turn on WiFi → syncs
+   4. Verify: attendance appears in Firestore
+
+I. Regression:
+   1. Tasks 1-12 still work
+   2. Institution Management shows all 4 types (School/MFI/Clinic/Farm)
+   3. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-12
+- Do NOT use paid AI APIs for animal detection (use lightweight 
+  on-device heuristics)
+- Do NOT lose animal movement data offline
+- Do NOT allow non-farm-admin to view farm financial data
+- Do NOT lose worker face data (it's biometric — protect like Task 4)
+- Do NOT skip consent for worker face enrollment
+- Do NOT allow negative animal counts
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 13 Step 1 complete — Farm Foundation + Animal Types + 
+Cameras + Movement Tracking built"
+
+Report:
+- Which tests A through I passed
+- Any bugs found
+- Screenshots recommended: Farm institution creation, farm 
+  dashboard, animals list, cameras, movement log, daily report, 
+  missing animal alert
