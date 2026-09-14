@@ -1,0 +1,441 @@
+Task 7 — Step 1 of 4: Video Studio data foundation + Cartoon Studio (Tab 1)
+
+CONTEXT:
+- Tasks 1-6 are complete: NCDC/UNEB, Offline PWA, Teacher Earnings, 
+  Project Integrity, Curriculum Linker, NCDC 10-Module Course
+- Task 7 is the VIDEO STUDIO with 3 tabs:
+  1. Cartoon Studio (FREE) — Script → cartoon video in 7 languages
+  2. AI Auto-Video (LOW COST) — Topic → full lesson video with Series Mode
+  3. Digital Teacher Twin (PREMIUM) — Teacher video → cloned AI
+- This step builds the DATA FOUNDATION + TAB 1 (Cartoon Studio only)
+
+GOAL:
+Super Admin gets a "Video Studio" card in Admin Panel with 3 tabs.
+Tab 1 (Cartoon Studio) is fully functional in this step.
+Tabs 2 and 3 show "Coming in next update" placeholders.
+
+YOUTUBE SAFETY REMINDER:
+- Do NOT download YouTube videos
+- Do NOT scrape YouTube URLs
+- Cartoon Studio generates AppShule's OWN content (own assets + Gemini TTS)
+- No YouTube involvement in cartoon generation
+
+═══════════════════════════════════════════════════════════════
+PART A: FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. video_studio_projects
+   Fields:
+   - title (string)
+   - topic (string)
+   - subject (string)
+   - classLevel (string)
+   - mode (string: 'cartoon' | 'auto_ai' | 'teacher_twin')
+   - language (string: english/luganda/lusoga/runyankore/runyoro/acholi/swahili)
+   - scriptText (string — the English script entered by Super Admin)
+   - translatedScript (string — translated version)
+   - durationMinutes (number)
+   - isSeries (boolean — for Tab 2/3 later)
+   - seriesTotalTime (number — for Series Mode)
+   - seriesSegmentCount (number)
+   - seriesParentId (string — links segments to parent)
+   - status (string: 'draft' | 'generating' | 'ready' | 'published' | 'failed')
+   - videoPathHd (string — Firebase Storage URL for HD version)
+   - videoPathOffline (string — Firebase Storage URL for slideshow version)
+   - thumbnailPath (string)
+   - offlineSizeMb (number)
+   - onlineSizeMb (number)
+   - createdBy (string — uid)
+   - createdAt (timestamp)
+   - publishedAt (timestamp)
+
+2. cartoon_assets
+   Fields:
+   - characterType (string: 'boy' | 'girl' | 'teacher_mama' | 'teacher_mzee')
+   - pose (string: 'standing' | 'pointing' | 'writing' | 'smiling' | 'talking')
+   - imagePath (string — Firebase Storage URL)
+   - tags (array of strings)
+   - createdAt (timestamp)
+
+3. video_generation_queue
+   Fields:
+   - projectId (string — reference to video_studio_projects)
+   - mode (string)
+   - currentStep (string: 'script' | 'translate' | 'audio' | 'visuals' | 'render')
+   - status (string: 'pending' | 'in_progress' | 'completed' | 'failed')
+   - errorMessage (string)
+   - startedAt (timestamp)
+   - completedAt (timestamp)
+
+4. video_library
+   Fields:
+   - projectId (string)
+   - subject (string)
+   - classLevel (string)
+   - language (string)
+   - publishedBy (string — uid)
+   - publishedToSchools (array of strings — empty = all schools)
+   - viewsCount (number, default 0)
+   - createdAt (timestamp)
+
+═══════════════════════════════════════════════════════════════
+PART B: SEED CARTOON ASSETS
+═══════════════════════════════════════════════════════════════
+
+Create a Super Admin button "🌱 Seed Cartoon Assets" (visible only to superadmin):
+
+- Location: Admin Panel → Video Studio → Cartoon Studio tab
+- On click:
+  1. Check if cartoon_assets is empty
+  2. If not empty: ask "Assets already seeded. Re-seed? (will overwrite)"
+  3. Seed 20 sample cartoon assets:
+     - 4 characters × 5 poses each = 20 records
+     - Characters: boy, girl, teacher_mama, teacher_mzee
+     - Poses: standing, pointing, writing, smiling, talking
+     - Use free cartoon assets from Open Peeps or unDraw (place URLs)
+     - If URLs unavailable, use placeholder SVG data URLs
+  4. Show: "✅ Seeded 20 cartoon assets"
+
+For simplicity in this step, use base64-encoded simple SVG placeholders
+that Replit generates. Real assets can be uploaded later.
+
+═══════════════════════════════════════════════════════════════
+PART C: SUPER ADMIN VIDEO STUDIO CARD
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Super Admin Admin Panel
+PLACE IT: AFTER "NCDC/UNEB Control" card (from Task 1)
+
+Add a new card "🎬 Video Studio"
+
+When clicked → opens full-screen modal (id="videoStudioModal")
+
+Modal layout:
+┌─────────────────────────────────────────┐
+│ 🎬 APPSHULE VIDEO STUDIO                │
+├─────────────────────────────────────────┤
+│ [🎨 Cartoon Studio] [🤖 AI Auto-Video] │
+│ [👤 Digital Teacher Twin]                │
+├─────────────────────────────────────────┤
+│ (content changes per tab)                │
+└─────────────────────────────────────────┘
+
+Tabs:
+- Cartoon Studio: ACTIVE (built in this step)
+- AI Auto-Video: shows "🚧 Coming in Step 2"
+- Digital Teacher Twin: shows "🚧 Coming in Step 3"
+
+Styling:
+- Active tab: purple background (#4B2E9E), white text
+- Inactive tab: white background, purple border + text
+- Modal: full-screen on phone, centered on desktop
+
+═══════════════════════════════════════════════════════════════
+PART D: CARTOON STUDIO FORM (Tab 1)
+═══════════════════════════════════════════════════════════════
+
+Inside the Cartoon Studio tab, show a form:
+
+FORM FIELDS:
+
+1. Topic (text input, required)
+   - Placeholder: "e.g. Solar Cooker Project S2"
+
+2. Type (dropdown, required)
+   - Options: "Project Demo" | "Assessment Demo" | "CBC Activity"
+
+3. Subject (dropdown, required)
+   - Load from existing subjects list (primarySubjects + secondarySubjects)
+
+4. Class Level (dropdown, required)
+   - Options: P1-P7, S1-S6
+
+5. Language (dropdown, required)
+   - Options: English, Luganda, Lusoga, Runyankore, Runyoro, Acholi, Swahili
+   - Default: English
+
+6. Cartoon Character (dropdown, required)
+   - Options: Student Boy, Student Girl, Teacher Mama, Teacher Mzee
+
+7. Duration (dropdown, required)
+   - Options: 3 min, 5 min, 8 min, 10 min
+   - Default: 5 min
+
+8. Script (textarea, required)
+   - Placeholder: "Hello, today we are going to make a solar cooker 
+     using a cardboard box..."
+   - Max 2000 chars
+   - Counter shows "X / 2000"
+   - Helper text: "Write in English. Translation happens automatically."
+
+BUTTON: "🎨 Generate Cartoon Video"
+
+═══════════════════════════════════════════════════════════════
+PART E: CARTOON VIDEO GENERATION PIPELINE
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks "Generate Cartoon Video":
+
+Show a progress modal (id="videoGenProgressModal") with steps:
+
+STEP 1/5: Translating script...       [progress bar]
+STEP 2/5: Generating voiceover...     [progress bar]
+STEP 3/5: Selecting cartoon images... [progress bar]
+STEP 4/5: Adding captions...          [progress bar]
+STEP 5/5: Compiling video...          [progress bar]
+
+IMPLEMENTATION:
+
+Step 1 — Translate Script (if language != English):
+- Call Gemini API with prompt:
+  "Translate the following English script to {language}. 
+   Keep simple primary/secondary level, Ugandan context, CBC values. 
+   Return only the translated text, no explanations.
+   Script: {scriptText}"
+- Save to project doc as translatedScript
+- If language == English: skip, translatedScript = scriptText
+
+Step 2 — Generate Voiceover:
+- Use Google TTS API (free tier via browser SpeechSynthesis)
+  OR fallback: ElevenLabs if configured
+- Split script into chunks of 200 chars max
+- Generate audio for each chunk
+- Combine into single audio file
+- Save to Firebase Storage:
+  projects/{projectId}/audio.mp3
+- Save URL to project doc as audioPath
+
+Step 3 — Select Cartoon Images:
+- Based on character selection, fetch 6 images from cartoon_assets
+  WHERE characterType == selected character
+  Choose poses in sequence: standing → pointing → talking → writing → 
+  smiling → talking
+- If assets missing, generate simple SVG placeholders
+- Save image URLs to project doc
+
+Step 4 — Add Captions:
+- Split translatedScript into 6 segments (one per image)
+- Generate SRT file content:
+  1
+  00:00:00,000 --> 00:00:30,000
+  {segment 1 text}
+
+  2
+  00:00:30,000 --> 00:01:00,000
+  {segment 2 text}
+  ... etc
+- Save as string in project doc as captionsSrt
+
+Step 5 — Compile Video:
+- For offline version (slideshow):
+  * Store 6 images + audio + captions as separate fields
+  * Do NOT render MP4 (browser can play as slideshow)
+  * Total size: ~2-3MB
+  * Save as videoPathOffline (just metadata URL)
+- For HD version:
+  * If Super Admin wants MP4, they can upload separately
+  * For now, set videoPathHd = "" and show "Use offline version"
+
+After all 5 steps complete:
+- Update project doc: status = "ready"
+- Show success modal:
+  "✅ Cartoon Video Ready!
+   Topic: {topic}
+   Language: {language}
+   Duration: {duration}
+   
+   [▶ Preview] [📥 Download] [📝 Publish to Schools]"
+
+═══════════════════════════════════════════════════════════════
+PART F: PREVIEW MODAL
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [▶ Preview]:
+- Open preview modal
+- Show cartoon slideshow:
+  * Display current image (from 6 images)
+  * Play audio in background
+  * Show captions at bottom
+  * Auto-advance image every {duration/6} seconds
+  * Controls: play/pause, restart, close
+
+Implementation:
+- Use HTML5 audio + setInterval for image swap
+- Captions from captionsSrt parsed into timed segments
+
+═══════════════════════════════════════════════════════════════
+PART G: PUBLISH TO SCHOOLS
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [📝 Publish to Schools]:
+
+1. Show publish dialog:
+   - "Publish to all schools?" (default yes)
+   - OR "Select specific schools" (checkbox list)
+   - [Cancel] [Publish]
+
+2. On publish:
+   - Add to video_library collection:
+     {
+       projectId,
+       subject,
+       classLevel,
+       language,
+       publishedBy: currentUser.uid,
+       publishedToSchools: [] or [list of schoolIds],
+       viewsCount: 0,
+       createdAt: serverTimestamp()
+     }
+   - Update project doc: status = "published", publishedAt = serverTimestamp()
+
+3. Students/Teachers see this video:
+   - In their video tutorials section (filtered by class + subject)
+   - Cartoon video appears as playable option
+   - Works offline via Task 2's slideshow caching
+
+═══════════════════════════════════════════════════════════════
+PART H: VIDEO LIBRARY TAB
+═══════════════════════════════════════════════════════════════
+
+Add a 4th tab inside Video Studio modal: "📚 Library"
+
+Shows all generated videos:
+- Filter by: mode (cartoon/auto_ai/teacher_twin), language, subject
+- Sort by: newest first, most views
+- Each video card:
+  * Thumbnail (first cartoon image)
+  * Topic + Subject + Class
+  * Language badge
+  * Duration + mode
+  * Status badge (draft/ready/published)
+  * [Preview] [Edit] [Publish] [Delete] buttons
+
+Pagination: 20 per page with "Load more" button.
+
+═══════════════════════════════════════════════════════════════
+PART I: SUPABASE/FIREBASE FUNCTIONS
+═══════════════════════════════════════════════════════════════
+
+Add helper functions:
+
+1. openVideoStudio() — opens the modal
+2. switchVideoStudioTab(tabName) — switches tab
+3. generateCartoonVideo(formData) — runs the 5-step pipeline
+4. updateProgressModal(step, status) — updates progress UI
+5. translateScript(text, language) — calls Gemini
+6. generateAudioChunks(text, language) — uses TTS
+7. selectCartoonImages(characterType) — picks 6 images
+8. generateCaptions(script, duration) — creates SRT content
+9. compileSlideshow(projectData) — assembles final data
+10. previewCartoonVideo(projectId) — opens preview modal
+11. publishToSchools(projectId, schoolIds) — publishes
+12. loadVideoLibrary(filters) — loads library tab
+13. deleteVideoProject(projectId) — removes project
+
+═══════════════════════════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Cards: white, 16px radius, soft shadow
+- Buttons: rounded 20-25px, bold text
+- Form inputs: rounded 12px, subtle borders
+- Progress bar: purple-to-orange gradient
+
+Modal:
+- Full-screen on phone (<500px)
+- Centered, max 700px on tablet/desktop
+- Sticky header with close button
+- Scrollable content area
+
+═══════════════════════════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Cartoon videos (once published) work offline via Task 2:
+
+1. When a school downloads videos for offline:
+   - Cartoon slideshow + audio + captions cached in IndexedDB
+   - Video plays from cache without internet
+
+2. When Super Admin creates a new video (offline):
+   - Not allowed — video generation requires internet (Gemini + TTS)
+   - Show message: "Video generation requires internet connection"
+
+═══════════════════════════════════════════════════════════════
+PART L: TESTING
+═══════════════════════════════════════════════════════════════
+
+A. Video Studio opens:
+   1. Login as super admin
+   2. Admin Panel → Video Studio card
+   3. Verify: modal opens with 3 tabs (Cartoon active)
+   4. Verify: AI Auto-Video + Digital Twin show "Coming in Step 2/3"
+
+B. Seed assets:
+   1. Click "🌱 Seed Cartoon Assets"
+   2. Verify: 20 assets added to cartoon_assets collection
+   3. Verify: 4 characters × 5 poses = 20
+
+C. Form validation:
+   1. Try to submit empty form → verify required field errors
+   2. Fill in: Topic="Test", Type="Project Demo", Subject="Science",
+      Class="P5", Language="English", Character="Student Boy", 
+      Duration="5 min", Script="Hello this is a test script."
+
+D. Generate cartoon video:
+   1. Click "🎨 Generate Cartoon Video"
+   2. Verify: progress modal appears
+   3. Watch all 5 steps complete
+   4. Verify: success modal appears
+   5. Check video_studio_projects collection: new doc with all fields
+
+E. Preview video:
+   1. Click [▶ Preview]
+   2. Verify: slideshow plays with captions
+   3. Verify: audio plays
+
+F. Publish to schools:
+   1. Click [📝 Publish to Schools]
+   2. Choose "All schools"
+   3. Verify: video_library has new entry
+   4. Verify: project doc status = "published"
+
+G. Video library tab:
+   1. Open Library tab
+   2. Verify: published video appears
+   3. Test filters (mode, language, subject)
+   4. Verify: pagination works
+
+H. Non-superadmin cannot access:
+   1. Login as teacher → verify no Video Studio card in their Admin Panel
+   2. Login as school admin → verify no Video Studio card
+
+═══════════════════════════════════════════════════════════════
+PART M: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-6
+- Do NOT download YouTube videos (ToS)
+- Do NOT generate AI avatars yet (that's Step 3)
+- Do NOT require paid APIs (Cartoon Studio is FREE)
+- Do NOT exceed Gemini free tier limits
+- Do NOT allow non-superadmin access
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 7 Step 1 complete — Video Studio foundation + Cartoon Studio built"
+
+Report:
+- Which tests A through H passed
+- Any bugs found
+- Screenshots recommended: Video Studio card, 3 tabs, form, 
+  progress modal, preview, library tab
