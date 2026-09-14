@@ -1,0 +1,538 @@
+Task 9 — Step 1 of 3: Command Center foundation + User Management + Institution Management + Institution Branding
+
+CONTEXT:
+- Tasks 1-8 are complete: NCDC/UNEB, Offline PWA, Teacher Earnings, 
+  Project Integrity, Curriculum Linker, NCDC Course, Video Studio, Settings
+- Current Super Admin has scattered Admin Panel sections (Analytics, 
+  NCDC/UNEB Control, Video Studio, Live Lesson Control, etc.)
+- Task 9 rebuilds Super Admin into a UNIFIED COMMAND CENTER
+- This is the biggest task in the master plan — done in 3 mega-steps
+
+GOAL OF STEP 1:
+Build the foundation for the Command Center + User Management + 
+Institution Management + Institution Branding (dual-logo header)
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW SUPER ADMIN NAVIGATION
+═══════════════════════════════════════════════════════════════
+
+Replace the current Super Admin bottom navigation with a NEW layout:
+
+New bottom nav (5 tabs):
+[📊 Dashboard] [👥 Users] [🏛️ Institutions] [📈 Analytics] [⚙️ Settings]
+
+OLD nav for superadmin (to be replaced):
+[Home] [Resources] [Alerts] [Account] [About]
+
+Keep the OTHER users' navigation unchanged:
+- Student: [Home] [Resources] [Live] [Alerts] [Account] [About]
+- Teacher: [Home] [Resources] [Dashboard] [Alerts] [Account] [About]
+- School Admin: [Home] [Resources] [Live] [Alerts] [Account] [About]
+
+Only SUPER ADMIN gets the new 5-tab layout.
+
+═══════════════════════════════════════════════════════════════
+PART B: DASHBOARD HOME (Tab 1)
+═══════════════════════════════════════════════════════════════
+
+Dashboard home shows at-a-glance stats:
+
+┌─────────────────────────────────────────┐
+│ ⚙️ APPSHULE COMMAND CENTER                │
+│ Welcome, {superAdminName}                │
+├─────────────────────────────────────────┤
+│ 📊 QUICK STATS                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Total    │ │ Active   │ │ Monthly  │ │
+│ │ Users    │ │ Schools  │ │ Revenue  │ │
+│ │ {count}  │ │ {count}  │ │ UGX {X}  │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Videos   │ │ Pending  │              │
+│ │ Published│ │ Approvals│              │
+│ │ {count}  │ │ {count}  │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [👥 Users] [🏛️ Institutions] [📚 Content]│
+│ [💰 Payments] [📢 Announce] [📊 Reports]│
+│                                          │
+│ 📋 RECENT ACTIVITY                       │
+│ • New school registered: {name}          │
+│ • Payment received: UGX {amount}         │
+│ • Teacher submitted lesson request       │
+│ • {count} students enrolled today        │
+└─────────────────────────────────────────┘
+
+Data sources:
+- Total Users: count(users collection)
+- Active Schools: count(schools where status == active)
+- Monthly Revenue: sum of approved subscriptions this month
+- Videos Published: count(video_library)
+- Pending Approvals: sum of pending items (live requests, payments, etc.)
+
+═══════════════════════════════════════════════════════════════
+PART C: SECTION ROUTING
+═══════════════════════════════════════════════════════════════
+
+When Super Admin taps a quick action, open the corresponding tab 
+OR a sub-modal. Add a routing function:
+
+navigateSuperAdmin(section) where section is one of:
+- 'dashboard' → Dashboard home
+- 'users' → Users tab
+- 'institutions' → Institutions tab
+- 'analytics' → Analytics tab
+- 'settings' → Settings tab
+- 'content' → opens Content Management modal
+- 'payments' → opens Payments modal
+- 'announce' → opens Communication modal
+- 'reports' → opens Reports modal
+
+The 5 main tabs scroll to their content. The 4 sub-modals open full-screen.
+
+═══════════════════════════════════════════════════════════════
+PART D: USERS TAB (Tab 2)
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 👥 USER MANAGEMENT                       │
+├─────────────────────────────────────────┤
+│ Search: [___________________] [🔍]      │
+│                                          │
+│ Filter by Role:                          │
+│ [All] [Students] [Teachers] [Admins]    │
+│ [Loan Officers] [Clinic Staff] [Farmers]│
+│                                          │
+│ Filter by Status:                        │
+│ [All] [Active] [Inactive] [Suspended]   │
+│                                          │
+│ [+ Add User] [📥 Import CSV] [📤 Export]│
+│                                          │
+│ User list (paginated, 20 per page):     │
+│ ┌───────────────────────────────────┐   │
+│ │ 👤 John Doe                       │   │
+│ │ Student · Rose Junior · Active    │   │
+│ │ Last login: 2 hours ago           │   │
+│ │ [👁 View] [✏️ Edit] [⋮ More]     │   │
+│ └───────────────────────────────────┘   │
+│ ┌───────────────────────────────────┐   │
+│ │ 👤 Mary Nabirye                   │   │
+│ │ Teacher · Excel Schools · Active  │   │
+│ │ ...                                │   │
+│ └───────────────────────────────────┘   │
+│                                          │
+│ [Load More]                              │
+└─────────────────────────────────────────┘
+
+Each user card has ⋮ More menu:
+- Reset Password
+- Change Role
+- Suspend Account
+- Delete Account
+- View Activity Log
+- Impersonate (view as user — for testing)
+
+User detail modal:
+- All profile fields
+- Login history
+- Actions taken
+- Subscriptions owned
+- Devices used
+
+═══════════════════════════════════════════════════════════════
+PART E: ADD USER FORM
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [+ Add User]:
+
+Form fields:
+- Full Name (required)
+- Email (required, must be unique)
+- Phone (required)
+- Role (dropdown, required):
+  * Student
+  * Teacher
+  * School Admin
+  * Loan Officer
+  * Clinic Staff
+  * Farmer
+  * Super Admin
+- Institution (dropdown, required for non-superadmin):
+  * Filter by role — shows only relevant institutions
+- Initial Password (auto-generated, show to admin)
+- Send Welcome Email (checkbox, default ON)
+
+On save:
+- Create Firebase Auth user
+- Create Firestore user doc
+- Send welcome notification (if checkbox ON)
+- Show toast: "✅ User created"
+
+═══════════════════════════════════════════════════════════════
+PART F: CSV IMPORT FOR USERS
+═══════════════════════════════════════════════════════════════
+
+Add bulk import:
+- Download CSV template button
+- Expected columns: name,email,phone,role,institutionId
+- Upload CSV
+- Preview parsed users (with validation)
+- [Import All] button
+- Show progress bar
+- Report: "X imported, Y skipped (with reasons)"
+
+═══════════════════════════════════════════════════════════════
+PART G: INSTITUTIONS TAB (Tab 3)
+═══════════════════════════════════════════════════════════════
+
+Content:
+
+┌─────────────────────────────────────────┐
+│ 🏛️ INSTITUTION MANAGEMENT                │
+├─────────────────────────────────────────┤
+│ Filter by Type:                          │
+│ [All] [Schools] [MFIs] [Clinics] [Farms]│
+│                                          │
+│ [+ Add Institution]                      │
+│                                          │
+│ Institution list:                       │
+│ ┌───────────────────────────────────┐   │
+│ │ 🏫 Rose Junior School              │   │
+│ │ Type: School                       │   │
+│ │ Students: 245 · Teachers: 18       │   │
+│ │ Plan: School Premium               │   │
+│ │ Status: ✅ Active                   │   │
+│ │ [👁 View] [🎨 Branding] [⋮ More]  │   │
+│ └───────────────────────────────────┘   │
+│ ┌───────────────────────────────────┐   │
+│ │ 🏦 Green Valley MFI                │   │
+│ │ Type: Microfinance                 │   │
+│ │ Borrowers: 320 · Officers: 8       │   │
+│ │ Plan: MFI Premium                  │   │
+│ │ Status: ✅ Active                   │   │
+│ │ [👁 View] [🎨 Branding] [⋮ More]  │   │
+│ └───────────────────────────────────┘   │
+└─────────────────────────────────────────┘
+
+⋮ More menu:
+- Edit institution
+- Manage staff
+- View analytics
+- Assign subscription plan
+- Configure payment beneficiary
+- Suspend/Activate
+- Delete (with strong confirmation)
+
+═══════════════════════════════════════════════════════════════
+PART H: ADD INSTITUTION FORM
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [+ Add Institution]:
+
+Form fields (Section 1 — Basic Info):
+- Institution Name (required)
+- Type (dropdown, required): School / MFI / Clinic / Farm
+- Region/District (dropdown)
+- Physical Address (text)
+- Phone Number (required)
+- Email (required, must be unique)
+- Website (optional)
+
+Section 2 — Primary Contact:
+- Contact Person Name (required)
+- Contact Person Role (dropdown): Headteacher / Director / Manager / Owner
+- Contact Person Phone (required)
+
+Section 3 — Login Credentials:
+- Admin Login Email (required, unique)
+- Initial Password (auto-generated, show to admin)
+- Send Welcome Email (checkbox, default ON)
+
+Section 4 — Subscription Plan:
+- Plan (dropdown — filtered by type)
+- Billing Cycle: Monthly / Yearly
+- Start Date (default today)
+- Trial period (14 days checkbox)
+
+On save:
+- Create Firebase Auth for admin
+- Create Firestore institution doc
+- Create Firestore user doc (role: school admin or mfi admin etc.)
+- Send welcome notification
+- Show success modal with credentials to share
+
+═══════════════════════════════════════════════════════════════
+PART I: INSTITUTION BRANDING (CRITICAL FEATURE)
+═══════════════════════════════════════════════════════════════
+
+This is a PAID premium feature — institutions can add their own 
+logo to the header alongside AppShule's logo.
+
+NEW FIRESTORE COLLECTION: institution_branding
+Fields:
+- institutionId (string — reference to institutions)
+- appshuleLogoPath (string — always the AppShule logo)
+- institutionLogoPath (string — uploaded by Super Admin)
+- institutionLogoAlt (string — alt text)
+- institutionDisplayName (string — e.g. "Rosete Junior Day & Boarding")
+- institutionTagline (string — e.g. "Excellence in Education Since 2005")
+- primaryColor (string — hex code, optional)
+- secondaryColor (string — hex code, optional)
+- showAppshuleLogo (boolean, default TRUE)
+- showInstitutionLogo (boolean, default TRUE)
+- createdBy (string)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+
+═══════════════════════════════════════════════════════════════
+PART J: BRANDING EDITOR UI
+═══════════════════════════════════════════════════════════════
+
+When Super Admin clicks [🎨 Branding] on an institution:
+
+Opens full-screen modal (id="institutionBrandingModal"):
+
+┌─────────────────────────────────────────┐
+│ 🎨 INSTITUTION BRANDING                  │
+│ Rose Junior Day & Boarding Primary School│
+├─────────────────────────────────────────┤
+│ LIVE HEADER PREVIEW:                     │
+│ ┌───────────────────────────────────┐   │
+│ │ [A] │ [R] Rose Junior              │   │
+│ │     │     Day & Boarding            │   │
+│ │     │     "Excellence in Education" │   │
+│ └───────────────────────────────────┘   │
+│                                          │
+│ Institution Logo:                        │
+│ [🖼️ Current Logo Preview]               │
+│ [📁 Upload New Logo]                    │
+│ Requirements: PNG, JPG, SVG · max 500KB │
+│ Recommended: 512x512px                  │
+│                                          │
+│ Display Name:                            │
+│ [Rose Junior Day & Boarding Primary]    │
+│ (max 60 chars)                           │
+│                                          │
+│ Tagline (optional):                      │
+│ [Excellence in Education Since 2005]    │
+│ (max 80 chars)                           │
+│                                          │
+│ Branding Options:                        │
+│ Show AppShule logo: [✓] Yes             │
+│ Show Institution logo: [✓] Yes          │
+│                                          │
+│ Theme Colors (optional):                 │
+│ Primary: [#4B2E9E] [color picker]      │
+│ Secondary: [#FF8C42] [color picker]    │
+│                                          │
+│ [💾 Save Branding] [🗑️ Reset to Default]│
+└─────────────────────────────────────────┘
+
+Live preview:
+- Updates as Super Admin types
+- Shows exactly how the header will look
+- Two logos side by side (AppShule | Institution)
+
+═══════════════════════════════════════════════════════════════
+PART K: HEADER INTEGRATION (WHERE BRANDING APPEARS)
+═══════════════════════════════════════════════════════════════
+
+When any user from an institution logs in:
+
+1. APP HEADER (every page for that institution's users):
+   ┌─────────────────────────────────────┐
+   │ [A] │ [R] Rose Junior              │
+   │     │     Day & Boarding            │
+   │     │     "Excellence in Education" │
+   │ Hello, studentName!                  │
+   └─────────────────────────────────────┘
+   [A] = AppShule logo (small, left)
+   [R] = Institution logo (larger, right)
+
+2. LOGIN SCREEN:
+   - Institution logo above the login form
+   - AppShule logo below ("Powered by AppShule")
+
+3. SPLASH SCREEN:
+   - Both logos shown for 2 seconds on app load
+
+4. REPORT CARDS (PDF):
+   - Institution logo top-left
+   - AppShule logo bottom-right ("Powered by AppShule")
+   - Institution name in header
+
+5. INVOICES / BILLS:
+   - Institution logo prominent
+   - AppShule credit at bottom
+
+6. EMAIL / SMS TEMPLATES:
+   - Institution name as sender
+   - AppShule mentioned in footer
+
+Role-based display:
+- Student / Teacher / School Admin of institution X → See X's branding
+- Super Admin → Sees only AppShule branding (not institution-specific)
+- Cross-institution users → See AppShule branding only
+
+Loading logic:
+- On login, load user's institutionId
+- Fetch institution_branding by institutionId
+- If branding exists → apply
+- If not → show only AppShule logo
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Danger: #dc3545 (red)
+- Cards: white, 16px radius, soft shadow
+- Buttons: rounded 20-25px, bold text
+
+New Command Center uses:
+- Larger cards with clear icons
+- Number displays use big bold font
+- Section headers with emoji icons
+- Mobile-first, responsive
+
+═══════════════════════════════════════════════════════════════
+PART M: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Command Center actions mostly require internet (creating users, 
+uploading logos). Show clear message when offline:
+"⚠️ This action requires internet connection"
+
+Dashboard stats cache:
+- Store last-loaded stats in IndexedDB
+- Show cached values with "Last updated X ago" note when offline
+
+Branding cache:
+- Institution branding cached in IndexedDB
+- Header shows correct logos even offline
+
+═══════════════════════════════════════════════════════════════
+PART N: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. users: role (asc) + createdAt (desc)
+2. users: institutionId (asc) + role (asc)
+3. institutions: type (asc) + status (asc)
+4. institution_branding: institutionId (asc)
+
+═══════════════════════════════════════════════════════════════
+PART O: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Super Admin account:
+
+A. Navigation change:
+   1. Login as Super Admin
+   2. Verify: new 5-tab nav appears (Dashboard, Users, 
+      Institutions, Analytics, Settings)
+   3. Other roles (student/teacher/school admin) still see their 
+      original nav
+
+B. Dashboard home:
+   1. Open Dashboard tab
+   2. Verify: 5 stat cards display with real numbers
+   3. Verify: 6 quick action buttons
+   4. Verify: recent activity feed
+
+C. User Management:
+   1. Open Users tab
+   2. Verify: user list loads
+   3. Test search: type "John" → list filters
+   4. Test role filter: select "Teacher" → only teachers shown
+   5. Click [+ Add User]
+   6. Fill form: Test User, test@example.com, Student, Rose Junior
+   7. Save → verify user created in Firebase Auth + Firestore
+   8. Verify: new user appears in list
+
+D. User actions:
+   1. Tap ⋮ on any user
+   2. Test [Reset Password] → sends reset email
+   3. Test [Suspend Account] → user doc status = suspended
+   4. Verify: suspended user cannot login
+
+E. CSV import:
+   1. Download CSV template
+   2. Add 2 test rows
+   3. Upload CSV
+   4. Verify: preview shows parsed users
+   5. Click [Import All]
+   6. Verify: 2 users created
+
+F. Institution Management:
+   1. Open Institutions tab
+   2. Verify: existing schools/MFIs listed
+   3. Filter by type: Schools → only schools shown
+   4. Click [+ Add Institution]
+   5. Fill form: Test School, School type, all required fields
+   6. Save → verify institution + admin user created
+   7. Verify: welcome email/notification sent
+
+G. Institution Branding:
+   1. Tap [🎨 Branding] on any institution
+   2. Verify: modal opens with live preview
+   3. Upload a test logo (any PNG)
+   4. Set Display Name: "Test School"
+   5. Set Tagline: "Testing Since 2026"
+   6. Verify: live preview updates
+   7. Save → verify institution_branding doc created
+
+H. Header integration:
+   1. Login as a user from that institution
+   2. Verify: header shows [AppShule Logo] | [Institution Logo]
+   3. Verify: display name and tagline appear
+   4. Turn off "Show AppShule logo" → verify only institution logo
+   5. Save → login again → verify only institution logo shows
+
+I. Login screen branding:
+   1. Logout
+   2. Return to login screen
+   3. Verify: institution logo appears above form (if institution 
+      has branding — needs device tracking)
+
+J. Offline check:
+   1. Turn off WiFi
+   2. Try to add user → verify "requires internet" message
+   3. Dashboard stats show cached values with "Last updated" note
+
+K. Regression check:
+   1. Task 1-8 features still work for other roles
+   2. Super Admin can still access NCDC/UNEB Control, Video Studio
+   3. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-8
+- Do NOT change navigation for non-superadmin roles
+- Do NOT delete existing Firestore data
+- Do NOT allow institution branding without institution existing
+- Do NOT expose other institutions' branding to unauthorized users
+- Do NOT lose existing functionality — old Admin Panel sections should 
+  still be accessible via the new tabs or modals
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 9 Step 1 complete — Command Center foundation + User Management + Institution Management + Institution Branding built"
+
+Report:
+- Which tests A through K passed
+- Any bugs found
+- Screenshots recommended: new navigation, dashboard home, 
+  user management, add user form, institution management, 
+  branding editor with live preview, header with dual logos
