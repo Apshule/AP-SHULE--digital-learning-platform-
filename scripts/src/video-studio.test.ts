@@ -110,12 +110,48 @@ describe("Video Studio UI and offline contracts", () => {
     expect(indexHtml).toContain('data-video-studio-tab="auto"');
     expect(indexHtml).toContain('data-video-studio-tab="twin"');
     expect(indexHtml).toContain('data-video-studio-tab="library"');
+    expect(indexHtml).toContain('data-video-studio-tab="stats"');
+    expect(indexHtml).toContain('id="videoStudioAutoForm"');
+    expect(indexHtml).toContain('id="videoStudioAutoProgress"');
+    expect(indexHtml).toContain('id="videoTwinList"');
+    expect(indexHtml).toContain('id="studentVideoTutorialsSection"');
+    expect(indexHtml).toContain('id="teacherVideoLibrarySection"');
+    expect(indexHtml).toContain('id="videoDownloadsSection"');
     expect(indexHtml).toContain('id="videoStudioPlayPauseBtn"');
     expect(indexHtml).toContain('id="videoStudioRestartBtn"');
     expect(indexHtml).toContain('id="publishVideoStudioBtn"');
     expect(indexHtml).toContain('id="loadMoreVideoStudioBtn"');
     expect(indexHtml).toContain("SpeechSynthesis");
     expect(indexHtml).toContain("Connect to the internet before generating a lesson");
+  });
+
+  it("keeps AI Auto-Video generation and series mode offline-safe", () => {
+    expect(indexHtml).toContain("video_generation_stats");
+    expect(indexHtml).toContain("videoStudioSplitSeriesScript");
+    expect(indexHtml).toContain("videoStudioGenerateAutoScript");
+    expect(indexHtml).toContain("durationMode === 'series'");
+    expect(indexHtml).toContain("videoStudioCachePublished");
+    expect(indexHtml).toContain("SpeechSynthesis");
+  });
+
+  it("keeps Digital Teacher Twin consent and credential handling server-safe", () => {
+    expect(indexHtml).toContain("teacher_twins");
+    expect(indexHtml).toContain("twin_generation_jobs");
+    expect(indexHtml).toContain("twin_api_config");
+    expect(indexHtml).toContain("keyStorage:'server-secret-required'");
+    expect(indexHtml).toContain("secure server integration is still required");
+    expect(indexHtml).toContain("downloadTwinConsentTemplate");
+    expect(indexHtml).not.toContain("fetch('https://api.elevenlabs.io");
+    expect(indexHtml).not.toContain("fetch('https://api.d-id.com");
+  });
+
+  it("covers assignments, analytics, sharing, and download management", () => {
+    expect(indexHtml).toContain("video_assignments");
+    expect(indexHtml).toContain("videoViews");
+    expect(indexHtml).toContain("downloadVideoAnalyticsBtn");
+    expect(indexHtml).toContain("videoStudioShare");
+    expect(indexHtml).toContain("clearVideoDownloads");
+    expect(indexHtml).toContain("mapping.mode === 'teacher_twin' ? 250");
   });
 
   it("extends IndexedDB with a published cartoon slideshow store", () => {
@@ -138,6 +174,9 @@ describe("Video Studio UI and offline contracts", () => {
       "cartoon_assets",
       "video_studio_projects",
       "video_library",
+      "video_assignments",
+      "teacher_twins",
+      "videoViews",
     ]));
   });
 });

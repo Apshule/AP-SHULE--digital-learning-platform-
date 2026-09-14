@@ -42,9 +42,37 @@ service cloud.firestore {
       allow create, update, delete: if isSuperAdmin();
     }
 
+    match /video_generation_stats/{monthId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /twin_api_config/{configId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /teacher_twins/{twinId} {
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.teacherId == request.auth.uid);
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /twin_generation_jobs/{jobId} {
+      allow read, create, update, delete: if isSuperAdmin();
+    }
+
+    match /video_assignments/{assignmentId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && role() in ['teacher', 'superadmin', 'school'];
+    }
+
+    match /videoViews/{viewId} {
+      allow create, update: if signedIn();
+      allow read: if isSuperAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews)(/.*)?$');
     }
   }
 }

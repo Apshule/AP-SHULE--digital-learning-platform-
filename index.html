@@ -843,6 +843,7 @@
         .video-studio-header h2 { margin:0; font-size:21px; letter-spacing:-.3px; }
         .video-studio-header p { margin:4px 0 0; font-size:12px; opacity:.82; }
         .video-studio-header-copy { flex:1; min-width:0; }
+        .video-studio-cost { display:inline-flex; margin-top:8px; padding:5px 9px; border-radius:12px; color:#fff; background:rgba(255,255,255,.16); font-size:11px; font-weight:800; }
         .video-studio-close { width:40px; height:40px; border:0; border-radius:50%; color:#fff; background:rgba(255,255,255,.17); font-size:25px; cursor:pointer; }
         .video-studio-tabs { display:flex; gap:8px; padding:12px 20px 0; overflow:auto; flex-shrink:0; background:#fff; border-bottom:1px solid #ebe5f4; }
         .video-studio-tab { border:0; border-bottom:3px solid transparent; padding:12px 14px; background:transparent; color:#777087; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer; }
@@ -909,6 +910,63 @@
         .video-studio-preview-progress div { height:100%; width:0; background:#d86f48; transition:width .2s linear; }
         .video-studio-school-list { max-height:150px; overflow:auto; padding:8px; border:1px solid #ddd5ec; border-radius:10px; background:#fbfaff; }
         .video-studio-school-list label { display:flex; align-items:center; gap:7px; padding:5px 2px; color:#51476a; font-size:11px; }
+        .video-studio-ai-badge,.video-studio-premium-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:12px; color:#fff; background:linear-gradient(120deg,#4B2E9E,#9b68d9); font-size:10px; font-weight:900; letter-spacing:.3px; }
+        .video-studio-premium-badge { background:linear-gradient(120deg,#5b3d9e,#d6a33d); }
+        .video-studio-choice-row { display:flex; flex-wrap:wrap; gap:8px; }
+        .video-studio-choice { display:flex; align-items:center; gap:5px; padding:8px 10px; border:1px solid #ddd5ec; border-radius:10px; color:#51476a; background:#fff; font-size:11px; cursor:pointer; }
+        .video-studio-choice:has(input:checked) { border-color:#4B2E9E; background:#f3efff; color:#34206f; font-weight:800; }
+        .video-studio-choice input { accent-color:#4B2E9E; }
+        .video-studio-ai-form { display:grid; gap:12px; }
+        .video-studio-ai-form .video-studio-field small { display:block; margin-top:4px; color:#8a8298; font-size:10px; }
+        .video-studio-ai-progress { display:grid; gap:7px; margin-top:12px; }
+        .video-studio-ai-step { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; background:#f7f3ff; color:#777087; font-size:11px; }
+        .video-studio-ai-step span { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#e9e2f8; color:#7962ba; font-weight:900; }
+        .video-studio-ai-step.done { color:#28763b; background:#eff9f2; }
+        .video-studio-ai-step.done span { background:#dff3e5; color:#28763b; }
+        .video-studio-ai-step.current { color:#34206f; background:#eee8ff; }
+        .video-studio-ai-step.current span { color:#fff; background:#4B2E9E; }
+        .video-studio-series-card { margin-top:12px; padding:12px; border:1px solid #ded4f3; border-radius:13px; background:#fbfaff; }
+        .video-studio-series-card h4 { margin:0 0 8px; color:#34206f; }
+        .video-studio-series-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid #eee8f7; font-size:11px; }
+        .video-studio-series-row:first-of-type { border-top:0; }
+        .video-studio-series-row strong { color:#34206f; }
+        .video-studio-series-row span { flex:1; color:#756d82; }
+        .video-studio-twin-grid,.video-studio-stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .video-studio-twin-panel { border:1px solid #e5def2; border-radius:15px; padding:13px; background:#fff; }
+        .video-studio-twin-panel h4 { margin:0 0 8px; color:#34206f; }
+        .video-studio-twin-panel input,.video-studio-twin-panel select { width:100%; box-sizing:border-box; margin:4px 0 8px; padding:9px; border:1px solid #ddd5ec; border-radius:9px; font:12px inherit; }
+        .video-studio-twin-message { padding:11px; border-radius:10px; color:#7a5b18; background:#fff6df; font-size:11px; line-height:1.4; }
+        .video-studio-twin-list { display:grid; gap:8px; margin-top:10px; }
+        .video-studio-twin-card { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid #e5def2; border-radius:12px; background:#fff; }
+        .video-studio-twin-avatar { width:42px; height:42px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:#fff; background:linear-gradient(135deg,#5b3d9e,#d6a33d); font-size:20px; }
+        .video-studio-twin-card-copy { flex:1; min-width:0; }
+        .video-studio-twin-card-copy strong { display:block; color:#34206f; font-size:12px; }
+        .video-studio-twin-card-copy small { display:block; color:#756d82; font-size:10px; line-height:1.4; }
+        .video-studio-stats-grid { grid-template-columns:repeat(4,1fr); margin:12px 0; }
+        .video-studio-stat { padding:12px; border-radius:13px; background:#f7f3ff; }
+        .video-studio-stat strong { display:block; color:#34206f; font-size:19px; }
+        .video-studio-stat span { display:block; margin-top:3px; color:#756d82; font-size:10px; }
+        .video-studio-budget { height:9px; overflow:hidden; border-radius:9px; background:#eee8f7; }
+        .video-studio-budget div { height:100%; background:linear-gradient(90deg,#4B2E9E,#d86f48); }
+        .video-studio-user-section { margin:16px 0; padding:15px; border:1px solid #e5def2; border-radius:18px; background:#fff; box-shadow:0 8px 24px rgba(75,46,158,.06); }
+        .video-studio-user-section h4 { margin:0 0 5px; color:#34206f; }
+        .video-studio-user-toolbar { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
+        .video-studio-user-toolbar input,.video-studio-user-toolbar select { flex:1 1 150px; min-height:36px; box-sizing:border-box; padding:8px 10px; border:1px solid #ddd5ec; border-radius:10px; background:#fff; font:12px inherit; }
+        .video-studio-user-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+        .video-studio-user-card { display:flex; flex-direction:column; gap:7px; padding:10px; border:1px solid #e5def2; border-radius:13px; background:#fbfaff; }
+        .video-studio-user-thumb { display:block; width:100%; aspect-ratio:16/8; object-fit:cover; border-radius:9px; background:#eee8f7; }
+        .video-studio-user-card strong { color:#34206f; font-size:13px; }
+        .video-studio-user-card small { color:#756d82; font-size:10px; line-height:1.4; }
+        .video-studio-user-actions { display:flex; flex-wrap:wrap; gap:5px; margin-top:auto; }
+        .video-studio-mini-btn { padding:7px 9px; border:1px solid #d8ccf4; border-radius:16px; color:#4B2E9E; background:#fff; font-size:10px; font-weight:800; cursor:pointer; }
+        .video-studio-mini-btn.primary { color:#fff; background:#4B2E9E; }
+        .video-studio-assigned { margin-bottom:12px; padding:10px; border-radius:12px; background:#fff7e7; }
+        .video-studio-assigned strong { color:#8a5c14; font-size:11px; }
+        .video-studio-download-row { display:flex; align-items:center; gap:8px; padding:9px 0; border-top:1px solid #eee8f7; font-size:11px; }
+        .video-studio-download-row:first-child { border-top:0; }
+        .video-studio-download-row span { flex:1; color:#756d82; }
+        @media (max-width:760px) { .video-studio-twin-grid,.video-studio-stats-grid { grid-template-columns:1fr 1fr; } }
+        @media (max-width:430px) { .video-studio-twin-grid,.video-studio-stats-grid { grid-template-columns:1fr; } }
         @media (max-width:760px) {
             .video-studio-header { padding:13px 14px; }
             .video-studio-header h2 { font-size:18px; }
@@ -1463,6 +1521,7 @@
                 <div class="video-studio-header-copy">
                     <h2 id="videoStudioTitle">🎬 Video Studio</h2>
                     <p>Make short lessons that feel clear, local, and easy to replay.</p>
+                    <div id="videoStudioCostTracker" class="video-studio-cost">💰 This month: 0 videos · Approx UGX 0</div>
                 </div>
                 <button id="closeVideoStudioBtn" class="video-studio-close" type="button" aria-label="Close Video Studio">&times;</button>
             </div>
@@ -1471,6 +1530,7 @@
                 <button class="video-studio-tab" type="button" data-video-studio-tab="auto">AI Auto-Video <small>Step 2</small></button>
                 <button class="video-studio-tab" type="button" data-video-studio-tab="twin">Digital Teacher Twin <small>Step 3</small></button>
                 <button class="video-studio-tab" type="button" data-video-studio-tab="library">Video Library</button>
+                <button class="video-studio-tab" type="button" data-video-studio-tab="stats">📊 Stats</button>
             </div>
             <div class="video-studio-body">
                 <section id="videoStudioCartoonPane" class="video-studio-pane active" role="tabpanel">
@@ -1584,22 +1644,75 @@
                     </div>
                 </section>
                 <section id="videoStudioAutoPane" class="video-studio-pane" role="tabpanel">
-                    <div class="video-studio-card"><h3 style="margin:0;color:#34206f;">AI Auto-Video</h3><p class="video-studio-note" style="margin-top:12px;">Coming in Step 2. This foundation release deliberately does not create automated topic series or paid AI video assets.</p></div>
+                    <div class="video-studio-intro">
+                        <div><h3><span class="video-studio-ai-badge">🤖 AI</span> Auto-Video + Series Mode</h3><p>Enter only a topic. APSHULE prepares a CBC-aligned script, translated narration metadata, visuals, captions, and an offline-ready slideshow.</p></div>
+                    </div>
+                    <div class="video-studio-grid">
+                        <div class="video-studio-card">
+                            <form id="videoStudioAutoForm" class="video-studio-ai-form">
+                                <div class="video-studio-field"><label for="videoStudioAutoTopic">Topic *</label><input id="videoStudioAutoTopic" name="topic" required maxlength="160" placeholder="e.g. Photosynthesis for S2 Biology"><small>Enter just the topic — AI will generate everything.</small></div>
+                                <div class="video-studio-form-grid">
+                                    <div class="video-studio-field"><label for="videoStudioAutoSubject">Subject *</label><select id="videoStudioAutoSubject" name="subject" required><option value="">Select subject</option></select></div>
+                                    <div class="video-studio-field"><label for="videoStudioAutoClass">Class level *</label><select id="videoStudioAutoClass" name="classLevel" required><option value="">Select class</option></select></div>
+                                    <div class="video-studio-field"><label for="videoStudioAutoLanguage">Language *</label><select id="videoStudioAutoLanguage" name="language" required><option>English</option><option>Luganda</option><option>Lusoga</option><option>Runyankore</option><option>Runyoro</option><option>Acholi</option><option>Swahili</option></select></div>
+                                    <div class="video-studio-field"><label>Duration mode *</label><div class="video-studio-choice-row"><label class="video-studio-choice"><input type="radio" name="durationMode" value="single"> Single</label><label class="video-studio-choice"><input type="radio" name="durationMode" value="series" checked> Series</label></div></div>
+                                </div>
+                                <div id="videoStudioAutoSingleOptions" class="video-studio-field" style="display:none;"><label for="videoStudioAutoSingleDuration">Single video duration</label><select id="videoStudioAutoSingleDuration" name="singleDuration"><option value="5">5 minutes</option><option value="10" selected>10 minutes</option><option value="15">15 minutes</option></select></div>
+                                <div id="videoStudioAutoSeriesOptions" class="video-studio-form-grid">
+                                    <div class="video-studio-field"><label for="videoStudioAutoTotalTime">Total lesson time</label><select id="videoStudioAutoTotalTime" name="totalTime"><option value="30">30 minutes</option><option value="45" selected>45 minutes</option><option value="60">60 minutes</option></select></div>
+                                    <div class="video-studio-field"><label for="videoStudioAutoSegmentLength">Segment length</label><select id="videoStudioAutoSegmentLength" name="segmentLength"><option value="5">5 minutes</option><option value="8" selected>8 minutes</option><option value="10">10 minutes</option></select></div>
+                                </div>
+                                <div class="video-studio-field"><label>Visual style</label><div class="video-studio-choice-row"><label class="video-studio-choice"><input type="radio" name="visualStyle" value="cartoon"> Cartoon</label><label class="video-studio-choice"><input type="radio" name="visualStyle" value="stock"> Stock images</label><label class="video-studio-choice"><input type="radio" name="visualStyle" value="slideshow" checked> Slideshow</label></div></div>
+                                <div class="video-studio-field"><label>Difficulty</label><div class="video-studio-choice-row"><label class="video-studio-choice"><input type="radio" name="difficulty" value="standard" checked> Standard</label><label class="video-studio-choice"><input type="radio" name="difficulty" value="beginner"> Beginner-friendly</label><label class="video-studio-choice"><input type="radio" name="difficulty" value="advanced"> Advanced</label></div></div>
+                                <div class="video-studio-note">Gemini-compatible script generation uses the app's managed AI helper when available. Voice playback uses browser SpeechSynthesis; no client-side API key is required.</div>
+                                <div class="video-studio-actions"><button id="generateVideoStudioAutoBtn" class="video-studio-btn primary" type="submit">🤖 Generate AI Video</button><button id="resetVideoStudioAutoBtn" class="video-studio-btn" type="reset">Clear form</button></div>
+                                <div id="videoStudioAutoStatus" class="video-studio-status" role="status" aria-live="polite"></div>
+                                <div id="videoStudioAutoProgress" class="video-studio-ai-progress" style="display:none;">
+                                    <div class="video-studio-ai-step" data-auto-stage="script"><span>1</span>Generating lesson script</div><div class="video-studio-ai-step" data-auto-stage="translation"><span>2</span>Translating lesson</div><div class="video-studio-ai-step" data-auto-stage="voice"><span>3</span>Preparing voiceover</div><div class="video-studio-ai-step" data-auto-stage="visuals"><span>4</span>Selecting visuals</div><div class="video-studio-ai-step" data-auto-stage="captions"><span>5</span>Adding captions</div><div class="video-studio-ai-step" data-auto-stage="compile"><span>6</span>Compiling video</div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="video-studio-card"><h4>AI output</h4><div id="videoStudioAutoOutput" class="video-studio-empty">Generated scripts and series segments will appear here.</div></div>
+                    </div>
                 </section>
                 <section id="videoStudioTwinPane" class="video-studio-pane" role="tabpanel">
-                    <div class="video-studio-card"><h3 style="margin:0;color:#34206f;">Digital Teacher Twin</h3><p class="video-studio-note" style="margin-top:12px;">Coming in Step 3. Teacher avatar capture, cloning, and processing are not enabled in this release.</p></div>
+                    <div class="video-studio-intro"><div><h3><span class="video-studio-premium-badge">👤 PREMIUM</span> Digital Teacher Twin</h3><p>Create a consent-first configuration and management surface. Live ElevenLabs and D-ID calls remain disabled until a secure server integration is added.</p></div></div>
+                    <div class="video-studio-twin-grid">
+                        <div class="video-studio-twin-panel">
+                            <h4>⚙️ API configuration</h4>
+                            <div id="videoTwinConfigStatus" class="video-studio-twin-message">⚠️ Digital Twin disabled. Configure APIs first.</div>
+                            <label for="videoTwinElevenKey">ElevenLabs API Key</label><input id="videoTwinElevenKey" type="password" autocomplete="new-password" placeholder="Enter only when secure backend is configured"><button id="testVideoTwinElevenBtn" class="video-studio-mini-btn" type="button" disabled>Test connection</button>
+                            <label for="videoTwinDidKey">D-ID API Key</label><input id="videoTwinDidKey" type="password" autocomplete="new-password" placeholder="Enter only when secure backend is configured"><button id="testVideoTwinDidBtn" class="video-studio-mini-btn" type="button" disabled>Test connection</button>
+                            <label for="videoTwinBudget">Monthly budget (UGX)</label><input id="videoTwinBudget" type="number" min="0" step="1000" value="100000">
+                            <div id="videoTwinSpend" class="video-studio-status">Current month spend: UGX 0</div>
+                            <div class="video-studio-actions"><button id="saveVideoTwinConfigBtn" class="video-studio-btn primary" type="button">💾 Save configuration</button><button id="disableVideoTwinBtn" class="video-studio-btn" type="button">🔕 Disable</button></div>
+                            <div id="videoTwinConfigStatusText" class="video-studio-status"></div>
+                        </div>
+                        <div class="video-studio-twin-panel">
+                            <h4>📋 Consent-first creation</h4>
+                            <div class="video-studio-twin-message">Signed consent and a secure server-side API connection are required before a twin can be created. This UI does not make live API calls.</div>
+                            <div class="video-studio-actions" style="margin-top:10px;"><button id="downloadTwinConsentBtn" class="video-studio-mini-btn" type="button">📥 Download consent template</button><button id="createVideoTwinBtn" class="video-studio-btn primary" type="button" disabled>👤 Create Digital Twin</button></div>
+                            <div id="videoTwinCreationStatus" class="video-studio-status"></div>
+                        </div>
+                    </div>
+                    <div class="video-studio-card" style="margin-top:12px;"><h4>Existing Digital Twins</h4><div id="videoTwinList" class="video-studio-twin-list"><div class="video-studio-empty">No digital twins configured.</div></div></div>
                 </section>
                 <section id="videoStudioLibraryPane" class="video-studio-pane" role="tabpanel">
                     <div class="video-studio-intro"><div><h3>Video Library</h3><p>Review published cartoon lessons, cache them for offline use, or return to a draft for editing.</p></div><button id="refreshVideoStudioLibraryBtn" type="button" class="video-studio-btn">Refresh library</button></div>
                     <div class="video-studio-library-toolbar">
                         <input id="videoStudioLibrarySearch" type="search" placeholder="Search topic">
-                        <select id="videoStudioLibraryModeFilter"><option value="">All modes</option><option value="cartoon">Cartoon</option></select>
+                        <select id="videoStudioLibraryModeFilter"><option value="">All modes</option><option value="cartoon">Cartoon</option><option value="ai_auto">AI Auto</option><option value="teacher_twin">Twin</option><option value="series">Series</option></select>
                         <select id="videoStudioLibraryLanguageFilter"><option value="">All languages</option><option>English</option><option>Luganda</option><option>Swahili</option><option>Runyankole</option><option>Acholi</option><option>Lusoga</option><option>Rukiga</option></select>
                         <select id="videoStudioLibrarySubjectFilter"><option value="">All subjects</option></select>
+                        <select id="videoStudioLibraryStatusFilter"><option value="">All statuses</option><option value="draft">Draft</option><option value="ready">Ready</option><option value="published">Published</option></select>
                     </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;"><span id="videoStudioLibraryCount" class="cbc-status"></span><select id="videoStudioLibrarySort" style="width:auto;padding:8px;border:1px solid #ddd5ec;border-radius:10px;"><option value="newest">Newest first</option><option value="views">Most viewed</option></select></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;"><span id="videoStudioLibraryCount" class="cbc-status"></span><div class="video-studio-actions"><select id="videoStudioLibrarySort" style="width:auto;padding:8px;border:1px solid #ddd5ec;border-radius:10px;"><option value="newest">Newest first</option><option value="views">Most viewed</option></select><button id="bulkPublishVideoStudioBtn" class="video-studio-btn primary" type="button">Publish selected</button><button id="bulkDeleteVideoStudioBtn" class="video-studio-btn danger" type="button">Delete selected</button></div></div>
                     <div id="videoStudioLibraryList" class="video-studio-library-list"><div class="video-studio-empty" style="grid-column:1/-1;">No published cartoon lessons yet.</div></div>
                     <button id="loadMoreVideoStudioBtn" type="button" class="video-studio-btn" style="display:none;margin:14px auto 0;">Load more</button>
+                </section>
+                <section id="videoStudioStatsPane" class="video-studio-pane" role="tabpanel">
+                    <div class="video-studio-intro"><div><h3>📊 Video Studio Stats</h3><p>Generation cost and usage summaries are aggregated from published projects and generation stats.</p></div><button id="refreshVideoStudioStatsBtn" type="button" class="video-studio-btn">Refresh stats</button></div>
+                    <div id="videoStudioStatsBody" class="video-studio-card"><div class="video-studio-empty">Open Stats to load this month's summary.</div></div>
                 </section>
             </div>
         </div>
@@ -1613,6 +1726,28 @@
             <div class="video-studio-preview-progress"><div id="videoStudioPreviewProgress"></div></div>
             <div class="video-studio-preview-controls"><button id="videoStudioRestartBtn" type="button" title="Restart">↺</button><button id="videoStudioPlayPauseBtn" class="primary" type="button">Pause</button><button id="videoStudioPreviewNextBtn" type="button" title="Next scene">Next</button></div>
             <div id="videoStudioPreviewInfo" class="video-studio-preview-info"></div>
+        </div>
+    </div>
+    <div id="videoAnalyticsModal" class="video-studio-preview-modal" role="dialog" aria-modal="true" aria-labelledby="videoAnalyticsTitle">
+        <div class="video-studio-preview-card">
+            <div class="video-studio-preview-head"><strong id="videoAnalyticsTitle">Video analytics</strong><button id="closeVideoAnalyticsBtn" class="video-studio-preview-close" type="button" aria-label="Close analytics">&times;</button></div>
+            <div id="videoAnalyticsBody" style="padding:16px;"><div class="video-studio-empty">Loading analytics…</div></div>
+        </div>
+    </div>
+    <div id="videoAssignModal" class="video-studio-preview-modal" role="dialog" aria-modal="true" aria-labelledby="videoAssignTitle">
+        <div class="video-studio-preview-card">
+            <div class="video-studio-preview-head"><strong id="videoAssignTitle">Assign video to a class</strong><button id="closeVideoAssignBtn" class="video-studio-preview-close" type="button" aria-label="Close assignment">&times;</button></div>
+            <form id="videoAssignForm" style="padding:16px;">
+                <input type="hidden" id="videoAssignId"><label class="video-studio-field"><span style="display:block;margin-bottom:4px;color:#51476a;font-size:11px;font-weight:800;">Class</span><select id="videoAssignClass" required style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd5ec;border-radius:10px;"></select></label>
+                <label class="video-studio-field" style="display:block;margin-top:10px;"><span style="display:block;margin-bottom:4px;color:#51476a;font-size:11px;font-weight:800;">Message (optional)</span><textarea id="videoAssignMessage" rows="3" maxlength="300" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ddd5ec;border-radius:10px;"></textarea></label>
+                <button class="video-studio-btn primary" type="submit" style="margin-top:10px;">📌 Assign to class</button><div id="videoAssignStatus" class="video-studio-status"></div>
+            </form>
+        </div>
+    </div>
+    <div id="videoPlaylistModal" class="video-studio-preview-modal" role="dialog" aria-modal="true" aria-labelledby="videoPlaylistTitle">
+        <div class="video-studio-preview-card">
+            <div class="video-studio-preview-head"><strong id="videoPlaylistTitle">Series playlist</strong><button id="closeVideoPlaylistBtn" class="video-studio-preview-close" type="button" aria-label="Close playlist">&times;</button></div>
+            <div id="videoPlaylistBody" style="padding:16px;"><div class="video-studio-empty">Loading playlist…</div></div>
         </div>
     </div>
 
@@ -1851,6 +1986,19 @@
                 <div class="folder-header" id="folderHeader"><i class="fas fa-folder"></i><span>📚 Learning Materials (PDFs)</span><i class="fas fa-chevron-down"></i></div>
                 <div class="folder-content" id="folderContent"><div id="pdfListContainer"></div></div>
             </div>
+            <section id="studentVideoTutorialsSection" class="video-studio-user-section" style="display:none;" aria-labelledby="studentVideoTutorialsTitle">
+                <h4 id="studentVideoTutorialsTitle">🎬 Video Tutorials</h4>
+                <p style="font-size:12px;color:#756d82;margin:0;">Search lessons by topic, subject, language, and learning mode.</p>
+                <div id="studentAssignedVideos" class="video-studio-assigned" style="display:none;"></div>
+                <div class="video-studio-user-toolbar">
+                    <input id="studentVideoSearch" type="search" placeholder="Search videos by topic or subject" aria-label="Search videos">
+                    <select id="studentVideoModeFilter" aria-label="Video mode"><option value="">All modes</option><option value="cartoon">Cartoon</option><option value="ai_auto">AI Auto</option><option value="teacher_twin">Twin</option><option value="series">Series</option></select>
+                    <select id="studentVideoLanguageFilter" aria-label="Video language"><option value="">All languages</option><option>English</option><option>Luganda</option><option>Lusoga</option><option>Runyankore</option><option>Runyoro</option><option>Acholi</option><option>Swahili</option></select>
+                    <select id="studentVideoSubjectFilter" aria-label="Video subject"><option value="">All subjects</option></select>
+                </div>
+                <div id="studentVideoRecommendations" style="display:none;margin:8px 0;"></div>
+                <div id="studentVideoGrid" class="video-studio-user-grid"><div class="video-studio-empty">Loading video tutorials…</div></div>
+            </section>
             <div id="studentCbcSection" class="cbc-card" style="display:none;">
                 <h4>📘 CBC & UNEB</h4>
                 <p style="font-size:12px;color:#666;margin:0;">Build evidence for your learning journey and keep your competency record together.</p>
@@ -2431,6 +2579,16 @@
                 </div>
                 <div id="teacherCbcPanel" style="display:none;"></div>
             </div>
+            <section id="teacherVideoLibrarySection" class="video-studio-user-section" style="display:none;" aria-labelledby="teacherVideoLibraryTitle">
+                <h4 id="teacherVideoLibraryTitle">🎬 Video Library</h4>
+                <p style="font-size:12px;color:#756d82;margin:0;">Watch, assign, and download lessons relevant to your classes.</p>
+                <div class="video-studio-user-toolbar">
+                    <select id="teacherVideoSubjectFilter" aria-label="Teacher subject filter"><option value="">All subjects</option><option value="__mine">My subject</option></select>
+                    <select id="teacherVideoClassFilter" aria-label="Teacher class filter"><option value="">All classes</option></select>
+                    <select id="teacherVideoLanguageFilter" aria-label="Teacher language filter"><option value="">All languages</option><option>English</option><option>Luganda</option><option>Lusoga</option><option>Runyankore</option><option>Runyoro</option><option>Acholi</option><option>Swahili</option></select>
+                </div>
+                <div id="teacherVideoGrid" class="video-studio-user-grid"><div class="video-studio-empty">Loading video library…</div></div>
+            </section>
 
              <div class="teacher-card" id="ncdcProgressCard" style="border:2px solid #6d52bd;background:linear-gradient(145deg,#faf8ff,#fff);">
                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
@@ -2589,6 +2747,16 @@
                 <div id="myWeakAreasTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
                 <button id="editWeakAreasBtn" style="background:#4B2E9E;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;font-size:13px;">✏️ Edit Weak Areas</button>
             </div>
+            <section id="teacherTwinAccountSection" class="video-studio-user-section" style="display:none;">
+                <h4>👤 Your Digital Twin</h4>
+                <div id="teacherTwinAccountBody" class="video-studio-empty">No digital twin is linked to this account.</div>
+            </section>
+            <section id="videoDownloadsSection" class="video-studio-user-section" aria-labelledby="videoDownloadsTitle">
+                <h4 id="videoDownloadsTitle">📥 My Downloads</h4>
+                <div id="videoDownloadsSummary" class="video-studio-status">Loading downloaded videos…</div>
+                <div id="videoDownloadsList"><div class="video-studio-empty">No offline videos downloaded yet.</div></div>
+                <button id="clearVideoDownloadsBtn" type="button" class="video-studio-mini-btn" style="margin-top:9px;">Clear all downloads</button>
+            </section>
 
             <!-- My Questions & Answers -->
             <div class="account-card" style="margin-top:16px;">
@@ -3150,7 +3318,13 @@
         currentProject: null,
         library: [],
         libraryVisible: 20,
-        preview: { project: null, index: 0, playing: false, timer: null, speech: null, startedAt: 0 }
+        preview: { project: null, index: 0, playing: false, timer: null, speech: null, startedAt: 0 },
+        userLibrary: [],
+        teacherLibrary: [],
+        playlist: [],
+        playlistIndex: 0,
+        twinConfig: null,
+        twins: []
     };
     let _offlineProgressTimer = null;
     let _offlineProgressWrite = null;
@@ -3843,11 +4017,12 @@
         // Add earning to teacher earnings collection
         const earningRef = doc(db, "teacherEarnings", completionId);
         const teacher = allTeachers.find(t => t.uid === currentTeacherId);
-        const revenue = teacher?.revenuePerView || 100;
+        const mapping = window._videoMappingData?.[currentVideoKey] || {};
+        const revenue = mapping.mode === 'teacher_twin' ? 250 : (teacher?.revenuePerView || 100);
         await setDoc(earningRef, {
             teacherId: currentTeacherId,
             studentId: currentUser.uid, studentName: currentUser.name,
-            videoKey: currentVideoKey, amount: revenue,
+            videoKey: currentVideoKey, amount: revenue, lessonMode: mapping.mode || 'standard',
             paid: false, earnedAt: new Date().toISOString()
         });
         showNotification("Lesson completed! 🎉", "success");
@@ -5739,6 +5914,18 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             librarySubject.innerHTML = '<option value="">All subjects</option>' + subjects.map(subject => `<option value="${escHtml(subject)}">${escHtml(subject)}</option>`).join('');
             librarySubject.value = value;
         }
+        const autoSubject = document.getElementById('videoStudioAutoSubject');
+        if(autoSubject) {
+            const value = autoSubject.value;
+            autoSubject.innerHTML = '<option value="">Select subject</option>' + subjects.map(subject => `<option value="${escHtml(subject)}">${escHtml(subject)}</option>`).join('');
+            autoSubject.value = value;
+        }
+        const autoClass = document.getElementById('videoStudioAutoClass');
+        if(autoClass) {
+            const value = autoClass.value;
+            autoClass.innerHTML = '<option value="">Select class</option>' + videoStudioClassOptions().map(item => `<option value="${item.value}">${escHtml(item.label)}</option>`).join('');
+            autoClass.value = value;
+        }
     }
     function videoStudioRenderAssets(assets, topic) {
         const container = document.getElementById('videoStudioAssetPreview');
@@ -5985,6 +6172,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 preview.timer = null;
                 if(typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
                 if(audio?.src) audio.pause();
+                if(_videoStudioState.playlist?.length) {
+                    setTimeout(videoStudioAdvancePlaylist, 350);
+                }
             }
             videoStudioRenderPreview();
         }, 250);
@@ -6036,13 +6226,28 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
         currentVideoKey = videoKey || item.id || '';
         currentLessonSubject = `${item.subject || item.topic || 'Cartoon'} (${item.classLevel || ''})`;
-        currentTeacherId = '';
+        currentTeacherId = item.teacherId || '';
         videoStudioOpenPreview(project);
         if(navigator.onLine && db && item.id && !offlineSession) updateDoc(doc(db,'video_library',item.id), { views:increment(1) }).catch(()=>{});
         videoStudioCachePublished(project).catch(()=>{});
     }
     function videoStudioSelectedSchools() {
         return [...document.querySelectorAll('#videoStudioSchoolList input[type="checkbox"]:checked')].map(input => input.value);
+    }
+    async function videoStudioPublishProjectToLibrary(project, audience, schoolIds) {
+        const libraryRef = await addDoc(collection(db,'video_library'), {
+            projectId:project.id, mode:project.mode || 'cartoon', isSeries:Boolean(project.isSeries || project.mode === 'series'),
+            seriesParentId:project.seriesParentId || null, seriesSegmentNumber:project.seriesSegmentNumber || null,
+            seriesChildIds:project.seriesLibraryIds || project.seriesChildIds || [], seriesSegmentCount:project.seriesSegmentCount || null, seriesTotalTime:project.seriesTotalTime || null,
+            topic:project.topic, type:project.type || 'video_lesson', subject:project.subject, classLevel:project.classLevel, language:project.language, character:project.character,
+            durationMinutes:project.durationMinutes || null, durationSeconds:project.durationSeconds || null, scriptEnglish:project.scriptEnglish || project.scriptText || '',
+            translatedScript:project.translatedScript || project.scriptText || '', voiceover:project.voiceover || { mode:'speechSynthesis' },
+            slideshowImages:project.slideshowImages || [], captions:project.captions || [], captionsSrt:project.captionsSrt || '',
+            audioPath:null, storagePaths:project.storagePaths || { audio:null, slides:[] },
+            estimatedCostUgx:project.estimatedCostUgx || 0, audience, schoolIds, views:0, publishedBy:currentUser.uid, publishedAt:serverTimestamp(), createdAt:project.createdAt || serverTimestamp()
+        });
+        await videoStudioUpdateProject(project.id, { status:'published', publishedAt:serverTimestamp(), libraryId:libraryRef.id, audience, schoolIds });
+        return libraryRef.id;
     }
     async function videoStudioPublishCurrent() {
         const project = _videoStudioState.currentProject;
@@ -6054,20 +6259,24 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const publishButton = document.getElementById('publishVideoStudioBtn');
         if(publishButton) publishButton.disabled = true;
         try {
-            const libraryRef = await addDoc(collection(db,'video_library'), {
-                projectId:project.id, mode:'cartoon', topic:project.topic, type:project.type, subject:project.subject,
-                classLevel:project.classLevel, language:project.language, character:project.character,
-                durationSeconds:project.durationSeconds, scriptEnglish:project.scriptEnglish, translatedScript:project.translatedScript,
-                voiceover:project.voiceover, slideshowImages:project.slideshowImages, captions:project.captions, captionsSrt:project.captionsSrt,
-                audioPath:null, storagePaths:project.storagePaths || { audio:null, slides:[] },
-                audience, schoolIds, views:0, publishedBy:currentUser.uid, publishedAt:serverTimestamp(), createdAt:project.createdAt || serverTimestamp()
-            });
-            await videoStudioUpdateProject(project.id, { status:'published', publishedAt:serverTimestamp(), libraryId:libraryRef.id, audience, schoolIds });
-            _videoStudioState.currentProject = Object.assign({}, project, { status:'published', libraryId:libraryRef.id, audience, schoolIds, publishedAt:new Date().toISOString() });
+            let libraryId;
+            if(project.isSeries || project.mode === 'series') {
+                const childIds = project.seriesChildIds || [];
+                const publishedChildren = [];
+                for(const childId of childIds) {
+                    const childSnap = await getDoc(doc(db,'video_studio_projects',childId));
+                    if(childSnap.exists()) publishedChildren.push(await videoStudioPublishProjectToLibrary(Object.assign({id:childSnap.id}, childSnap.data()), audience, schoolIds));
+                }
+                libraryId = await videoStudioPublishProjectToLibrary(Object.assign({}, project, { seriesLibraryIds:publishedChildren }), audience, schoolIds);
+                await updateDoc(doc(db,'video_library',libraryId), { seriesLibraryIds:publishedChildren });
+            } else {
+                libraryId = await videoStudioPublishProjectToLibrary(project, audience, schoolIds);
+            }
+            _videoStudioState.currentProject = Object.assign({}, project, { status:'published', libraryId, audience, schoolIds, publishedAt:new Date().toISOString() });
             await videoStudioCachePublished(_videoStudioState.currentProject).catch(error => console.warn('Video Studio offline cache skipped:', error));
             videoStudioRenderProjectActions(_videoStudioState.currentProject);
             await loadVideoStudioLibrary();
-            showNotification('Cartoon lesson published to schools');
+            showNotification(project.isSeries || project.mode === 'series' ? 'Series published to schools' : 'Video lesson published to schools');
         } catch(error) { showNotification(`Could not publish lesson: ${error.message || error}`,'error'); }
         finally { if(publishButton) publishButton.disabled = false; }
     }
@@ -6088,8 +6297,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const mode = document.getElementById('videoStudioLibraryModeFilter')?.value || '';
         const language = document.getElementById('videoStudioLibraryLanguageFilter')?.value || '';
         const subject = document.getElementById('videoStudioLibrarySubjectFilter')?.value || '';
+        const status = document.getElementById('videoStudioLibraryStatusFilter')?.value || '';
         return (!search || `${item.topic || ''} ${item.scriptEnglish || ''}`.toLowerCase().includes(search))
-            && (!mode || item.mode === mode) && (!language || item.language === language) && (!subject || item.subject === subject);
+            && (!mode || item.mode === mode || (mode === 'series' && item.isSeries))
+            && (!language || item.language === language) && (!subject || item.subject === subject)
+            && (!status || item.status === status || (status === 'published' && item.publishedAt));
     }
     async function loadVideoStudioLibrary() {
         if(!db || currentUser?.role !== 'superadmin') return [];
@@ -6112,17 +6324,21 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(count) count.textContent = `${filtered.length} published lesson${filtered.length === 1 ? '' : 's'}`;
         const more = document.getElementById('loadMoreVideoStudioBtn');
         if(more) more.style.display = visible.length < filtered.length ? 'block' : 'none';
-        if(!visible.length) { container.innerHTML = '<div class="video-studio-empty" style="grid-column:1/-1;">No published cartoon lessons match these filters.</div>'; return; }
+        if(!visible.length) { container.innerHTML = '<div class="video-studio-empty" style="grid-column:1/-1;">No published lessons match these filters.</div>'; return; }
         container.innerHTML = visible.map(item => {
             const images = item.slideshowImages || [];
             const date = item.publishedAt && item.publishedAt.toDate ? item.publishedAt.toDate() : item.publishedAt;
-            return `<article class="video-studio-library-item"><div class="video-studio-library-thumb">${images.slice(0,3).map(image => `<img src="${image.url || ''}" alt="" loading="lazy">`).join('')}</div><div class="video-studio-library-title">${escHtml(item.topic || 'Untitled lesson')}</div><div class="video-studio-library-meta">${escHtml(item.subject || '')} · ${escHtml(item.classLevel || '')} · ${escHtml(item.language || 'English')}<br>${Number(item.views || 0)} views${date ? ` · ${new Date(date).toLocaleDateString()}` : ''}</div><div class="video-studio-library-actions"><button type="button" class="video-studio-btn orange" data-video-library-preview="${escHtml(item.id)}">Preview</button><button type="button" class="video-studio-btn" data-video-library-cache="${escHtml(item.id)}">Cache offline</button><button type="button" class="video-studio-btn" data-video-library-edit="${escHtml(item.projectId || '')}">Edit</button><button type="button" class="video-studio-btn danger" data-video-library-delete="${escHtml(item.id)}">Delete</button></div></article>`;
+            const series = item.isSeries || item.mode === 'series';
+            return `<article class="video-studio-library-item"><label style="position:absolute;display:flex;gap:4px;align-items:center;font-size:10px;color:#756d82;"><input type="checkbox" data-library-select="${escHtml(item.id)}"> Select</label><div class="video-studio-library-thumb" style="margin-top:14px;">${images.slice(0,3).map(image => `<img src="${image.url || ''}" alt="${escHtml(image.alt || item.topic || 'Lesson thumbnail')}" loading="lazy">`).join('')}</div><div class="video-studio-library-title">${escHtml(item.topic || 'Untitled lesson')}</div><div class="video-studio-library-meta"><span class="video-studio-ai-badge">${videoStudioModeLabel(item)}</span><br>${escHtml(item.subject || '')} · ${escHtml(item.classLevel || '')} · ${escHtml(item.language || 'English')}<br>${series ? `${item.seriesSegmentCount || (item.segments || []).length || 0} parts · ` : ''}${Number(item.views || 0)} views${date ? ` · ${new Date(date).toLocaleDateString()}` : ''}</div><div class="video-studio-library-actions"><button type="button" class="video-studio-btn orange" data-video-library-preview="${escHtml(item.id)}">${series ? 'Playlist' : 'Preview'}</button>${series ? `<button type="button" class="video-studio-btn" data-video-library-playall="${escHtml(item.id)}">Play all</button>` : ''}<button type="button" class="video-studio-btn" data-video-library-cache="${escHtml(item.id)}">Cache offline</button><button type="button" class="video-studio-btn" data-video-library-analytics="${escHtml(item.id)}">Analytics</button><button type="button" class="video-studio-btn" data-video-library-share="${escHtml(item.id)}">Share</button><button type="button" class="video-studio-btn" data-video-library-edit="${escHtml(item.projectId || '')}">Edit</button><button type="button" class="video-studio-btn danger" data-video-library-delete="${escHtml(item.id)}">Delete</button></div></article>`;
         }).join('');
-        container.querySelectorAll('[data-video-library-preview]').forEach(button => button.onclick = () => videoStudioOpenPreview(_videoStudioState.library.find(item => item.id === button.dataset.videoLibraryPreview)));
+        container.querySelectorAll('[data-video-library-preview]').forEach(button => button.onclick = () => { const item = _videoStudioState.library.find(video => video.id === button.dataset.videoLibraryPreview); if(item?.isSeries || item?.mode === 'series') videoStudioOpenPlaylist(item); else videoStudioOpenPreview(item); });
+        container.querySelectorAll('[data-video-library-playall]').forEach(button => button.onclick = () => videoStudioPlaySeries(_videoStudioState.library.find(item => item.id === button.dataset.videoLibraryPlayall)));
         container.querySelectorAll('[data-video-library-cache]').forEach(button => button.onclick = async () => {
             const item = _videoStudioState.library.find(video => video.id === button.dataset.videoLibraryCache);
             try { await videoStudioCachePublished(item); showNotification('Lesson cached for offline playback'); } catch(error) { showNotification(error.message || 'Could not cache lesson','error'); }
         });
+        container.querySelectorAll('[data-video-library-share]').forEach(button => button.onclick = () => videoStudioShare(_videoStudioState.library.find(item => item.id === button.dataset.videoLibraryShare)));
+        container.querySelectorAll('[data-video-library-analytics]').forEach(button => button.onclick = () => videoStudioOpenAnalytics(_videoStudioState.library.find(item => item.id === button.dataset.videoLibraryAnalytics)));
         container.querySelectorAll('[data-video-library-edit]').forEach(button => button.onclick = () => videoStudioEditProject(button.dataset.videoLibraryEdit));
         container.querySelectorAll('[data-video-library-delete]').forEach(button => button.onclick = async () => {
             const item = _videoStudioState.library.find(video => video.id === button.dataset.videoLibraryDelete);
@@ -6142,10 +6358,572 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         videoStudioRenderAssets(project.slideshowImages || [], project.topic);
         videoStudioSwitchTab('cartoon');
     }
+
+    // ===== VIDEO STUDIO — AI AUTO-VIDEO, SERIES, TWIN, AND USER LIBRARIES =====
+    function videoStudioAutoValues() {
+        const form = document.getElementById('videoStudioAutoForm');
+        if(!form) return {};
+        const data = Object.fromEntries(new FormData(form).entries());
+        data.durationMode = data.durationMode || 'series';
+        data.singleDurationMinutes = Number(data.singleDuration || 10);
+        data.totalTimeMinutes = Number(data.totalTime || 45);
+        data.segmentLengthMinutes = Number(data.segmentLength || 8);
+        data.durationMinutes = data.durationMode === 'single' ? data.singleDurationMinutes : data.totalTimeMinutes;
+        data.segmentCount = data.durationMode === 'series' ? Math.max(1, Math.ceil(data.totalTimeMinutes / data.segmentLengthMinutes)) : 1;
+        return data;
+    }
+    function videoStudioAutoStage(stage, status='current') {
+        const stages = ['script','translation','voice','visuals','captions','compile'];
+        document.querySelectorAll('[data-auto-stage]').forEach(row => {
+            const index = stages.indexOf(row.dataset.autoStage);
+            const current = stages.indexOf(stage);
+            row.classList.toggle('done', status === 'done' ? index <= current : index < current);
+            row.classList.toggle('current', status !== 'done' && row.dataset.autoStage === stage);
+        });
+    }
+    function videoStudioAutoStatus(message, type='') {
+        const el = document.getElementById('videoStudioAutoStatus');
+        if(el) { el.textContent = message || ''; el.className = `video-studio-status${type ? ` ${type}` : ''}`; }
+    }
+    function videoStudioAutoPrompt(values) {
+        const duration = values.durationMode === 'series' ? `${values.totalTimeMinutes}-minute lesson split into ${values.segmentCount} segments of about ${values.segmentLengthMinutes} minutes` : `${values.singleDurationMinutes}-minute video`;
+        return `You are a Ugandan CBC curriculum expert. Generate a ${duration} lesson script for the topic: ${values.topic}. Subject: ${values.subject}. Class: ${values.classLevel}. Difficulty: ${values.difficulty}. Language source: English.\n\nInclude a hook using a real-life Ugandan scenario, clear explanations, local examples such as mangoes, matooke, markets, or boda bodas where relevant, CBC values, generic skills, a short summary, and three quiz questions. Keep sentences under 20 words and add [MM:SS] markers for major sections. ${values.durationMode === 'series' ? `Make each of the ${values.segmentCount} segments self-contained and build logically from introduction to summary.` : ''}\n\nReturn only the lesson script.`;
+    }
+    function videoStudioFallbackAutoScript(values) {
+        return `[00:00] Introduction\nToday we will learn about ${values.topic}. Think about how this idea appears in everyday life in Uganda.\n\n[02:00] Main idea\n${values.topic} connects to our homes, schools, farms, markets, and communities. We will explain the key words, work through a local example, and practise one useful skill.\n\n[06:00] Local activity\nDiscuss ${values.topic} with a partner. Give one example from your community and explain why it matters.\n\n[08:00] Summary and quiz\nRemember the main idea and the local example. Question one: What is ${values.topic}? Question two: Give one example. Question three: How would you use this knowledge?`;
+    }
+    async function videoStudioGenerateAutoScript(values) {
+        if(!navigator.onLine) throw new Error('Connect to the internet before generating an AI video');
+        const prompt = videoStudioAutoPrompt(values);
+        try {
+            const response = await askAI(prompt);
+            if(response && !String(response).startsWith('📚 The AI tutor is having trouble') && response.length > 80) return { text:String(response).trim(), provider:'managed-ai-compatible' };
+        } catch(error) { console.warn('AI Auto-Video script generation failed:', error); }
+        return { text:videoStudioFallbackAutoScript(values), provider:'structured-local-draft' };
+    }
+    function videoStudioSplitSeriesScript(script, count) {
+        const lines = String(script || '').split(/\n{2,}/).map(line => line.trim()).filter(Boolean);
+        const buckets = Array.from({ length:Math.max(1, count) }, () => []);
+        lines.forEach((line, index) => buckets[index % buckets.length].push(line));
+        return buckets.map((bucket, index) => bucket.join('\n\n') || `Segment ${index + 1}: ${script}`);
+    }
+    function videoStudioSlideData(topic, text, index) {
+        const safeTopic = videoStudioXml(String(topic || 'Lesson').slice(0, 44));
+        const words = String(text || '').replace(/\s+/g,' ').trim().slice(0, 110);
+        const safeText = videoStudioXml(words);
+        const colors = ['#4B2E9E','#1D8A9B','#D86F48','#3B8654','#8A5C14'];
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><rect width="800" height="450" fill="#fbf8ff"/><rect width="800" height="18" fill="${colors[index % colors.length]}"/><circle cx="112" cy="114" r="50" fill="${colors[index % colors.length]}" opacity=".16"/><path d="M96 140l18-50 18 50Z" fill="${colors[index % colors.length]}"/><text x="170" y="118" font-family="system-ui,sans-serif" font-weight="800" font-size="30" fill="#34206f">${safeTopic}</text><foreignObject x="72" y="190" width="650" height="120"><div xmlns="http://www.w3.org/1999/xhtml" style="font:24px system-ui,sans-serif;color:#4c4560;line-height:1.35;">${safeText}</div></foreignObject><text x="72" y="388" font-family="system-ui,sans-serif" font-size="16" fill="#81798c">APSHULE · scene ${index + 1}</text></svg>`;
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+    async function videoStudioSelectAutoVisuals(values, script, projectId) {
+        const count = Math.max(6, Math.min(20, Math.ceil((values.durationMinutes * 60) / 30)));
+        if(values.visualStyle === 'cartoon') {
+            const assets = _videoStudioState.assets.length ? _videoStudioState.assets : await loadVideoStudioAssets();
+            return videoStudioSelectScenes(assets, 'teacher', values.topic).concat(videoStudioSelectScenes(assets, 'boy', values.topic)).slice(0, count).map((asset,index) => ({ index:index+1, assetId:asset.id, pose:asset.pose, url:asset.imageDataUrl, alt:`${values.topic} cartoon scene ${index+1}` }));
+        }
+        if(values.visualStyle === 'stock') {
+            try {
+                const queryText = encodeURIComponent(`${values.topic} ${values.subject}`);
+                const response = await fetch(`https://pixabay.com/api/?key=demo&q=${queryText}&image_type=photo&per_page=20&safesearch=true`);
+                if(response.ok) {
+                    const data = await response.json();
+                    const stock = (data.hits || []).filter(item => Number(item.imageWidth || 0) >= 640 && Number(item.imageHeight || 0) >= 360).slice(0, count);
+                    if(stock.length) return stock.map((item,index) => ({ index:index+1, assetId:`pixabay_${item.id}`, url:item.webformatURL || item.largeImageURL, alt:`${values.topic} stock image ${index+1}`, source:'pixabay' }));
+                }
+            } catch(error) { console.warn('Pixabay visual selection failed; using slideshow:', error); }
+        }
+        const chunks = videoStudioBuildCaptions(script, Math.max(30, values.durationMinutes * 60)).captions;
+        return Array.from({ length:count }, (_, index) => {
+            const source = chunks[index % Math.max(1, chunks.length)]?.text || values.topic;
+            return { index:index+1, assetId:`slide_${projectId}_${index+1}`, url:videoStudioSlideData(values.topic, source, index), alt:`${values.topic} slide ${index+1}`, source:'slideshow' };
+        });
+    }
+    async function videoStudioCreateAutoProject(values, scriptText, translatedScript, images, segmentText, parentId, segmentNumber) {
+        const durationSeconds = Math.max(30, Math.round((segmentNumber ? values.segmentLengthMinutes : values.durationMinutes) * 60));
+        const captionData = videoStudioBuildCaptions(translatedScript || segmentText || scriptText, durationSeconds);
+        const voiceChunks = String(translatedScript || segmentText || scriptText).split(/(?<=[.!?])\s+/).filter(Boolean).map(text => text.trim()).slice(0, 120);
+        const projectData = {
+            mode:values.durationMode === 'series' ? 'series' : 'ai_auto',
+            status:'ready', generationStep:'complete', topic:values.topic, type:'ai_auto_video',
+            subject:values.subject, classLevel:values.classLevel, language:values.language,
+            durationMinutes:segmentNumber ? values.segmentLengthMinutes : values.durationMinutes,
+            durationSeconds, difficulty:values.difficulty, visualStyle:values.visualStyle,
+            durationMode:values.durationMode, scriptText:scriptText, scriptEnglish:scriptText,
+            translatedScript:translatedScript || scriptText, translationProvider:values.language === 'English' ? 'source-english' : 'managed-ai-compatible',
+            voiceover:{ mode:'speechSynthesis', chunks:voiceChunks, rate:.9, pitch:1, audioPath:null, audioUrl:null, provider:'browser' },
+            slideshowImages:images, captions:captionData.captions, captionsSrt:captionData.srt,
+            audioPath:null, videoPathOffline:null, storagePaths:{ audio:null, slides:[] },
+            seriesParentId:parentId || null, seriesSegmentNumber:segmentNumber || null,
+            createdBy:currentUser.uid, createdAt:serverTimestamp(), updatedAt:serverTimestamp(), views:0,
+            estimatedCostUgx:values.durationMode === 'series' ? 8000 : 2000
+        };
+        const ref = await addDoc(collection(db,'video_studio_projects'), projectData);
+        return Object.assign({}, projectData, { id:ref.id, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() });
+    }
+    async function videoStudioUpdateGenerationStats(mode, count, cost) {
+        const month = new Date().toISOString().slice(0,7);
+        const ref = doc(db,'video_generation_stats',month);
+        await setDoc(ref, { month, videosGenerated:increment(count), estimatedCostUgx:increment(cost), byMode:{ [mode]:increment(count) }, updatedAt:serverTimestamp() }, { merge:true }).catch(()=>{});
+        await videoStudioLoadCostTracker();
+    }
+    async function videoStudioLoadCostTracker() {
+        const el = document.getElementById('videoStudioCostTracker');
+        if(!el || !db || currentUser?.role !== 'superadmin') return;
+        const month = new Date().toISOString().slice(0,7);
+        const snap = await getDoc(doc(db,'video_generation_stats',month)).catch(()=>null);
+        const stats = snap?.exists() ? snap.data() : {};
+        el.textContent = `💰 This month: ${Number(stats.videosGenerated || 0)} videos · Approx UGX ${Number(stats.estimatedCostUgx || 0).toLocaleString()}`;
+    }
+    async function videoStudioGenerateAuto(values) {
+        if(currentUser?.role !== 'superadmin') throw new Error('Only Super Admins can generate AI videos');
+        if(!navigator.onLine) throw new Error('Connect to the internet before generating an AI video');
+        if(!db) throw new Error('Video Studio is still connecting to Firebase');
+        if(!values.topic || !values.subject || !values.classLevel || !values.language) throw new Error('Topic, subject, class, and language are required');
+        document.getElementById('videoStudioAutoProgress').style.display = 'grid';
+        videoStudioAutoStage('script'); videoStudioAutoStatus('Generating a CBC lesson script…');
+        const generated = await videoStudioGenerateAutoScript(values);
+        const masterRef = await addDoc(collection(db,'video_studio_projects'), { mode:values.durationMode === 'series' ? 'series' : 'ai_auto', status:'generating', topic:values.topic, subject:values.subject, classLevel:values.classLevel, language:values.language, durationMode:values.durationMode, durationMinutes:values.durationMinutes, segmentLengthMinutes:values.segmentLengthMinutes, segmentCount:values.segmentCount, difficulty:values.difficulty, visualStyle:values.visualStyle, scriptText:generated.text, scriptEnglish:generated.text, createdBy:currentUser.uid, createdAt:serverTimestamp(), updatedAt:serverTimestamp() });
+        const masterId = masterRef.id;
+        await setDoc(doc(db,'video_generation_queue',masterId), { projectId:masterId, mode:values.durationMode === 'series' ? 'series' : 'ai_auto', status:'processing', currentStep:'script', createdBy:currentUser.uid, createdAt:serverTimestamp(), updatedAt:serverTimestamp() }, { merge:true });
+        try {
+            videoStudioAutoStage('translation'); videoStudioAutoStatus('Translating the lesson where needed…');
+            const translation = await videoStudioTranslateScript(generated.text, values.language);
+            await videoStudioUpdateProject(masterId, { translatedScript:translation.text, translationProvider:translation.provider });
+            videoStudioAutoStage('voice'); videoStudioAutoStatus('Preparing browser-safe voiceover metadata…');
+            videoStudioAutoStage('visuals'); videoStudioAutoStatus('Selecting visuals and building slides…');
+            const images = await videoStudioSelectAutoVisuals(values, translation.text, masterId);
+            videoStudioAutoStage('captions'); videoStudioAutoStatus('Aligning captions to the lesson…');
+            videoStudioAutoStage('compile'); videoStudioAutoStatus('Compiling the offline-ready lesson…');
+            let segments = [];
+            if(values.durationMode === 'series') {
+                const pieces = videoStudioSplitSeriesScript(translation.text, values.segmentCount);
+                for(let index=0; index<pieces.length; index++) {
+                    const segmentImages = images.slice(index * Math.max(1, Math.ceil(images.length / pieces.length)), (index + 1) * Math.max(1, Math.ceil(images.length / pieces.length)));
+                    segments.push(await videoStudioCreateAutoProject(values, generated.text, pieces[index], segmentImages.length ? segmentImages : images.slice(0,6), pieces[index], masterId, index+1));
+                }
+                const seriesData = { mode:'series', status:'ready', generationStep:'complete', isSeries:true, seriesTotalTime:values.totalTimeMinutes, seriesSegmentCount:segments.length, seriesChildIds:segments.map(item => item.id), translatedScript:translation.text, segments:segments.map(item => ({ id:item.id, number:item.seriesSegmentNumber, title:`Part ${item.seriesSegmentNumber}`, durationMinutes:item.durationMinutes })), updatedAt:serverTimestamp(), estimatedCostUgx:8000 };
+                await videoStudioUpdateProject(masterId, seriesData);
+                _videoStudioState.currentProject = Object.assign({ id:masterId }, { ...seriesData, ...values, scriptText:generated.text, translatedScript:translation.text, slideshowImages:images, captions:videoStudioBuildCaptions(translation.text, values.totalTimeMinutes*60).captions, captionsSrt:videoStudioBuildCaptions(translation.text, values.totalTimeMinutes*60).srt, voiceover:{mode:'speechSynthesis',chunks:translation.text.split(/(?<=[.!?])\s+/).filter(Boolean)}, status:'ready' });
+                await videoStudioUpdateGenerationStats('series', segments.length, 8000);
+            } else {
+                const project = await videoStudioCreateAutoProject(values, generated.text, translation.text, images, translation.text);
+                const { id:generatedProjectId, ...projectFields } = project;
+                await videoStudioUpdateProject(masterId, Object.assign({}, projectFields, { updatedAt:serverTimestamp() }));
+                _videoStudioState.currentProject = Object.assign({}, projectFields, { id:masterId });
+                await videoStudioUpdateGenerationStats('ai_auto', 1, 2000);
+            }
+            await setDoc(doc(db,'video_generation_queue',masterId), { status:'complete', currentStep:'complete', updatedAt:serverTimestamp() }, { merge:true });
+            videoStudioAutoStage('compile','done'); videoStudioAutoStatus('AI video is ready to preview or publish.', 'success');
+            videoStudioRenderAutoOutput(_videoStudioState.currentProject, segments);
+            videoStudioRenderProjectActions(_videoStudioState.currentProject);
+            showNotification('AI video generated');
+            return _videoStudioState.currentProject;
+        } catch(error) {
+            await videoStudioUpdateProject(masterId, { status:'failed', errorMessage:error.message || String(error) }).catch(()=>{});
+            await setDoc(doc(db,'video_generation_queue',masterId), { status:'failed', errorMessage:error.message || String(error), updatedAt:serverTimestamp() }, { merge:true }).catch(()=>{});
+            videoStudioAutoStatus(`Generation failed: ${error.message || error}`, 'error');
+            throw error;
+        }
+    }
+    function videoStudioRenderAutoOutput(project, segments=[]) {
+        const output = document.getElementById('videoStudioAutoOutput');
+        if(!output || !project) return;
+        const series = project.isSeries || project.mode === 'series';
+        output.innerHTML = `<div class="video-studio-note"><span class="video-studio-ai-badge">🤖 ${series ? 'SERIES' : 'AI GENERATED'}</span><br><strong>${escHtml(project.topic || 'Untitled lesson')}</strong><br>${escHtml(project.subject || '')} · ${escHtml(project.classLevel || '')} · ${project.language || 'English'} · ${series ? `${project.seriesSegmentCount || segments.length} parts · ${project.seriesTotalTime || project.durationMinutes} min total` : `${project.durationMinutes || Math.round((project.durationSeconds || 0)/60)} min`}</div>${series ? `<div class="video-studio-series-card"><h4>Series playlist</h4>${(segments.length ? segments : project.segments || []).map(item => `<div class="video-studio-series-row"><strong>Part ${item.number || item.seriesSegmentNumber}</strong><span>${escHtml(item.title || `Segment ${item.number || item.seriesSegmentNumber}`)} · ${item.durationMinutes || 0} min</span><button type="button" class="video-studio-mini-btn" data-auto-segment-preview="${escHtml(item.id || '')}">Preview</button></div>`).join('')}</div>` : ''}<div class="video-studio-actions" style="margin-top:10px;"><button type="button" class="video-studio-btn orange" id="videoStudioAutoPreviewBtn">Preview</button><button type="button" class="video-studio-btn primary" id="videoStudioAutoPublishBtn">Publish to schools</button></div>`;
+        output.querySelector('#videoStudioAutoPreviewBtn')?.addEventListener('click', () => videoStudioOpenPreview(project));
+        output.querySelector('#videoStudioAutoPublishBtn')?.addEventListener('click', videoStudioPublishCurrent);
+        output.querySelectorAll('[data-auto-segment-preview]').forEach(button => button.addEventListener('click', async () => {
+            const segment = (segments || project.segments || []).find(item => item.id === button.dataset.autoSegmentPreview);
+            if(segment?.slideshowImages) videoStudioOpenPreview(segment);
+            else if(segment?.id && db) { const snap = await getDoc(doc(db,'video_studio_projects',segment.id)); if(snap.exists()) videoStudioOpenPreview(Object.assign({id:snap.id}, snap.data())); }
+        }));
+    }
+    function videoStudioTwinStatus(message, type='') {
+        const el = document.getElementById('videoTwinConfigStatusText');
+        if(el) { el.textContent = message || ''; el.className = `video-studio-status${type ? ` ${type}` : ''}`; }
+    }
+    async function loadVideoTwinConfig() {
+        if(currentUser?.role !== 'superadmin' || !db) return;
+        const snap = await getDoc(doc(db,'twin_api_config','default')).catch(()=>null);
+        const config = snap?.exists() ? snap.data() : { isEnabled:false, monthlyBudgetUgx:100000, currentMonthSpend:0 };
+        _videoStudioState.twinConfig = config;
+        const status = document.getElementById('videoTwinConfigStatus');
+        if(status) status.innerHTML = config.isEnabled ? '✅ Digital Twin configuration saved. Live API calls remain disabled in this UI-only phase.' : '⚠️ Digital Twin disabled. Configure APIs first.';
+        const budget = document.getElementById('videoTwinBudget'); if(budget) budget.value = String(config.monthlyBudgetUgx ?? 100000);
+        const spend = document.getElementById('videoTwinSpend'); if(spend) spend.textContent = `Current month spend: UGX ${Number(config.currentMonthSpend || 0).toLocaleString()}`;
+        const create = document.getElementById('createVideoTwinBtn'); if(create) create.disabled = true;
+        const enabled = document.getElementById('disableVideoTwinBtn'); if(enabled) enabled.disabled = !config.isEnabled;
+        await loadVideoTwinList();
+    }
+    async function saveVideoTwinConfig() {
+        if(currentUser?.role !== 'superadmin' || !db) return;
+        const eleven = String(document.getElementById('videoTwinElevenKey')?.value || '').trim();
+        const did = String(document.getElementById('videoTwinDidKey')?.value || '').trim();
+        const budget = Math.max(0, Number(document.getElementById('videoTwinBudget')?.value || 100000));
+        const current = _videoStudioState.twinConfig || {};
+        const payload = {
+            isEnabled:Boolean(eleven && did), monthlyBudgetUgx:budget, currentMonthSpend:Number(current.currentMonthSpend || 0),
+            elevenLabsConfigured:Boolean(eleven || current.elevenLabsConfigured), dIdConfigured:Boolean(did || current.dIdConfigured),
+            elevenLabsKeyLast4:eleven ? eleven.slice(-4) : current.elevenLabsKeyLast4 || null,
+            dIdKeyLast4:did ? did.slice(-4) : current.dIdKeyLast4 || null,
+            keyStorage:'server-secret-required', updatedBy:currentUser.uid, updatedAt:serverTimestamp()
+        };
+        await setDoc(doc(db,'twin_api_config','default'), payload, { merge:true });
+        const elevenInput = document.getElementById('videoTwinElevenKey'); if(elevenInput) elevenInput.value = '';
+        const didInput = document.getElementById('videoTwinDidKey'); if(didInput) didInput.value = '';
+        videoStudioTwinStatus(payload.isEnabled ? 'Configuration recorded without storing raw API keys. A secure server integration is still required before live generation.' : 'Enter both keys to mark the configuration as ready.', payload.isEnabled ? 'success' : 'error');
+        await loadVideoTwinConfig();
+    }
+    async function disableVideoTwin() {
+        if(currentUser?.role !== 'superadmin' || !db) return;
+        await setDoc(doc(db,'twin_api_config','default'), { isEnabled:false, disabledAt:serverTimestamp(), disabledBy:currentUser.uid }, { merge:true });
+        await loadVideoTwinConfig();
+        videoStudioTwinStatus('Digital Twin disabled.', 'success');
+    }
+    async function createVideoTwinJob() {
+        if(currentUser?.role !== 'superadmin' || !db) return;
+        const config = _videoStudioState.twinConfig || {};
+        if(!config.isEnabled) { videoStudioTwinStatus('Enable a secure backend configuration before creating a Twin.','error'); return; }
+        const teacherName = prompt('Teacher name for the consent record:');
+        if(!teacherName) return;
+        await addDoc(collection(db,'twin_generation_jobs'), { teacherName, status:'awaiting_secure_backend', requiresConsent:true, liveApiCallsEnabled:false, createdBy:currentUser.uid, createdAt:serverTimestamp() });
+        const status = document.getElementById('videoTwinCreationStatus');
+        if(status) { status.textContent = 'Twin request saved. Upload signed consent and sample media through the secure backend before processing.'; status.className = 'video-studio-status success'; }
+    }
+    async function loadVideoTwinList() {
+        const list = document.getElementById('videoTwinList');
+        if(!list || !db || currentUser?.role !== 'superadmin') return;
+        const snap = await getDocs(query(collection(db,'teacher_twins'), orderBy('createdAt','desc'), limit(50))).catch(()=>getDocs(collection(db,'teacher_twins')));
+        const twins = snap.docs.map(item => Object.assign({ id:item.id }, item.data()));
+        _videoStudioState.twins = twins;
+        if(!twins.length) { list.innerHTML = '<div class="video-studio-empty">No digital twins configured.</div>'; return; }
+        list.innerHTML = twins.map(twin => `<div class="video-studio-twin-card"><div class="video-studio-twin-avatar">👤</div><div class="video-studio-twin-card-copy"><strong>${escHtml(twin.teacherName || 'Teacher')}</strong><small>${escHtml(twin.subject || 'Subject')} · <b>${escHtml(twin.status || 'training')}</b><br>${Number(twin.videosGenerated || 0)} lessons · ${twin.consentSignedAt ? 'Consent uploaded' : 'Consent pending'}</small></div><button type="button" class="video-studio-mini-btn" data-twin-disable="${escHtml(twin.id)}">${twin.status === 'disabled' ? 'Enable' : 'Disable'}</button><button type="button" class="video-studio-mini-btn" data-twin-delete="${escHtml(twin.id)}">Delete</button></div>`).join('');
+        list.querySelectorAll('[data-twin-disable]').forEach(button => button.onclick = async () => {
+            const twin = twins.find(item => item.id === button.dataset.twinDisable);
+            if(twin) await updateDoc(doc(db,'teacher_twins',twin.id), { status:twin.status === 'disabled' ? 'ready' : 'disabled', updatedAt:serverTimestamp() });
+            loadVideoTwinList();
+        });
+        list.querySelectorAll('[data-twin-delete]').forEach(button => button.onclick = async () => {
+            if(!confirm('Delete this digital twin record?')) return;
+            await deleteDoc(doc(db,'teacher_twins',button.dataset.twinDelete)); loadVideoTwinList();
+        });
+    }
+    function downloadTwinConsentTemplate() {
+        const html = `<!doctype html><html><head><meta charset="utf-8"><title>APSHULE Digital Teacher Twin Consent</title><style>body{font:14px Arial;padding:40px;line-height:1.5}h1{color:#4B2E9E}p{margin:20px 0}.line{border-bottom:1px solid #333;display:inline-block;min-width:260px}</style></head><body><h1>APSHULE Digital Teacher Twin Consent</h1><p>Teacher name: <span class="line"></span></p><p>School: <span class="line"></span></p><p>Subject: <span class="line"></span></p><p>I consent to APSHULE using my approved voice and likeness to create educational digital twin lessons. I understand how generated media is used, stored, reviewed, and removed on request.</p><p>Signature: <span class="line"></span></p><p>Date: <span class="line"></span></p><p><small>Print this page or save it as PDF, sign it, and upload it through the secure admin workflow.</small></p></body></html>`;
+        const blob = new Blob([html], { type:'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url; link.download = 'appshule-digital-twin-consent-template.html'; link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    async function loadTeacherTwinAccount() {
+        const section = document.getElementById('teacherTwinAccountSection');
+        const body = document.getElementById('teacherTwinAccountBody');
+        if(!section || !body || !currentUser || currentUser.role !== 'teacher' || !db) { if(section) section.style.display = 'none'; return; }
+        section.style.display = 'block';
+        const snap = await getDocs(query(collection(db,'teacher_twins'), where('teacherId','==',currentUser.uid), limit(5))).catch(()=>null);
+        const twin = snap?.docs?.[0]?.data();
+        if(!twin) { body.innerHTML = '<div class="video-studio-empty">No digital twin is linked to this account.</div>'; return; }
+        body.innerHTML = `<div class="video-studio-note">Status: <strong>${escHtml(twin.status || 'ready')}</strong><br>Videos generated: ${Number(twin.videosGenerated || 0)}<br><button type="button" class="video-studio-mini-btn" id="requestTwinRemovalBtn">❌ Request removal</button></div>`;
+        document.getElementById('requestTwinRemovalBtn')?.addEventListener('click', async () => {
+            await addDoc(collection(db,'notifications'), { targetRole:'superadmin', type:'twin_removal_request', title:'Digital Twin removal requested', message:`${currentUser.name || currentUser.email} requested removal of their Digital Twin.`, createdAt:serverTimestamp(), read:false }).catch(()=>{});
+            showNotification('Removal request sent to the Super Admin');
+        });
+    }
+    function videoStudioCurrentMonthKey() { return new Date().toISOString().slice(0,7); }
+    function videoStudioModeLabel(item) {
+        if(item.isSeries || item.mode === 'series') return '📚 Series';
+        if(item.mode === 'ai_auto') return '🤖 AI Auto';
+        if(item.mode === 'teacher_twin') return '👤 Twin';
+        return '🎨 Cartoon';
+    }
+    function videoStudioFirstImage(item) {
+        const image = item?.slideshowImages?.[0];
+        return image?.url || image?.imageDataUrl || '';
+    }
+    function videoStudioShare(item) {
+        if(!item) return;
+        const link = `${location.origin}${location.pathname}#video/${encodeURIComponent(item.projectId || item.id)}`;
+        const data = { title:item.topic || 'APSHULE video lesson', text:`Watch ${item.topic || 'this lesson'} on APSHULE`, url:link };
+        if(navigator.share) navigator.share(data).then(()=>showNotification('Video link shared')).catch(()=>{});
+        else navigator.clipboard?.writeText(link).then(()=>showNotification('✅ Link copied')).catch(()=>showNotification(link,'info'));
+    }
+    async function videoStudioDownloadItem(item, button) {
+        if(!item) return;
+        if(button) button.disabled = true;
+        try {
+            if(item.isSeries || item.mode === 'series') {
+                const ids = item.seriesChildIds || (item.segments || []).map(segment => segment.id);
+                const children = [];
+                for(const id of ids) {
+                    const snap = await getDoc(doc(db,'video_library',id)).catch(()=>null);
+                    if(snap?.exists()) children.push(Object.assign({id:snap.id}, snap.data()));
+                }
+                await videoStudioCachePublished(item);
+                for(const child of children) await videoStudioCachePublished(child);
+            } else await videoStudioCachePublished(item);
+            await videoStudioRenderDownloads();
+            showNotification('Video saved for offline playback');
+        } catch(error) { showNotification(error.message || 'Could not download video','error'); }
+        finally { if(button) button.disabled = false; }
+    }
+    function videoStudioUserMatches(item, role) {
+        const user = currentUser || {};
+        if(item.audience === 'selected' && user.schoolId && !(item.schoolIds || []).includes(user.schoolId) && role !== 'superadmin') return false;
+        if(role === 'student' && user.classLevel && item.classLevel && item.classLevel !== user.classLevel) return false;
+        return true;
+    }
+    async function videoStudioLoadPublishedForUser(role) {
+        if(!currentUser) return [];
+        if(!navigator.onLine || offlineSession) {
+            const cached = await Offline?.listVideoStudio().catch(()=>[]) || [];
+            return cached.filter(item => videoStudioUserMatches(item, role));
+        }
+        const snap = await getDocs(query(collection(db,'video_library'), orderBy('publishedAt','desc'), limit(200))).catch(()=>getDocs(collection(db,'video_library')));
+        return snap.docs.map(item => Object.assign({id:item.id}, item.data())).filter(item => videoStudioUserMatches(item, role));
+    }
+    function videoStudioSubjectOptions(containerId, items) {
+        const select = document.getElementById(containerId);
+        if(!select) return;
+        const current = select.value;
+        const subjects = [...new Set(items.map(item => item.subject).filter(Boolean))].sort();
+        select.innerHTML = '<option value="">All subjects</option>' + subjects.map(subject => `<option value="${escHtml(subject)}">${escHtml(subject)}</option>`).join('');
+        if([...select.options].some(option => option.value === current)) select.value = current;
+    }
+    function videoStudioCard(item, role='student') {
+        const image = videoStudioFirstImage(item);
+        const series = item.isSeries || item.mode === 'series';
+        const duration = series ? `${item.seriesSegmentCount || (item.segments || []).length || 0} parts · ${item.seriesTotalTime || item.durationMinutes || 0} min` : `${item.durationMinutes || Math.round((item.durationSeconds || 0)/60) || 1} min`;
+        const actions = role === 'teacher'
+            ? `<button type="button" class="video-studio-mini-btn primary" data-user-preview="${escHtml(item.id)}">▶ Watch</button><button type="button" class="video-studio-mini-btn" data-assign-video="${escHtml(item.id)}">📌 Assign</button><button type="button" class="video-studio-mini-btn" data-download-video="${escHtml(item.id)}">📥 Download</button><button type="button" class="video-studio-mini-btn" data-share-video="${escHtml(item.id)}">📤 Share</button>`
+            : `<button type="button" class="video-studio-mini-btn primary" data-user-preview="${escHtml(item.id)}">${series ? '▶ Play all' : '▶ Play'}</button><button type="button" class="video-studio-mini-btn" data-download-video="${escHtml(item.id)}">📥 Download${series ? ' all' : ''}</button><button type="button" class="video-studio-mini-btn" data-share-video="${escHtml(item.id)}">📤 Share</button>`;
+        return `<article class="video-studio-user-card"><img class="video-studio-user-thumb" src="${image}" alt="${escHtml(item.topic || 'Video lesson')} thumbnail" loading="lazy"><strong>${escHtml(item.topic || 'Untitled lesson')}</strong><small>${videoStudioModeLabel(item)} · ${duration} · ${escHtml(item.language || 'English')}<br>${escHtml(item.subject || '')} · ${escHtml(item.classLevel || '')} · ${Number(item.views || 0)} views</small><div class="video-studio-user-actions">${actions}</div></article>`;
+    }
+    function videoStudioWireUserCards(container, items, role) {
+        container.querySelectorAll('[data-user-preview]').forEach(button => button.onclick = async () => {
+            const item = items.find(video => video.id === button.dataset.userPreview);
+            if(item?.isSeries || item?.mode === 'series') videoStudioOpenPlaylist(item);
+            else videoStudioOpenPreview(item);
+        });
+        container.querySelectorAll('[data-download-video]').forEach(button => button.onclick = () => videoStudioDownloadItem(items.find(item => item.id === button.dataset.downloadVideo), button));
+        container.querySelectorAll('[data-share-video]').forEach(button => button.onclick = () => videoStudioShare(items.find(item => item.id === button.dataset.shareVideo)));
+        container.querySelectorAll('[data-assign-video]').forEach(button => button.onclick = () => videoStudioOpenAssign(items.find(item => item.id === button.dataset.assignVideo)));
+    }
+    function videoStudioApplyStudentFilters() {
+        const section = document.getElementById('studentVideoTutorialsSection');
+        if(!section) return;
+        const source = _videoStudioState.userLibrary || [];
+        const search = String(document.getElementById('studentVideoSearch')?.value || '').toLowerCase().trim();
+        const mode = document.getElementById('studentVideoModeFilter')?.value || '';
+        const language = document.getElementById('studentVideoLanguageFilter')?.value || '';
+        const subject = document.getElementById('studentVideoSubjectFilter')?.value || '';
+        const items = source.filter(item => (!search || `${item.topic || ''} ${item.subject || ''}`.toLowerCase().includes(search)) && (!mode || item.mode === mode || (mode === 'series' && item.isSeries)) && (!language || item.language === language) && (!subject || item.subject === subject));
+        const grid = document.getElementById('studentVideoGrid');
+        if(grid) grid.innerHTML = items.length ? items.map(item => videoStudioCard(item,'student')).join('') : '<div class="video-studio-empty" style="grid-column:1/-1;">No video lessons match your filters.</div>';
+        if(grid) videoStudioWireUserCards(grid, items, 'student');
+    }
+    async function loadStudentVideoLibrary() {
+        const section = document.getElementById('studentVideoTutorialsSection');
+        if(!section || !currentUser || currentUser.role === 'teacher' || currentUser.role === 'school' || currentUser.role === 'superadmin') { if(section) section.style.display='none'; return; }
+        section.style.display = 'block';
+        _videoStudioState.userLibrary = await videoStudioLoadPublishedForUser('student');
+        videoStudioSubjectOptions('studentVideoSubjectFilter', _videoStudioState.userLibrary);
+        videoStudioApplyStudentFilters();
+        await loadStudentAssignedVideos();
+        await loadStudentVideoRecommendations();
+    }
+    async function loadStudentAssignedVideos() {
+        const container = document.getElementById('studentAssignedVideos');
+        if(!container || !currentUser || !db || (!navigator.onLine && !offlineSession)) return;
+        const classId = currentUser.classLevel || currentUser.classId || currentUser.class || '';
+        const snap = await getDocs(query(collection(db,'video_assignments'), where('classId','==',classId), orderBy('assignedAt','desc'), limit(5))).catch(()=>null);
+        const assignments = snap?.docs?.map(item => Object.assign({id:item.id}, item.data())) || [];
+        if(!assignments.length) { container.style.display='none'; return; }
+        container.style.display='block';
+        container.innerHTML = `<strong>📌 Assigned by your teacher</strong>${assignments.map(item => `<div class="video-studio-download-row"><span>${escHtml(item.topic || 'Assigned lesson')}<br><small>${escHtml(item.teacherName || 'Teacher')} · ${item.assignedAt?.toDate ? item.assignedAt.toDate().toLocaleDateString() : ''}</small></span><button type="button" class="video-studio-mini-btn primary" data-assigned-video="${escHtml(item.videoId || '')}">Watch now</button></div>`).join('')}`;
+        container.querySelectorAll('[data-assigned-video]').forEach(button => button.onclick = () => {
+            const item = _videoStudioState.userLibrary.find(video => video.id === button.dataset.assignedVideo);
+            if(item) videoStudioOpenPreview(item);
+        });
+    }
+    async function loadStudentVideoRecommendations() {
+        const container = document.getElementById('studentVideoRecommendations');
+        if(!container) return;
+        const weak = currentUser?.weakAreas || [];
+        const items = _videoStudioState.userLibrary.filter(item => weak.includes(item.subject)).slice(0,3);
+        const recommendations = items.length ? items : _videoStudioState.userLibrary.slice().sort((a,b)=>Number(b.views||0)-Number(a.views||0)).slice(0,3);
+        if(!recommendations.length) { container.style.display='none'; return; }
+        container.style.display='block';
+        container.innerHTML = `<strong style="font-size:11px;color:#4B2E9E;">✨ Recommended for you</strong><div class="video-studio-user-grid" style="margin-top:7px;">${recommendations.map(item => videoStudioCard(item,'student')).join('')}</div>`;
+        videoStudioWireUserCards(container, recommendations, 'student');
+    }
+    function videoStudioTeacherMatches(item) {
+        const subject = document.getElementById('teacherVideoSubjectFilter')?.value || '';
+        const classLevel = document.getElementById('teacherVideoClassFilter')?.value || '';
+        const language = document.getElementById('teacherVideoLanguageFilter')?.value || '';
+        const mine = subject === '__mine';
+        const subjects = String(currentUser?.subject || currentUser?.subjects || '').split(/[,;]/).map(value=>value.trim()).filter(Boolean);
+        return (!mine && (!subject || item.subject === subject) || mine && subjects.includes(item.subject)) && (!classLevel || item.classLevel === classLevel) && (!language || item.language === language);
+    }
+    async function loadTeacherVideoLibrary() {
+        const section = document.getElementById('teacherVideoLibrarySection');
+        if(!section || currentUser?.role !== 'teacher') { if(section) section.style.display='none'; return; }
+        section.style.display='block';
+        _videoStudioState.teacherLibrary = await videoStudioLoadPublishedForUser('teacher');
+        videoStudioSubjectOptions('teacherVideoSubjectFilter', _videoStudioState.teacherLibrary);
+        const classSelect = document.getElementById('teacherVideoClassFilter');
+        if(classSelect) classSelect.innerHTML = '<option value="">All classes</option>' + videoStudioClassOptions().map(item=>`<option value="${item.value}">${escHtml(item.label)}</option>`).join('');
+        videoStudioApplyTeacherFilters();
+    }
+    function videoStudioApplyTeacherFilters() {
+        const grid = document.getElementById('teacherVideoGrid');
+        if(!grid) return;
+        const items = (_videoStudioState.teacherLibrary || []).filter(videoStudioTeacherMatches);
+        grid.innerHTML = items.length ? items.map(item => videoStudioCard(item,'teacher')).join('') : '<div class="video-studio-empty" style="grid-column:1/-1;">No published videos match these filters.</div>';
+        videoStudioWireUserCards(grid, items, 'teacher');
+    }
+    async function videoStudioOpenAssign(item) {
+        if(!item || currentUser?.role !== 'teacher') return;
+        const modal = document.getElementById('videoAssignModal');
+        const select = document.getElementById('videoAssignClass');
+        if(!modal || !select) return;
+        select.innerHTML = videoStudioClassOptions().map(option => `<option value="${option.value}">${escHtml(option.label)}</option>`).join('');
+        document.getElementById('videoAssignId').value = item.id;
+        document.getElementById('videoAssignTitle').textContent = `Assign: ${item.topic || 'Video lesson'}`;
+        document.getElementById('videoAssignStatus').textContent = '';
+        modal.classList.add('show');
+    }
+    async function submitVideoAssignment(event) {
+        event.preventDefault();
+        const videoId = document.getElementById('videoAssignId')?.value;
+        const classId = document.getElementById('videoAssignClass')?.value;
+        const item = (_videoStudioState.teacherLibrary || []).find(video => video.id === videoId);
+        if(!videoId || !classId || !item || !db) return;
+        const message = document.getElementById('videoAssignMessage')?.value || '';
+        const status = document.getElementById('videoAssignStatus');
+        try {
+            await addDoc(collection(db,'video_assignments'), { videoId, topic:item.topic, classId, subject:item.subject, teacherId:currentUser.uid, teacherName:currentUser.name, message, assignedAt:serverTimestamp() });
+            await addDoc(collection(db,'notifications'), { targetRole:'student', classId, type:'video_assignment', title:`New video from ${currentUser.name || 'your teacher'}`, message:message || `Watch ${item.topic}`, videoId, createdAt:serverTimestamp(), read:false }).catch(()=>{});
+            if(status) { status.textContent='Assigned to the class.'; status.className='video-studio-status success'; }
+        } catch(error) { if(status) { status.textContent=error.message || 'Could not assign video'; status.className='video-studio-status error'; } }
+    }
+    async function videoStudioRenderDownloads() {
+        const list = document.getElementById('videoDownloadsList');
+        const summary = document.getElementById('videoDownloadsSummary');
+        if(!list || !Offline) return;
+        const items = await Offline.listVideoStudio().catch(()=>[]);
+        const bytes = items.reduce((sum,item)=>sum + Number(item.sizeBytes || JSON.stringify(item).length), 0);
+        if(summary) summary.textContent = `Storage used: ${formatOfflineBytes(bytes)} · ${items.length} downloaded lesson${items.length === 1 ? '' : 's'}`;
+        if(!items.length) { list.innerHTML='<div class="video-studio-empty">No offline videos downloaded yet.</div>'; return; }
+        list.innerHTML = items.map(item => `<div class="video-studio-download-row"><span><strong>${escHtml(item.topic || 'Video lesson')}</strong><br>${videoStudioModeLabel(item)} · ${escHtml(item.language || 'English')} · ${formatOfflineBytes(item.sizeBytes || JSON.stringify(item).length)}</span><button type="button" class="video-studio-mini-btn" data-delete-download="${escHtml(item.libraryId)}">Delete</button></div>`).join('');
+        list.querySelectorAll('[data-delete-download]').forEach(button => button.onclick = async () => { await Offline.deleteVideoStudio(button.dataset.deleteDownload); videoStudioRenderDownloads(); });
+    }
+    async function clearVideoDownloads() {
+        if(!Offline || !confirm('Clear all downloaded videos from this device?')) return;
+        const items = await Offline.listVideoStudio().catch(()=>[]);
+        for(const item of items) await Offline.deleteVideoStudio(item.libraryId);
+        videoStudioRenderDownloads();
+        showNotification('All video downloads cleared');
+    }
+    async function videoStudioResolveSeriesChildren(item) {
+        if(!item) return [];
+        const ids = item.seriesLibraryIds || item.seriesChildIds || (item.segments || []).map(segment => segment.id);
+        if(!ids.length) return [];
+        const children = [];
+        for(const id of ids) {
+            const local = (_videoStudioState.library || []).find(video => video.id === id);
+            if(local) { children.push(local); continue; }
+            const snap = await getDoc(doc(db,'video_library',id)).catch(()=>null);
+            if(snap?.exists()) children.push(Object.assign({id:snap.id}, snap.data()));
+        }
+        return children.sort((a,b)=>Number(a.seriesSegmentNumber||0)-Number(b.seriesSegmentNumber||0));
+    }
+    function videoStudioOpenPlaylist(item) {
+        const modal = document.getElementById('videoPlaylistModal');
+        const body = document.getElementById('videoPlaylistBody');
+        if(!modal || !body || !item) return;
+        body.innerHTML = `<div class="video-studio-note"><strong>${escHtml(item.topic || 'Series lesson')}</strong><br>${item.seriesSegmentCount || (item.segments || []).length || 0} parts · ${item.seriesTotalTime || item.durationMinutes || 0} minutes</div><div id="videoPlaylistRows" class="video-studio-series-card"><div class="video-studio-empty">Loading segments…</div></div><div class="video-studio-actions" style="margin-top:10px;"><button type="button" id="playAllVideoSeriesBtn" class="video-studio-btn primary">▶ Play all</button><button type="button" id="downloadAllVideoSeriesBtn" class="video-studio-btn">📥 Download all</button></div>`;
+        modal.classList.add('show');
+        videoStudioResolveSeriesChildren(item).then(children => {
+            const rows = document.getElementById('videoPlaylistRows');
+            if(!rows) return;
+            rows.innerHTML = children.length ? children.map((child,index) => `<div class="video-studio-series-row"><strong>Part ${index+1}</strong><span>${escHtml(child.segmentTitle || child.topic || `Segment ${index+1}`)} · ${child.durationMinutes || 0} min ✅</span><button type="button" class="video-studio-mini-btn" data-play-series-part="${escHtml(child.id)}">Play</button></div>`).join('') : '<div class="video-studio-empty">No published segments found yet.</div>';
+            rows.querySelectorAll('[data-play-series-part]').forEach(button => button.onclick = () => { const child = children.find(segment => segment.id === button.dataset.playSeriesPart); if(child) { document.getElementById('videoPlaylistModal').classList.remove('show'); videoStudioOpenPreview(child); } });
+            document.getElementById('playAllVideoSeriesBtn')?.addEventListener('click', () => { modal.classList.remove('show'); videoStudioPlaySeries(Object.assign({}, item, { seriesChildren:children })); });
+            document.getElementById('downloadAllVideoSeriesBtn')?.addEventListener('click', () => videoStudioDownloadItem(Object.assign({}, item, { seriesChildren:children })));
+        });
+    }
+    function videoStudioPlaySeries(item) {
+        if(!item) return;
+        const start = children => {
+            _videoStudioState.playlist = children;
+            _videoStudioState.playlistIndex = 0;
+            if(children[0]) videoStudioOpenPreview(children[0]);
+        };
+        if(item.seriesChildren?.length) start(item.seriesChildren);
+        else videoStudioResolveSeriesChildren(item).then(start);
+    }
+    function videoStudioAdvancePlaylist() {
+        const playlist = _videoStudioState.playlist || [];
+        if(!playlist.length || _videoStudioState.playlistIndex >= playlist.length - 1) { _videoStudioState.playlist = []; return; }
+        _videoStudioState.playlistIndex += 1;
+        const next = playlist[_videoStudioState.playlistIndex];
+        videoStudioOpenPreview(next);
+        showNotification(`Next: Part ${_videoStudioState.playlistIndex + 1}`);
+    }
+    async function videoStudioOpenAnalytics(item) {
+        const modal = document.getElementById('videoAnalyticsModal');
+        const body = document.getElementById('videoAnalyticsBody');
+        if(!modal || !body || !item) return;
+        modal.classList.add('show');
+        body.innerHTML = '<div class="video-studio-empty">Loading analytics…</div>';
+        let views = Number(item.views || 0), completed = 0, unique = 0, devices = {};
+        if(db) {
+            const snap = await getDocs(query(collection(db,'videoViews'), where('videoId','==',item.id), limit(1000))).catch(()=>null);
+            const docs = snap?.docs?.map(docSnap => docSnap.data()) || [];
+            views = Math.max(views, docs.length); unique = new Set(docs.map(view => view.userId).filter(Boolean)).size; completed = docs.filter(view => view.completed).length;
+            devices = docs.reduce((acc,view) => { const device = String(view.deviceType || '').toLowerCase().includes('mobile') ? 'Phone' : String(view.deviceType || '').toLowerCase().includes('tablet') ? 'Tablet' : 'Desktop'; acc[device]=(acc[device]||0)+1; return acc; }, {});
+        }
+        body.innerHTML = `<div class="video-studio-note"><strong>${escHtml(item.topic || 'Video lesson')}</strong><br>${escHtml(item.subject || '')} · ${escHtml(item.classLevel || '')} · ${escHtml(item.language || 'English')}</div><div class="video-studio-stats-grid"><div class="video-studio-stat"><strong>${views}</strong><span>Total views</span></div><div class="video-studio-stat"><strong>${unique}</strong><span>Unique viewers</span></div><div class="video-studio-stat"><strong>${views ? Math.round(completed / views * 100) : 0}%</strong><span>Completion</span></div><div class="video-studio-stat"><strong>${Number(item.views || 0)}</strong><span>Published count</span></div></div><p style="font-size:11px;color:#756d82;">Device breakdown: ${Object.entries(devices).map(([key,value]) => `${key} ${value}`).join(' · ') || 'No view detail yet'}</p><button type="button" id="downloadVideoAnalyticsBtn" class="video-studio-btn">📥 Download analytics CSV</button>`;
+        document.getElementById('downloadVideoAnalyticsBtn')?.addEventListener('click', () => {
+            const csv = `video,subject,class,totalViews,uniqueViewers,completionPercent\n"${String(item.topic || '').replace(/"/g,'""')}","${item.subject || ''}","${item.classLevel || ''}",${views},${unique},${views ? Math.round(completed / views * 100) : 0}`;
+            const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); link.download = 'video-analytics.csv'; link.click();
+        });
+    }
+    async function loadVideoStudioStats() {
+        const body = document.getElementById('videoStudioStatsBody');
+        if(!body || currentUser?.role !== 'superadmin' || !db) return;
+        const month = videoStudioCurrentMonthKey();
+        const statsSnap = await getDoc(doc(db,'video_generation_stats',month)).catch(()=>null);
+        const stats = statsSnap?.exists() ? statsSnap.data() : {};
+        const projects = _videoStudioState.library.length ? _videoStudioState.library : await loadVideoStudioLibrary();
+        const modeCounts = projects.reduce((acc,item)=>{ const key=item.mode || 'cartoon'; acc[key]=(acc[key]||0)+1; return acc; }, {});
+        const spend = Number(stats.estimatedCostUgx || projects.reduce((sum,item)=>sum + Number(item.estimatedCostUgx || 0),0));
+        const budget = Number(_videoStudioState.twinConfig?.monthlyBudgetUgx || 100000);
+        body.innerHTML = `<h3 style="margin:0;color:#34206f;">📊 This month</h3><div class="video-studio-stats-grid"><div class="video-studio-stat"><strong>${Number(stats.videosGenerated || projects.length)}</strong><span>Videos generated</span></div><div class="video-studio-stat"><strong>UGX ${spend.toLocaleString()}</strong><span>Estimated cost</span></div><div class="video-studio-stat"><strong>${modeCounts.cartoon || 0}</strong><span>Cartoon</span></div><div class="video-studio-stat"><strong>${(modeCounts.ai_auto || 0) + (modeCounts.series || 0) + (modeCounts.teacher_twin || 0)}</strong><span>AI / Twin</span></div></div><div class="video-studio-note">Monthly budget: UGX ${budget.toLocaleString()} · Current spend: UGX ${spend.toLocaleString()} (${budget ? Math.round(spend / budget * 100) : 0}%)</div><div class="video-studio-budget" style="margin-top:10px;"><div style="width:${Math.min(100,budget ? spend / budget * 100 : 0)}%"></div></div><p style="font-size:11px;color:#756d82;">Top lessons by views: ${projects.slice().sort((a,b)=>Number(b.views||0)-Number(a.views||0)).slice(0,3).map(item=>`${escHtml(item.topic || 'Untitled')} (${Number(item.views || 0)})`).join(' · ') || 'No published lessons yet'}.</p>`;
+    }
+    async function videoStudioBulkAction(action) {
+        if(currentUser?.role !== 'superadmin') return;
+        const ids = [...document.querySelectorAll('[data-library-select]:checked')].map(input => input.dataset.librarySelect);
+        if(!ids.length) { showNotification('Select at least one lesson first','error'); return; }
+        if(action === 'delete' && !confirm(`Delete ${ids.length} selected lesson${ids.length === 1 ? '' : 's'}?`)) return;
+        for(const id of ids) {
+            const item = _videoStudioState.library.find(video => video.id === id);
+            if(!item) continue;
+            if(action === 'publish') await updateDoc(doc(db,'video_library',id), { audience:'all', schoolIds:[], publishedAt:serverTimestamp() }).catch(()=>{});
+            if(action === 'delete') {
+                await deleteDoc(doc(db,'video_library',id)).catch(()=>{});
+                if(item.projectId) await deleteDoc(doc(db,'video_studio_projects',item.projectId)).catch(()=>{});
+            }
+        }
+        await loadVideoStudioLibrary();
+        showNotification(action === 'publish' ? 'Selected lessons published to all schools' : 'Selected lessons deleted');
+    }
     function videoStudioSwitchTab(name) {
         document.querySelectorAll('[data-video-studio-tab]').forEach(tab => tab.classList.toggle('active', tab.dataset.videoStudioTab === name));
         document.querySelectorAll('.video-studio-pane').forEach(pane => pane.classList.toggle('active', pane.id === `videoStudio${name.charAt(0).toUpperCase()+name.slice(1)}Pane`));
         if(name === 'library') loadVideoStudioLibrary().catch(error => showNotification(error.message || 'Could not load library','error'));
+        if(name === 'twin') loadVideoTwinConfig().catch(error => videoStudioTwinStatus(error.message || 'Could not load Twin settings','error'));
+        if(name === 'stats') loadVideoStudioStats().catch(error => showNotification(error.message || 'Could not load stats','error'));
     }
     async function openVideoStudio() {
         if(currentUser?.role !== 'superadmin') { showNotification('Only Super Admins can open Video Studio','error'); return; }
@@ -6155,6 +6933,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         videoStudioRenderSchoolList();
         await loadVideoStudioAssets().catch(error => videoStudioSetStatus(error.message || 'Could not load assets','error'));
         await loadVideoStudioLibrary().catch(()=>{});
+        await loadVideoTwinConfig().catch(()=>{});
+        await videoStudioLoadCostTracker().catch(()=>{});
     }
     function closeVideoStudio() {
         document.getElementById('videoStudioModal')?.classList.remove('show');
@@ -6174,6 +6954,17 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             document.getElementById('videoStudioProgress').style.display = 'grid';
             try { await videoStudioGenerate(values); } catch(_) {} finally { if(button) button.disabled = false; }
         });
+        document.getElementById('videoStudioAutoForm')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = document.getElementById('generateVideoStudioAutoBtn');
+            if(button) button.disabled = true;
+            try { await videoStudioGenerateAuto(videoStudioAutoValues()); } catch(error) { videoStudioAutoStatus(error.message || 'Could not generate AI video','error'); } finally { if(button) button.disabled = false; }
+        });
+        document.querySelectorAll('input[name="durationMode"]').forEach(input => input.addEventListener('change', () => {
+            const series = document.querySelector('input[name="durationMode"]:checked')?.value === 'series';
+            document.getElementById('videoStudioAutoSingleOptions').style.display = series ? 'none' : 'block';
+            document.getElementById('videoStudioAutoSeriesOptions').style.display = series ? 'grid' : 'none';
+        }));
         document.querySelectorAll('[data-video-studio-tab]').forEach(tab => tab.addEventListener('click', () => videoStudioSwitchTab(tab.dataset.videoStudioTab)));
         document.getElementById('openVideoStudioBtn')?.addEventListener('click', openVideoStudio);
         document.getElementById('closeVideoStudioBtn')?.addEventListener('click', closeVideoStudio);
@@ -6189,12 +6980,30 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('publishVideoStudioBtn')?.addEventListener('click', videoStudioPublishCurrent);
         document.getElementById('deleteVideoStudioBtn')?.addEventListener('click', () => videoStudioDeleteProject(_videoStudioState.currentProject));
         document.getElementById('refreshVideoStudioLibraryBtn')?.addEventListener('click', () => loadVideoStudioLibrary());
-        ['videoStudioLibrarySearch','videoStudioLibraryModeFilter','videoStudioLibraryLanguageFilter','videoStudioLibrarySubjectFilter','videoStudioLibrarySort'].forEach(id => document.getElementById(id)?.addEventListener('input', videoStudioRenderLibrary));
+        ['videoStudioLibrarySearch','videoStudioLibraryModeFilter','videoStudioLibraryLanguageFilter','videoStudioLibrarySubjectFilter','videoStudioLibraryStatusFilter','videoStudioLibrarySort'].forEach(id => document.getElementById(id)?.addEventListener('input', videoStudioRenderLibrary));
+        document.getElementById('bulkPublishVideoStudioBtn')?.addEventListener('click', () => videoStudioBulkAction('publish'));
+        document.getElementById('bulkDeleteVideoStudioBtn')?.addEventListener('click', () => videoStudioBulkAction('delete'));
         document.getElementById('loadMoreVideoStudioBtn')?.addEventListener('click', () => { _videoStudioState.libraryVisible += 20; videoStudioRenderLibrary(); });
         document.getElementById('closeVideoStudioPreviewBtn')?.addEventListener('click', videoStudioClosePreview);
         document.getElementById('videoStudioPlayPauseBtn')?.addEventListener('click', videoStudioStartPreview);
         document.getElementById('videoStudioRestartBtn')?.addEventListener('click', videoStudioRestartPreview);
         document.getElementById('videoStudioPreviewNextBtn')?.addEventListener('click', videoStudioNextPreview);
+        document.getElementById('saveVideoTwinConfigBtn')?.addEventListener('click', () => saveVideoTwinConfig().catch(error => videoStudioTwinStatus(error.message || 'Could not save configuration','error')));
+        document.getElementById('disableVideoTwinBtn')?.addEventListener('click', () => disableVideoTwin().catch(error => videoStudioTwinStatus(error.message || 'Could not disable Twin','error')));
+        document.getElementById('createVideoTwinBtn')?.addEventListener('click', () => createVideoTwinJob().catch(error => videoStudioTwinStatus(error.message || 'Could not create Twin job','error')));
+        document.getElementById('downloadTwinConsentBtn')?.addEventListener('click', downloadTwinConsentTemplate);
+        document.getElementById('testVideoTwinElevenBtn')?.addEventListener('click', () => videoStudioTwinStatus('Test skipped: secure server integration is not configured. Raw keys are never sent from this browser.','error'));
+        document.getElementById('testVideoTwinDidBtn')?.addEventListener('click', () => videoStudioTwinStatus('Test skipped: secure server integration is not configured. Raw keys are never sent from this browser.','error'));
+        document.getElementById('closeVideoAnalyticsBtn')?.addEventListener('click', () => document.getElementById('videoAnalyticsModal')?.classList.remove('show'));
+        document.getElementById('closeVideoAssignBtn')?.addEventListener('click', () => document.getElementById('videoAssignModal')?.classList.remove('show'));
+        document.getElementById('closeVideoPlaylistBtn')?.addEventListener('click', () => document.getElementById('videoPlaylistModal')?.classList.remove('show'));
+        document.getElementById('videoAssignForm')?.addEventListener('submit', submitVideoAssignment);
+        ['studentVideoSearch','studentVideoModeFilter','studentVideoLanguageFilter','studentVideoSubjectFilter'].forEach(id => document.getElementById(id)?.addEventListener('input', videoStudioApplyStudentFilters));
+        ['teacherVideoSubjectFilter','teacherVideoClassFilter','teacherVideoLanguageFilter'].forEach(id => document.getElementById(id)?.addEventListener('input', videoStudioApplyTeacherFilters));
+        document.getElementById('refreshVideoStudioStatsBtn')?.addEventListener('click', () => loadVideoStudioStats());
+        document.getElementById('clearVideoDownloadsBtn')?.addEventListener('click', clearVideoDownloads);
+        videoStudioRenderDownloads().catch(()=>{});
+        loadTeacherTwinAccount().catch(()=>{});
     }
 
     async function complianceApi(path, options={}) {
@@ -10589,6 +11398,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         renderEnrolledList();
         renderEventsTicker();
         if(isTeacher) loadTeacherDashboard();
+        loadStudentVideoLibrary().catch(() => {});
+        loadTeacherVideoLibrary().catch(() => {});
+        loadTeacherTwinAccount().catch(() => {});
+        videoStudioRenderDownloads().catch(() => {});
         // Request browser notification permission (non-blocking)
         if(Notification && Notification.permission === 'default') {
             Notification.requestPermission().catch(()=>{});
@@ -10820,7 +11633,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(!match) return;
             const key = `${match[1].toUpperCase() === 'P' ? 'primary' : 'secondary'}_${match[2]}_${item.subject}`;
             videoMappings[key] = `cartoon:${item.id}`;
-            window._videoMappingData[key] = Object.assign({}, item, { id:item.id, cartoonProject:item, teacherId:'' });
+            window._videoMappingData[key] = Object.assign({}, item, { id:item.id, cartoonProject:item, teacherId:item.teacherId || '' });
         });
     }
     function listenToVideoMappings() {

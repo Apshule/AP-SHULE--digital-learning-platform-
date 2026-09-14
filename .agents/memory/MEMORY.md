@@ -2,3 +2,4 @@
 - [PWA preview asset routing](pwa-preview-asset-routing.md) — The API preview must explicitly serve root PWA scripts, manifest, and icons for offline initialization to work.
 - [Project integrity schema compatibility](project-integrity-schema.md) — Preserve legacy project column types; extend PostgreSQL with safe defaults and indexes.
 - [NCDC inline test compatibility](ncdc-inline-test-compatibility.md) — Guard browser-only top-level side effects because inline helpers are evaluated in lightweight VM tests.
+- [Video Studio secure AI boundary](video-studio-secure-ai-boundary.md) — Keep Twin credentials server-only and UI-only until a secure backend is explicitly configured.
