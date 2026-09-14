@@ -1,0 +1,479 @@
+Task 9 — Step 2 of 3: Content Management + Payments + NCDC/UNEB Control + Live Lesson Control + Communication
+
+CONTEXT:
+- Task 9 Step 1 built: new 5-tab nav (Dashboard, Users, Institutions, 
+  Analytics, Settings), Dashboard home, User Management, Institution 
+  Management, Institution Branding with dual-logo header
+- Step 2 now builds the 5 middle sections that Super Admin uses daily
+
+GOAL:
+Add 5 major management sections accessible from the Command Center:
+1. 📚 Content Management (videos, PDFs, UNEB items, curriculum)
+2. 💰 Payments & Subscriptions
+3. 📋 NCDC/UNEB Control (refined)
+4. 🎓 Live Lesson Control
+5. 📢 Communication (bulk messaging)
+
+Each section opens as a full-screen modal from the Dashboard quick 
+actions OR as a sub-tab.
+
+═══════════════════════════════════════════════════════════════
+PART A: CONTENT MANAGEMENT MODAL
+═══════════════════════════════════════════════════════════════
+
+Trigger: Dashboard → [📚 Content] quick action button
+
+Full-screen modal (id="contentManagementModal") with internal tabs:
+
+TAB 1 — VIDEO LIBRARY
+- Reuse existing Video Library from Task 7
+- Add admin-specific actions:
+  * Bulk delete videos
+  * Bulk publish/unpublish
+  * Filter by: mode, language, subject, status, created date
+  * Search by title
+  * Sort by: newest, most views, alphabetical
+- Each row: [👁 Preview] [✏️ Edit] [📝 Publish/Unpublish] [🗑️ Delete]
+- Pagination: 20 per page with "Load more"
+
+TAB 2 — PDF LIBRARY
+- List all PDFs from pdfs collection
+- Admin actions:
+  * Upload new PDF (title, category, file)
+  * Edit metadata (title, category)
+  * Delete
+  * View analytics (views count)
+  * Bulk delete
+- Filter by category, upload date
+- Search by title
+- Add "📊 Most viewed PDFs" summary card
+
+TAB 3 — UNEB ITEMS
+- List uneb_items collection
+- Admin actions:
+  * Upload UNEB sample papers (PDF or structured input)
+  * Edit existing items (subject, class, topic, scenario)
+  * Delete
+  * Bulk import via CSV
+- Filter by: subject, class level, source year
+- Add "🌱 Seed UNEB Samples" button (seeds 20 sample items)
+- Show count: "X items available"
+
+TAB 4 — CURRICULUM LINKS
+- Reuse Curriculum Linker data foundation from Task 5
+- Admin actions:
+  * Import CSV (bulk)
+  * Paste JSON
+  * Edit existing topics
+  * Delete
+  * Download CSV export
+- Show total: "X topics across Y subjects"
+- Add "🌱 Seed Sample Topics" button (from Task 5)
+
+TAB 5 — SUBJECTS & CLASSES
+- Manage the subjects list (primary + secondary)
+- Add/Edit/Delete subjects
+- Reorder subjects (drag or arrows)
+- View count of videos per subject
+- Manage class levels
+
+═══════════════════════════════════════════════════════════════
+PART B: PAYMENTS & SUBSCRIPTIONS MODAL
+═══════════════════════════════════════════════════════════════
+
+Trigger: Dashboard → [💰 Payments] quick action button
+
+Full-screen modal (id="paymentsModal") with tabs:
+
+TAB 1 — OVERVIEW
+┌─────────────────────────────────────────┐
+│ 💰 PAYMENTS OVERVIEW                     │
+├─────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ This     │ │ This     │ │ Active   │ │
+│ │ Month    │ │ Year     │ │ Subs     │ │
+│ │ UGX 245K │ │ UGX 1.8M │ │ 45       │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Pending  │ │ Failed   │              │
+│ │ Payments │ │ Payments │              │
+│ │ 8        │ │ 2        │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 📊 Revenue Chart (last 6 months)        │
+│ [Line chart placeholder]                 │
+│                                          │
+│ 🏆 Top Paying Schools (this month)      │
+│ 1. Rose Junior — UGX 100,000            │
+│ 2. Excel Schools — UGX 80,000           │
+│ 3. Green Valley MFI — UGX 50,000        │
+└─────────────────────────────────────────┘
+
+TAB 2 — SUBSCRIPTION PLANS
+- List all subscription plans
+- Create/Edit/Delete plans
+- Each plan has: name, price, duration, features, target audience
+- Show which institutions are on which plan
+- Support plan tiers: Basic, Standard, Premium
+
+TAB 3 — TRANSACTIONS
+- Full transaction list
+- Filters: date range, payment method, status, institution
+- Each row: date, payer, amount, method, status, receipt#
+- [View] → opens transaction detail
+- [Download] → PDF receipt
+- Export CSV
+
+TAB 4 — PENDING APPROVALS
+- List of payment requests awaiting manual approval
+- Especially for: mobile money confirmations, bank transfers
+- [✅ Approve] [❌ Reject] buttons per row
+- Bulk approve for trusted sources
+
+TAB 5 — BENEFICIARIES
+- Manage institution beneficiaries for payment disbursement
+- Add/Edit/Delete beneficiary accounts
+- Fields: institution, type (Yo!/MobileMoney/Bank), account number
+- Used for Task 12 (Automated Payments)
+
+TAB 6 — INVOICES
+- Generate invoices for institutions
+- List past invoices
+- Download as PDF
+- Mark as paid/unpaid
+- Send reminder button
+
+═══════════════════════════════════════════════════════════════
+PART C: NCDC/UNEB CONTROL MODAL (Refined)
+═══════════════════════════════════════════════════════════════
+
+Trigger: Dashboard → opens from Dashboard quick actions
+
+Full-screen modal (id="ncdcControlModal") with tabs:
+
+TAB 1 — OVERVIEW
+- Total uneb_items: X
+- Total curriculum_links: X
+- Total CA exports this month: X
+- Total CPD certificates issued: X
+- Total teachers retooling: X
+- Duplication flags: X
+
+TAB 2 — CA EXPORTS
+- List of all UNEB CA files exported by schools
+- Each row: school, class, term, date exported, [📥 Download]
+- Export aggregated report as PDF
+
+TAB 3 — CPD CERTIFICATES
+- List all issued certificates
+- Search by teacher name/email
+- Issue / Revoke / Regenerate buttons
+- Download individual PDFs
+- Export certificate registry
+
+TAB 4 — TEACHER RETOOLING PROGRESS
+- Table of all teachers with:
+  * Modules completed
+  * CPD points earned
+  * Certificate status
+- Filter by school, status
+- Export as CSV/PDF
+
+TAB 5 — DUPLICATION FLAGS (from Task 4)
+- List all flagged projects
+- Reason: text_match / photo_hash_match
+- Score percentage
+- [View both projects] [Clear flag]
+
+TAB 6 — REPEAT TITLE LOG (from Task 5)
+- List of repeat project titles
+- Show improvement notes
+- Filter by date, school, student
+
+═══════════════════════════════════════════════════════════════
+PART D: LIVE LESSON CONTROL MODAL
+═══════════════════════════════════════════════════════════════
+
+Trigger: Dashboard → Live Lesson quick action
+
+Full-screen modal (id="liveLessonControlModal") with tabs:
+
+TAB 1 — SCHEDULED LESSONS
+- List upcoming live lessons
+- Schedule new lesson form:
+  * Title
+  * Teacher
+  * Date + time
+  * Meeting link (Zoom/Google Meet)
+  * Access fee (UGX, 0 = free)
+  * Description
+- Edit / Cancel scheduled lessons
+
+TAB 2 — TEACHER REQUESTS
+- List of pending teacher lesson requests
+- Each shows: teacher, title, date, description
+- [✅ Approve] [❌ Reject] buttons
+- Approve → publishes to all students
+
+TAB 3 — ATTENDANCE
+- Live lesson attendance records
+- Filter by lesson, teacher, date
+- Export attendance as CSV
+
+TAB 4 — ENROLLMENTS
+- Teachers enrolled in live lesson plans
+- Plan type (Weekly/Monthly/Termly)
+- Expiry dates
+- Payment status
+
+TAB 5 — ACCESS TOKENS
+- Generate token for a specific student
+- Select lesson + enter student email
+- [🔑 Generate & Send Token]
+- List of all active tokens
+- [Revoke] per token
+
+═══════════════════════════════════════════════════════════════
+PART E: COMMUNICATION MODAL
+═══════════════════════════════════════════════════════════════
+
+Trigger: Dashboard → [📢 Announce] quick action
+
+Full-screen modal (id="communicationModal") with tabs:
+
+TAB 1 — SEND ANNOUNCEMENT
+- Title (text input)
+- Body (textarea)
+- Target audience (multi-select):
+  * All users
+  * Students only
+  * Teachers only
+  * School admins only
+  * Specific school (dropdown)
+  * Specific class
+- Send via: [✓] In-app [✓] SMS [✓] Email
+- Schedule (optional): Send now / Send at...
+- [📢 Send Now] button
+- Preview panel showing how notification will appear
+
+TAB 2 — MESSAGE HISTORY
+- List of all announcements sent
+- Each row: title, date, audience, delivery stats
+- Click → see delivery report (sent/delivered/read)
+
+TAB 3 — SCHEDULED MESSAGES
+- List of scheduled announcements
+- Edit / Cancel
+- Show next send time
+
+TAB 4 — TEMPLATES
+- Pre-built message templates:
+  * Exam reminder
+  * Holiday notice
+  * Fee reminder
+  * Welcome message
+  * Password reset
+- Create custom templates
+- Insert template into new message
+
+TAB 5 — CHANNELS
+- Configure SMS provider (default: existing provider)
+- Configure email provider
+- Test send buttons for each channel
+- Show pricing per SMS/email
+
+═══════════════════════════════════════════════════════════════
+PART F: LINK SECTIONS TO DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Update the Dashboard quick actions (from Step 1):
+
+- [👥 Users] → switches to Users tab (already built)
+- [🏛️ Institutions] → switches to Institutions tab (already built)
+- [📚 Content] → opens contentManagementModal
+- [💰 Payments] → opens paymentsModal
+- [📋 NCDC/UNEB] → opens ncdcControlModal  (add this button)
+- [🎓 Live] → opens liveLessonControlModal (add this button)
+- [📢 Announce] → opens communicationModal
+- [📊 Reports] → opens Reports modal (Step 3)
+
+Update the Dashboard quick actions grid to show 8 buttons in 2 rows of 4.
+
+═══════════════════════════════════════════════════════════════
+PART G: MIGRATE EXISTING ADMIN PANEL SECTIONS
+═══════════════════════════════════════════════════════════════
+
+Many existing Admin Panel sections (from earlier tasks) should move 
+into the new Command Center modals:
+
+MOVE:
+- Old "Video Studio" card → Content Management → Video Library tab
+- Old "NCDC/UNEB Control" card → NCDC Control modal
+- Old "Live Lesson" controls → Live Lesson Control modal
+- Old "Send Announcement" → Communication modal
+- Old "Manage Subscription Plans" → Payments modal → Subscription Plans tab
+- Old "Manage Schools" → Institution Management tab (already moved in Step 1)
+
+KEEP IN PLACE (still accessible):
+- Certificate Manager (from Task 6) → now inside NCDC Control
+- Video Studio modal → still accessible, but links from Content Management
+
+The old Admin Panel should be HIDDEN for super admin after migration, 
+but not deleted (other roles may still use parts).
+
+═══════════════════════════════════════════════════════════════
+PART H: SUPER ADMIN HOMEPAGE REDIRECT
+═══════════════════════════════════════════════════════════════
+
+When Super Admin logs in:
+- Redirect directly to the Command Center dashboard (Tab 1)
+- Do NOT show the old student Home screen
+- If they tap the AppShule logo, still show branding but no home feed
+
+When Super Admin taps other tabs:
+- Users → user management
+- Institutions → institution management
+- Analytics → dashboards (Step 3)
+- Settings → platform settings (Step 3)
+
+Other roles unchanged.
+
+═══════════════════════════════════════════════════════════════
+PART I: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Cards: white, 16px radius, soft shadow
+- Modal headers sticky at top with close button
+- Section tabs: horizontal scrollable pill-style
+- Consistent button styles (rounded 20-25px)
+
+Command Center feels like a real admin dashboard:
+- Clean typography
+- Data tables with hover states
+- Empty states with helpful icons
+- Loading skeletons
+- Toast notifications for actions
+
+═══════════════════════════════════════════════════════════════
+PART J: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Most actions require internet (creating users, uploading, sending 
+messages). Show clear message when offline.
+
+Cached data:
+- Institution list cached
+- Users list cached (last 100)
+- Payment stats cached
+- Show "Last updated X ago" when offline
+
+═══════════════════════════════════════════════════════════════
+PART K: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. transactions: institutionId (asc) + createdAt (desc)
+2. transactions: status (asc) + createdAt (desc)
+3. subscriptions: institutionId (asc) + status (asc)
+4. notifications: targetUserId (asc) + createdAt (desc)
+5. liveLessons: status (asc) + scheduledDate (desc)
+6. ca_exports: schoolId (asc) + exportedAt (desc)
+7. cpd_certificates: teacherId (asc) + issuedAt (desc)
+
+═══════════════════════════════════════════════════════════════
+PART L: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Super Admin account:
+
+A. Content Management:
+   1. Dashboard → [📚 Content]
+   2. Verify: modal opens with 5 tabs
+   3. Test each tab:
+      - Video Library: list, filter, delete
+      - PDF Library: list, upload, edit
+      - UNEB Items: list, seed samples
+      - Curriculum Links: list, import CSV
+      - Subjects: add/edit/delete
+
+B. Payments:
+   1. Dashboard → [💰 Payments]
+   2. Verify: 6 tabs
+   3. Overview: shows stat cards + chart placeholder
+   4. Subscription Plans: list + create new plan
+   5. Transactions: list with filters
+   6. Pending Approvals: approve/reject a request
+   7. Beneficiaries: add beneficiary
+   8. Invoices: generate + download
+
+C. NCDC Control:
+   1. Dashboard → [📋 NCDC/UNEB]
+   2. Verify: 6 tabs
+   3. CA Exports: list + download
+   4. CPD Certificates: list, search teacher
+   5. Teacher Progress: table
+   6. Duplication Flags: review
+   7. Repeat Title Log: list
+
+D. Live Lesson Control:
+   1. Dashboard → [🎓 Live]
+   2. Verify: 5 tabs
+   3. Schedule a new lesson
+   4. Approve a teacher request
+   5. Generate access token for a student
+   6. View attendance
+
+E. Communication:
+   1. Dashboard → [📢 Announce]
+   2. Verify: 5 tabs
+   3. Send a test announcement to yourself
+   4. Verify: notification appears
+   5. Schedule a future message
+   6. Use a template
+
+F. Dashboard integration:
+   1. All 8 quick action buttons work
+   2. Each opens the correct modal or tab
+   3. Modals close properly with X or Escape
+
+G. Migration:
+   1. Old Admin Panel sections still accessible
+   2. No duplicate features appear in both places
+   3. Old sections work if linked
+
+H. Offline:
+   1. Turn off WiFi
+   2. Try creating user → "requires internet" message
+   3. Dashboard shows cached stats
+
+I. Regression:
+   1. Task 1-8 features still work for other roles
+   2. Student/teacher/school admin screens unchanged
+   3. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART M: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-8 or Task 9 Step 1
+- Do NOT delete existing Firestore collections
+- Do NOT remove old Admin Panel sections yet (they may still be used)
+- Do NOT allow non-superadmin access to these modals
+- Do NOT lose payment history
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 9 Step 2 complete — Content Management, Payments, NCDC Control, 
+Live Lesson Control, and Communication modals built"
+
+Report:
+- Which tests A through I passed
+- Any bugs found
+- Screenshots recommended: Content Management tabs, Payments overview, 
+  NCDC Control tabs, Live Lesson Control, Communication modal, 
+  Dashboard with 8 quick actions
