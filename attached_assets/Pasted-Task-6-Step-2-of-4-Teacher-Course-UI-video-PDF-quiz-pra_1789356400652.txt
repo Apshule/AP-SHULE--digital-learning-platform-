@@ -1,0 +1,369 @@
+Task 6 — Step 2 of 4: Teacher Course UI — video, PDF, quiz, practical
+
+CONTEXT:
+- Step 1 created ncdc_course_modules (10 docs), ncdc_module_lessons 
+  (40 docs), teacher_retooling_progress, ncdc_cpd_certificates collections
+- Super Admin can seed the course content
+- Now we build the teacher-facing UI to actually take the course
+
+GOAL:
+Teacher taps "NCDC 10 Modules Course" in Teacher Dashboard → sees:
+- Course overview page with 10 modules
+- Progress bar (X of 10 completed)
+- Each module card shows status (locked / available / in-progress / done)
+- Tapping module opens lesson viewer with 4 sequential lessons:
+  1. Video (YouTube embedded)
+  2. PDF summary (opens in existing pdf modal)
+  3. Quiz (5 questions, passing score 3)
+  4. Practical upload (photo/file)
+- After all 4 lessons complete → module marked done
+- Next module unlocks
+
+═══════════════════════════════════════════════════════════════
+PART A: COURSE OVERVIEW MODAL
+═══════════════════════════════════════════════════════════════
+
+Modify Teacher Dashboard — the "NCDC 10 Modules Course" sub-button:
+
+Currently shows placeholder toast. Replace with real function.
+
+When tapped:
+- Open full-screen modal (id="ncdcCourseModal")
+- Close button (X) top right
+- Header:
+  * Title: "NCDC Teacher Retooling Course"
+  * Subtitle: "10 modules · Aligned to NCDC curriculum"
+  * Progress bar showing X/10 modules completed
+  * Percentage complete
+  * CPD points earned (or "0 of 20")
+
+═══════════════════════════════════════════════════════════════
+PART B: MODULE LIST
+═══════════════════════════════════════════════════════════════
+
+Below header, show all 10 modules as cards:
+
+Each module card:
+┌─────────────────────────────────────────┐
+│ [📘] Module 1                            │
+│ Familiarisation with Course and LMS     │
+│ 30 min · 4 lessons                       │
+│                                          │
+│ Status: ✅ Completed / ⏳ In Progress /  │
+│         🔓 Available / 🔒 Locked        │
+│                                          │
+│ [Start Module] / [Continue] / [Review]  │
+└─────────────────────────────────────────┘
+
+Unlock logic:
+- Module 1: Always available
+- Module N (N>1): Unlocked only if Module N-1 is completed
+- Locked modules show lock icon and "Complete Module N-1 first"
+
+Load data:
+- Query ncdc_course_modules ORDER BY moduleNumber ASC
+- Query teacher_retooling_progress WHERE teacherId == currentUser.uid
+- Merge to determine status per module
+
+═══════════════════════════════════════════════════════════════
+PART C: MODULE DETAIL VIEW
+═══════════════════════════════════════════════════════════════
+
+When teacher taps a module card → open module detail (id="ncdcModuleDetailModal"):
+
+Header:
+- [← Back to modules]
+- Module N: {title}
+- Description
+- Duration + lesson count
+
+Lesson list (4 items, sequential):
+
+┌─────────────────────────────────────────┐
+│ 🎬 Lesson 1 — Introduction              │
+│ Video · 3 min                            │
+│ [▶ Watch Video] / ✅ Watched             │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ 📄 Lesson 2 — Module Summary            │
+│ PDF · Read                               │
+│ [📄 Open PDF] / ✅ Read                  │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ ❓ Lesson 3 — Knowledge Check            │
+│ Quiz · 5 questions · Pass: 3/5          │
+│ [📝 Take Quiz] / ✅ Passed (4/5)         │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ 📸 Lesson 4 — Practical Task            │
+│ Upload a photo demonstrating your work  │
+│ [📤 Upload Photo] / ✅ Uploaded          │
+└─────────────────────────────────────────┘
+
+Progress footer:
+- "2 of 4 lessons complete"
+- [Mark Module Complete] button (enabled only when 4/4 done)
+
+═══════════════════════════════════════════════════════════════
+PART D: VIDEO LESSON PLAYER
+═══════════════════════════════════════════════════════════════
+
+When teacher taps [▶ Watch Video]:
+- If OFFLINE: show "Video requires internet. Connect to watch."
+- If ONLINE:
+  * Open existing video modal (from Task 1) with YouTube embed
+  * Video URL from ncdc_module_lessons.contentUrl
+  * Track watch completion:
+    - If watched > 80% of duration → mark lesson as watched
+    - Save to teacher_retooling_progress.lessonCompletions
+      { lessonOrder: 1, completedAt, watchPercentage: 85 }
+  * Show toast: "✅ Video watched"
+
+═══════════════════════════════════════════════════════════════
+PART E: PDF LESSON VIEWER
+═══════════════════════════════════════════════════════════════
+
+When teacher taps [📄 Open PDF]:
+- Reuse existing PDF inline viewer (from Task 1)
+- Load PDF URL from ncdc_module_lessons.contentUrl
+- Track read completion:
+  * If teacher stays in viewer > 30 seconds → mark as read
+  * Save to teacher_retooling_progress.lessonCompletions
+    { lessonOrder: 2, completedAt, readDuration: 35 }
+- Mark complete when viewer is closed
+
+Offline: If PDF is cached (from offline_ncdc_modules), show from cache.
+
+═══════════════════════════════════════════════════════════════
+PART F: QUIZ ENGINE
+═══════════════════════════════════════════════════════════════
+
+When teacher taps [📝 Take Quiz]:
+- Open quiz modal (id="ncdcQuizModal")
+- Load 5 questions from lesson.contentData.questions
+
+Quiz UI:
+- Question 1 of 5
+- Question text
+- 4 radio button options (A, B, C, D)
+- [Next] button (disabled until an option is selected)
+- Progress bar at top showing question number
+
+After all 5 questions:
+- Show results screen:
+  * "You scored 4/5"
+  * List of questions with correct/incorrect indicators
+  * Show correct answers for wrong ones
+  * If score >= 3 (passing):
+    - [✅ Pass — Return to module] button
+    - Save to teacher_retooling_progress:
+      { lessonOrder: 3, completedAt, score: 4, passed: true }
+  * If score < 3 (fail):
+    - [🔄 Retake Quiz] button
+    - [Return to module] button
+    - Do NOT mark as complete
+    - Max 3 attempts per session
+
+Offline behavior:
+- Quiz works fully offline (questions cached)
+- Result saved to IndexedDB offline_teacher_progress
+- Syncs to Firestore when online
+
+═══════════════════════════════════════════════════════════════
+PART G: PRACTICAL UPLOAD
+═══════════════════════════════════════════════════════════════
+
+When teacher taps [📤 Upload Photo]:
+- Open file picker OR camera
+- Compress to <500KB (reuse Task 2 compression)
+- Upload to Firebase Storage:
+  * Path: teacher_retooling/{teacherId}/module_{N}_practical.jpg
+- Save to teacher_retooling_progress:
+  { lessonOrder: 4, completedAt, 
+    practicalUrl: downloadURL, practicalSize: fileSize }
+- Show preview thumbnail with [🔄 Replace] button
+- Show toast: "✅ Practical uploaded"
+
+Offline: Save to IndexedDB, upload when connected.
+
+═══════════════════════════════════════════════════════════════
+PART H: MODULE COMPLETION
+═══════════════════════════════════════════════════════════════
+
+When all 4 lessons are completed (from lessonCompletions array):
+
+1. Enable [Mark Module Complete] button in module detail view
+2. When teacher clicks it:
+   - Update teacher_retooling_progress:
+     {
+       moduleCompleted: true,
+       moduleCompletedAt: serverTimestamp(),
+       quizScore: (average of quiz scores),
+       updatedAt: serverTimestamp()
+     }
+   - Update course_enrollment:
+     {
+       modulesCompleted: increment(1),
+       lastActivityAt: serverTimestamp()
+     }
+   - Show celebration modal:
+     "🎉 Module N Complete!"
+     "+2 CPD Points earned"
+     Next module: "Module N+1 — {title}"
+     [Start Next Module] button
+   - Unlock Module N+1
+
+3. If module completed is Module 10 (final):
+   - Show certificate generation prompt:
+     "🏆 You've completed all 10 modules!
+      Your CPD Certificate (20 points) is ready."
+   - [Generate Certificate] button → triggers Step 3 flow
+
+═══════════════════════════════════════════════════════════════
+PART I: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+1. Course overview loads from offline_ncdc_modules cache:
+   - Shows module list even without internet
+   - Locked modules still shown (state from last sync)
+   - Available modules can be opened
+
+2. Videos require internet (YouTube ToS):
+   - Show "Video unavailable offline" if clicked while offline
+   - Show "Resume when connected" option
+
+3. PDFs work offline if previously cached
+
+4. Quizzes work fully offline
+
+5. Practical uploads queue for sync
+
+6. Progress saves locally + syncs when online
+
+═══════════════════════════════════════════════════════════════
+PART J: TEACHER DASHBOARD CARD UPDATE
+═══════════════════════════════════════════════════════════════
+
+Update the "CBC Teaching Tools (Earn More)" card:
+
+The "NCDC 10 Modules Course" sub-button now shows progress:
+┌─────────────────────────────────────────┐
+│ 📚 NCDC 10 Modules Course               │
+│ Progress: 3 of 10 modules               │
+│ ▓▓▓░░░░░░░ 30%                          │
+│ [Continue Module 4]                     │
+└─────────────────────────────────────────┘
+
+When teacher has completed all 10:
+┌─────────────────────────────────────────┐
+│ 🏆 NCDC 10 Modules Course               │
+│ ✅ All modules complete!                 │
+│ [📜 View Certificate]                   │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART K: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing AppShule design:
+- Primary: #4B2E9E (purple)
+- Accent: #FF8C42 (orange)
+- Success: #4CAF50 (green)
+- Warning: #FF9800 (yellow)
+- Cards: white, 16px radius, soft shadow
+- Buttons: rounded 20-25px, bold text
+
+Status colors:
+- Locked: grey badge, faded card
+- Available: white card, purple button
+- In Progress: yellow badge, orange accent
+- Completed: green badge, checkmark
+
+Mobile-first:
+- Full-screen modals on phone
+- Touch-friendly targets (44px min height)
+- Responsive scaling on tablet + desktop
+
+═══════════════════════════════════════════════════════════════
+PART L: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 teacher account:
+
+A. Course overview:
+   1. Login as teacher
+   2. Teacher Dashboard → CBC Teaching Tools → NCDC 10 Modules
+   3. Verify: modal opens with 10 modules listed
+   4. Verify: Module 1 available, modules 2-10 locked
+   5. Verify: progress bar shows 0/10
+
+B. Video lesson:
+   1. Open Module 1
+   2. Tap [▶ Watch Video]
+   3. If online: verify video plays
+   4. Watch ~90% → verify lesson marked as watched
+   5. Verify teacher_retooling_progress updated
+
+C. PDF lesson:
+   1. Tap [📄 Open PDF]
+   2. Verify PDF viewer opens
+   3. Stay in viewer 30+ seconds
+   4. Close → verify marked as read
+
+D. Quiz:
+   1. Tap [📝 Take Quiz]
+   2. Answer all 5 questions
+   3. Verify score screen shows correct/incorrect
+   4. Score >= 3 → verify passed + saved
+   5. Score < 3 → verify retake option
+
+E. Practical:
+   1. Tap [📤 Upload Photo]
+   2. Select photo
+   3. Verify: photo uploads, thumbnail appears
+   4. Verify: teacher_retooling_progress has practicalUrl
+
+F. Module completion:
+   1. Complete all 4 lessons
+   2. Verify: [Mark Module Complete] enabled
+   3. Click it → verify: celebration modal
+   4. Verify: Module 2 now unlocked
+   5. Check course_enrollment.modulesCompleted = 1
+
+G. Locked module test:
+   1. Try to open Module 3
+   2. Verify: shows "Complete Module 2 first"
+
+H. Offline test:
+   1. Turn off WiFi
+   2. Open course overview → verify modules load
+   3. Try video → verify "Video unavailable offline"
+   4. Take quiz → verify it works offline
+   5. Turn on WiFi → verify progress syncs
+
+═══════════════════════════════════════════════════════════════
+DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-5 or Step 1 of Task 6
+- Do NOT allow skipping lessons (must complete in order 1→2→3→4)
+- Do NOT unlock modules out of order
+- Do NOT download YouTube videos
+- Do NOT break offline support
+- Do NOT lose progress on offline → online transitions
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 6 Step 2 complete — Teacher Course UI with video, PDF, quiz, 
+and practical lessons built and tested"
+
+Report:
+- Which tests A through H passed
+- Any bugs found
+- Screenshots recommended: course overview, module detail, 
+  quiz screen, practical upload, module completion celebration
