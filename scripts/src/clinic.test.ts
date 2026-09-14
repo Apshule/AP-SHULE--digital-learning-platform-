@@ -104,7 +104,7 @@ describe("Task 11 Step 1 clinic foundation contracts", () => {
 
   it("keeps clinic offline stores in the IndexedDB sync contract", () => {
     for (const value of [
-      "var DB_VERSION = 16",
+       "var DB_VERSION = 17",
       "offline_clinic_visits",
       "offline_clinic_prescriptions",
       "offline_clinic_checkins",
@@ -114,6 +114,129 @@ describe("Task 11 Step 1 clinic foundation contracts", () => {
       "markClinicVisitSynced",
       "markClinicPrescriptionSynced",
       "markClinicCheckinSynced",
+    ]) {
+      expect(indexSource + offlineSource).toContain(value);
+    }
+  });
+});
+
+describe("Task 11 Step 2 pharmacy, billing, and insurance contracts", () => {
+  it("declares all five Step 2 Firestore collections and eight composite indexes", () => {
+    for (const collection of [
+      "clinic_pharmacy_inventory",
+      "clinic_product_scans",
+      "clinic_billing",
+      "clinic_payments",
+      "clinic_insurance_claims",
+    ]) {
+      expect(indexSource).toContain(collection);
+      expect(rulesSource).toContain(`match /${collection}/`);
+    }
+    const required: Array<[string, string[]]> = [
+      ["clinic_pharmacy_inventory", ["institutionId", "category"]],
+      ["clinic_pharmacy_inventory", ["institutionId", "quantityInStock"]],
+      ["clinic_pharmacy_inventory", ["institutionId", "expiryDate"]],
+      ["clinic_billing", ["institutionId", "status", "billDate"]],
+      ["clinic_billing", ["patientId", "billDate"]],
+      ["clinic_payments", ["institutionId", "paymentDate"]],
+      ["clinic_insurance_claims", ["institutionId", "status"]],
+      ["clinic_product_scans", ["institutionId", "scannedAt"]],
+    ];
+    for (const [collectionGroup, fields] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+  });
+
+  it("provides pharmacist dashboard, inventory lifecycle, local scanner matching, and checkout", () => {
+    for (const value of [
+      "clinicPharmacyPage",
+      "pharmacyPendingPrescriptions",
+      "inventoryModal",
+      "inventoryItemFormModal",
+      "clinicOpenInventoryForm",
+      "clinicAdjustInventory",
+      "clinicDiscontinueInventory",
+      "histogramEmbedding",
+      "clinicProductEmbedding",
+      "productScannerModal",
+      "scannerCaptureBtn",
+      "scannerUploadInput",
+      "scannerManualBtn",
+      "clinicFindProductMatches",
+      "clinicCheckoutCart",
+      "clinic_pharmacy_inventory",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("Stock cannot become negative");
+    expect(indexSource).toContain("Inventory with sales history is retained, not deleted.");
+  });
+
+  it("provides billing tabs, immutable paid-bill protection, payments, and invoice actions", () => {
+    for (const value of [
+      "clinicBillingPage",
+      "Unpaid",
+      "Recent payments",
+      "All bills",
+      "Create bill",
+      "Insurance claims",
+      "Daily reconciliation",
+      "clinicCreateBill",
+      "openBillDetail",
+      "openRecordPayment",
+      "clinicSavePayment",
+      "Print invoice",
+      "partial",
+      "paid",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(rulesSource).toContain("resource.data.status != 'paid' || request.resource.data.status == 'reversed'");
+  });
+
+  it("provides insurance claims and patient billing views", () => {
+    for (const value of [
+      "insuranceClaimModal",
+      "Draft",
+      "Submitted",
+      "Under Review",
+      "Approved",
+      "Partially Approved",
+      "Rejected",
+      "Paid",
+      "openInsuranceClaim",
+      "clinicSaveClaim",
+      "clinicPatientBillingPage",
+      "loadPatientBilling",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("extends IndexedDB migration, offline queues, and sync hooks for every Step 2 workflow", () => {
+    for (const value of [
+      "if (oldVersion < 17)",
+      "offline_clinic_inventory",
+      "offline_clinic_product_scans",
+      "offline_clinic_dispensing",
+      "offline_clinic_billing",
+      "offline_clinic_payments",
+      "offline_clinic_claims",
+      "queueClinicInventory",
+      "queueClinicProductScan",
+      "queueClinicDispensing",
+      "queueClinicBilling",
+      "queueClinicPayment",
+      "queueClinicClaim",
+      "pushClinicInventory",
+      "pushClinicScans",
+      "pushClinicDispensing",
+      "pushClinicBilling",
+      "pushClinicPayments",
+      "pushClinicClaims",
     ]) {
       expect(indexSource + offlineSource).toContain(value);
     }

@@ -249,10 +249,42 @@ service cloud.firestore {
       allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
       allow write: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() == 'clinic_admin';
     }
+    match /clinic_pharmacy_inventory/{itemId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'pharmacist'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'pharmacist'];
+      allow delete: if false;
+    }
+    match /clinic_product_scans/{scanId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'pharmacist'];
+      allow update, delete: if false;
+    }
+    match /clinic_billing/{billId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'pharmacist', 'doctor'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'pharmacist']
+        && (resource.data.status != 'paid' || request.resource.data.status == 'reversed');
+      allow delete: if false;
+    }
+    match /clinic_payments/{paymentId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'pharmacist'];
+      allow update, delete: if false;
+    }
+    match /clinic_insurance_claims/{claimId} {
+      allow read: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'patient' && resource.data.patientId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameClinicInstitution(request.resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'pharmacist'];
+      allow update: if isSuperAdmin() || sameClinicInstitution(resource.data.institutionId) && role() in ['clinic_admin', 'receptionist', 'pharmacist'];
+      allow delete: if false;
+    }
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims)(/.*)?$');
     }
   }
 }
