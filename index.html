@@ -835,6 +835,93 @@
         .connection-status i { margin-top:2px; color:#2E8B57; }
         @media (max-width:420px) { .connection-mode-badge { max-width:32px; padding:8px; } .connection-mode-badge .connection-label { display:none; } .header-right { gap:7px; } .sync-now-btn { padding:8px 10px; } }
         @media (max-width:350px) { .sync-now-btn .sync-label { display:none; } .sync-now-btn { width:36px; padding:8px; } }
+        /* ===== VIDEO STUDIO ===== */
+        .video-studio-modal { position:fixed; inset:0; z-index:8300; display:none; background:#17112d; color:#27233a; }
+        .video-studio-modal.show { display:flex; }
+        .video-studio-shell { width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(135deg,#f8f5ff 0%,#fff8f1 100%); }
+        .video-studio-header { display:flex; align-items:center; gap:14px; padding:16px 20px; color:#fff; background:linear-gradient(120deg,#34206f,#5c45bb 58%,#d86f48); box-shadow:0 5px 24px rgba(37,20,86,.2); }
+        .video-studio-header h2 { margin:0; font-size:21px; letter-spacing:-.3px; }
+        .video-studio-header p { margin:4px 0 0; font-size:12px; opacity:.82; }
+        .video-studio-header-copy { flex:1; min-width:0; }
+        .video-studio-close { width:40px; height:40px; border:0; border-radius:50%; color:#fff; background:rgba(255,255,255,.17); font-size:25px; cursor:pointer; }
+        .video-studio-tabs { display:flex; gap:8px; padding:12px 20px 0; overflow:auto; flex-shrink:0; background:#fff; border-bottom:1px solid #ebe5f4; }
+        .video-studio-tab { border:0; border-bottom:3px solid transparent; padding:12px 14px; background:transparent; color:#777087; font-weight:800; font-size:12px; white-space:nowrap; cursor:pointer; }
+        .video-studio-tab.active { color:#4B2E9E; border-bottom-color:#4B2E9E; }
+        .video-studio-body { flex:1; min-height:0; overflow:auto; padding:18px 20px 28px; }
+        .video-studio-pane { display:none; max-width:1180px; margin:0 auto; }
+        .video-studio-pane.active { display:block; }
+        .video-studio-intro { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:14px; }
+        .video-studio-intro h3 { margin:0; color:#34206f; font-size:19px; }
+        .video-studio-intro p { margin:5px 0 0; max-width:670px; color:#6e687a; font-size:12px; line-height:1.5; }
+        .video-studio-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr); gap:16px; align-items:start; }
+        .video-studio-card { background:#fff; border:1px solid #e5def2; border-radius:18px; padding:16px; box-shadow:0 8px 24px rgba(75,46,158,.07); }
+        .video-studio-card h4 { margin:0 0 12px; color:#34206f; font-size:14px; }
+        .video-studio-form { display:grid; gap:10px; }
+        .video-studio-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .video-studio-field label { display:block; margin-bottom:4px; color:#51476a; font-size:11px; font-weight:800; }
+        .video-studio-field input,.video-studio-field select,.video-studio-field textarea,.video-studio-library-toolbar select { width:100%; box-sizing:border-box; border:1px solid #ddd5ec; border-radius:10px; padding:10px; background:#fff; color:#302b3f; font:13px inherit; }
+        .video-studio-field textarea { min-height:150px; resize:vertical; line-height:1.45; }
+        .video-studio-field input:focus,.video-studio-field select:focus,.video-studio-field textarea:focus { outline:3px solid rgba(75,46,158,.13); border-color:#8065d1; }
+        .video-studio-script-meta { display:flex; justify-content:space-between; gap:8px; color:#8a8298; font-size:11px; margin-top:4px; }
+        .video-studio-script-meta strong { color:#4B2E9E; }
+        .video-studio-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+        .video-studio-btn { border:1px solid #d8ccf4; border-radius:22px; padding:10px 14px; background:#fff; color:#4B2E9E; font-size:12px; font-weight:800; cursor:pointer; }
+        .video-studio-btn.primary { color:#fff; border-color:#4B2E9E; background:#4B2E9E; }
+        .video-studio-btn.orange { color:#fff; border-color:#d86f48; background:#d86f48; }
+        .video-studio-btn.danger { color:#b3261e; border-color:#f0b4b0; background:#fff8f7; }
+        .video-studio-btn:disabled { opacity:.55; cursor:not-allowed; }
+        .video-studio-status { min-height:18px; margin-top:8px; color:#6b6478; font-size:12px; line-height:1.4; }
+        .video-studio-status.error { color:#b3261e; }
+        .video-studio-status.success { color:#28763b; }
+        .video-studio-progress { display:grid; gap:7px; margin-top:12px; }
+        .video-studio-progress-row { display:flex; align-items:center; gap:8px; color:#777087; font-size:11px; }
+        .video-studio-progress-row span:first-child { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:#eeeaf7; color:#7962ba; font-weight:800; }
+        .video-studio-progress-row.done span:first-child { background:#dff3e5; color:#28763b; }
+        .video-studio-progress-row.current span:first-child { background:#4B2E9E; color:#fff; }
+        .video-studio-asset-preview { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+        .video-studio-asset-preview img { width:100%; aspect-ratio:16/10; border:1px solid #e5def2; border-radius:9px; object-fit:cover; background:#f8f5ff; }
+        .video-studio-note { padding:10px 11px; border-radius:11px; background:#f7f3ff; color:#625878; font-size:11px; line-height:1.45; }
+        .video-studio-library-toolbar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-bottom:12px; }
+        .video-studio-library-toolbar input,.video-studio-library-toolbar select { min-height:38px; }
+        .video-studio-library-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+        .video-studio-library-item { display:flex; flex-direction:column; gap:9px; border:1px solid #e5def2; border-radius:15px; padding:11px; background:#fff; }
+        .video-studio-library-thumb { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; overflow:hidden; border-radius:10px; background:#f4f0fc; }
+        .video-studio-library-thumb img { width:100%; aspect-ratio:1.4; object-fit:cover; }
+        .video-studio-library-title { color:#34206f; font-weight:800; font-size:14px; }
+        .video-studio-library-meta { color:#756d82; font-size:11px; line-height:1.45; }
+        .video-studio-library-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+        .video-studio-library-actions .video-studio-btn { padding:7px 10px; font-size:11px; }
+        .video-studio-empty { padding:35px 18px; border:1px dashed #d8ccf4; border-radius:15px; text-align:center; color:#81798c; font-size:13px; }
+        .video-studio-preview-modal { position:fixed; inset:0; z-index:8500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,14,45,.82); }
+        .video-studio-preview-modal.show { display:flex; }
+        .video-studio-preview-card { width:min(720px,100%); max-height:calc(100vh - 32px); overflow:auto; border-radius:20px; background:#fff; box-shadow:0 20px 70px rgba(0,0,0,.35); }
+        .video-studio-preview-head { display:flex; align-items:center; gap:10px; padding:15px 16px; color:#fff; background:linear-gradient(120deg,#34206f,#5c45bb); }
+        .video-studio-preview-head strong { flex:1; }
+        .video-studio-preview-close { border:0; width:34px; height:34px; border-radius:50%; color:#fff; background:rgba(255,255,255,.16); font-size:21px; cursor:pointer; }
+        .video-studio-stage { position:relative; margin:16px; overflow:hidden; border-radius:14px; background:#181321; }
+        .video-studio-stage img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; }
+        .video-studio-caption { position:absolute; left:10px; right:10px; bottom:10px; padding:8px 10px; border-radius:8px; color:#fff; background:rgba(0,0,0,.72); font-size:13px; line-height:1.35; text-align:center; }
+        .video-studio-preview-controls { display:flex; align-items:center; justify-content:center; gap:8px; padding:0 16px 16px; }
+        .video-studio-preview-controls button { min-width:44px; min-height:40px; border:1px solid #d8ccf4; border-radius:20px; background:#fff; color:#4B2E9E; font-weight:800; cursor:pointer; }
+        .video-studio-preview-controls button.primary { color:#fff; background:#4B2E9E; border-color:#4B2E9E; }
+        .video-studio-preview-info { padding:0 16px 16px; color:#6e687a; font-size:12px; line-height:1.5; }
+        .video-studio-preview-progress { height:5px; margin:0 16px 12px; overflow:hidden; border-radius:5px; background:#eeeaf7; }
+        .video-studio-preview-progress div { height:100%; width:0; background:#d86f48; transition:width .2s linear; }
+        .video-studio-school-list { max-height:150px; overflow:auto; padding:8px; border:1px solid #ddd5ec; border-radius:10px; background:#fbfaff; }
+        .video-studio-school-list label { display:flex; align-items:center; gap:7px; padding:5px 2px; color:#51476a; font-size:11px; }
+        @media (max-width:760px) {
+            .video-studio-header { padding:13px 14px; }
+            .video-studio-header h2 { font-size:18px; }
+            .video-studio-tabs { padding-left:10px; padding-right:10px; }
+            .video-studio-body { padding:14px 12px 24px; }
+            .video-studio-grid { grid-template-columns:1fr; }
+            .video-studio-form-grid,.video-studio-library-toolbar { grid-template-columns:1fr 1fr; }
+        }
+        @media (max-width:430px) {
+            .video-studio-form-grid,.video-studio-library-toolbar { grid-template-columns:1fr; }
+            .video-studio-intro { display:block; }
+            .video-studio-asset-preview { grid-template-columns:repeat(2,1fr); }
+        }
     </style>
 </head>
 <body>
@@ -1366,6 +1453,166 @@
                     <button class="curriculum-action-btn primary" type="submit">Submit Suggestion</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- VIDEO STUDIO -->
+    <div id="videoStudioModal" class="video-studio-modal" role="dialog" aria-modal="true" aria-labelledby="videoStudioTitle">
+        <div class="video-studio-shell">
+            <div class="video-studio-header">
+                <div class="video-studio-header-copy">
+                    <h2 id="videoStudioTitle">🎬 Video Studio</h2>
+                    <p>Make short lessons that feel clear, local, and easy to replay.</p>
+                </div>
+                <button id="closeVideoStudioBtn" class="video-studio-close" type="button" aria-label="Close Video Studio">&times;</button>
+            </div>
+            <div class="video-studio-tabs" role="tablist" aria-label="Video Studio sections">
+                <button class="video-studio-tab active" type="button" data-video-studio-tab="cartoon">Cartoon Studio</button>
+                <button class="video-studio-tab" type="button" data-video-studio-tab="auto">AI Auto-Video <small>Step 2</small></button>
+                <button class="video-studio-tab" type="button" data-video-studio-tab="twin">Digital Teacher Twin <small>Step 3</small></button>
+                <button class="video-studio-tab" type="button" data-video-studio-tab="library">Video Library</button>
+            </div>
+            <div class="video-studio-body">
+                <section id="videoStudioCartoonPane" class="video-studio-pane active" role="tabpanel">
+                    <div class="video-studio-intro">
+                        <div>
+                            <h3>Cartoon Studio</h3>
+                            <p>Turn a short English lesson script into a six-scene slideshow with captions and browser voiceover. Generation requires an internet connection; the finished lesson can be cached for offline playback.</p>
+                        </div>
+                        <button id="videoStudioSeedAssetsInlineBtn" type="button" class="video-studio-btn">Seed asset library</button>
+                    </div>
+                    <div class="video-studio-grid">
+                        <div class="video-studio-card">
+                            <h4>Lesson brief</h4>
+                            <form id="videoStudioForm" class="video-studio-form">
+                                <div class="video-studio-form-grid">
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioTopic">Topic *</label>
+                                        <input id="videoStudioTopic" name="topic" required maxlength="120" placeholder="e.g. Parts of a plant">
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioType">Lesson type *</label>
+                                        <select id="videoStudioType" name="type" required>
+                                            <option value="">Select type</option>
+                                            <option value="lesson">Lesson</option>
+                                            <option value="revision">Revision</option>
+                                            <option value="story">Story</option>
+                                            <option value="quiz">Quiz</option>
+                                        </select>
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioSubject">Subject *</label>
+                                        <select id="videoStudioSubject" name="subject" required><option value="">Select subject</option></select>
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioClassLevel">Class level *</label>
+                                        <select id="videoStudioClassLevel" name="classLevel" required><option value="">Select class</option></select>
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioLanguage">Language *</label>
+                                        <select id="videoStudioLanguage" name="language" required>
+                                            <option value="English">English</option>
+                                            <option value="Luganda">Luganda</option>
+                                            <option value="Swahili">Swahili</option>
+                                            <option value="Runyankole">Runyankole</option>
+                                            <option value="Acholi">Acholi</option>
+                                            <option value="Lusoga">Lusoga</option>
+                                            <option value="Rukiga">Rukiga</option>
+                                        </select>
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioCharacter">Character *</label>
+                                        <select id="videoStudioCharacter" name="character" required>
+                                            <option value="">Select character</option>
+                                            <option value="teacher">Teacher</option>
+                                            <option value="boy">Curious learner</option>
+                                            <option value="girl">Young scientist</option>
+                                            <option value="farmer">Community guide</option>
+                                        </select>
+                                    </div>
+                                    <div class="video-studio-field">
+                                        <label for="videoStudioDuration">Duration *</label>
+                                        <select id="videoStudioDuration" name="duration" required>
+                                            <option value="">Select duration</option>
+                                            <option value="30">30 seconds</option>
+                                            <option value="60">60 seconds</option>
+                                            <option value="90">90 seconds</option>
+                                            <option value="120">120 seconds</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="video-studio-field">
+                                    <label for="videoStudioScript">English script *</label>
+                                    <textarea id="videoStudioScript" name="script" required maxlength="2000" placeholder="Write the lesson narration in English. Keep it short enough for six clear scenes."></textarea>
+                                    <div class="video-studio-script-meta"><span>Maximum 2,000 characters</span><strong><span id="videoStudioScriptCount">0</span>/2000</strong></div>
+                                </div>
+                                <div class="video-studio-note">Voiceover uses the browser's SpeechSynthesis when no managed audio provider is configured. No fake audio URL is saved, and the slideshow remains playable with captions if voiceover is unavailable.</div>
+                                <div class="video-studio-actions">
+                                    <button id="generateVideoStudioBtn" class="video-studio-btn primary" type="submit">Generate cartoon lesson</button>
+                                    <button id="resetVideoStudioBtn" class="video-studio-btn" type="reset">Clear form</button>
+                                </div>
+                                <div id="videoStudioGenerationStatus" class="video-studio-status" role="status" aria-live="polite"></div>
+                                <div id="videoStudioProgress" class="video-studio-progress" style="display:none;">
+                                    <div class="video-studio-progress-row" data-video-stage="translation"><span>1</span><b>Translate script</b></div>
+                                    <div class="video-studio-progress-row" data-video-stage="voiceover"><span>2</span><b>Prepare voiceover</b></div>
+                                    <div class="video-studio-progress-row" data-video-stage="images"><span>3</span><b>Select cartoon scenes</b></div>
+                                    <div class="video-studio-progress-row" data-video-stage="captions"><span>4</span><b>Build captions</b></div>
+                                    <div class="video-studio-progress-row" data-video-stage="slideshow"><span>5</span><b>Compile slideshow</b></div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="video-studio-card">
+                            <h4>Cartoon scene library</h4>
+                            <div id="videoStudioAssetPreview" class="video-studio-asset-preview"><div class="video-studio-empty" style="grid-column:1/-1;">Seed the 20 placeholder assets to preview scenes.</div></div>
+                            <div id="videoStudioProjectActions" style="display:none;margin-top:12px;">
+                                <div id="videoStudioProjectSummary" class="video-studio-note"></div>
+                                <div style="margin-top:10px;">
+                                    <label style="display:block;color:#51476a;font-size:11px;font-weight:800;margin-bottom:4px;">School access</label>
+                                    <select id="videoStudioPublishAudience" style="width:100%;box-sizing:border-box;border:1px solid #ddd5ec;border-radius:10px;padding:9px;background:#fff;font:12px inherit;">
+                                        <option value="all">All schools</option>
+                                        <option value="selected">Selected schools</option>
+                                    </select>
+                                    <div id="videoStudioSchoolList" class="video-studio-school-list" style="display:none;margin-top:7px;"></div>
+                                </div>
+                                <div class="video-studio-actions">
+                                    <button id="previewVideoStudioBtn" type="button" class="video-studio-btn orange">Preview</button>
+                                    <button id="publishVideoStudioBtn" type="button" class="video-studio-btn primary">Publish to schools</button>
+                                    <button id="deleteVideoStudioBtn" type="button" class="video-studio-btn danger">Delete draft</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section id="videoStudioAutoPane" class="video-studio-pane" role="tabpanel">
+                    <div class="video-studio-card"><h3 style="margin:0;color:#34206f;">AI Auto-Video</h3><p class="video-studio-note" style="margin-top:12px;">Coming in Step 2. This foundation release deliberately does not create automated topic series or paid AI video assets.</p></div>
+                </section>
+                <section id="videoStudioTwinPane" class="video-studio-pane" role="tabpanel">
+                    <div class="video-studio-card"><h3 style="margin:0;color:#34206f;">Digital Teacher Twin</h3><p class="video-studio-note" style="margin-top:12px;">Coming in Step 3. Teacher avatar capture, cloning, and processing are not enabled in this release.</p></div>
+                </section>
+                <section id="videoStudioLibraryPane" class="video-studio-pane" role="tabpanel">
+                    <div class="video-studio-intro"><div><h3>Video Library</h3><p>Review published cartoon lessons, cache them for offline use, or return to a draft for editing.</p></div><button id="refreshVideoStudioLibraryBtn" type="button" class="video-studio-btn">Refresh library</button></div>
+                    <div class="video-studio-library-toolbar">
+                        <input id="videoStudioLibrarySearch" type="search" placeholder="Search topic">
+                        <select id="videoStudioLibraryModeFilter"><option value="">All modes</option><option value="cartoon">Cartoon</option></select>
+                        <select id="videoStudioLibraryLanguageFilter"><option value="">All languages</option><option>English</option><option>Luganda</option><option>Swahili</option><option>Runyankole</option><option>Acholi</option><option>Lusoga</option><option>Rukiga</option></select>
+                        <select id="videoStudioLibrarySubjectFilter"><option value="">All subjects</option></select>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;"><span id="videoStudioLibraryCount" class="cbc-status"></span><select id="videoStudioLibrarySort" style="width:auto;padding:8px;border:1px solid #ddd5ec;border-radius:10px;"><option value="newest">Newest first</option><option value="views">Most viewed</option></select></div>
+                    <div id="videoStudioLibraryList" class="video-studio-library-list"><div class="video-studio-empty" style="grid-column:1/-1;">No published cartoon lessons yet.</div></div>
+                    <button id="loadMoreVideoStudioBtn" type="button" class="video-studio-btn" style="display:none;margin:14px auto 0;">Load more</button>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoStudioPreviewModal" class="video-studio-preview-modal" role="dialog" aria-modal="true" aria-labelledby="videoStudioPreviewTitle">
+        <div class="video-studio-preview-card">
+            <div class="video-studio-preview-head"><strong id="videoStudioPreviewTitle">Cartoon lesson preview</strong><button id="closeVideoStudioPreviewBtn" class="video-studio-preview-close" type="button" aria-label="Close preview">&times;</button></div>
+            <div class="video-studio-stage"><img id="videoStudioPreviewImage" src="" alt="Cartoon lesson scene"><div id="videoStudioPreviewCaption" class="video-studio-caption"></div></div>
+            <audio id="videoStudioPreviewAudio" controls preload="metadata" style="display:none;width:calc(100% - 32px);margin:0 16px 12px;"></audio>
+            <div class="video-studio-preview-progress"><div id="videoStudioPreviewProgress"></div></div>
+            <div class="video-studio-preview-controls"><button id="videoStudioRestartBtn" type="button" title="Restart">↺</button><button id="videoStudioPlayPauseBtn" class="primary" type="button">Pause</button><button id="videoStudioPreviewNextBtn" type="button" title="Next scene">Next</button></div>
+            <div id="videoStudioPreviewInfo" class="video-studio-preview-info"></div>
         </div>
     </div>
 
@@ -2038,6 +2285,21 @@
                         <button id="exportNcdcCsvBtn" type="button" class="admin-toggle" style="background:#2e7d32;">📥 Export CSV</button>
                         <button id="exportNcdcPdfBtn" type="button" class="admin-toggle">📥 Export PDF</button>
                     </div>
+                </div>
+
+                <div class="admin-section" id="superVideoStudioSection" style="display:none;background:linear-gradient(135deg,#fff6ef,#f4f0ff);border:1.5px solid #d9c8f4;border-radius:16px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                        <div>
+                            <h4 style="margin:0;color:#34206f;">🎬 Video Studio</h4>
+                            <p style="font-size:12px;color:#6e687a;margin:5px 0 0;">Create short, curriculum-aligned cartoon lessons that schools can play online or offline.</p>
+                        </div>
+                        <button id="openVideoStudioBtn" type="button" class="admin-toggle" style="background:#34206f;color:#fff;">Open Video Studio</button>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:11px;padding-top:10px;border-top:1px solid #e5def2;">
+                        <span style="font-size:11px;color:#81798c;">Cartoon Studio uses owned SVG placeholders in this foundation release.</span>
+                        <button id="seedVideoStudioAssetsBtn" type="button" class="admin-toggle" style="background:#fff;color:#4B2E9E;border:1px solid #cdbdf8;">🌱 Seed 20 Cartoon Assets</button>
+                    </div>
+                    <div id="videoStudioSeedStatus" class="cbc-status" role="status" aria-live="polite"></div>
                 </div>
 
                 <div class="admin-section" id="superProjectOverviewSection" style="display:none;background:#f7f2ff;border:1.5px solid #cdbdf8;border-radius:16px;padding:16px;">
@@ -2883,6 +3145,13 @@
     let offlineSession = false;
     let _offlineSlideshowTimer = null;
     let _offlineObjectUrls = [];
+    let _videoStudioState = {
+        assets: [],
+        currentProject: null,
+        library: [],
+        libraryVisible: 20,
+        preview: { project: null, index: 0, playing: false, timer: null, speech: null, startedAt: 0 }
+    };
     let _offlineProgressTimer = null;
     let _offlineProgressWrite = null;
     let _offlineProgressPending = null;
@@ -3887,6 +4156,15 @@
         if(!currentSelectedClassId) { showNotification("Please select a class first","error"); return; }
         const key = `${currentSelectedClassId.level}_${currentSelectedClassId.id}_${subject}`;
         let vid = videoMappings[key];
+        if(!vid && (!navigator.onLine || offlineSession) && Offline) {
+            const cachedCartoons = await Offline.listVideoStudio().catch(() => []);
+            const cached = cachedCartoons.find(item => item.subject === subject && item.classLevel === `${currentSelectedClassId.level === 'primary' ? 'P' : 'S'}${currentSelectedClassId.id}`);
+            if(cached) {
+                vid = `cartoon:${cached.libraryId}`;
+                window._videoMappingData = window._videoMappingData || {};
+                window._videoMappingData[key] = Object.assign({}, cached, { id:cached.libraryId, cartoonProject:cached });
+            }
+        }
         if(!vid) { showNotification(`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`, "info"); return; }
 
         // Build video list for prev/next (all subjects with videos in current class)
@@ -3901,6 +4179,10 @@
         const mappingData = window._videoMappingData && window._videoMappingData[key];
         currentTeacherId = mappingData?.teacherId || "";
         await saveVideoView(subject, currentSelectedClassId.id, currentSelectedClassId.name);
+        if(String(vid).startsWith('cartoon:')) {
+            await openPublishedCartoonVideo(mappingData?.cartoonProject || mappingData, key);
+            return;
+        }
         document.getElementById('currentVideoTitle').innerText = `${subject} - ${currentSelectedClassId.name} Lesson`;
         document.getElementById('videoTitle').innerHTML = `<i class="fab fa-youtube"></i> ${subject} Lesson`;
         document.getElementById('feedbackSection').style.display = 'block';
@@ -3928,6 +4210,11 @@
         if(!vid) return;
         currentVideoKey = videoKey;
         currentTeacherId = teacherId || '';
+        const mappingData=window._videoMappingData&&window._videoMappingData[videoKey];
+        if(String(vid).startsWith('cartoon:')) {
+            await openPublishedCartoonVideo(mappingData?.cartoonProject || mappingData, videoKey);
+            return;
+        }
         if(!navigator.onLine || offlineSession) {
             await saveVideoView(title||'Lesson',currentSelectedClassId?.id||'',currentSelectedClassId?.name||'');
         }
@@ -3940,7 +4227,6 @@
         const nextBtn = document.getElementById('vcNextBtn');
         if(prevBtn) prevBtn.disabled = _currentVideoIdx <= 0;
         if(nextBtn) nextBtn.disabled = _currentVideoIdx < 0 || _currentVideoIdx >= _currentVideoList.length - 1;
-        const mappingData=window._videoMappingData&&window._videoMappingData[videoKey];
         setupOfflineVideoActions(videoKey,mappingData||{youtubeId:vid});
         if(!navigator.onLine || offlineSession) await showOfflineVideo(videoKey); else createYTPlayer(vid);
     }
@@ -5393,6 +5679,524 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         { id:'default-full', name:'Full Year', price:150000, duration:'12 months' }
     ];
 
+    // ===== VIDEO STUDIO — CARTOON FOUNDATION =====
+    const VIDEO_STUDIO_STAGES = ['translation','voiceover','images','captions','slideshow'];
+    const VIDEO_STUDIO_POSES = ['intro','explain','point','example','practice'];
+    const VIDEO_STUDIO_CHARACTERS = ['teacher','boy','girl','farmer'];
+
+    function videoStudioXml(value) {
+        return String(value || '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[char]));
+    }
+    function videoStudioSvg(character, pose, topic) {
+        const colors = { teacher:'#4B2E9E', boy:'#1D8A9B', girl:'#D86F48', farmer:'#3B8654' };
+        const color = colors[character] || '#4B2E9E';
+        const labels = { teacher:'Teacher', boy:'Learner', girl:'Scientist', farmer:'Guide' };
+        const scene = String(pose || 'intro').replace(/^\w/, value => value.toUpperCase());
+        const safeTopic = videoStudioXml(String(topic || 'Learning').slice(0, 38));
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f6f1ff"/><stop offset="1" stop-color="#fff3e7"/></linearGradient></defs><rect width="800" height="450" fill="url(#bg)"/><circle cx="115" cy="92" r="46" fill="${color}" opacity=".15"/><circle cx="680" cy="370" r="95" fill="${color}" opacity=".11"/><rect x="82" y="282" width="636" height="5" rx="3" fill="${color}" opacity=".25"/><circle cx="400" cy="162" r="62" fill="#ffd6b8"/><path d="M340 153c12-58 108-63 123 1-25-20-77-23-123-1Z" fill="${color}"/><circle cx="378" cy="168" r="6" fill="#34206f"/><circle cx="422" cy="168" r="6" fill="#34206f"/><path d="M378 201q22 18 44 0" fill="none" stroke="#9a4d48" stroke-width="6" stroke-linecap="round"/><path d="M335 255q65-54 130 0l26 75H309Z" fill="${color}"/><path d="M351 330h98l24 45H327Z" fill="#fff" opacity=".92"/><path d="M469 278q80-20 119-65" fill="none" stroke="#ffd6b8" stroke-width="24" stroke-linecap="round"/><path d="M584 210l36-8" stroke="${color}" stroke-width="12" stroke-linecap="round"/><rect x="510" y="74" width="190" height="74" rx="16" fill="#fff" stroke="${color}" stroke-width="4"/><text x="605" y="105" text-anchor="middle" font-family="system-ui,sans-serif" font-size="19" font-weight="700" fill="${color}">${videoStudioXml(labels[character] || 'Guide')}</text><text x="605" y="130" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" fill="#625878">${videoStudioXml(scene)}</text><text x="400" y="408" text-anchor="middle" font-family="system-ui,sans-serif" font-size="24" font-weight="800" fill="#34206f">${safeTopic}</text></svg>`;
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+    function videoStudioAssetRecords() {
+        return VIDEO_STUDIO_CHARACTERS.flatMap(character => VIDEO_STUDIO_POSES.map(pose => ({
+            id: `${character}_${pose}`,
+            character, pose, assetType:'svg-placeholder',
+            imageDataUrl: videoStudioSvg(character, pose, 'APSHULE lesson'),
+            tags: [character, pose, 'cartoon', 'offline-ready'],
+            createdAt: new Date().toISOString()
+        })));
+    }
+    function videoStudioClassOptions() {
+        return [
+            ...(classData.primary || []).map(item => ({ value:`P${item.id}`, label:item.name })),
+            ...(classData.secondary || []).map(item => ({ value:`S${item.id}`, label:item.name }))
+        ];
+    }
+    function videoStudioSetStatus(message, type='') {
+        const status = document.getElementById('videoStudioGenerationStatus');
+        if(status) { status.textContent = message || ''; status.className = `video-studio-status${type ? ` ${type}` : ''}`; }
+    }
+    function videoStudioSetSeedStatus(message, type='') {
+        const status = document.getElementById('videoStudioSeedStatus');
+        if(status) { status.textContent = message || ''; status.style.color = type === 'error' ? '#b3261e' : type === 'success' ? '#28763b' : '#6e687a'; }
+    }
+    function videoStudioPopulateFormOptions() {
+        const subjects = [...new Set([...(primarySubjects || []), ...(secondarySubjects || [])])];
+        const subjectSelect = document.getElementById('videoStudioSubject');
+        if(subjectSelect) {
+            const value = subjectSelect.value;
+            subjectSelect.innerHTML = '<option value="">Select subject</option>' + subjects.map(subject => `<option value="${escHtml(subject)}">${escHtml(subject)}</option>`).join('');
+            subjectSelect.value = value;
+        }
+        const classSelect = document.getElementById('videoStudioClassLevel');
+        if(classSelect) {
+            const value = classSelect.value;
+            classSelect.innerHTML = '<option value="">Select class</option>' + videoStudioClassOptions().map(item => `<option value="${item.value}">${escHtml(item.label)}</option>`).join('');
+            classSelect.value = value;
+        }
+        const librarySubject = document.getElementById('videoStudioLibrarySubjectFilter');
+        if(librarySubject) {
+            const value = librarySubject.value;
+            librarySubject.innerHTML = '<option value="">All subjects</option>' + subjects.map(subject => `<option value="${escHtml(subject)}">${escHtml(subject)}</option>`).join('');
+            librarySubject.value = value;
+        }
+    }
+    function videoStudioRenderAssets(assets, topic) {
+        const container = document.getElementById('videoStudioAssetPreview');
+        if(!container) return;
+        const items = (assets || []).slice(0, 6);
+        if(!items.length) { container.innerHTML = '<div class="video-studio-empty" style="grid-column:1/-1;">Seed the 20 placeholder assets to preview scenes.</div>'; return; }
+        container.innerHTML = items.map(item => `<img src="${item.imageDataUrl || item.url || ''}" alt="${escHtml(item.pose || 'Cartoon scene')}" loading="lazy">`).join('');
+    }
+    function videoStudioRenderSchoolList() {
+        const container = document.getElementById('videoStudioSchoolList');
+        if(!container) return;
+        const available = (schools || []).filter(school => school.id);
+        container.innerHTML = available.length ? available.map(school => `<label><input type="checkbox" value="${escHtml(school.id)}"> ${escHtml(school.name || school.id)}</label>`).join('') : '<span style="font-size:11px;color:#81798c;">No schools are available yet.</span>';
+    }
+    async function loadVideoStudioAssets() {
+        if(!db) return [];
+        const snap = await getDocs(query(collection(db,'cartoon_assets'), orderBy('character','asc'), orderBy('pose','asc'))).catch(() => getDocs(collection(db,'cartoon_assets')));
+        _videoStudioState.assets = snap.docs.map(item => ({ id:item.id, ...item.data() }));
+        videoStudioRenderAssets(_videoStudioState.assets, document.getElementById('videoStudioTopic')?.value);
+        return _videoStudioState.assets;
+    }
+    async function seedVideoStudioAssets() {
+        if(currentUser?.role !== 'superadmin') throw new Error('Only Super Admins can seed cartoon assets');
+        if(!db) throw new Error('Video Studio is still connecting to Firebase');
+        const existing = await getDocs(collection(db,'cartoon_assets'));
+        const records = videoStudioAssetRecords();
+        await Promise.all(records.map(record => setDoc(doc(collection(db,'cartoon_assets'), record.id), record, { merge:true })));
+        await loadVideoStudioAssets();
+        return { created: Math.max(0, records.length - existing.size), total:records.length };
+    }
+    function videoStudioFormatSrtTime(seconds) {
+        const total = Math.max(0, Number(seconds) || 0);
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const secs = Math.floor(total % 60);
+        const millis = Math.round((total - Math.floor(total)) * 1000);
+        return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(secs).padStart(2,'0')},${String(millis).padStart(3,'0')}`;
+    }
+    function videoStudioBuildCaptions(text, duration) {
+        const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+        const chunks = [];
+        const target = Math.max(6, Math.ceil(words.length / 6));
+        for(let index=0; index<words.length; index += target) chunks.push(words.slice(index, index + target).join(' '));
+        if(!chunks.length) chunks.push('APSHULE lesson');
+        const seconds = Math.max(5, Number(duration) || 60) / chunks.length;
+        const captions = chunks.map((caption, index) => ({ index:index+1, start:Number((index * seconds).toFixed(3)), end:Number(((index+1) * seconds).toFixed(3)), text:caption }));
+        const srt = captions.map(caption => `${caption.index}\n${videoStudioFormatSrtTime(caption.start)} --> ${videoStudioFormatSrtTime(caption.end)}\n${caption.text}`).join('\n\n');
+        return { captions, srt };
+    }
+    async function videoStudioTranslateScript(script, language) {
+        if(language === 'English') return { text:script, provider:'source-english' };
+        if(!navigator.onLine) throw new Error('Connect to the internet before translating a non-English lesson');
+        const translated = await askAI(`Translate the following APSHULE primary or secondary school lesson from English to ${language}. Return only the translation, preserve the educational meaning, and do not add commentary:\n\n${script}`);
+        if(!translated || translated.startsWith('📚 The AI tutor is having trouble')) throw new Error('Translation service is unavailable. Try again while online.');
+        return { text:translated.trim(), provider:'existing-managed-ai' };
+    }
+    function videoStudioStage(stage, state='current') {
+        document.querySelectorAll('[data-video-stage]').forEach(row => {
+            row.classList.remove('done','current');
+            const index = VIDEO_STUDIO_STAGES.indexOf(row.dataset.videoStage);
+            const currentIndex = VIDEO_STUDIO_STAGES.indexOf(stage);
+            if(state === 'done' ? index <= currentIndex : index < currentIndex) row.classList.add('done');
+            if(row.dataset.videoStage === stage && state !== 'done') row.classList.add('current');
+        });
+    }
+    async function videoStudioUpdateProject(projectId, data) {
+        if(!projectId || !db) return;
+        await setDoc(doc(db,'video_studio_projects',projectId), Object.assign({}, data, { updatedAt:serverTimestamp() }), { merge:true });
+    }
+    function videoStudioFormValues() {
+        const form = document.getElementById('videoStudioForm');
+        if(!form) return {};
+        const data = Object.fromEntries(new FormData(form).entries());
+        data.script = String(data.script || '').trim();
+        data.durationSeconds = Number(data.duration || 0);
+        return data;
+    }
+    function videoStudioValidate(values) {
+        const required = ['topic','type','subject','classLevel','language','character'];
+        const errors = required.filter(key => !String(values[key] || '').trim()).map(key => `${key} is required`);
+        const script = String(values.script || '').trim();
+        if(!values.durationSeconds || ![30,60,90,120].includes(values.durationSeconds)) errors.push('Choose a lesson duration');
+        if(!script) errors.push('Write an English script');
+        if(script.length > 2000) errors.push('Keep the script within 2,000 characters');
+        return errors;
+    }
+    function videoStudioSelectScenes(assets, character, topic) {
+        const byPose = new Map((assets || []).filter(asset => asset.character === character).map(asset => [asset.pose, asset]));
+        const chosen = VIDEO_STUDIO_POSES.map(pose => byPose.get(pose)).filter(Boolean);
+        if(chosen.length < 5) {
+            const fallback = VIDEO_STUDIO_POSES.map(pose => ({ id:`${character}_${pose}`, character, pose, imageDataUrl:videoStudioSvg(character, pose, topic), assetType:'svg-placeholder' }));
+            return fallback.concat(fallback.slice(1,2)).slice(0,6);
+        }
+        return chosen.concat(chosen.slice(1,2)).slice(0,6).map(asset => Object.assign({}, asset, { imageDataUrl:asset.imageDataUrl || videoStudioSvg(character, asset.pose, topic) }));
+    }
+    async function videoStudioGenerate(values) {
+        if(currentUser?.role !== 'superadmin') throw new Error('Only Super Admins can generate cartoon lessons');
+        if(!navigator.onLine) throw new Error('Connect to the internet before generating a lesson');
+        if(!db) throw new Error('Video Studio is still connecting to Firebase');
+        const projectRef = await addDoc(collection(db,'video_studio_projects'), {
+            mode:'cartoon', status:'generating', generationStep:'translation',
+            topic:values.topic, type:values.type, subject:values.subject, classLevel:values.classLevel,
+            language:values.language, character:values.character, durationSeconds:values.durationSeconds,
+            scriptEnglish:values.script, script:values.script, createdBy:currentUser.uid,
+            createdAt:serverTimestamp(), updatedAt:serverTimestamp(), views:0
+        });
+        const projectId = projectRef.id;
+        await setDoc(doc(db,'video_generation_queue',projectId), { projectId, mode:'cartoon', status:'processing', currentStep:'translation', createdBy:currentUser.uid, createdAt:serverTimestamp(), updatedAt:serverTimestamp() }, { merge:true });
+        try {
+            videoStudioSetStatus('Translating the lesson…');
+            videoStudioStage('translation');
+            const translation = await videoStudioTranslateScript(values.script, values.language);
+            await videoStudioUpdateProject(projectId, { translatedScript:translation.text, translationProvider:translation.provider, generationStep:'voiceover' });
+            await setDoc(doc(db,'video_generation_queue',projectId), { currentStep:'voiceover', updatedAt:serverTimestamp() }, { merge:true });
+
+            videoStudioSetStatus('Preparing browser-safe voiceover…');
+            videoStudioStage('voiceover');
+            const voiceChunks = translation.text.split(/(?<=[.!?])\s+/).filter(Boolean).map(text => text.trim()).slice(0, 30);
+            const voiceover = { mode:'speechSynthesis', chunks:voiceChunks, audioPath:null, audioUrl:null, provider:'browser', status:'available-in-preview' };
+            await videoStudioUpdateProject(projectId, { voiceover, generationStep:'images' });
+            await setDoc(doc(db,'video_generation_queue',projectId), { currentStep:'images', updatedAt:serverTimestamp() }, { merge:true });
+
+            videoStudioSetStatus('Selecting six cartoon scenes…');
+            videoStudioStage('images');
+            const assets = _videoStudioState.assets.length ? _videoStudioState.assets : await loadVideoStudioAssets();
+            const slideshowImages = videoStudioSelectScenes(assets, values.character, values.topic).map((asset, index) => ({ index:index+1, assetId:asset.id, pose:asset.pose, url:asset.imageDataUrl, alt:`${values.topic} scene ${index+1}` }));
+            await videoStudioUpdateProject(projectId, { slideshowImages, generationStep:'captions' });
+            await setDoc(doc(db,'video_generation_queue',projectId), { currentStep:'captions', updatedAt:serverTimestamp() }, { merge:true });
+
+            videoStudioSetStatus('Building timed captions…');
+            videoStudioStage('captions');
+            const captionData = videoStudioBuildCaptions(translation.text, values.durationSeconds);
+            await videoStudioUpdateProject(projectId, { captions:captionData.captions, captionsSrt:captionData.srt, generationStep:'slideshow' });
+            await setDoc(doc(db,'video_generation_queue',projectId), { currentStep:'slideshow', updatedAt:serverTimestamp() }, { merge:true });
+
+            videoStudioSetStatus('Compiling offline slideshow metadata…');
+            videoStudioStage('slideshow');
+            const project = {
+                id:projectId, mode:'cartoon', status:'ready', generationStep:'complete',
+                topic:values.topic, type:values.type, subject:values.subject, classLevel:values.classLevel,
+                language:values.language, character:values.character, durationSeconds:values.durationSeconds,
+                scriptEnglish:values.script, script:values.script, translatedScript:translation.text,
+                translationProvider:translation.provider, voiceover, slideshowImages,
+                captions:captionData.captions, captionsSrt:captionData.srt, audioPath:null, storagePaths:{ audio:null, slides:[] },
+                sizeBytes:JSON.stringify({ slideshowImages, captions:captionData.captions, voiceover }).length,
+                createdBy:currentUser.uid, createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(), views:0
+            };
+            await videoStudioUpdateProject(projectId, project);
+            await setDoc(doc(db,'video_generation_queue',projectId), { status:'complete', currentStep:'complete', updatedAt:serverTimestamp() }, { merge:true });
+            _videoStudioState.currentProject = project;
+            videoStudioSetStatus('Cartoon lesson is ready to preview or publish.', 'success');
+            videoStudioRenderAssets(slideshowImages, values.topic);
+            videoStudioRenderProjectActions(project);
+            return project;
+        } catch(error) {
+            await videoStudioUpdateProject(projectId, { status:'failed', generationStep:'failed', errorMessage:error.message || String(error) }).catch(()=>{});
+            await setDoc(doc(db,'video_generation_queue',projectId), { status:'failed', errorMessage:error.message || String(error), updatedAt:serverTimestamp() }, { merge:true }).catch(()=>{});
+            videoStudioSetStatus(`Generation failed: ${error.message || error}`, 'error');
+            throw error;
+        }
+    }
+    function videoStudioRenderProjectActions(project) {
+        const actions = document.getElementById('videoStudioProjectActions');
+        const summary = document.getElementById('videoStudioProjectSummary');
+        if(!actions || !summary) return;
+        actions.style.display = project ? 'block' : 'none';
+        if(!project) return;
+        summary.innerHTML = `<strong>${escHtml(project.topic)}</strong><br>${escHtml(project.subject)} · ${escHtml(project.classLevel)} · ${escHtml(project.language)} · ${project.durationSeconds}s<br><span style="font-size:11px;">${project.status === 'published' ? 'Published to schools' : 'Ready to preview'}</span>`;
+        videoStudioRenderSchoolList();
+    }
+    function videoStudioResetPreviewState() {
+        const preview = _videoStudioState.preview;
+        if(preview.timer) clearInterval(preview.timer);
+        if(typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+        const audio = document.getElementById('videoStudioPreviewAudio');
+        if(audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); }
+        _videoStudioState.preview = { project:null, index:0, elapsed:0, playing:false, timer:null, speech:null, startedAt:0 };
+    }
+    function videoStudioRenderPreview() {
+        const preview = _videoStudioState.preview;
+        const project = preview.project;
+        if(!project) return;
+        const images = project.slideshowImages || [];
+        const captions = project.captions || [];
+        const image = images[preview.index % Math.max(1, images.length)];
+        const caption = captions[preview.index % Math.max(1, captions.length)];
+        const imageEl = document.getElementById('videoStudioPreviewImage');
+        const captionEl = document.getElementById('videoStudioPreviewCaption');
+        const titleEl = document.getElementById('videoStudioPreviewTitle');
+        const info = document.getElementById('videoStudioPreviewInfo');
+        if(imageEl) { imageEl.src = image?.url || image?.imageDataUrl || ''; imageEl.alt = image?.alt || 'Cartoon lesson scene'; }
+        if(captionEl) captionEl.textContent = caption?.text || '';
+        if(titleEl) titleEl.textContent = project.topic || 'Cartoon lesson preview';
+        if(info) info.textContent = `${project.subject || 'Lesson'} · ${project.classLevel || ''} · ${project.language || 'English'} · Scene ${preview.index + 1} of ${Math.max(1, images.length)}${project.voiceover?.mode === 'speechSynthesis' ? ' · Browser voiceover' : ''}`;
+        const audio = document.getElementById('videoStudioPreviewAudio');
+        const audioUrl = project.voiceover?.audioUrl || project.audioUrl || '';
+        if(audio) {
+            if(audioUrl && audio.src !== audioUrl) audio.src = audioUrl;
+            audio.style.display = audioUrl ? 'block' : 'none';
+        }
+        const progress = document.getElementById('videoStudioPreviewProgress');
+        if(progress) progress.style.width = `${Math.min(100, (preview.elapsed / Math.max(1, Number(project.durationSeconds) || 1)) * 100)}%`;
+        const button = document.getElementById('videoStudioPlayPauseBtn');
+        if(button) button.textContent = preview.playing ? 'Pause' : 'Play';
+    }
+    function videoStudioSpeakCaption(index) {
+        const project = _videoStudioState.preview.project;
+        const caption = project?.captions?.[index];
+        if(!caption || typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return;
+        speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(caption.text);
+        utterance.rate = 0.92;
+        speechSynthesis.speak(utterance);
+    }
+    function videoStudioStartPreview() {
+        const preview = _videoStudioState.preview;
+        if(!preview.project) return;
+        if(preview.playing) {
+            preview.playing = false;
+            if(preview.timer) clearInterval(preview.timer);
+            preview.timer = null;
+            if(typeof speechSynthesis !== 'undefined') speechSynthesis.pause();
+            videoStudioRenderPreview();
+            return;
+        }
+        preview.playing = true;
+        const audio = document.getElementById('videoStudioPreviewAudio');
+        if(audio?.src) audio.play().catch(()=>{});
+        if(typeof speechSynthesis !== 'undefined') speechSynthesis.resume();
+        videoStudioSpeakCaption(preview.index);
+        preview.timer = setInterval(() => {
+            preview.elapsed += 0.25;
+            const duration = Math.max(1, Number(preview.project.durationSeconds) || 60);
+            const sceneDuration = duration / Math.max(1, (preview.project.slideshowImages || []).length);
+            const nextIndex = Math.min((preview.project.slideshowImages || []).length - 1, Math.floor(preview.elapsed / sceneDuration));
+            if(nextIndex !== preview.index) {
+                preview.index = Math.max(0, nextIndex);
+                videoStudioSpeakCaption(preview.index);
+            }
+            if(preview.elapsed >= duration) {
+                preview.elapsed = duration;
+                preview.playing = false;
+                clearInterval(preview.timer);
+                preview.timer = null;
+                if(typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+                if(audio?.src) audio.pause();
+            }
+            videoStudioRenderPreview();
+        }, 250);
+        videoStudioRenderPreview();
+    }
+    function videoStudioOpenPreview(project) {
+        if(!project) return;
+        videoStudioResetPreviewState();
+        _videoStudioState.preview.project = project;
+        document.getElementById('videoStudioPreviewModal')?.classList.add('show');
+        videoStudioRenderPreview();
+    }
+    function videoStudioClosePreview() {
+        videoStudioResetPreviewState();
+        document.getElementById('videoStudioPreviewModal')?.classList.remove('show');
+    }
+    function videoStudioRestartPreview() {
+        videoStudioResetPreviewState();
+        _videoStudioState.preview.project = _videoStudioState.currentProject;
+        videoStudioRenderPreview();
+        videoStudioStartPreview();
+    }
+    function videoStudioNextPreview() {
+        const preview = _videoStudioState.preview;
+        if(!preview.project) return;
+        preview.index = (preview.index + 1) % Math.max(1, (preview.project.slideshowImages || []).length);
+        const duration = Math.max(1, Number(preview.project.durationSeconds) || 60);
+        preview.elapsed = (preview.index / Math.max(1, (preview.project.slideshowImages || []).length)) * duration;
+        videoStudioSpeakCaption(preview.index);
+        videoStudioRenderPreview();
+    }
+    async function videoStudioCachePublished(project) {
+        if(!Offline || !project?.id) return;
+        await Offline.cacheVideoStudio({
+            libraryId:project.libraryId || project.id,
+            projectId:project.id,
+            topic:project.topic, subject:project.subject, classLevel:project.classLevel, language:project.language,
+            durationSeconds:project.durationSeconds, slideshowImages:project.slideshowImages || [],
+            captions:project.captions || [], captionsText:project.captionsSrt || '',
+            audioMetadata:project.voiceover || {}, publishedAt:project.publishedAt || new Date().toISOString()
+        });
+    }
+    async function openPublishedCartoonVideo(item, videoKey) {
+        if(!item) { showNotification('This cartoon lesson is not available yet','error'); return; }
+        let project = Object.assign({}, item, { id:item.projectId || item.id, libraryId:item.id });
+        if((!navigator.onLine || offlineSession) && Offline && item.id) {
+            const cached = await Offline.getVideoStudio(item.id).catch(() => null);
+            if(cached) project = Object.assign({}, project, cached, { id:item.projectId || cached.projectId || item.id, libraryId:item.id });
+        }
+        currentVideoKey = videoKey || item.id || '';
+        currentLessonSubject = `${item.subject || item.topic || 'Cartoon'} (${item.classLevel || ''})`;
+        currentTeacherId = '';
+        videoStudioOpenPreview(project);
+        if(navigator.onLine && db && item.id && !offlineSession) updateDoc(doc(db,'video_library',item.id), { views:increment(1) }).catch(()=>{});
+        videoStudioCachePublished(project).catch(()=>{});
+    }
+    function videoStudioSelectedSchools() {
+        return [...document.querySelectorAll('#videoStudioSchoolList input[type="checkbox"]:checked')].map(input => input.value);
+    }
+    async function videoStudioPublishCurrent() {
+        const project = _videoStudioState.currentProject;
+        if(!project || project.status !== 'ready') { showNotification('Generate a ready lesson before publishing','error'); return; }
+        if(currentUser?.role !== 'superadmin') { showNotification('Only Super Admins can publish lessons','error'); return; }
+        const audience = document.getElementById('videoStudioPublishAudience')?.value || 'all';
+        const schoolIds = audience === 'selected' ? videoStudioSelectedSchools() : [];
+        if(audience === 'selected' && !schoolIds.length) { showNotification('Select at least one school','error'); return; }
+        const publishButton = document.getElementById('publishVideoStudioBtn');
+        if(publishButton) publishButton.disabled = true;
+        try {
+            const libraryRef = await addDoc(collection(db,'video_library'), {
+                projectId:project.id, mode:'cartoon', topic:project.topic, type:project.type, subject:project.subject,
+                classLevel:project.classLevel, language:project.language, character:project.character,
+                durationSeconds:project.durationSeconds, scriptEnglish:project.scriptEnglish, translatedScript:project.translatedScript,
+                voiceover:project.voiceover, slideshowImages:project.slideshowImages, captions:project.captions, captionsSrt:project.captionsSrt,
+                audioPath:null, storagePaths:project.storagePaths || { audio:null, slides:[] },
+                audience, schoolIds, views:0, publishedBy:currentUser.uid, publishedAt:serverTimestamp(), createdAt:project.createdAt || serverTimestamp()
+            });
+            await videoStudioUpdateProject(project.id, { status:'published', publishedAt:serverTimestamp(), libraryId:libraryRef.id, audience, schoolIds });
+            _videoStudioState.currentProject = Object.assign({}, project, { status:'published', libraryId:libraryRef.id, audience, schoolIds, publishedAt:new Date().toISOString() });
+            await videoStudioCachePublished(_videoStudioState.currentProject).catch(error => console.warn('Video Studio offline cache skipped:', error));
+            videoStudioRenderProjectActions(_videoStudioState.currentProject);
+            await loadVideoStudioLibrary();
+            showNotification('Cartoon lesson published to schools');
+        } catch(error) { showNotification(`Could not publish lesson: ${error.message || error}`,'error'); }
+        finally { if(publishButton) publishButton.disabled = false; }
+    }
+    async function videoStudioDeleteProject(project) {
+        if(!project?.id || currentUser?.role !== 'superadmin') return;
+        if(!confirm(`Delete "${project.topic || 'this project'}"? This cannot be undone.`)) return;
+        await deleteDoc(doc(db,'video_studio_projects',project.id));
+        if(project.libraryId) await deleteDoc(doc(db,'video_library',project.libraryId)).catch(()=>{});
+        if(_videoStudioState.currentProject?.id === project.id) {
+            _videoStudioState.currentProject = null;
+            videoStudioRenderProjectActions(null);
+        }
+        await loadVideoStudioLibrary();
+        showNotification('Video project deleted');
+    }
+    function videoStudioLibraryMatches(item) {
+        const search = String(document.getElementById('videoStudioLibrarySearch')?.value || '').toLowerCase().trim();
+        const mode = document.getElementById('videoStudioLibraryModeFilter')?.value || '';
+        const language = document.getElementById('videoStudioLibraryLanguageFilter')?.value || '';
+        const subject = document.getElementById('videoStudioLibrarySubjectFilter')?.value || '';
+        return (!search || `${item.topic || ''} ${item.scriptEnglish || ''}`.toLowerCase().includes(search))
+            && (!mode || item.mode === mode) && (!language || item.language === language) && (!subject || item.subject === subject);
+    }
+    async function loadVideoStudioLibrary() {
+        if(!db || currentUser?.role !== 'superadmin') return [];
+        const snap = await getDocs(query(collection(db,'video_library'), orderBy('publishedAt','desc'))).catch(() => getDocs(collection(db,'video_library')));
+        _videoStudioState.library = snap.docs.map(item => Object.assign({ id:item.id }, item.data()));
+        _videoStudioState.libraryVisible = 20;
+        videoStudioRenderLibrary();
+        return _videoStudioState.library;
+    }
+    function videoStudioRenderLibrary() {
+        const container = document.getElementById('videoStudioLibraryList');
+        if(!container) return;
+        const sort = document.getElementById('videoStudioLibrarySort')?.value || 'newest';
+        const filtered = _videoStudioState.library.filter(videoStudioLibraryMatches).sort((a,b) => {
+            if(sort === 'views') return Number(b.views || 0) - Number(a.views || 0);
+            return String(b.publishedAt || b.createdAt || '').localeCompare(String(a.publishedAt || a.createdAt || ''));
+        });
+        const visible = filtered.slice(0, _videoStudioState.libraryVisible);
+        const count = document.getElementById('videoStudioLibraryCount');
+        if(count) count.textContent = `${filtered.length} published lesson${filtered.length === 1 ? '' : 's'}`;
+        const more = document.getElementById('loadMoreVideoStudioBtn');
+        if(more) more.style.display = visible.length < filtered.length ? 'block' : 'none';
+        if(!visible.length) { container.innerHTML = '<div class="video-studio-empty" style="grid-column:1/-1;">No published cartoon lessons match these filters.</div>'; return; }
+        container.innerHTML = visible.map(item => {
+            const images = item.slideshowImages || [];
+            const date = item.publishedAt && item.publishedAt.toDate ? item.publishedAt.toDate() : item.publishedAt;
+            return `<article class="video-studio-library-item"><div class="video-studio-library-thumb">${images.slice(0,3).map(image => `<img src="${image.url || ''}" alt="" loading="lazy">`).join('')}</div><div class="video-studio-library-title">${escHtml(item.topic || 'Untitled lesson')}</div><div class="video-studio-library-meta">${escHtml(item.subject || '')} · ${escHtml(item.classLevel || '')} · ${escHtml(item.language || 'English')}<br>${Number(item.views || 0)} views${date ? ` · ${new Date(date).toLocaleDateString()}` : ''}</div><div class="video-studio-library-actions"><button type="button" class="video-studio-btn orange" data-video-library-preview="${escHtml(item.id)}">Preview</button><button type="button" class="video-studio-btn" data-video-library-cache="${escHtml(item.id)}">Cache offline</button><button type="button" class="video-studio-btn" data-video-library-edit="${escHtml(item.projectId || '')}">Edit</button><button type="button" class="video-studio-btn danger" data-video-library-delete="${escHtml(item.id)}">Delete</button></div></article>`;
+        }).join('');
+        container.querySelectorAll('[data-video-library-preview]').forEach(button => button.onclick = () => videoStudioOpenPreview(_videoStudioState.library.find(item => item.id === button.dataset.videoLibraryPreview)));
+        container.querySelectorAll('[data-video-library-cache]').forEach(button => button.onclick = async () => {
+            const item = _videoStudioState.library.find(video => video.id === button.dataset.videoLibraryCache);
+            try { await videoStudioCachePublished(item); showNotification('Lesson cached for offline playback'); } catch(error) { showNotification(error.message || 'Could not cache lesson','error'); }
+        });
+        container.querySelectorAll('[data-video-library-edit]').forEach(button => button.onclick = () => videoStudioEditProject(button.dataset.videoLibraryEdit));
+        container.querySelectorAll('[data-video-library-delete]').forEach(button => button.onclick = async () => {
+            const item = _videoStudioState.library.find(video => video.id === button.dataset.videoLibraryDelete);
+            if(item?.projectId) { const project = Object.assign({}, item, { id:item.projectId, libraryId:item.id }); await videoStudioDeleteProject(project); }
+        });
+    }
+    async function videoStudioEditProject(projectId) {
+        if(!projectId) return;
+        const snap = await getDoc(doc(db,'video_studio_projects',projectId));
+        if(!snap.exists()) { showNotification('The original project is no longer available','error'); return; }
+        const project = Object.assign({ id:snap.id }, snap.data());
+        _videoStudioState.currentProject = project;
+        ['topic','type','subject','classLevel','language','character'].forEach(key => { const input = document.getElementById(`videoStudio${key.charAt(0).toUpperCase()+key.slice(1)}`); if(input) input.value = project[key] || ''; });
+        const duration = document.getElementById('videoStudioDuration'); if(duration) duration.value = String(project.durationSeconds || '');
+        const script = document.getElementById('videoStudioScript'); if(script) { script.value = project.scriptEnglish || project.script || ''; script.dispatchEvent(new Event('input')); }
+        videoStudioRenderProjectActions(project);
+        videoStudioRenderAssets(project.slideshowImages || [], project.topic);
+        videoStudioSwitchTab('cartoon');
+    }
+    function videoStudioSwitchTab(name) {
+        document.querySelectorAll('[data-video-studio-tab]').forEach(tab => tab.classList.toggle('active', tab.dataset.videoStudioTab === name));
+        document.querySelectorAll('.video-studio-pane').forEach(pane => pane.classList.toggle('active', pane.id === `videoStudio${name.charAt(0).toUpperCase()+name.slice(1)}Pane`));
+        if(name === 'library') loadVideoStudioLibrary().catch(error => showNotification(error.message || 'Could not load library','error'));
+    }
+    async function openVideoStudio() {
+        if(currentUser?.role !== 'superadmin') { showNotification('Only Super Admins can open Video Studio','error'); return; }
+        document.getElementById('videoStudioModal')?.classList.add('show');
+        videoStudioPopulateFormOptions();
+        videoStudioSwitchTab('cartoon');
+        videoStudioRenderSchoolList();
+        await loadVideoStudioAssets().catch(error => videoStudioSetStatus(error.message || 'Could not load assets','error'));
+        await loadVideoStudioLibrary().catch(()=>{});
+    }
+    function closeVideoStudio() {
+        document.getElementById('videoStudioModal')?.classList.remove('show');
+        videoStudioClosePreview();
+    }
+    function videoStudioSetup() {
+        const script = document.getElementById('videoStudioScript');
+        script?.addEventListener('input', () => { const count = document.getElementById('videoStudioScriptCount'); if(count) count.textContent = String(script.value.length); });
+        document.getElementById('videoStudioForm')?.addEventListener('reset', () => setTimeout(() => { document.getElementById('videoStudioScriptCount').textContent = '0'; videoStudioSetStatus(''); videoStudioRenderProjectActions(null); }, 0));
+        document.getElementById('videoStudioForm')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const values = videoStudioFormValues();
+            const errors = videoStudioValidate(values);
+            if(errors.length) { videoStudioSetStatus(errors.join(' · '), 'error'); return; }
+            const button = document.getElementById('generateVideoStudioBtn');
+            if(button) button.disabled = true;
+            document.getElementById('videoStudioProgress').style.display = 'grid';
+            try { await videoStudioGenerate(values); } catch(_) {} finally { if(button) button.disabled = false; }
+        });
+        document.querySelectorAll('[data-video-studio-tab]').forEach(tab => tab.addEventListener('click', () => videoStudioSwitchTab(tab.dataset.videoStudioTab)));
+        document.getElementById('openVideoStudioBtn')?.addEventListener('click', openVideoStudio);
+        document.getElementById('closeVideoStudioBtn')?.addEventListener('click', closeVideoStudio);
+        document.getElementById('seedVideoStudioAssetsBtn')?.addEventListener('click', async () => {
+            const button = document.getElementById('seedVideoStudioAssetsBtn'); if(button) button.disabled = true;
+            try { const result = await seedVideoStudioAssets(); videoStudioSetSeedStatus(`${result.total} cartoon assets are ready.`, 'success'); showNotification('20 cartoon assets are ready'); } catch(error) { videoStudioSetSeedStatus(error.message || 'Could not seed assets','error'); } finally { if(button) button.disabled = false; }
+        });
+        document.getElementById('videoStudioSeedAssetsInlineBtn')?.addEventListener('click', async () => {
+            try { const result = await seedVideoStudioAssets(); videoStudioSetStatus(`${result.total} cartoon assets are ready.`, 'success'); } catch(error) { videoStudioSetStatus(error.message || 'Could not seed assets','error'); }
+        });
+        document.getElementById('videoStudioPublishAudience')?.addEventListener('change', event => { const list = document.getElementById('videoStudioSchoolList'); if(list) list.style.display = event.target.value === 'selected' ? 'block' : 'none'; });
+        document.getElementById('previewVideoStudioBtn')?.addEventListener('click', () => videoStudioOpenPreview(_videoStudioState.currentProject));
+        document.getElementById('publishVideoStudioBtn')?.addEventListener('click', videoStudioPublishCurrent);
+        document.getElementById('deleteVideoStudioBtn')?.addEventListener('click', () => videoStudioDeleteProject(_videoStudioState.currentProject));
+        document.getElementById('refreshVideoStudioLibraryBtn')?.addEventListener('click', () => loadVideoStudioLibrary());
+        ['videoStudioLibrarySearch','videoStudioLibraryModeFilter','videoStudioLibraryLanguageFilter','videoStudioLibrarySubjectFilter','videoStudioLibrarySort'].forEach(id => document.getElementById(id)?.addEventListener('input', videoStudioRenderLibrary));
+        document.getElementById('loadMoreVideoStudioBtn')?.addEventListener('click', () => { _videoStudioState.libraryVisible += 20; videoStudioRenderLibrary(); });
+        document.getElementById('closeVideoStudioPreviewBtn')?.addEventListener('click', videoStudioClosePreview);
+        document.getElementById('videoStudioPlayPauseBtn')?.addEventListener('click', videoStudioStartPreview);
+        document.getElementById('videoStudioRestartBtn')?.addEventListener('click', videoStudioRestartPreview);
+        document.getElementById('videoStudioPreviewNextBtn')?.addEventListener('click', videoStudioNextPreview);
+    }
+
     async function complianceApi(path, options={}) {
         const token = auth?.currentUser ? await auth.currentUser.getIdToken() : null;
         const headers = Object.assign({'Content-Type':'application/json'}, options.headers||{}, token ? {'Authorization':'Bearer '+token} : {});
@@ -5727,8 +6531,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          if(curriculumRequestsSection) curriculumRequestsSection.style.display=currentUser?.role==='superadmin'?'block':'none';
          const ncdcCourseSection=document.getElementById('superNcdcCourseSection');
          if(ncdcCourseSection) ncdcCourseSection.style.display=currentUser?.role==='superadmin'?'block':'none';
+         const videoStudioSection=document.getElementById('superVideoStudioSection');
+         if(videoStudioSection) videoStudioSection.style.display=currentUser?.role==='superadmin'?'block':'none';
         const superProjectSection=document.getElementById('superProjectOverviewSection');
         if(superProjectSection) superProjectSection.style.display=currentUser?.role==='superadmin'?'block':'none';
+         if(!window._videoStudioSetupDone) { videoStudioSetup(); window._videoStudioSetupDone=true; }
         document.getElementById('complianceExportBtn')?.addEventListener('click',renderComplianceExport);
         document.getElementById('complianceDashboardBtn')?.addEventListener('click',renderComplianceDashboard);
         document.getElementById('complianceProjectsBtn')?.addEventListener('click',renderComplianceProjects);
@@ -10005,6 +10812,17 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         `).join('');
     }
 
+    function applyVideoStudioLibraryMappings() {
+        Object.values(window._videoStudioLibraryData || {}).forEach(item => {
+            const schoolAllowed = item.audience !== 'selected' || currentUser?.role === 'superadmin' || !currentUser?.schoolId || (item.schoolIds || []).includes(currentUser.schoolId);
+            if(!schoolAllowed || !item.subject || !item.classLevel) return;
+            const match = String(item.classLevel).match(/^([PS])(\d+)$/i);
+            if(!match) return;
+            const key = `${match[1].toUpperCase() === 'P' ? 'primary' : 'secondary'}_${match[2]}_${item.subject}`;
+            videoMappings[key] = `cartoon:${item.id}`;
+            window._videoMappingData[key] = Object.assign({}, item, { id:item.id, cartoonProject:item, teacherId:'' });
+        });
+    }
     function listenToVideoMappings() {
         onSnapshot(collection(db,"videoMappings"), (snap) => {
             videoMappings = {};
@@ -10013,8 +10831,16 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 videoMappings[d.id] = d.data().youtubeId;
                 window._videoMappingData[d.id] = d.data();
             });
+            applyVideoStudioLibraryMappings();
             renderExistingMappings();
         });
+        onSnapshot(query(collection(db,'video_library'), orderBy('publishedAt','desc')), (snap) => {
+            window._videoStudioLibraryData = {};
+            snap.forEach(d => { window._videoStudioLibraryData[d.id] = Object.assign({ id:d.id }, d.data()); });
+            applyVideoStudioLibraryMappings();
+            renderExistingMappings();
+            if(document.getElementById('subjectsGrid')?.innerHTML) renderSubjects();
+        }, error => console.warn('Video Studio library unavailable:', error));
     }
 
     function listenToSubjects() {

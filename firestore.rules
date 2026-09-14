@@ -9,6 +9,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
+    function isSuperAdmin() {
+      return signedIn() && role() == 'superadmin';
+    }
+
     match /liveLessons/{lessonId} {
       allow read: if signedIn();
       allow create, update, delete: if signedIn()
@@ -19,9 +23,28 @@ service cloud.firestore {
       allow read, create, update: if signedIn();
     }
 
+    match /cartoon_assets/{assetId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /video_studio_projects/{projectId} {
+      allow read, create, update, delete: if isSuperAdmin();
+    }
+
+    match /video_generation_queue/{queueId} {
+      allow read, create, update: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /video_library/{libraryId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn();
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library)(/.*)?$');
     }
   }
 }
