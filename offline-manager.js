@@ -1097,12 +1097,16 @@
       video = video || {};
       options = options || {};
       if (!video.videoId || !video.customMp4Url || !isSafeCustomMediaUrl(video.customMp4Url)) return fail('A non-YouTube customMp4Url is required; YouTube and Googlevideo media cannot be cached');
-      return currentMode().then(function (mode) {
-        if (mode !== 'wifi') throw new Error('HD offline downloads are available on WiFi only');
-        return fetchBlob(video.customMp4Url).then(function (blob) {
-          var record = Object.assign({}, video, { customMp4Blob: blob, cached: true, versionType: 'custom-mp4', size: blob.size });
-          return putRecord('offline_videos', record).then(function () {
-            return recordDataUsage(options.userId, 'downloadedBytes', record.size).then(function () { return record; });
+      return getSettings(options.userId).then(function (settings) {
+        return currentMode().then(function (mode) {
+          if (mode === 'offline') throw new Error('Connect before downloading an HD lesson');
+          if (mode === 'mobile' && settings.downloadHdWifiOnly !== false) throw new Error('HD offline downloads are blocked on mobile data by your WiFi-only preference');
+          if (mode === 'mobile' && !mobileConfirmation(options)) throw new Error('MOBILE_DOWNLOAD_CANCELLED');
+          return fetchBlob(video.customMp4Url).then(function (blob) {
+            var record = Object.assign({}, video, { customMp4Blob: blob, cached: true, versionType: 'custom-mp4', size: blob.size });
+            return putRecord('offline_videos', record).then(function () {
+              return recordDataUsage(options.userId, 'downloadedBytes', record.size).then(function () { return record; });
+            });
           });
         });
       });
