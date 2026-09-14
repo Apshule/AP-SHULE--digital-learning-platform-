@@ -155,7 +155,7 @@ describe("Video Studio UI and offline contracts", () => {
   });
 
   it("extends IndexedDB with a published cartoon slideshow store", () => {
-    expect(offlineSource).toContain("var DB_VERSION = 13");
+    expect(offlineSource).toContain("var DB_VERSION = 14");
     expect(offlineSource).toContain("'offline_video_studio'");
     expect(offlineSource).toContain("cacheVideoStudio");
     expect(offlineSource).toContain("getVideoStudio");

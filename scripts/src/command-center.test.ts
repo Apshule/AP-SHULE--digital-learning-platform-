@@ -35,7 +35,7 @@ describe("Task 9 Step 1 command center contracts", () => {
     expect(indexSource).toContain("institution_branding");
     expect(indexSource).toContain("applyInstitutionBranding");
     expect(indexSource).toContain('id="headerInstitutionName"');
-    expect(offlineSource).toContain("var DB_VERSION = 13");
+    expect(offlineSource).toContain("var DB_VERSION = 14");
     expect(offlineSource).toContain("offline_branding");
     expect(offlineSource).toContain("cacheInstitutionBranding");
     expect(offlineSource).toContain("offline_command_stats");

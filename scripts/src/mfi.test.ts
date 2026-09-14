@@ -93,4 +93,67 @@ describe("Task 10 Step 1 MFI foundation contracts", () => {
     expect(offlineSource).toContain("queueMfiCustomer");
     expect(offlineSource).toContain("queueMfiCollateral");
   });
+
+  it("adds the manager review, decision, verification, registry, and audit surfaces", () => {
+    for (const value of [
+      "mfi_collateral_verification",
+      "mfi_collateral_decisions",
+      "mfi_valuers",
+      "mfi_legal_officers",
+      "mfiManagerHomePage",
+      "managerReviewsListModal",
+      "managerReviewModal",
+      "scheduleVerificationModal",
+      "verificationActivityModal",
+      "mfiSettingsPage",
+      "mfiPrintDecisionHistory",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("enforces manager decision comments, top-up details, and mandatory verification", () => {
+    expect(indexSource).toContain("Comments are required for rejection or top-up");
+    expect(indexSource).toContain("Top-up amount and collateral type are required");
+    expect(indexSource).toContain("Complete required verification");
+    expect(indexSource).toContain("estimatedValueUgx||0)>20000000");
+    expect(indexSource).toContain("Legal Check");
+    expect(indexSource).toContain("Valuer Report");
+  });
+
+  it("supports document validation and offline verification synchronization", () => {
+    expect(indexSource).toContain("mfiValidateDocuments");
+    expect(indexSource).toContain("up to 10 files");
+    expect(indexSource).toContain("5*1024*1024");
+    expect(indexSource).toContain("Offline.queueMfiVerification");
+    expect(indexSource).toContain("pushMfiVerification");
+    expect(offlineSource).toContain("offline_mfi_verification");
+    expect(offlineSource).toContain("queueMfiVerification");
+    expect(offlineSource).toContain("markMfiVerificationSynced");
+  });
+
+  it("keeps Step 2 collections institution-scoped and immutable where appropriate", () => {
+    expect(rulesSource).toContain("match /mfi_collateral_verification/{verificationId}");
+    expect(rulesSource).toContain("match /mfi_collateral_decisions/{decisionId}");
+    expect(rulesSource).toContain("match /mfi_valuers/{valuerId}");
+    expect(rulesSource).toContain("match /mfi_legal_officers/{officerId}");
+    expect(rulesSource).toContain("allow update, delete: if isSuperAdmin();");
+    expect(rulesSource).toContain("resource.data.assignedToId == request.auth.uid");
+  });
+
+  it("declares the five Step 2 verification and decision indexes", () => {
+    const required: Array<[string, string[]]> = [
+      ["mfi_collateral_verification", ["institutionId", "status", "dueAt"]],
+      ["mfi_collateral_verification", ["institutionId", "assignedToId", "status"]],
+      ["mfi_collateral_verification", ["collateralId", "scheduledAt"]],
+      ["mfi_collateral_decisions", ["institutionId", "decision", "decidedAt"]],
+      ["mfi_collateral_decisions", ["collateralId", "decidedAt"]],
+    ];
+    for (const [collectionGroup, fields] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+  });
 });

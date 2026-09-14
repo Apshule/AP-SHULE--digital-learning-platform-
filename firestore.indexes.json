@@ -335,6 +335,49 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "scoredAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "mfi_collateral_verification",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dueAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_collateral_verification",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "assignedToId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_collateral_verification",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "collateralId", "order": "ASCENDING" },
+        { "fieldPath": "scheduledAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_collateral_decisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "decision", "order": "ASCENDING" },
+        { "fieldPath": "decidedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_collateral_decisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "collateralId", "order": "ASCENDING" },
+        { "fieldPath": "decidedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

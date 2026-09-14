@@ -249,6 +249,15 @@
         .mfi-list-card p { margin:0; color:#64748b; font-size:11px; line-height:1.5; }
         .mfi-list-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; }
         .mfi-list-actions button { border:1px solid #cfe0ed; color:#1A5490; background:#fff; border-radius:14px; padding:6px 9px; font-size:10px; font-weight:800; cursor:pointer; }
+        .mfi-detail-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:12px; }
+        .mfi-document-list { display:grid; gap:7px; }
+        .mfi-document-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid #e6f0f7; }
+        .mfi-document-link { color:#1A5490; font-size:12px; font-weight:700; text-decoration:none; }
+        .mfi-select-row { display:flex !important; flex:0 0 22px; padding-top:3px; }
+        .mfi-list-main { flex:1; }
+        .mfi-timeline-item { display:grid; gap:3px; padding:10px 0; border-bottom:1px solid #e6f0f7; color:#526273; font-size:12px; }
+        .mfi-timeline-item strong { color:#1A5490; }
+        .mfi-timeline-item small { color:#64748b; }
         .mfi-score-card { background:linear-gradient(145deg,#f7fbff,#eaf4fb); border:1px solid #bdd8eb; border-radius:18px; padding:16px; }
         .mfi-score-row { display:grid; grid-template-columns:115px 1fr 45px; align-items:center; gap:7px; margin:9px 0; color:#526273; font-size:11px; }
         .mfi-score-track { height:8px; background:#d8e5ef; border-radius:8px; overflow:hidden; }
@@ -2246,6 +2255,47 @@
             <div class="mfi-section" style="margin-top:0;">📊 MFI Reports</div>
             <div class="mfi-panel-card"><p class="mfi-form-help">Loan Director and MFI Admin reporting foundation. Exports contain customer and collateral records for the selected institution.</p><div class="mfi-form-actions" style="justify-content:flex-start;"><button id="mfiExportCustomersBtn" class="mfi-secondary-btn" type="button">Export customers CSV</button><button id="mfiExportCollateralBtn" class="mfi-primary-btn" type="button">Export collateral CSV</button></div><div id="mfiReportStatus" class="mfi-form-help" style="margin-top:10px;"></div></div>
         </div>
+        <div id="mfiManagerHomePage" class="page mfi-page">
+            <div class="mfi-hero"><h2>🏦 <span id="mfiManagerInstitutionName">MFI Name — Manager View</span></h2><p>Welcome, <strong id="mfiManagerName">Loan Manager</strong>. Review collateral, coordinate verification, and record decisions.</p></div>
+            <div id="mfiManagerOfflineNotice" class="mfi-offline-note mfi-hidden">Offline mode: assigned field activities can be completed and will sync when connected.</div>
+            <div class="mfi-section">📊 Quick Stats</div>
+            <div class="mfi-stats-grid"><div class="mfi-stat-card"><strong id="mfiManagerPending">—</strong><span>Pending Reviews</span></div><div class="mfi-stat-card"><strong id="mfiManagerApproved">—</strong><span>Approved This Month</span></div><div class="mfi-stat-card"><strong id="mfiManagerRejected">—</strong><span>Rejected This Month</span></div></div>
+            <div class="mfi-section">🎯 Quick Actions</div>
+            <div class="mfi-actions-grid"><button class="mfi-action-btn" data-manager-action="reviews"><span>📋</span>Review Collateral</button><button class="mfi-action-btn" data-manager-action="approvals"><span>✅</span>Approvals</button><button class="mfi-action-btn" data-manager-action="schedule"><span>📅</span>Schedule Visit</button><button class="mfi-action-btn" data-manager-action="reports"><span>📊</span>Reports</button></div>
+            <div class="mfi-section">🚨 Attention Required</div><div id="mfiManagerAttention" class="mfi-activity-card"><div class="mfi-activity-item">Loading attention items…</div></div>
+            <div class="mfi-section">📋 Recent Activity</div><div id="mfiManagerRecentActivity" class="mfi-activity-card"><div class="mfi-activity-item">Loading recent activity…</div></div>
+        </div>
+        <div id="mfiManagerApprovalsPage" class="page mfi-page">
+            <div class="mfi-section" style="margin-top:0;">✅ Approvals &amp; Decision History</div>
+            <div class="mfi-panel-card"><div class="mfi-filter-row"><select id="mfiDecisionStatusFilter" aria-label="Filter decisions"><option value="">All decisions</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="topup_requested">Top-up requested</option></select><input id="mfiDecisionSearch" type="search" placeholder="Search customer or collateral" aria-label="Search decisions"><button id="mfiExportDecisionHistoryBtn" class="mfi-secondary-btn" type="button">🖨️ Export PDF</button></div><div id="mfiDecisionHistoryList"><div class="mfi-activity-item">Loading decisions…</div></div></div>
+        </div>
+        <div id="mfiSettingsPage" class="page mfi-page">
+            <div class="mfi-section" style="margin-top:0;">⚙️ MFI Settings &amp; Registries</div>
+            <div class="mfi-panel-card"><div class="mfi-section" style="margin-top:0;font-size:14px;">Certified Valuers <button id="mfiAddValuerBtn" class="mfi-primary-btn" type="button" style="float:right;">＋ Add Valuer</button></div><div id="mfiValuersList" class="mfi-activity-card"><div class="mfi-activity-item">Loading valuers…</div></div></div>
+            <div class="mfi-panel-card" style="margin-top:14px;"><div class="mfi-section" style="margin-top:0;font-size:14px;">Legal Officers <button id="mfiAddLegalOfficerBtn" class="mfi-primary-btn" type="button" style="float:right;">＋ Add Officer</button></div><div id="mfiLegalOfficersList" class="mfi-activity-card"><div class="mfi-activity-item">Loading legal officers…</div></div></div>
+        </div>
+        <div id="managerReviewsListModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="managerReviewsListTitle">
+            <div class="command-modal-card"><div class="command-modal-head"><h3 id="managerReviewsListTitle">📋 Collateral Reviews</h3><button class="command-close" data-command-close="managerReviewsListModal" type="button" aria-label="Close reviews">&times;</button></div><div class="command-modal-body">
+                <div class="mfi-filter-row"><select id="managerReviewStatusFilter" aria-label="Review status"><option value="">All</option><option value="pending">Pending</option><option value="under_review">Under Review</option><option value="awaiting_verification">Awaiting Verification</option><option value="decided">Decided</option></select><select id="managerReviewGradeFilter" aria-label="Review grade"><option value="">All scores</option><option>Excellent</option><option>Good</option><option>Fair</option><option>Weak</option></select><select id="managerReviewTypeFilter" aria-label="Review collateral type"><option value="">All types</option></select><select id="managerReviewSort" aria-label="Sort reviews"><option value="newest">Newest</option><option value="high">Score high-low</option><option value="low">Score low-high</option><option value="overdue">Overdue</option></select><input id="managerReviewSearch" type="search" placeholder="Search customer or collateral" aria-label="Search reviews"></div>
+                <div class="mfi-form-actions" style="justify-content:flex-start;"><button id="managerSelectAllBtn" class="mfi-secondary-btn" type="button">Select visible</button><button id="managerBatchApproveBtn" class="mfi-primary-btn" type="button">📤 Batch Approve</button><button id="managerBatchRejectBtn" class="mfi-danger-btn" type="button">📤 Batch Reject</button><button id="managerBatchTopupBtn" class="mfi-secondary-btn" type="button">📤 Batch Top-up</button></div>
+                <div id="managerReviewsList"><div class="mfi-activity-item">Loading reviews…</div></div>
+            </div></div>
+        </div>
+        <div id="managerReviewModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="managerReviewTitle">
+            <div class="command-modal-card"><div class="command-modal-head"><h3 id="managerReviewTitle">📋 Review Collateral</h3><button class="command-close" data-command-close="managerReviewModal" type="button" aria-label="Close review">&times;</button></div><div id="managerReviewBody" class="command-modal-body"></div></div>
+        </div>
+        <div id="scheduleVerificationModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="scheduleVerificationTitle">
+            <div class="command-modal-card"><div class="command-modal-head"><h3 id="scheduleVerificationTitle">📅 Schedule Verification Activity</h3><button class="command-close" data-command-close="scheduleVerificationModal" type="button" aria-label="Close schedule form">&times;</button></div><div class="command-modal-body">
+                <form id="scheduleVerificationForm" class="mfi-form"><div class="mfi-form-grid"><label>Activity type *<select id="verificationActivityType" required><option value="Desk Review">Desk Review (1 day)</option><option value="Field Visit">Field Visit (3–5 days)</option><option value="Valuer Report">Valuer Report (7 days)</option><option value="Legal Check">Legal Check (3 days)</option></select></label><label>Assign to *<select id="verificationAssignedTo" required></select></label><label>Scheduled date *<input id="verificationScheduledDate" type="date" required></label><label class="full">Notes<textarea id="verificationNotes"></textarea></label></div><div id="verificationRuleNotice" class="mfi-offline-note" style="margin-top:10px;"></div><div id="scheduleVerificationStatus" class="mfi-form-help" aria-live="polite"></div><div class="mfi-form-actions"><button class="mfi-secondary-btn" data-command-close="scheduleVerificationModal" type="button">Cancel</button><button class="mfi-primary-btn" type="submit">✅ Schedule</button></div></form>
+            </div></div>
+        </div>
+        <div id="verificationActivityModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="verificationActivityTitle">
+            <div class="command-modal-card"><div class="command-modal-head"><h3 id="verificationActivityTitle">✅ Complete Verification Activity</h3><button class="command-close" data-command-close="verificationActivityModal" type="button" aria-label="Close activity">&times;</button></div><div class="command-modal-body">
+                <form id="verificationActivityForm" class="mfi-form"><p id="verificationActivitySummary" class="mfi-form-help"></p><label>Completion notes *<textarea id="verificationCompletionNotes" required></textarea></label><label>Attachments (up to 10 files, max 5MB each)<input id="verificationAttachments" type="file" accept="image/*,application/pdf" multiple></label><div id="verificationActivityStatus" class="mfi-form-help" aria-live="polite"></div><div class="mfi-form-actions"><button class="mfi-secondary-btn" data-command-close="verificationActivityModal" type="button">Cancel</button><button class="mfi-primary-btn" type="submit">✅ Mark Complete</button></div></form>
+            </div></div>
+        </div>
+        <div id="valuerFormModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="valuerFormTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="valuerFormTitle">Add Certified Valuer</h3><button class="command-close" data-command-close="valuerFormModal" type="button" aria-label="Close valuer form">&times;</button></div><div class="command-modal-body"><form id="valuerForm" class="mfi-form"><div class="mfi-form-grid"><label>Full name *<input id="valuerFullName" required></label><label>Company *<input id="valuerCompany" required></label><label>License number *<input id="valuerLicenseNumber" required></label><label>Phone *<input id="valuerPhone" required></label><label>Email<input id="valuerEmail" type="email"></label><label>Specialization *<select id="valuerSpecialization" required><option>Land</option><option>Vehicles</option><option>Business Assets</option><option>General</option></select></label></div><div id="valuerFormStatus" class="mfi-form-help"></div><div class="mfi-form-actions"><button class="mfi-secondary-btn" data-command-close="valuerFormModal" type="button">Cancel</button><button class="mfi-primary-btn" type="submit">Save Valuer</button></div></form></div></div></div>
+        <div id="legalOfficerFormModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="legalOfficerFormTitle"><div class="command-modal-card"><div class="command-modal-head"><h3 id="legalOfficerFormTitle">Add Legal Officer</h3><button class="command-close" data-command-close="legalOfficerFormModal" type="button" aria-label="Close legal officer form">&times;</button></div><div class="command-modal-body"><form id="legalOfficerForm" class="mfi-form"><div class="mfi-form-grid"><label>Full name *<input id="legalFullName" required></label><label>Law firm *<input id="legalLawFirm" required></label><label>License number *<input id="legalLicenseNumber" required></label><label>Phone *<input id="legalPhone" required></label><label>Email<input id="legalEmail" type="email"></label></div><div id="legalOfficerFormStatus" class="mfi-form-help"></div><div class="mfi-form-actions"><button class="mfi-secondary-btn" data-command-close="legalOfficerFormModal" type="button">Cancel</button><button class="mfi-primary-btn" type="submit">Save Legal Officer</button></div></form></div></div></div>
         <div id="mfiCustomerFormModal" class="command-fullscreen-modal mfi-modal" role="dialog" aria-modal="true" aria-labelledby="mfiCustomerFormTitle">
             <div class="command-modal-card"><div class="command-modal-head"><h3 id="mfiCustomerFormTitle">👤 Register MFI Customer</h3><button class="command-close" data-command-close="mfiCustomerFormModal" type="button" aria-label="Close customer form">&times;</button></div><div class="command-modal-body">
                 <div id="mfiCustomerOfflineMessage" class="mfi-offline-note mfi-hidden">Customer registration requires internet because an account and document uploads are created securely.</div>
@@ -2276,7 +2326,7 @@
                         <label>Ownership proof type *<select id="mfiOwnershipProofType" required><option value="">Select proof</option><option>Title Deed</option><option>Logbook</option><option>Sales Agreement</option><option>Bank Statement</option><option>None</option></select></label><label>Ownership proof<input id="mfiOwnershipProof" type="file" accept="image/*,.pdf"></label>
                         <label>Location *<input id="mfiCollateralLocation" required></label><label>Condition *<select id="mfiCollateralCondition" required><option>Good</option><option>Fair</option><option>Poor</option></select></label>
                         <div id="mfiGuarantorFields" class="mfi-form-grid full mfi-hidden"><label>Guarantor name *<input id="mfiGuarantorName"></label><label>Guarantor phone *<input id="mfiGuarantorPhone" type="tel"></label><label>Relationship *<select id="mfiGuarantorRelationship"><option value="">Select</option><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Friend</option><option>Colleague</option><option>Other</option></select></label><label>Guarantor National ID<input id="mfiGuarantorId" type="file" accept="image/*,.pdf"></label><label>Signed guarantor form<input id="mfiGuarantorSignedForm" type="file" accept="application/pdf,image/*"></label></div>
-                        <label class="full">Additional documents (up to 5)<input id="mfiAdditionalDocuments" type="file" accept="image/*,.pdf" multiple><span class="mfi-form-help">Label each document after selecting it.</span></label>
+                         <label class="full">Additional documents (up to 10)<input id="mfiAdditionalDocuments" type="file" accept="image/*,application/pdf" multiple><span class="mfi-form-help">Images and PDFs only, maximum 10 files and 5MB per file.</span></label>
                         <label class="full">Notes<textarea id="mfiCollateralNotes"></textarea></label>
                     </div>
                     <div id="mfiCollateralReview" class="mfi-score-card" style="margin-top:13px;"><strong style="color:#1A5490;">Review &amp; estimated score preview</strong><div id="mfiCollateralSummary" class="mfi-form-help" style="margin-top:8px;">Complete the required fields to preview the score.</div><div id="mfiCollateralPreviewScore"></div></div>
@@ -3795,6 +3845,13 @@
     let mfiInstitution = null;
     let mfiActiveCustomerId = '';
     let mfiCurrentScore = null;
+    let mfiVerifications = [];
+    let mfiDecisions = [];
+    let mfiValuers = [];
+    let mfiLegalOfficers = [];
+    let mfiAssignees = [];
+    let mfiActiveReviewCollateral = null;
+    let mfiActiveVerification = null;
     let primarySubjects = [];
     let secondarySubjects = [];
     let allTeachers = [];
@@ -4593,6 +4650,7 @@
             pushViews: async items => syncOfflineViews(items),
             pushMfiCustomers: async items => { for(const item of items) { const payload={...item}; delete payload.localId; delete payload.syncStatus; delete payload.queuedAt; await addDoc(collection(db,'mfi_customers'),{...payload,syncedAt:new Date().toISOString()}); } },
             pushMfiCollateral: async items => { for(const item of items) await mfiSyncOfflineCollateral(item); },
+             pushMfiVerification: async items => { for(const item of items) await mfiSyncOfflineVerification(item); },
             pullProjects: async () => {
                 if(!auth?.currentUser) return [];
                 const data=await complianceApi('/projects');
@@ -12820,13 +12878,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         return ref.getDownloadURL();
     }
     async function mfiUploadCollateralFiles(data,files){
+        mfiValidateDocuments([files.ownership,files.guarantorId,files.guarantorForm,...(files.additional||[])].filter(Boolean));
         const base=`mfi/${data.institutionId}/${data.customerId}/${Date.now()}`;
         const result={...data};
         result.ownershipProofPath=await mfiUploadFile(files.ownership,`${base}/ownership-${files.ownership?.name||'proof'}`);
         result.guarantorIdPath=await mfiUploadFile(files.guarantorId,`${base}/guarantor-id-${files.guarantorId?.name||'id'}`);
         result.guarantorSignedFormPath=await mfiUploadFile(files.guarantorForm,`${base}/guarantor-form-${files.guarantorForm?.name||'form'}`);
         result.additionalDocuments=[];
-        for(const file of files.additional.slice(0,5)){ const filePath=await mfiUploadFile(file,`${base}/documents/${file.name}`); result.additionalDocuments.push({institutionId:data.institutionId,documentType:'Supporting document',filePath,fileName:file.name,fileSize:file.size,uploadedBy:currentUser.uid,uploadedAt:new Date().toISOString()}); }
+        for(const file of files.additional.slice(0,10)){ const filePath=await mfiUploadFile(file,`${base}/documents/${file.name}`); result.additionalDocuments.push({institutionId:data.institutionId,documentType:'Supporting document',filePath,fileName:file.name,fileSize:file.size,uploadedBy:currentUser.uid,uploadedAt:new Date().toISOString(),archived:false}); }
         return result;
     }
     async function mfiSyncOfflineCollateral(item){
@@ -12850,8 +12909,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!data.customerId||!data.typeId||!data.description||!data.estimatedValueUgx||!data.location) { showNotification('Complete the required collateral fields','error'); return; }
         if(mfiNormalizeTypeName(type?.name)==='guarantor'&&(!data.guarantorName||!data.guarantorPhone||!data.guarantorRelationship)){showNotification('Complete the guarantor fields','error');return;}
         const files={ownership:mfiFile('mfiOwnershipProof'),guarantorId:mfiFile('mfiGuarantorId'),guarantorForm:mfiFile('mfiGuarantorSignedForm'),additional:mfiFiles('mfiAdditionalDocuments')};
+        try{mfiValidateDocuments([files.ownership,files.guarantorId,files.guarantorForm,...files.additional].filter(Boolean));}catch(error){showNotification(error.message,'error');return;}
         const score=computeCollateralScore(data,data.customerSnapshot,type);
-        const queueData={...data,score,status:asDraft?'draft':'submitted',ownershipProofFile:files.ownership,guarantorIdFile:files.guarantorId,guarantorSignedFormFile:files.guarantorForm,additionalDocumentFiles:files.additional};
+        const submittedAt=asDraft?null:new Date().toISOString(),queueData={...data,score,status:asDraft?'draft':'submitted',submittedAt,verificationStage:asDraft?'draft':'submitted',verificationProgress:{completed:0,total:0},ownershipProofFile:files.ownership,guarantorIdFile:files.guarantorId,guarantorSignedFormFile:files.guarantorForm,additionalDocumentFiles:files.additional};
         const statusEl=document.getElementById('mfiCollateralFormStatus');
         if(!navigator.onLine){
             if(!Offline){showNotification('Offline storage is unavailable in this browser','error');return;}
@@ -12863,13 +12923,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(statusEl) statusEl.textContent=asDraft?'Saving draft…':'Uploading documents and calculating score…';
         try {
             const uploaded=await mfiUploadCollateralFiles(data,files);
-            const payload={...uploaded,status:asDraft?'draft':'submitted',createdAt:new Date().toISOString(),capturedAt:data.capturedAt};
+            const now=new Date().toISOString(),payload={...uploaded,status:asDraft?'draft':'submitted',createdAt:now,capturedAt:data.capturedAt,submittedAt:asDraft?null:now,verificationStage:asDraft?'draft':'submitted',verificationProgress:{completed:0,total:0}};
             delete payload.customerSnapshot; delete payload.typeSnapshot;
             const collateralRef=await addDoc(collection(db,'mfi_collateral'),payload);
             for(const document of uploaded.additionalDocuments||[]) await addDoc(collection(db,'mfi_collateral_documents'),{...document,collateralId:collateralRef.id});
             if(!asDraft){
                 const scoreRef=await addDoc(collection(db,'mfi_collateral_scoring'),{institutionId:data.institutionId,collateralId:collateralRef.id,...score,managerComments:'',scoredBy:currentUser.uid,scoredAt:new Date().toISOString(),status:'pending'});
-                await updateDoc(collateralRef,{scoringId:scoreRef.id,status:'submitted'});
+                await updateDoc(collateralRef,{scoringId:scoreRef.id,status:'submitted',submittedAt:now,verificationStage:'submitted'});
                 await addDoc(collection(db,'notifications'),{targetRole:'loan_manager',institutionId:data.institutionId,type:'mfi_collateral_review',title:'Collateral ready for review',body:`${mfiCustomerName(data.customerSnapshot)} submitted ${type.name}`,createdAt:new Date().toISOString(),read:false});
             }
             if(statusEl) statusEl.textContent=asDraft?'✅ Draft saved':'✅ Collateral submitted';
@@ -12926,6 +12986,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!mfiRequireAccess()) return;
         document.getElementById('mfiOfflineNotice')?.classList.toggle('mfi-hidden',navigator.onLine);
         await Promise.all([mfiLoadCustomers(),mfiLoadCollateral(),mfiLoadInstitution()]);
+        await mfiLoadAssignedVerifications();
         const collateralCount=mfiCollateral.length,pending=mfiCollateral.filter(item=>['submitted','under_review'].includes(item.status)).length;
         const customerEl=document.getElementById('mfiTotalCustomers'),collateralEl=document.getElementById('mfiCollateralCaptured'),pendingEl=document.getElementById('mfiPendingReviews');
         if(customerEl) customerEl.textContent=mfiCustomers.length;
@@ -12934,11 +12995,22 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const admin=document.getElementById('mfiAdminName'); if(admin) admin.textContent=currentUser?.name||currentUser?.email||'MFI team';
         const recent=document.getElementById('mfiRecentActivity');
         if(recent){const rows=[...mfiCustomers.map(item=>({date:item.createdAt||item.queuedAt,text:`New customer: ${mfiCustomerName(item)}`})),...mfiCollateral.map(item=>({date:item.capturedAt||item.queuedAt,text:`Collateral ${item.status||'saved'}: ${mfiCustomerName(mfiCustomerById(item.customerId))}`}))].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,6);recent.innerHTML=rows.length?rows.map(item=>`<div class="mfi-activity-item">• ${escHtml(item.text)} <span style="float:right;color:#8aa0b2;">${escHtml(mfiDate(item.date))}</span></div>`).join(''):'<div class="mfi-activity-item">No recent activity yet.</div>';}
+        mfiShowAssignedVerifications();
+    }
+    async function mfiLoadAssignedVerifications(){
+        if(!currentUser?.uid||!db)return [];
+        let rows=[];
+        if(navigator.onLine){
+            const snap=await getDocs(query(collection(db,'mfi_collateral_verification'),where('assignedToId','==',currentUser.uid),limit(100))).catch(()=>({docs:[]}));
+            rows=snap.docs.map(row=>({id:row.id,...row.data()}));
+        }
+        if(Offline){const offlineRows=await Offline.listMfiVerification(mfiInstitutionId()).catch(()=>[]);rows=[...rows,...offlineRows.filter(row=>row.syncStatus==='pending').map(row=>({...row,id:row.verificationId,offline:true}))];}
+        mfiVerifications=rows;mfiShowAssignedVerifications();return rows;
     }
     function mfiNavigate(section){
         if(!mfiRequireAccess()) return;
         if(section==='account'){navigateTo('account');return;}
-        const map={home:'mfiDashboardPage',customers:'mfiCustomersPage',collateral:'mfiCollateralPage',reports:'mfiReportsPage'};
+        const map={home:'mfiDashboardPage',customers:'mfiCustomersPage',collateral:'mfiCollateralPage',reports:'mfiReportsPage',settings:'mfiSettingsPage'};
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
         document.getElementById(map[section]||map.home)?.classList.add('active-page');
         document.querySelectorAll('.bottom-nav .nav-item').forEach(item=>item.classList.toggle('active',item.dataset.mfiSection===section));
@@ -12947,10 +13019,50 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(section==='collateral'){mfiLoadCustomers();mfiLoadTypes();mfiLoadCollateral();}
         window.scrollTo({top:0,behavior:'smooth'});
     }
+    function mfiManagerNavigate(section){
+        if(!mfiManagerRequire())return;
+        if(section==='account'){navigateTo('account');return;}
+        if(section==='reviews'){mfiOpenManagerReviews();return;}
+        if(section==='schedule'){if(mfiCollateral[0])mfiOpenScheduleVerification(mfiCollateral[0].id);else showNotification('There is no collateral available to schedule','info');return;}
+        const map={home:'mfiManagerHomePage',approvals:'mfiManagerApprovalsPage',reports:'mfiReportsPage',settings:'mfiSettingsPage'};
+        document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));document.getElementById(map[section]||map.home)?.classList.add('active-page');
+        document.querySelectorAll('.bottom-nav .nav-item').forEach(item=>item.classList.toggle('active',item.dataset.mfiManagerSection===section));
+        if(section==='home')mfiLoadManagerData();if(section==='approvals'){mfiLoadManagerData();renderMfiDecisionHistory();}if(section==='settings'){mfiLoadRegistries();}if(section==='reports'){mfiLoadCustomers();mfiLoadCollateral();}
+        window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function setupMfiManagerNavigation(){
+        const bottom=document.querySelector('.bottom-nav');if(!bottom)return;bottom.classList.add('superadmin-bottom-nav');
+        bottom.innerHTML='<div class="nav-item active" data-mfi-manager-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-manager-section="reviews"><i class="fas fa-clipboard-check"></i><span>Reviews</span></div><div class="nav-item" data-mfi-manager-section="approvals"><i class="fas fa-check-circle"></i><span>Approvals</span></div><div class="nav-item" data-mfi-manager-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div><div class="nav-item" data-mfi-manager-section="account"><i class="fas fa-user"></i><span>Account</span></div>';
+        bottom.querySelectorAll('[data-mfi-manager-section]').forEach(item=>item.addEventListener('click',()=>mfiManagerNavigate(item.dataset.mfiManagerSection)));
+    }
+    function mfiShowAssignedVerifications(){
+        const assigned=mfiVerifications.filter(row=>String(row.assignedToId)===String(currentUser?.uid)&&row.status!=='completed');if(!assigned.length)return;
+        const recent=document.getElementById('mfiRecentActivity');if(!recent)return;
+        recent.innerHTML=assigned.slice(0,5).map(row=>`<div class="mfi-activity-item">📅 ${escHtml(row.activityType)} · Due ${escHtml(mfiDate(row.dueAt))}<button class="mfi-secondary-btn" data-mfi-open-verification="${escHtml(row.id||row.verificationId)}" type="button">Open</button></div>`).join('');
+    }
+    function initMfiManagerInteractions(){
+        if(window._mfiManagerInteractionsInitialized)return;window._mfiManagerInteractionsInitialized=true;
+        document.querySelectorAll('[data-manager-action]').forEach(button=>button.addEventListener('click',()=>{const action=button.dataset.managerAction;if(action==='reviews')mfiManagerNavigate('reviews');if(action==='approvals')mfiManagerNavigate('approvals');if(action==='reports')mfiManagerNavigate('reports');if(action==='schedule')mfiManagerNavigate('schedule');}));
+        document.getElementById('managerReviewsList')?.addEventListener('click',event=>{const button=event.target.closest('[data-mfi-manager-review]');if(button)mfiReviewCollateral(button.dataset.mfiManagerReview);});
+        document.getElementById('mfiManagerAttention')?.addEventListener('click',event=>{const button=event.target.closest('[data-mfi-manager-review]');if(button)mfiReviewCollateral(button.dataset.mfiManagerReview);});
+        document.getElementById('mfiManagerRecentActivity')?.addEventListener('click',event=>{const button=event.target.closest('[data-mfi-manager-review]');if(button)mfiReviewCollateral(button.dataset.mfiManagerReview);});
+        document.getElementById('mfiDecisionHistoryList')?.addEventListener('click',event=>{const button=event.target.closest('[data-mfi-manager-review]');if(button)mfiReviewCollateral(button.dataset.mfiManagerReview);});
+        document.getElementById('managerSelectAllBtn')?.addEventListener('click',()=>document.querySelectorAll('[data-review-select]').forEach(input=>input.checked=true));
+        document.getElementById('managerBatchApproveBtn')?.addEventListener('click',()=>mfiBatchDecision('approved'));document.getElementById('managerBatchRejectBtn')?.addEventListener('click',()=>mfiBatchDecision('rejected'));document.getElementById('managerBatchTopupBtn')?.addEventListener('click',()=>mfiBatchDecision('topup_requested'));
+        ['managerReviewStatusFilter','managerReviewGradeFilter','managerReviewTypeFilter','managerReviewSort','managerReviewSearch'].forEach(id=>document.getElementById(id)?.addEventListener('input',renderMfiManagerReviews));
+        ['mfiDecisionStatusFilter','mfiDecisionSearch'].forEach(id=>document.getElementById(id)?.addEventListener('input',renderMfiDecisionHistory));
+        document.getElementById('verificationActivityType')?.addEventListener('change',()=>{mfiUpdateVerificationRuleNotice();const type=document.getElementById('verificationActivityType')?.value,select=document.getElementById('verificationAssignedTo');if(select)select.innerHTML='<option value="">Select assignee</option>'+mfiAssignees.filter(row=>(type==='Valuer Report'?row.assignmentRole==='valuer':type==='Legal Check'?row.assignmentRole==='legal_officer':['loan_officer','loan_manager'].includes(row.assignmentRole))).map(row=>`<option value="${escHtml(row.assignmentKey)}">${escHtml(row.fullName||row.name||row.email||'Assignee')} · ${escHtml(row.company||row.assignmentRole)}</option>`).join('');});
+        document.getElementById('scheduleVerificationForm')?.addEventListener('submit',mfiScheduleVerification);document.getElementById('verificationActivityForm')?.addEventListener('submit',mfiCompleteVerification);
+        document.getElementById('mfiAddValuerBtn')?.addEventListener('click',()=>{document.getElementById('valuerForm')?.reset();openCommandModal('valuerFormModal');});document.getElementById('mfiAddLegalOfficerBtn')?.addEventListener('click',()=>{document.getElementById('legalOfficerForm')?.reset();openCommandModal('legalOfficerFormModal');});
+        document.getElementById('valuerForm')?.addEventListener('submit',event=>mfiSaveRegistry('mfi_valuers',event));document.getElementById('legalOfficerForm')?.addEventListener('submit',event=>mfiSaveRegistry('mfi_legal_officers',event));
+        document.getElementById('mfiRecentActivity')?.addEventListener('click',event=>{const button=event.target.closest('[data-mfi-open-verification]');if(button)mfiOpenVerificationActivity(button.dataset.mfiOpenVerification);});
+        document.getElementById('mfiExportDecisionHistoryBtn')?.addEventListener('click',()=>mfiPrintDecisionHistory());
+        document.getElementById('managerReviewBody')?.addEventListener('click',event=>{const button=event.target.closest('[data-archive-document]');if(button)mfiToggleDocumentArchive(button.dataset.archiveDocument);});
+    }
     function setupMfiNavigation(){
         const bottom=document.querySelector('.bottom-nav'); if(!bottom) return;
         bottom.classList.add('superadmin-bottom-nav');
-        bottom.innerHTML=`<div class="nav-item active" data-mfi-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-section="customers"><i class="fas fa-users"></i><span>Customers</span></div><div class="nav-item" data-mfi-section="collateral"><i class="fas fa-clipboard-list"></i><span>Collateral</span></div><div class="nav-item" data-mfi-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div><div class="nav-item" data-mfi-section="account"><i class="fas fa-user"></i><span>Account</span></div>`;
+        bottom.innerHTML=`<div class="nav-item active" data-mfi-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-section="customers"><i class="fas fa-users"></i><span>Customers</span></div><div class="nav-item" data-mfi-section="collateral"><i class="fas fa-clipboard-list"></i><span>Collateral</span></div><div class="nav-item" data-mfi-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div>${currentUser?.role==='mfi_admin'?'<div class="nav-item" data-mfi-section="settings"><i class="fas fa-cog"></i><span>Settings</span></div>':''}<div class="nav-item" data-mfi-section="account"><i class="fas fa-user"></i><span>Account</span></div>`;
         bottom.querySelectorAll('[data-mfi-section]').forEach(item=>item.addEventListener('click',()=>mfiNavigate(item.dataset.mfiSection)));
     }
     function restoreStandardNavigation(){
@@ -12981,18 +13093,234 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         body.innerHTML=`<div class="mfi-panel-card"><h3 style="color:#1A5490;margin-top:0;">👤 ${escHtml(mfiCustomerName(customer))}</h3><p class="mfi-form-help">📱 ${escHtml(customer.phone||'—')} · ${escHtml(customer.email||'No email')}<br>National ID: ${escHtml(customer.nationalId||'—')} · ${escHtml(customer.occupation||'—')}<br>Income: ${mfiMoney(customer.monthlyIncome)} · Address: ${escHtml(customer.physicalAddress||'—')}</p><h4 style="color:#1A5490;">Collateral timeline</h4>${rows.length?rows.map(item=>`<div class="mfi-activity-item">${escHtml(item.description||'Collateral')} · ${escHtml(item.status||'draft')} · ${item.score?`${item.score.totalScore}/100 ${escHtml(item.score.grade)}`:'No score yet'}</div>`).join(''):'<div class="mfi-activity-item">No collateral captured.</div>'}</div>`;
         document.getElementById('mfiResultTitle').textContent='Customer details'; openCommandModal('mfiResultModal');
     }
+    function mfiManagerRequire(message='Only MFI managers can access this workflow'){
+        if(!currentUser||!['superadmin','mfi_admin','loan_manager'].includes(currentUser.role)){showNotification(message,'error');return false;}
+        return true;
+    }
+    function mfiReviewItem(id){ return mfiCollateral.find(row=>String(row.id||row.collateralId)===String(id))||null; }
+    function mfiVerificationLabel(status){ return status==='completed'?'Completed':status==='in_progress'?'In progress':status==='overdue'?'Overdue':'Scheduled'; }
+    function mfiVerificationMissing(item){
+        const completed=new Set(mfiVerifications.filter(row=>String(row.collateralId)===String(item?.id||item?.collateralId)&&row.status==='completed').map(row=>row.activityType));
+        const missing=[];
+        if(Number(item?.estimatedValueUgx||0)>20000000&&!completed.has('Valuer Report')) missing.push('Valuer Report');
+        const typeName=mfiNormalizeTypeName(item?.typeName||mfiTypes.find(type=>type.id===item?.typeId)?.name);
+        if(typeName.includes('land')&&!completed.has('Legal Check')) missing.push('Legal Check');
+        return missing;
+    }
+    function mfiDocumentLink(file,label){
+        if(!file) return '';
+        const url=typeof file==='string'?file:file.filePath||file.url||'';
+        const name=typeof file==='string'?label:file.fileName||label;
+        if(!url) return `<span class="mfi-form-help">${escHtml(name)} (pending upload)</span>`;
+        const preview=/\.(png|jpe?g|gif|webp)$/i.test(name||'')?' 🖼️ Preview':'';
+        return `<a class="mfi-document-link" href="${escHtml(url)}" target="_blank" rel="noopener" download>${escHtml(name||label)}${preview} · Download</a>`;
+    }
+    function mfiReviewDocuments(item,customer){
+        const docs=[];
+        if(customer?.photoPath) docs.push(mfiDocumentLink(customer.photoPath,'Customer photo'));
+        if(customer?.nationalIdFrontPath) docs.push(mfiDocumentLink(customer.nationalIdFrontPath,'National ID front'));
+        if(customer?.nationalIdBackPath) docs.push(mfiDocumentLink(customer.nationalIdBackPath,'National ID back'));
+        if(item?.ownershipProofPath) docs.push(mfiDocumentLink(item.ownershipProofPath,'Ownership proof'));
+        if(item?.guarantorIdPath) docs.push(mfiDocumentLink(item.guarantorIdPath,'Guarantor ID'));
+        if(item?.guarantorSignedFormPath) docs.push(mfiDocumentLink(item.guarantorSignedFormPath,'Signed guarantor form'));
+        (item?.additionalDocuments||[]).slice(0,10).forEach(file=>docs.push(mfiDocumentLink(file,'Supporting document')));
+        (item?.documents||[]).filter(file=>file.archived!==true).forEach(file=>docs.push(`<div class="mfi-document-row">${mfiDocumentLink(file,file.fileName||'Verification evidence')} <button class="mfi-secondary-btn" data-archive-document="${escHtml(file.id)}" type="button">Archive</button></div>`));
+        return docs.filter(Boolean).join('')||'<div class="mfi-activity-item">No documents uploaded.</div>';
+    }
+    async function mfiToggleDocumentArchive(documentId){
+        if(!mfiManagerRequire()||!mfiRequireOnline()||!documentId)return;
+        await updateDoc(doc(db,'mfi_collateral_documents',documentId),{archived:true,archivedAt:new Date().toISOString(),archivedBy:currentUser.uid}).catch(()=>null);
+        showNotification('Document archived','success');
+        if(mfiActiveReviewCollateral)await mfiReviewCollateral(mfiActiveReviewCollateral.id);
+    }
+    function mfiReviewTimeline(item){
+        const rows=mfiVerifications.filter(row=>String(row.collateralId)===String(item?.id||item?.collateralId)).sort((a,b)=>new Date(a.scheduledAt||a.createdAt||0)-new Date(b.scheduledAt||b.createdAt||0));
+        return rows.length?rows.map(row=>`<div class="mfi-timeline-item"><strong>${escHtml(row.activityType)}</strong><span>${mfiVerificationLabel(row.status)} · ${mfiDate(row.completedAt||row.scheduledAt)}</span><small>${escHtml(row.assignedToName||'Unassigned')}${row.notes?` · ${escHtml(row.notes)}`:''}</small>${row.status!=='completed'&&String(row.assignedToId)===String(currentUser?.uid)?`<button class="mfi-secondary-btn" data-complete-verification="${escHtml(row.id||row.verificationId)}" type="button">Complete</button>`:''}</div>`).join(''):'<div class="mfi-activity-item">No verification activity scheduled.</div>';
+    }
+    function renderMfiManagerReviews(){
+        const target=document.getElementById('managerReviewsList'); if(!target)return;
+        const status=document.getElementById('managerReviewStatusFilter')?.value||'',grade=document.getElementById('managerReviewGradeFilter')?.value||'',type=document.getElementById('managerReviewTypeFilter')?.value||'',search=(document.getElementById('managerReviewSearch')?.value||'').toLowerCase(),sort=document.getElementById('managerReviewSort')?.value||'newest';
+        let rows=mfiCollateral.filter(item=>{
+            const customer=mfiCustomerById(item.customerId),typeName=item.typeName||mfiTypes.find(row=>row.id===item.typeId)?.name||'',hay=`${mfiCustomerName(customer)} ${item.description||''} ${item.location||''}`.toLowerCase();
+            const reviewStatus=item.status==='submitted'?'pending':item.status==='under_review'?'under_review':['approved','rejected','topup_requested'].includes(item.status)?'decided':(item.verificationStage==='awaiting_verification'?'awaiting_verification':item.status||'pending');
+            return (!status||reviewStatus===status)&&(!grade||item.score?.grade===grade)&&(!type||item.typeId===type)&&(!search||hay.includes(search));
+        });
+        if(sort==='high')rows.sort((a,b)=>Number(b.score?.totalScore||0)-Number(a.score?.totalScore||0));else if(sort==='low')rows.sort((a,b)=>Number(a.score?.totalScore||0)-Number(b.score?.totalScore||0));else if(sort==='overdue')rows.sort((a,b)=>Number(new Date(a.reviewDueAt||0))-Number(new Date(b.reviewDueAt||0)));else rows.sort((a,b)=>new Date(b.submittedAt||b.createdAt||b.capturedAt||0)-new Date(a.submittedAt||a.createdAt||a.capturedAt||0));
+        target.innerHTML=rows.length?rows.map(item=>{const customer=mfiCustomerById(item.customerId),typeName=item.typeName||mfiTypes.find(row=>row.id===item.typeId)?.name||'Collateral',score=item.score?.totalScore??'—';return `<div class="mfi-list-card manager-review-row"><label class="mfi-select-row"><input type="checkbox" data-review-select="${escHtml(item.id||item.collateralId)}"><span></span></label><div class="mfi-list-main"><h4>${escHtml(typeName)} — ${escHtml(item.description||'Untitled')}</h4><p>${escHtml(mfiCustomerName(customer))} · ${mfiMoney(item.estimatedValueUgx)}<br>Score: <strong>${score}/100 ${escHtml(item.score?.grade||'Pending')}</strong> · <span class="mfi-badge">${escHtml(item.status||'submitted')}</span></p></div><div class="mfi-list-actions"><button class="mfi-primary-btn" data-mfi-manager-review="${escHtml(item.id||item.collateralId)}" type="button">Open review</button></div></div>`;}).join(''):'<div class="mfi-activity-item">No collateral reviews match these filters.</div>';
+    }
+    async function mfiLoadManagerData(){
+        if(!mfiManagerRequire())return;
+        await Promise.all([mfiLoadCollateral(),mfiLoadTypes(),mfiLoadInstitution()]);
+        let verificationRows=[],decisionRows=[];
+        if(navigator.onLine&&db){
+            const baseQuery=currentUser?.role==='superadmin'?query(collection(db,'mfi_collateral_verification'),limit(1000)):query(collection(db,'mfi_collateral_verification'),where('institutionId','==',mfiInstitutionId()),limit(1000));
+            const decisionQuery=currentUser?.role==='superadmin'?query(collection(db,'mfi_collateral_decisions'),limit(1000)):query(collection(db,'mfi_collateral_decisions'),where('institutionId','==',mfiInstitutionId()),limit(1000));
+            const documentQuery=currentUser?.role==='superadmin'?query(collection(db,'mfi_collateral_documents'),limit(2000)):query(collection(db,'mfi_collateral_documents'),where('institutionId','==',mfiInstitutionId()),limit(2000));
+            const [vSnap,dSnap,docSnap]=await Promise.all([getDocs(baseQuery).catch(()=>({docs:[]})),getDocs(decisionQuery).catch(()=>({docs:[]})),getDocs(documentQuery).catch(()=>({docs:[]}))]);
+            verificationRows=vSnap.docs.map(row=>({id:row.id,...row.data()}));decisionRows=dSnap.docs.map(row=>({id:row.id,...row.data()}));
+            const documents=docSnap.docs.map(row=>({id:row.id,...row.data()})),byCollateral={};
+            documents.forEach(row=>(byCollateral[row.collateralId] ||= []).push(row));
+            mfiCollateral=mfiCollateral.map(row=>({...row,documents:byCollateral[row.id]||row.documents||[]}));
+        }
+        if(Offline){const offlineRows=await Offline.listMfiVerification(mfiInstitutionId()).catch(()=>[]);verificationRows=[...verificationRows,...offlineRows.filter(row=>row.syncStatus==='pending').map(row=>({...row,id:row.verificationId,offline:true}))];}
+        mfiVerifications=verificationRows;mfiDecisions=decisionRows;
+        renderMfiManagerReviews();renderMfiDecisionHistory();renderMfiManagerHome();
+    }
+    function renderMfiManagerHome(){
+        const rows=mfiCollateral,month=new Date().toISOString().slice(0,7),approved=mfiDecisions.filter(row=>row.decision==='approved'&&String(row.decidedAt||'').slice(0,7)===month).length,rejected=mfiDecisions.filter(row=>row.decision==='rejected'&&String(row.decidedAt||'').slice(0,7)===month).length,pending=rows.filter(row=>['submitted','under_review'].includes(row.status)).length;
+        const set=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};set('mfiManagerPending',pending);set('mfiManagerApproved',approved);set('mfiManagerRejected',rejected);set('mfiManagerName',currentUser?.name||currentUser?.email||'Loan Manager');set('mfiManagerInstitutionName',mfiInstitution?.name||'MFI Name — Manager View');
+        const attention=document.getElementById('mfiManagerAttention');
+        const overdue=mfiVerifications.filter(row=>row.status!=='completed'&&row.dueAt&&new Date(row.dueAt)<new Date()),missing=rows.filter(row=>mfiVerificationMissing(row).length);
+        if(attention)attention.innerHTML=[...overdue.slice(0,4).map(row=>`<div class="mfi-activity-item">⏰ ${escHtml(row.activityType)} overdue for ${escHtml(mfiCustomerName(mfiCustomerById(row.customerId)))} <button class="mfi-secondary-btn" data-mfi-manager-review="${escHtml(row.collateralId)}" type="button">Review</button></div>`),...missing.slice(0,4).map(row=>`<div class="mfi-activity-item">⚠️ Mandatory verification missing for ${escHtml(mfiCustomerName(mfiCustomerById(row.customerId)))}: ${escHtml(mfiVerificationMissing(row).join(', '))} <button class="mfi-secondary-btn" data-mfi-manager-review="${escHtml(row.id)}" type="button">Open</button></div>`)].join('')||'<div class="mfi-activity-item">No overdue or mandatory verification items.</div>';
+        const recent=document.getElementById('mfiManagerRecentActivity');if(recent){const events=[...mfiDecisions.map(row=>({date:row.decidedAt,text:`${row.decision} — ${mfiCustomerName(mfiCustomerById(row.customerId))}`})),...mfiVerifications.map(row=>({date:row.completedAt||row.scheduledAt,text:`${row.activityType} ${row.status} — ${mfiCustomerName(mfiCustomerById(row.customerId))}`}))].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,6);recent.innerHTML=events.length?events.map(row=>`<div class="mfi-activity-item">• ${escHtml(row.text)} <span style="float:right;color:#8aa0b2;">${escHtml(mfiDate(row.date))}</span></div>`).join(''):'<div class="mfi-activity-item">No manager activity yet.</div>';}
+    }
+    function renderMfiDecisionHistory(){
+        const target=document.getElementById('mfiDecisionHistoryList');if(!target)return;
+        const status=document.getElementById('mfiDecisionStatusFilter')?.value||'',search=(document.getElementById('mfiDecisionSearch')?.value||'').toLowerCase();
+        const rows=mfiDecisions.filter(row=>{const hay=`${mfiCustomerName(mfiCustomerById(row.customerId))} ${row.collateralDescription||''}`.toLowerCase();return(!status||row.decision===status)&&(!search||hay.includes(search));}).sort((a,b)=>new Date(b.decidedAt||0)-new Date(a.decidedAt||0));
+        target.innerHTML=rows.length?rows.map(row=>`<div class="mfi-list-card"><div><h4>${escHtml(row.decision||'Decision')} · ${escHtml(mfiCustomerName(mfiCustomerById(row.customerId)))}</h4><p>${escHtml(row.collateralDescription||'Collateral')} · ${mfiMoney(row.topUpAmountUgx)}<br>By ${escHtml(row.decidedByName||'Manager')} · ${escHtml(mfiDate(row.decidedAt))}<br>${escHtml(row.comments||'No comments')}</p></div><div class="mfi-list-actions"><button class="mfi-secondary-btn" data-mfi-manager-review="${escHtml(row.collateralId)}" type="button">View record</button></div></div>`).join(''):'<div class="mfi-activity-item">No decisions match this filter.</div>';
+    }
+    function mfiPopulateReviewTypeFilter(){
+        const select=document.getElementById('managerReviewTypeFilter');if(!select)return;
+        const selected=select.value;select.innerHTML='<option value="">All types</option>'+mfiTypes.map(type=>`<option value="${escHtml(type.id)}">${escHtml(type.name)}</option>`).join('');select.value=selected;
+    }
     async function mfiReviewCollateral(id){
-        if(!mfiCanReview()||!mfiRequireOnline()) return;
-        const item=mfiCollateral.find(row=>String(row.id||row.collateralId)===String(id)); if(!item?.score) return;
-        const choice=prompt('Enter decision: approve, reject, or topup','approve')?.toLowerCase().trim(); if(!['approve','reject','topup'].includes(choice)) return;
-        const status=choice==='approve'?'approved':choice==='reject'?'rejected':'topup_requested';
-        const scoreQuery=currentUser?.role==='superadmin'
-            ? query(collection(db,'mfi_collateral_scoring'),where('collateralId','==',id),limit(1))
-            : query(collection(db,'mfi_collateral_scoring'),where('institutionId','==',mfiInstitutionId()),where('collateralId','==',id),limit(1));
-        const scoreSnap=await getDocs(scoreQuery).catch(()=>({docs:[]}));
-        if(scoreSnap.docs[0]) await updateDoc(doc(db,'mfi_collateral_scoring',scoreSnap.docs[0].id),{status,managerComments:`Decision: ${choice}`,scoredBy:currentUser.uid,reviewedAt:new Date().toISOString()});
-        await updateDoc(doc(db,'mfi_collateral',id),{status:choice==='approve'?'verified':choice==='reject'?'rejected':'under_review',updatedAt:new Date().toISOString()});
-        await logMfiAction(`collateral_${choice}`,{collateralId:id}); showNotification(`Collateral ${choice==='topup'?'top-up requested':choice+'d'}`,'success'); await mfiLoadCollateral(); await mfiLoadDashboard();
+        if(!mfiCanReview()||!mfiManagerRequire('Only Loan Managers can make manager decisions')||!mfiRequireOnline())return;
+        if(!mfiVerifications.length)await mfiLoadManagerData();
+        const item=mfiReviewItem(id);if(!item)return;
+        if(navigator.onLine&&!item.assignedManagerId){item.assignedManagerId=currentUser.uid;item.assignedManagerName=currentUser.name||currentUser.email||'Manager';updateDoc(doc(db,'mfi_collateral',item.id),{assignedManagerId:item.assignedManagerId,assignedManagerName:item.assignedManagerName,assignedAt:new Date().toISOString()}).catch(()=>{});}
+        mfiActiveReviewCollateral=item;
+        const customer=mfiCustomerById(item.customerId),missing=mfiVerificationMissing(item),score=item.score||{};
+        const body=document.getElementById('managerReviewBody');if(!body)return;
+        body.innerHTML=`<div class="mfi-detail-grid"><div class="mfi-panel-card"><h3 style="margin-top:0;color:#1A5490;">👤 Customer</h3><p>${escHtml(mfiCustomerName(customer))}<br>📱 ${escHtml(customer.phone||'—')} · ${escHtml(customer.occupation||'—')}<br>Income: ${mfiMoney(customer.monthlyIncome)}<br>Address: ${escHtml(customer.physicalAddress||'—')}</p></div><div class="mfi-panel-card"><h3 style="margin-top:0;color:#1A5490;">📋 Collateral</h3><p>${escHtml(item.typeName||'Collateral')}<br>${escHtml(item.description||'—')}<br>Value: ${mfiMoney(item.estimatedValueUgx)} · Location: ${escHtml(item.location||'—')}<br>Status: <span class="mfi-badge">${escHtml(item.status||'submitted')}</span></p></div></div><div class="mfi-panel-card mfi-score-card"><h3 style="margin-top:0;color:#1A5490;">🎯 Score card</h3><div class="mfi-score-total">${Number(score.totalScore||0)}/100</div><div class="mfi-score-grade">${escHtml(score.grade||'Pending')} · ${escHtml(score.recommendation||'Review')}</div>${[['Asset type','assetTypeScore',25],['Ownership proof','ownershipProofScore',25],['Market value','marketValueScore',20],['Location','locationScore',15],['Liquidity','liquidityScore',15]].map(([label,key,max])=>`<div class="mfi-score-row"><span>${label}</span><div class="mfi-score-track"><div class="mfi-score-fill" style="width:${Math.min(100,Number(score[key]||0)/max*100)}%;background:#1A5490;"></div></div><strong>${Number(score[key]||0)}/${max}</strong></div>`).join('')}</div><div class="mfi-panel-card"><h3 style="margin-top:0;color:#1A5490;">📄 Documents</h3><div class="mfi-document-list">${mfiReviewDocuments(item,customer)}</div></div><div class="mfi-panel-card"><h3 style="margin-top:0;color:#1A5490;">🕒 Verification timeline</h3>${missing.length?`<div class="mfi-offline-note">Required before approval: ${escHtml(missing.join(', '))}</div>`:''}<div id="managerVerificationTimeline">${mfiReviewTimeline(item)}</div><div class="mfi-form-actions" style="justify-content:flex-start;"><button id="managerScheduleVerificationBtn" class="mfi-secondary-btn" type="button">📅 Schedule verification</button></div></div><div class="mfi-panel-card"><h3 style="margin-top:0;color:#1A5490;">⚖️ Manager decision</h3><form id="managerDecisionForm" class="mfi-form"><div class="mfi-form-grid"><label>Decision *<select id="managerDecisionChoice" required><option value="">Select decision</option><option value="approved">Approve</option><option value="rejected">Reject</option><option value="topup_requested">Request top-up</option></select></label><label id="managerTopupAmountWrap" class="mfi-hidden">Top-up amount (UGX) *<input id="managerTopupAmount" type="number" min="1"></label><label id="managerTopupTypeWrap" class="mfi-hidden">Top-up collateral type *<select id="managerTopupType"></select></label><label class="full">Comments <span id="managerCommentsRequired"></span><textarea id="managerDecisionComments"></textarea></label></div><div id="managerDecisionStatus" class="mfi-form-help" aria-live="polite"></div><div class="mfi-form-actions"><button id="managerDecisionExportBtn" class="mfi-secondary-btn" type="button">🖨️ Decision history PDF</button><button class="mfi-primary-btn" type="submit">Save decision</button></div></form></div>`;
+        const topupType=document.getElementById('managerTopupType');if(topupType)topupType.innerHTML='<option value="">Select type</option>'+mfiTypes.map(type=>`<option value="${escHtml(type.id)}">${escHtml(type.name)}</option>`).join('');
+        document.getElementById('managerDecisionChoice')?.addEventListener('change',event=>{const topup=event.target.value==='topup_requested';document.getElementById('managerTopupAmountWrap')?.classList.toggle('mfi-hidden',!topup);document.getElementById('managerTopupTypeWrap')?.classList.toggle('mfi-hidden',!topup);document.getElementById('managerCommentsRequired').textContent=event.target.value==='rejected'||topup?'* required':'';});
+        document.getElementById('managerDecisionForm')?.addEventListener('submit',mfiSubmitManagerDecision);
+        document.getElementById('managerScheduleVerificationBtn')?.addEventListener('click',()=>mfiOpenScheduleVerification(item.id));
+        document.getElementById('managerDecisionExportBtn')?.addEventListener('click',()=>mfiPrintDecisionHistory(item.id));
+        document.getElementById('managerReviewBody')?.querySelectorAll('[data-complete-verification]').forEach(button=>button.addEventListener('click',()=>mfiOpenVerificationActivity(button.dataset.completeVerification)));
+        openCommandModal('managerReviewModal');
+    }
+    async function mfiSubmitManagerDecision(event){
+        event.preventDefault();if(!mfiManagerRequire()||!mfiRequireOnline())return;
+        const item=mfiActiveReviewCollateral,choice=document.getElementById('managerDecisionChoice')?.value,comments=document.getElementById('managerDecisionComments')?.value.trim()||'',amount=Number(document.getElementById('managerTopupAmount')?.value||0),typeId=document.getElementById('managerTopupType')?.value||'';
+        if(!choice)return;if((choice==='rejected'||choice==='topup_requested')&&!comments){showNotification('Comments are required for rejection or top-up','error');return;}if(choice==='topup_requested'&&(!amount||!typeId)){showNotification('Top-up amount and collateral type are required','error');return;}if(choice==='approved'&&mfiVerificationMissing(item).length){showNotification(`Complete required verification: ${mfiVerificationMissing(item).join(', ')}`,'error');return;}
+        const status=document.getElementById('managerDecisionStatus');if(status)status.textContent='Saving decision…';
+        try{await mfiWriteDecision(item,choice,comments,amount,typeId);if(status)status.textContent='✅ Decision saved';showNotification('✅ Decision saved and borrower notified','success');closeCommandModal('managerReviewModal');await mfiLoadManagerData();await mfiLoadDashboard();}catch(error){console.error('MFI decision failed:',error);if(status)status.textContent=error?.message||'Unable to save decision';showNotification('Unable to save decision','error');}
+    }
+    async function mfiWriteDecision(item,decision,comments='',topUpAmountUgx=0,topUpTypeId=''){
+        const now=new Date().toISOString(),decisionRef=await addDoc(collection(db,'mfi_collateral_decisions'),{institutionId:item.institutionId||mfiInstitutionId(),collateralId:item.id,customerId:item.customerId,decision,comments,topUpAmountUgx:Number(topUpAmountUgx||0),topUpTypeId,decidedBy:currentUser.uid,decidedByName:currentUser.name||currentUser.email||'Manager',decidedAt:now,collateralDescription:item.description||'',score:item.score||null});
+        await updateDoc(doc(db,'mfi_collateral',item.id),{status:decision,verificationStage:decision==='approved'?'approved':decision==='rejected'?'rejected':'awaiting_topup',latestDecisionId:decisionRef.id,latestDecisionAt:now,updatedAt:now});
+        if(item.score?.id)await updateDoc(doc(db,'mfi_collateral_scoring',item.score.id),{status:decision,managerComments:comments,reviewedAt:now,reviewedBy:currentUser.uid}).catch(()=>{});
+        await addDoc(collection(db,'notifications'),{targetUserId:item.customerId,institutionId:item.institutionId||mfiInstitutionId(),type:`mfi_${decision}`,title:decision==='approved'?'Collateral approved':decision==='rejected'?'Collateral review update':'Additional collateral requested',body:decision==='topup_requested'?`Please provide additional collateral. ${comments}`:`Your collateral review was ${decision}. ${comments}`,createdAt:now,read:false}).catch(()=>{});
+        await logMfiAction(`collateral_${decision}`,{collateralId:item.id,decisionId:decisionRef.id});
+    }
+    async function mfiOpenManagerReviews(){
+        if(!mfiManagerRequire())return;
+        await mfiLoadManagerData();mfiPopulateReviewTypeFilter();openCommandModal('managerReviewsListModal');
+    }
+    async function mfiLoadAssignees(){
+        if(!db)return [];
+        const institutionId=mfiInstitutionId(),rows=[];
+        const roles=['loan_officer','loan_manager'];
+        for(const role of roles){
+            const snap=await getDocs(query(collection(db,'users'),where('institutionId','==',institutionId),where('role','==',role),limit(100))).catch(()=>({docs:[]}));
+            snap.docs.forEach(row=>rows.push({id:row.id,...row.data(),assignmentRole:role,assignmentKey:`staff:${row.id}`}));
+        }
+        await mfiLoadRegistries();
+        mfiAssignees=[...rows,...mfiValuers.map(row=>({...row,assignmentRole:'valuer',assignmentKey:`valuer:${row.id}`,name:row.fullName||row.name})),...mfiLegalOfficers.map(row=>({...row,assignmentRole:'legal_officer',assignmentKey:`legal:${row.id}`,name:row.fullName||row.name}))];
+        return mfiAssignees;
+    }
+    function mfiUpdateVerificationRuleNotice(){
+        const item=mfiActiveReviewCollateral,type=document.getElementById('verificationActivityType')?.value,notice=document.getElementById('verificationRuleNotice');if(!item||!notice)return;
+        const rules=[];if(Number(item.estimatedValueUgx||0)>20000000)rules.push('Valuer Report is mandatory above UGX 20,000,000.');if(mfiNormalizeTypeName(item.typeName||'').includes('land'))rules.push('Legal Check is mandatory for Land & Property.');notice.textContent=rules.length?rules.join(' '):'Optional verification activity. Complete it with notes and evidence.';
+    }
+    async function mfiOpenScheduleVerification(id){
+        if(!mfiManagerRequire()||!mfiRequireOnline())return;
+        const item=mfiReviewItem(id);if(!item)return;mfiActiveReviewCollateral=item;
+        await mfiLoadAssignees();
+        const type=document.getElementById('verificationActivityType'),assignee=document.getElementById('verificationAssignedTo'),date=document.getElementById('verificationScheduledDate');
+        if(type)type.value=Number(item.estimatedValueUgx||0)>20000000?'Valuer Report':mfiNormalizeTypeName(item.typeName||'').includes('land')?'Legal Check':'Desk Review';
+        const allowedRole=type?.value==='Valuer Report'?'valuer':type?.value==='Legal Check'?'legal_officer':'staff';
+        if(assignee)assignee.innerHTML='<option value="">Select assignee</option>'+mfiAssignees.filter(row=>allowedRole==='staff'?['loan_officer','loan_manager'].includes(row.assignmentRole):row.assignmentRole===allowedRole).map(row=>`<option value="${escHtml(row.assignmentKey)}">${escHtml(row.fullName||row.name||row.email||'Assignee')} · ${escHtml(row.company||row.assignmentRole)}</option>`).join('');
+        if(date){const d=new Date();d.setDate(d.getDate()+1);date.value=d.toISOString().slice(0,10);}mfiUpdateVerificationRuleNotice();openCommandModal('scheduleVerificationModal');
+    }
+    async function mfiScheduleVerification(event){
+        event.preventDefault();if(!mfiManagerRequire()||!mfiRequireOnline()||!mfiActiveReviewCollateral)return;
+        const item=mfiActiveReviewCollateral,type=document.getElementById('verificationActivityType')?.value,assignedKey=document.getElementById('verificationAssignedTo')?.value,scheduledAt=document.getElementById('verificationScheduledDate')?.value,notes=document.getElementById('verificationNotes')?.value.trim()||'';
+        if(!type||!assignedKey||!scheduledAt){showNotification('Complete the verification schedule fields','error');return;}
+        const assigned=mfiAssignees.find(row=>row.assignmentKey===assignedKey);if(!assigned)return;
+        const dueAt=new Date(`${scheduledAt}T17:00:00`).toISOString(),now=new Date().toISOString();
+        const verification=await addDoc(collection(db,'mfi_collateral_verification'),{institutionId:item.institutionId||mfiInstitutionId(),collateralId:item.id,customerId:item.customerId,activityType:type,status:'scheduled',assignedToId:assigned.id,assignedToName:assigned.fullName||assigned.name||assigned.email||'Assignee',assignedRole:assigned.assignmentRole,scheduledAt:`${scheduledAt}T09:00:00.000Z`,dueAt,notes,createdBy:currentUser.uid,createdAt:now,completedAt:null});
+        await updateDoc(doc(db,'mfi_collateral',item.id),{verificationStage:'in_progress',verificationStartedAt:item.verificationStartedAt||now,verificationProgress:{completed:0,total:mfiVerifications.filter(row=>String(row.collateralId)===String(item.id)).length+1},updatedAt:now});
+        await addDoc(collection(db,'notifications'),{targetUserId:assigned.id,institutionId:item.institutionId||mfiInstitutionId(),type:'mfi_verification_assigned',title:`${type} assigned`,body:`Complete verification for ${mfiCustomerName(mfiCustomerById(item.customerId))}.`,collateralId:item.id,verificationId:verification.id,createdAt:now,read:false}).catch(()=>{});
+        await logMfiAction('schedule_collateral_verification',{collateralId:item.id,verificationId:verification.id,activityType:type});
+        closeCommandModal('scheduleVerificationModal');showNotification('✅ Verification activity scheduled','success');await mfiLoadManagerData();
+        if(document.getElementById('managerReviewModal')?.classList.contains('active'))mfiReviewCollateral(item.id);
+    }
+    async function mfiOpenVerificationActivity(id){
+        const activity=mfiVerifications.find(row=>String(row.id||row.verificationId)===String(id));if(!activity)return;
+        if(activity.assignedToId&&String(activity.assignedToId)!==String(currentUser?.uid)&&!mfiManagerRequire('Only the assigned person or manager can edit this activity'))return;
+        mfiActiveVerification=activity;document.getElementById('verificationActivitySummary').textContent=`${activity.activityType} for ${mfiCustomerName(mfiCustomerById(activity.customerId))} · due ${mfiDate(activity.dueAt)}`;
+        document.getElementById('verificationCompletionNotes').value='';document.getElementById('verificationAttachments').value='';document.getElementById('verificationActivityStatus').textContent='';openCommandModal('verificationActivityModal');
+    }
+    function mfiValidateDocuments(files){
+        if(files.length>10)throw new Error('You can attach up to 10 files');
+        const allowed=/^(image\/(jpeg|jpg|png|gif|webp)|application\/pdf)$/i;
+        files.forEach(file=>{if(file.size>5*1024*1024)throw new Error(`${file.name} is larger than 5MB`);if(!allowed.test(file.type))throw new Error(`${file.name} must be an image or PDF`);});
+    }
+    async function mfiCompleteVerification(event){
+        event.preventDefault();if(!mfiActiveVerification)return;
+        const notes=document.getElementById('verificationCompletionNotes')?.value.trim()||'',files=mfiFiles('verificationAttachments'),status=document.getElementById('verificationActivityStatus');
+        if(!notes){showNotification('Completion notes are required','error');return;}try{mfiValidateDocuments(files);}catch(error){showNotification(error.message,'error');return;}
+        const now=new Date().toISOString();
+        if(!navigator.onLine){
+            if(!Offline){showNotification('Offline storage is unavailable in this browser','error');return;}
+            await Offline.queueMfiVerification({...mfiActiveVerification,verificationId:mfiActiveVerification.id||mfiActiveVerification.verificationId,notes,completionNotes:notes,attachmentFiles:files,completedBy:currentUser.uid,completedByName:currentUser.name||currentUser.email});
+            if(status)status.textContent='Saved offline — will sync when connected.';showNotification('✅ Verification saved offline','info');closeCommandModal('verificationActivityModal');return;
+        }
+        if(status)status.textContent='Uploading evidence…';
+        try{const uploaded=[];const base=`mfi/${mfiInstitutionId()}/${mfiActiveVerification.customerId}/verification/${mfiActiveVerification.id}`;for(const file of files){const filePath=await mfiUploadFile(file,`${base}/${file.name}`);uploaded.push({fileName:file.name,filePath,fileSize:file.size,documentType:mfiActiveVerification.activityType,uploadedBy:currentUser.uid,uploadedAt:now});}
+            await updateDoc(doc(db,'mfi_collateral_verification',mfiActiveVerification.id),{status:'completed',completionNotes:notes,notes,attachments:uploaded,completedBy:currentUser.uid,completedByName:currentUser.name||currentUser.email,completedAt:now,updatedAt:now});
+            for(const file of uploaded)await addDoc(collection(db,'mfi_collateral_documents'),{...file,institutionId:mfiInstitutionId(),collateralId:mfiActiveVerification.collateralId,verificationId:mfiActiveVerification.id,archived:false});
+            const all=[...mfiVerifications.filter(row=>String(row.collateralId)===String(mfiActiveVerification.collateralId)&&String(row.id)!==String(mfiActiveVerification.id)),{...mfiActiveVerification,status:'completed'}],completed=all.filter(row=>row.status==='completed').length,missing=mfiVerificationMissing(mfiReviewItem(mfiActiveVerification.collateralId));
+            await updateDoc(doc(db,'mfi_collateral',mfiActiveVerification.collateralId),{verificationStage:missing.length?'awaiting_verification':'verified',verificationProgress:{completed,total:all.length},lastVerificationAt:now,updatedAt:now});
+            await addDoc(collection(db,'notifications'),{targetRole:'loan_manager',institutionId:mfiInstitutionId(),type:'mfi_verification_completed',title:'Verification completed',body:`${mfiActiveVerification.activityType} completed with evidence.`,collateralId:mfiActiveVerification.collateralId,createdAt:now,read:false}).catch(()=>{});
+            closeCommandModal('verificationActivityModal');showNotification('✅ Verification completed','success');await mfiLoadManagerData();
+        }catch(error){console.error('MFI verification completion failed:',error);if(status)status.textContent=error?.message||'Unable to complete verification';showNotification('Unable to complete verification','error');}
+    }
+    async function mfiSyncOfflineVerification(item){
+        const now=new Date().toISOString(),files=item.attachmentFiles||[],uploaded=[],base=`mfi/${item.institutionId}/${item.customerId}/verification/${item.verificationId}`;
+        for(const file of files){const filePath=await mfiUploadFile(file,`${base}/${file.name}`);uploaded.push({fileName:file.name,filePath,fileSize:file.size,documentType:item.activityType,uploadedBy:item.completedBy,uploadedAt:now});}
+        await updateDoc(doc(db,'mfi_collateral_verification',item.verificationId),{status:'completed',completionNotes:item.completionNotes||item.notes,notes:item.notes,attachments:uploaded,completedBy:item.completedBy,completedByName:item.completedByName,completedAt:now,updatedAt:now});
+        for(const file of uploaded)await addDoc(collection(db,'mfi_collateral_documents'),{...file,institutionId:item.institutionId,collateralId:item.collateralId,verificationId:item.verificationId,archived:false});
+        await updateDoc(doc(db,'mfi_collateral',item.collateralId),{verificationStage:'awaiting_verification',lastVerificationAt:now,updatedAt:now});
+    }
+    async function mfiBatchDecision(decision){
+        if(!mfiManagerRequire()||!mfiRequireOnline())return;
+        const ids=[...document.querySelectorAll('[data-review-select]:checked')].map(input=>input.dataset.reviewSelect);if(!ids.length){showNotification('Select at least one review','info');return;}
+        const comments=decision==='approved'?'':prompt('Enter comments for this batch decision','')?.trim()||'';if((decision!=='approved'&&!comments)){showNotification('Comments are required for batch rejection or top-up','error');return;}
+        let amount=0,typeId='';if(decision==='topup_requested'){amount=Number(prompt('Top-up amount in UGX','')||0);typeId=mfiTypes.find(type=>type.name===prompt('Top-up collateral type',mfiTypes[0]?.name||''))?.id||'';if(!amount||!typeId){showNotification('Top-up amount and collateral type are required','error');return;}}
+        const selected=ids.map(id=>mfiReviewItem(id)).filter(Boolean);for(const item of selected){if(decision==='approved'&&mfiVerificationMissing(item).length){showNotification(`Skipped ${mfiCustomerName(mfiCustomerById(item.customerId))}: ${mfiVerificationMissing(item).join(', ')} required`,'info');continue;}await mfiWriteDecision(item,decision,comments,amount,typeId);}
+        showNotification('✅ Batch decision saved','success');await mfiLoadManagerData();await mfiLoadDashboard();
+    }
+    function mfiPrintDecisionHistory(collateralId){
+        const rows=mfiDecisions.filter(row=>!collateralId||String(row.collateralId)===String(collateralId));const popup=window.open('','_blank','noopener,noreferrer');if(!popup){showNotification('Allow pop-ups to print the decision history','info');return;}
+        popup.document.write(`<html><head><title>APSHULE MFI Decision History</title><style>body{font-family:Arial;color:#142b3d;padding:28px}h1{color:#1A5490}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd9e2;padding:8px;text-align:left;font-size:12px}th{background:#e8f2f9}</style></head><body><h1>APSHULE MFI Decision History</h1><p>Generated ${escHtml(new Date().toLocaleString())}</p><table><tr><th>Customer</th><th>Collateral</th><th>Decision</th><th>Comments</th><th>Manager</th><th>Date</th></tr>${rows.map(row=>`<tr><td>${escHtml(mfiCustomerName(mfiCustomerById(row.customerId)))}</td><td>${escHtml(row.collateralDescription||'Collateral')}</td><td>${escHtml(row.decision)}</td><td>${escHtml(row.comments||'')}</td><td>${escHtml(row.decidedByName||'')}</td><td>${escHtml(mfiDate(row.decidedAt))}</td></tr>`).join('')}</table><script>window.onload=function(){window.print();}<\\/script></body></html>`);popup.document.close();
+    }
+    async function mfiLoadRegistries(){
+        if(!db||!['superadmin','mfi_admin','loan_manager'].includes(currentUser?.role))return;
+        const [vSnap,lSnap]=await Promise.all([getDocs(query(collection(db,'mfi_valuers'),where('institutionId','==',mfiInstitutionId()),limit(200))).catch(()=>({docs:[]})),getDocs(query(collection(db,'mfi_legal_officers'),where('institutionId','==',mfiInstitutionId()),limit(200))).catch(()=>({docs:[]}))]);
+        mfiValuers=vSnap.docs.map(row=>({id:row.id,...row.data()}));mfiLegalOfficers=lSnap.docs.map(row=>({id:row.id,...row.data()}));renderMfiRegistries();return {valuers:mfiValuers,legalOfficers:mfiLegalOfficers};
+    }
+    function renderMfiRegistries(){
+        const render=(id,rows,kind)=>{const target=document.getElementById(id);if(target)target.innerHTML=rows.length?rows.map(row=>`<div class="mfi-list-card"><div><h4>${escHtml(row.fullName||row.name||'Unnamed')}</h4><p>${escHtml(row.company||row.lawFirm||'')} · License: ${escHtml(row.licenseNumber||'—')}<br>${escHtml(row.phone||'')} ${row.specialization?`· ${escHtml(row.specialization)}`:''}</p></div><span class="mfi-badge">${kind}</span></div>`).join(''):'<div class="mfi-activity-item">No registry records yet.</div>';};render('mfiValuersList',mfiValuers,'Valuer');render('mfiLegalOfficersList',mfiLegalOfficers,'Legal officer');
+    }
+    async function mfiSaveRegistry(collectionName,event){
+        event.preventDefault();if(!['superadmin','mfi_admin'].includes(currentUser?.role)||!mfiRequireOnline())return;
+        const isValuer=collectionName==='mfi_valuers',values=isValuer?{fullName:document.getElementById('valuerFullName').value.trim(),company:document.getElementById('valuerCompany').value.trim(),licenseNumber:document.getElementById('valuerLicenseNumber').value.trim(),phone:document.getElementById('valuerPhone').value.trim(),email:document.getElementById('valuerEmail').value.trim(),specialization:document.getElementById('valuerSpecialization').value}:{fullName:document.getElementById('legalFullName').value.trim(),lawFirm:document.getElementById('legalLawFirm').value.trim(),licenseNumber:document.getElementById('legalLicenseNumber').value.trim(),phone:document.getElementById('legalPhone').value.trim(),email:document.getElementById('legalEmail').value.trim()};
+        if(Object.values(values).some(value=>!value)){showNotification('Complete all required registry fields','error');return;}
+        await addDoc(collection(db,collectionName),{...values,institutionId:mfiInstitutionId(),isActive:true,createdBy:currentUser.uid,createdAt:new Date().toISOString()});closeCommandModal(isValuer?'valuerFormModal':'legalOfficerFormModal');showNotification('✅ Registry record saved','success');await mfiLoadRegistries();
     }
     function mfiCsv(rows,filename){
         const csv=rows.map(row=>row.map(value=>`"${String(value??'').replace(/"/g,'""')}"`).join(',')).join('\n'),url=URL.createObjectURL(new Blob([csv],{type:'text/csv'})),a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
@@ -13089,7 +13417,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const isSchool = currentUser.role === 'school';
         const isTeacher = currentUser.role === 'teacher';
         const isMfi = isMfiRole();
-        if(isSuper) initCommandCenter(); else if(isMfi) { setupMfiNavigation(); initMfiInteractions(); } else restoreStandardNavigation();
+        if(isSuper) initCommandCenter(); else if(isMfi) { if(currentUser?.role==='loan_manager'){ setupMfiManagerNavigation(); } else { setupMfiNavigation(); } initMfiInteractions(); initMfiManagerInteractions(); setTimeout(()=>currentUser?.role==='loan_manager'?mfiManagerNavigate('home'):mfiNavigate('home'),0); } else restoreStandardNavigation();
         // Store superadmin UID so students/teachers can send targeted notifications
         if(isSuper) {
             setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});

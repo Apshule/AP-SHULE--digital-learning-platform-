@@ -5,3 +5,4 @@
 - [Video Studio secure AI boundary](video-studio-secure-ai-boundary.md) — Keep Twin credentials server-only and UI-only until a secure backend is explicitly configured.
 - [Push watcher missing-file fallback](push-watcher-missing-files.md) — Poll unwatched paths because Linux fs.watchFile can miss files created after watcher startup.
 - [GitHub Pages push allowlist](github-pages-push-allowlist.md) — The authenticated site push helper must include repository contracts when changes need to reach the main GitHub branch.
+- [Preview build environment](preview-build-environment.md) — Full workspace builds need explicit PORT and BASE_PATH values for the mockup preview.
