@@ -1,0 +1,548 @@
+Task 9 — Step 3 of 3: Analytics + Settings + Security + Full Regression Testing
+
+CONTEXT:
+- Step 1 built: 5-tab navigation, Dashboard home, User Management, 
+  Institution Management, Institution Branding
+- Step 2 built: Content Management, Payments, NCDC Control, 
+  Live Lesson Control, Communication modals
+- Step 3 completes Task 9 with Analytics, Settings, Security, and 
+  full regression testing across Tasks 1-9
+
+GOAL:
+Finish the Command Center with:
+1. 📈 Analytics tab (dashboards + reports)
+2. ⚙️ Settings tab (platform configuration)
+3. 🔐 Security tab (roles, permissions, audit log, PDPO)
+4. Full regression testing across all 9 tasks
+
+This is the FINAL step for Task 9.
+
+═══════════════════════════════════════════════════════════════
+PART A: ANALYTICS TAB (Tab 4)
+═══════════════════════════════════════════════════════════════
+
+Trigger: Bottom nav → [📈 Analytics] tab
+
+Content (scrollable page with multiple sections):
+
+SECTION 1 — GROWTH OVERVIEW
+┌─────────────────────────────────────────┐
+│ 📈 PLATFORM ANALYTICS                    │
+├─────────────────────────────────────────┤
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Total    │ │ New This │ │ Growth   │ │
+│ │ Users    │ │ Month    │ │ Rate     │ │
+│ │ 1,245    │ │ 87       │ │ +7.5%    │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ User Growth (Last 6 Months)             │
+│ [Line chart placeholder]                 │
+│                                          │
+│ User Breakdown by Role:                  │
+│ [Pie chart: Students 70%, Teachers 15%, │
+│  Admins 8%, Others 7%]                   │
+└─────────────────────────────────────────┘
+
+SECTION 2 — ENGAGEMENT METRICS
+┌─────────────────────────────────────────┐
+│ 🎯 ENGAGEMENT                            │
+├─────────────────────────────────────────┤
+│ DAU (Daily Active Users): 245           │
+│ WAU (Weekly Active Users): 890          │
+│ MAU (Monthly Active Users): 1,100       │
+│                                          │
+│ Avg Session Duration: 18 minutes        │
+│ Avg Videos Watched per User: 4.2        │
+│ Avg Projects Submitted per Student: 1.8 │
+│                                          │
+│ Retention:                               │
+│ Day 1: 65% · Day 7: 42% · Day 30: 28%  │
+└─────────────────────────────────────────┘
+
+SECTION 3 — INSTITUTION ANALYTICS
+┌─────────────────────────────────────────┐
+│ 🏛️ INSTITUTIONS                          │
+├─────────────────────────────────────────┤
+│ Top Schools by Activity:                │
+│ 1. Rose Junior — 245 students, 18 teachers│
+│ 2. Excel Schools — 180 students         │
+│ 3. Kampala High — 150 students          │
+│                                          │
+│ Top MFIs by Portfolio:                  │
+│ 1. Green Valley — UGX 45M portfolio     │
+│                                          │
+│ Clinic/Pharmacy Stats:                  │
+│ [If any exist]                           │
+└─────────────────────────────────────────┘
+
+SECTION 4 — REVENUE ANALYTICS
+┌─────────────────────────────────────────┐
+│ 💰 REVENUE                               │
+├─────────────────────────────────────────┤
+│ MRR (Monthly Recurring): UGX 245,000   │
+│ ARR (Annual Recurring): UGX 2,940,000  │
+│ Churn Rate: 3.2%                        │
+│                                          │
+│ Revenue by Source:                      │
+│ • School subscriptions: 60%             │
+│ • Student subscriptions: 25%            │
+│ • MFI subscriptions: 10%                │
+│ • Clinic subscriptions: 5%              │
+│                                          │
+│ Revenue Chart (Last 6 Months):          │
+│ [Bar chart placeholder]                  │
+└─────────────────────────────────────────┘
+
+SECTION 5 — CONTENT ANALYTICS
+┌─────────────────────────────────────────┐
+│ 🎬 CONTENT                               │
+├─────────────────────────────────────────┤
+│ Total Videos: 89                        │
+│ Total PDFs: 45                          │
+│ Total Views (all content): 12,450       │
+│                                          │
+│ Most Watched Videos:                    │
+│ 1. Photosynthesis Series (245 views)   │
+│ 2. Fractions Practice (198 views)      │
+│ 3. Water Cycle (152 views)             │
+│                                          │
+│ Completion Rate by Mode:                │
+│ • Cartoon: 78%                          │
+│ • AI Auto: 72%                          │
+│ • Series: 65%                           │
+└─────────────────────────────────────────┘
+
+SECTION 6 — REPORTS
+- [📥 Export User Analytics PDF]
+- [📥 Export Revenue Report PDF]
+- [📥 Export Engagement Report PDF]
+- [📥 Export Institution Report PDF]
+- [📥 Export All Analytics (ZIP)]
+
+Use jsPDF + jsPDF-AutoTable (already loaded in Task 3).
+
+Data sources:
+- users collection (growth, roles)
+- videoCompletions (engagement)
+- transactions (revenue)
+- institutions (institution stats)
+- video_library (content)
+
+Add "date range" filter at top:
+○ Last 7 days ● Last 30 days ○ Last 90 days ○ All time
+
+═══════════════════════════════════════════════════════════════
+PART B: SETTINGS TAB (Tab 5)
+═══════════════════════════════════════════════════════════════
+
+Trigger: Bottom nav → [⚙️ Settings] tab
+
+Content (scrollable, accordion sections):
+
+SECTION 1 — PLATFORM SETTINGS
+┌─────────────────────────────────────────┐
+│ ⚙️ PLATFORM SETTINGS                     │
+├─────────────────────────────────────────┤
+│ App Name: [APSHULE]                      │
+│ Tagline: [Let's Learn With Ease]         │
+│ Default Language: [English ▼]            │
+│ Time Zone: [Africa/Kampala ▼]            │
+│ Support Phone: [+256705732540]           │
+│ Support Email: [apshule@gmail.com]       │
+│                                          │
+│ [💾 Save Platform Settings]             │
+└─────────────────────────────────────────┘
+
+Stored in: settings/platform (single doc)
+
+SECTION 2 — SUBSCRIPTION PLAN DEFAULTS
+┌─────────────────────────────────────────┐
+│ 💳 DEFAULT PRICING                       │
+├─────────────────────────────────────────┤
+│ Student Basic: [5,000] UGX/month        │
+│ Student Premium: [10,000] UGX/month     │
+│ School Standard: [50,000] UGX/month     │
+│ School Premium: [100,000] UGX/month     │
+│ MFI Basic: [50,000] UGX/month           │
+│ MFI Premium: [100,000] UGX/month        │
+│ Clinic Basic: [50,000] UGX/month        │
+│ Clinic Premium: [100,000] UGX/month     │
+│                                          │
+│ [💾 Save Default Pricing]               │
+└─────────────────────────────────────────┘
+
+SECTION 3 — COMMUNICATION DEFAULTS
+┌─────────────────────────────────────────┐
+│ 📢 COMMUNICATION                         │
+├─────────────────────────────────────────┤
+│ SMS Provider: [Configured ▼]            │
+│ Email Provider: [Gmail SMTP ▼]          │
+│ WhatsApp Business: [Not configured]     │
+│ Push Notifications: [✓] Enabled         │
+│                                          │
+│ Default sender name: [APSHULE]           │
+│ Reply-to email: [apshule@gmail.com]     │
+│                                          │
+│ [💾 Save Communication Settings]        │
+└─────────────────────────────────────────┘
+
+SECTION 4 — PAYMENT GATEWAYS
+┌─────────────────────────────────────────┐
+│ 💳 PAYMENT GATEWAYS                      │
+├─────────────────────────────────────────┤
+│ Yo! Payments: [Not configured]          │
+│ [🔑 Configure Yo! Payments]             │
+│                                          │
+│ Mobile Money Merchant: [Not configured] │
+│ [🔑 Configure Mobile Money]             │
+│                                          │
+│ Bank Transfer: [Manual]                 │
+│                                          │
+│ [Test Payment Gateway]                  │
+└─────────────────────────────────────────┘
+
+Configurable fields for Yo!:
+- API Username
+- API Password
+- Public Key
+- Private Key (secure)
+- Sandbox Mode toggle
+- Callback URL
+
+SECTION 5 — INTEGRATION SETTINGS
+┌─────────────────────────────────────────┐
+│ 🔗 INTEGRATIONS                          │
+├─────────────────────────────────────────┤
+│ Gemini API: [✓] Configured              │
+│ ElevenLabs API: [Not configured]        │
+│ D-ID API: [Not configured]              │
+│ YouTube Data: [✓] Configured            │
+│ Pixabay: [✓] Free tier                  │
+│ Firebase: [✓] Configured                │
+│                                          │
+│ [🔑 Manage API Keys]                    │
+└─────────────────────────────────────────┘
+
+SECTION 6 — SYSTEM DEFAULTS
+┌─────────────────────────────────────────┐
+│ 🔧 SYSTEM DEFAULTS                       │
+├─────────────────────────────────────────┤
+│ Auto-sync on WiFi: [✓] On                │
+│ Auto-sync on mobile data: [✗] Off       │
+│ Download HD videos only on WiFi: [✓] On │
+│ Max file upload size: [5] MB            │
+│ Default video duration: [5] min          │
+│ Session timeout: [30] min                │
+│                                          │
+│ Maintenance Mode: [✗] Off               │
+│ (When on, only super admin can access)  │
+│                                          │
+│ [💾 Save System Defaults]               │
+└─────────────────────────────────────────┘
+
+SECTION 7 — BACKUP & DATA
+┌─────────────────────────────────────────┐
+│ 💾 BACKUP & DATA                         │
+├─────────────────────────────────────────┤
+│ Last backup: 2 days ago                  │
+│ Next scheduled: Tomorrow 2 AM           │
+│                                          │
+│ [🔄 Backup Now]                         │
+│ [📥 Download Backup (ZIP)]              │
+│ [⚠️ Clear Old Logs (> 6 months)]        │
+│                                          │
+│ ⚠️ Danger Zone:                          │
+│ [🗑️ Reset Demo Data]                    │
+│ (Only for demo/test accounts)           │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART C: SECURITY TAB (accessed from Settings)
+═══════════════════════════════════════════════════════════════
+
+Add a sub-section in Settings tab: "🔐 SECURITY & PERMISSIONS"
+
+Opens full-screen modal (id="securityModal") with tabs:
+
+TAB 1 — ROLES
+- List of all roles: Super Admin, School Admin, Teacher, 
+  Student, Loan Officer, Clinic Staff, Farmer, etc.
+- Each role shows: permissions matrix
+- Add custom role button
+- Edit role permissions
+
+TAB 2 — PERMISSIONS MATRIX
+- Grid showing what each role can do:
+  * View/create/edit/delete users
+  * View/create/edit/delete content
+  * Approve payments
+  * Access reports
+- Toggle permissions per role
+- Save changes
+
+TAB 3 — AUDIT LOG
+- Complete log of all admin actions:
+  * Who did what
+  * When
+  * From where (IP/device)
+  * Result (success/failed)
+- Filter by: user, action type, date range
+- Export as CSV
+- Retention: 12 months
+
+TAB 4 — FAILED LOGINS
+- List of failed login attempts
+- Group by email or IP
+- Show: email attempted, timestamp, location, device
+- Flag suspicious patterns
+- [Block IP] action
+- [Lock Account] action
+
+TAB 5 — ACTIVE SESSIONS
+- All currently logged-in users
+- Each row: user, device, location, last activity
+- [Force Logout] button per session
+- See who is online right now
+
+TAB 6 — PDPO COMPLIANCE
+- Data Protection Officer info
+- PDPO Registration number
+- Data retention policy summary
+- Data subject requests log:
+  * Access requests
+  * Deletion requests
+  * Rectification requests
+- [📥 Export Compliance Report]
+- [Generate DPIA Report]
+
+TAB 7 — API KEYS & SECRETS
+- List all configured API keys (masked)
+- Show: Gemini, ElevenLabs, D-ID, Yo!, etc.
+- [Rotate Key] per provider
+- [View Usage] per key
+- Track last used, request count
+
+═══════════════════════════════════════════════════════════════
+PART D: DASHBOARD QUICK ACTIONS UPDATE
+═══════════════════════════════════════════════════════════════
+
+Update Dashboard (from Step 1) quick actions:
+
+Add these 2 buttons to the existing 6:
+
+Row 1: [👥 Users] [🏛️ Institutions] [📚 Content] [💰 Payments]
+Row 2: [📋 NCDC/UNEB] [🎓 Live] [📢 Announce] [📊 Reports]
+
+[📊 Reports] → opens a Reports modal (or scrolls to Analytics → 
+Reports section)
+
+═══════════════════════════════════════════════════════════════
+PART E: SUPER ADMIN — HIDDEN FEATURES
+═══════════════════════════════════════════════════════════════
+
+Add hidden but useful features:
+
+1. **Impersonate User** (dev/testing):
+   - In Users tab → ⋮ More → [Impersonate]
+   - Logs super admin in as that user temporarily
+   - Shows banner: "Viewing as {userName} — [Exit]"
+   - Useful for testing and support
+
+2. **Debug Panel**:
+   - Hidden: tap AppShule logo 7 times fast
+   - Opens debug panel with:
+     * Current user info
+     * Firestore connection status
+     * IndexedDB stats
+     * Cache size
+     * Force clear cache button
+     * Reload app button
+
+3. **Announcement Preview**:
+   - Before sending an announcement, show preview
+   - See exactly how it appears in student's Alerts tab
+
+═══════════════════════════════════════════════════════════════
+PART F: FULL REGRESSION TESTING (Tasks 1-9)
+═══════════════════════════════════════════════════════════════
+
+Run this complete regression suite:
+
+TASK 1 — NCDC/UNEB:
+☐ Student CBC & UNEB section
+☐ Teacher CBC Teaching Tools
+☐ NCDC/UNEB Control (now inside Command Center)
+☐ School Admin NCDC Compliance card
+
+TASK 2 — Offline PWA:
+☐ Offline badge shows
+☐ Offline login works
+☐ Sync button works
+☐ Connection detection
+
+TASK 3 — Offline Earnings:
+☐ Teacher earnings summary
+☐ PDF report
+☐ Super Admin overview
+
+TASK 4 — Project Integrity:
+☐ Student My Projects
+☐ QR generation
+☐ Teacher verification + viva audio
+☐ Evidence Folder
+☐ Duplicate detection
+
+TASK 5 — Curriculum Linker:
+☐ Search works
+☐ 3-tab detail
+☐ AI activity generation
+☐ Favorites
+
+TASK 6 — NCDC Course:
+☐ 10 modules
+☐ Video/PDF/Quiz/Practical
+☐ CPD certificate
+☐ Verification page
+
+TASK 7 — Video Studio:
+☐ Cartoon Studio
+☐ AI Auto-Video
+☐ Series Mode
+☐ Digital Twin UI (API disabled state)
+☐ Student/Teacher libraries
+☐ Cost dashboard
+
+TASK 8 — Settings:
+☐ Settings page loads
+☐ Toggles save
+☐ Language switch
+☐ Storage management
+☐ Sync history
+☐ User guide
+☐ Bug report
+
+TASK 9 — Command Center:
+☐ New 5-tab nav for super admin
+☐ Dashboard home with 8 quick actions
+☐ User Management (CRUD + CSV)
+☐ Institution Management
+☐ Institution Branding (dual-logo header)
+☐ Content Management (5 tabs)
+☐ Payments (6 tabs)
+☐ NCDC Control (6 tabs)
+☐ Live Lesson Control (5 tabs)
+☐ Communication (5 tabs)
+☐ Analytics tab (6 sections + exports)
+☐ Settings tab (7 sections)
+☐ Security modal (7 tabs)
+☐ Audit log captures actions
+☐ Roles & Permissions editable
+
+Other roles unchanged:
+☐ Student nav unchanged
+☐ Teacher nav unchanged
+☐ School admin nav unchanged
+
+═══════════════════════════════════════════════════════════════
+PART G: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. audit_logs: userId (asc) + createdAt (desc)
+2. audit_logs: action (asc) + createdAt (desc)
+3. failed_logins: email (asc) + timestamp (desc)
+4. active_sessions: userId (asc) + lastActivityAt (desc)
+5. data_subject_requests: type (asc) + createdAt (desc)
+
+═══════════════════════════════════════════════════════════════
+PART H: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add clear code comments for:
+   - Command Center architecture
+   - Analytics aggregation queries
+   - Security & permissions model
+   - Audit logging flow
+3. Verify no syntax errors (check DevTools Console)
+4. Check for unused imports
+5. Ensure no memory leaks from modals/listeners
+6. Compress any new images
+
+═══════════════════════════════════════════════════════════════
+PART I: PERFORMANCE BENCHMARKS
+═══════════════════════════════════════════════════════════════
+
+Measure and confirm:
+1. Command Center dashboard load: <2 seconds
+2. Analytics tab with charts: <3 seconds
+3. Settings save: <500ms
+4. Security modal open: <500ms
+5. Regression suite completion: <30 seconds
+
+If slow:
+- Add Firestore indexes
+- Cache aggregated stats for 5 minutes
+- Lazy-load charts
+- Paginate long lists
+
+═══════════════════════════════════════════════════════════════
+PART J: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 9 feature completeness:
+   ☐ 5-tab navigation
+   ☐ Dashboard home
+   ☐ User Management (full CRUD)
+   ☐ Institution Management
+   ☐ Institution Branding (dual-logo)
+   ☐ Content Management (5 tabs)
+   ☐ Payments (6 tabs)
+   ☐ NCDC Control (6 tabs)
+   ☐ Live Lesson Control (5 tabs)
+   ☐ Communication (5 tabs)
+   ☐ Analytics (6 sections)
+   ☐ Settings (7 sections)
+   ☐ Security (7 tabs)
+   ☐ Impersonate user
+   ☐ Debug panel
+
+2. Regression: Tasks 1-8 still work? ✅/❌
+3. Performance benchmarks met? ✅/❌
+4. Recommendations for Task 10
+
+If all pass:
+"Task 9 fully complete — Super Admin Command Center with 
+Institution Branding ready. Ready for Task 10 (MFI Collateral)."
+
+═══════════════════════════════════════════════════════════════
+PART K: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-8 or Steps 1-2 of Task 9
+- Do NOT expose API keys in plain text
+- Do NOT allow non-superadmin access to Command Center
+- Do NOT delete user data via the Reset Demo Data button 
+  without double confirmation
+- Do NOT remove old admin functions — migrate them
+- Do NOT lose audit log entries
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-E first (Analytics, Settings, Security, Dashboard 
+update, Hidden features), then run regression (Part F) and report (Part J).
+
+Confirm when done with:
+"Task 9 fully complete — Super Admin Command Center ready. 
+Ready for Task 10."
+
+Report:
+- Feature checklist
+- Regression results
+- Performance benchmarks
+- Screenshots: Analytics tab, Settings tab, Security modal, 
+  Impersonate banner, Debug panel, Audit log
