@@ -1,0 +1,545 @@
+Task 11 — Step 3 of 3: Clinic Dashboard + Reports + Final Testing
+
+CONTEXT:
+- Step 1 built: Clinic foundation, Patients, Appointments, Visits, Prescriptions, 6 roles
+- Step 2 built: Pharmacy inventory, Product Scanner, Billing, Insurance Claims, Offline pharmacy
+- Step 3 completes Task 11 with: comprehensive Clinic Dashboard, Reports, Analytics, and full regression
+
+GOAL OF STEP 3:
+- Build a comprehensive Clinic Dashboard for Clinic Admin (management view)
+- Generate all clinic reports (financial, operational, medical, compliance)
+- Add analytics for revenue, patient trends, service performance
+- Complete Task 11 with full regression (Tasks 1-11)
+
+═══════════════════════════════════════════════════════════════
+PART A: CLINIC ADMIN DASHBOARD (Full Management View)
+═══════════════════════════════════════════════════════════════
+
+Update Clinic Admin home screen with comprehensive dashboard:
+
+┌─────────────────────────────────────────┐
+│ 🏥 {Clinic Name}                         │
+│ Welcome, {adminName}                     │
+├─────────────────────────────────────────┤
+│ 📊 TODAY                                │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Patients │ │ Appoint. │ │ Revenue  │ │
+│ │ Today    │ │ Today    │ │ Today    │ │
+│ │ 45       │ │ 28       │ │ UGX 245K │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐              │
+│ │ Pending  │ │ Low Stock│              │
+│ │ Bills    │ │ Alerts   │              │
+│ │ 34       │ │ 5        │              │
+│ └──────────┘ └──────────┘              │
+│                                          │
+│ 📈 THIS MONTH                            │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Revenue  │ │ New      │ │ Avg Visit│ │
+│ │ UGX 4.5M │ │ Patients │ │ UGX 25K  │ │
+│ │          │ │ 120      │ │          │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [➕ New Patient] [📅 New Appointment]   │
+│ [💊 Pharmacy] [💰 Billing]              │
+│ [📊 Reports] [👥 Staff]                 │
+│                                          │
+│ 📋 TODAY'S APPOINTMENTS                  │
+│ • 10:00 John Kato — General              │
+│ • 11:30 Sarah Hamble — Dental           │
+│ • 14:00 Paul Mugisha — Follow-up        │
+│ [View All 28]                            │
+│                                          │
+│ 🏆 TOP SERVICES THIS MONTH               │
+│ • General Consultation: 600             │
+│ • Laboratory Tests: 420                  │
+│ • Pharmacy Sales: 380                    │
+│ • Dental Services: 210                   │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 5 items low stock                      │
+│ • 3 items expiring soon                  │
+│ • 34 unpaid bills worth UGX 1.2M        │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART B: REPORTS & ANALYTICS MODAL
+═══════════════════════════════════════════════════════════════
+
+When Clinic Admin taps [📊 Reports]:
+
+Full-screen modal (id="clinicReportsModal") with tabs:
+
+TAB 1 — FINANCIAL REPORTS
+
+Sub-reports:
+1. Revenue Summary
+   - Total revenue (period selector: today/week/month/year/custom)
+   - Breakdown by: Services / Pharmacy / Lab
+   - Payment method breakdown: Cash / MoMo / Insurance / Bank
+   - [📥 Export PDF] [📥 Export Excel]
+
+2. Unpaid Bills Report
+   - List of all unpaid/partial bills
+   - Total outstanding amount
+   - Aging: 0-30 days, 31-60 days, 61-90 days, 90+ days
+   - [📥 Export PDF] [📧 Send Reminders]
+
+3. Daily Reconciliation
+   - Cash in hand vs recorded
+   - Mobile money reconciliation
+   - Insurance claims submitted vs approved
+   - Variances flagged
+   - [📥 Print Daily Report]
+
+4. Insurance Claims Report
+   - All claims by status
+   - Amount claimed vs approved
+   - Approval rate by provider
+   - Aging of pending claims
+   - [📥 Export PDF]
+
+TAB 2 — OPERATIONAL REPORTS
+
+Sub-reports:
+1. Patient Statistics
+   - Total patients: X
+   - New this month: X
+   - Returning patients: X
+   - Average visits per patient
+   - Demographics (age, gender)
+
+2. Appointment Analytics
+   - Total appointments (period)
+   - No-show rate
+   - Cancellation rate
+   - Peak hours
+   - Doctor-wise distribution
+
+3. Service Performance
+   - Top services by revenue
+   - Top services by volume
+   - Service-wise growth trend
+   - [📥 Export PDF]
+
+4. Staff Performance
+   - Doctor-wise: patients seen, revenue
+   - Nurse-wise: vitals recorded
+   - Receptionist-wise: appointments scheduled
+   - Pharmacist-wise: prescriptions dispensed
+
+TAB 3 — MEDICAL REPORTS
+
+Sub-reports:
+1. Diagnosis Summary
+   - Most common diagnoses
+   - By age group
+   - By gender
+   - Trend over time
+
+2. Prescription Analytics
+   - Most prescribed medications
+   - Prescription → Dispense rate
+   - Average prescriptions per visit
+   - Medication alerts
+
+3. Chronic Disease Tracking
+   - Patients with chronic conditions
+   - Follow-up compliance
+   - Condition-specific metrics
+
+4. Vaccination Records
+   - Vaccinations given (period)
+   - By vaccine type
+   - By age group
+   - Reminder list for pending vaccinations
+
+TAB 4 — COMPLIANCE REPORTS
+
+Sub-reports:
+1. MoH Compliance Report
+   - Reportable disease surveillance (if applicable)
+   - Weekly/Monthly summaries
+   - [📥 Export PDF]
+
+2. Pharmacy Regulatory Report
+   - Controlled substance tracking
+   - Expiry report
+   - Batch tracking
+   - [📥 Export PDF]
+
+3. Patient Privacy Audit
+   - Who accessed which patient records
+   - When
+   - Flagged unusual access patterns
+   - [📥 Export PDF]
+
+TAB 5 — CUSTOM REPORTS
+
+Build custom reports:
+- Select data source (patients, appointments, bills, etc.)
+- Select fields
+- Apply filters
+- Group by
+- Sort by
+- Preview
+- [📥 Export PDF] [📥 Export Excel] [📥 Export CSV]
+- [💾 Save as Template] for reuse
+
+═══════════════════════════════════════════════════════════════
+PART C: REPORT GENERATION IMPLEMENTATION
+═══════════════════════════════════════════════════════════════
+
+Use jsPDF + jsPDF-AutoTable (already loaded in Task 3).
+
+Add helper function generateClinicReport(reportType, filters):
+1. Fetch data from Firestore with proper filters
+2. Build PDF structure:
+   - Header: Clinic name + logo + report title
+   - Sub-header: Date range + filters applied
+   - Body: Data tables with proper formatting
+   - Summary section at bottom
+   - Footer: Page number + "Generated on {date}"
+3. Auto-number columns, sum totals where applicable
+4. Save with filename: {ReportName}_{dateRange}.pdf
+
+Excel export uses SheetJS (already loaded).
+
+═══════════════════════════════════════════════════════════════
+PART D: ANALYTICS DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When Clinic Admin taps [📈 Analytics] (add this to dashboard):
+
+Full-screen modal (id="clinicAnalyticsModal"):
+
+Section 1 — Revenue Trends (Chart.js):
+- Line chart: Daily revenue last 30 days
+- Bar chart: Monthly revenue last 6 months
+- Pie chart: Revenue by service category
+
+Section 2 — Patient Trends:
+- Line chart: New patients per month
+- Line chart: Total visits per month
+- Line chart: Unique vs returning patients
+
+Section 3 — Peak Hours Heatmap:
+- Grid showing busiest hours of week
+- Helps schedule staff
+
+Section 4 — Service Mix:
+- Pie chart: Revenue by service
+- Bar chart: Volume by service
+- Growth trend per service
+
+Section 5 — Doctor Performance:
+- Table: Doctor, patients seen, avg consultation time, revenue generated
+
+Use Chart.js (already loaded in Task 10).
+
+═══════════════════════════════════════════════════════════════
+PART E: STAFF MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+When Clinic Admin taps [👥 Staff]:
+
+Full-screen modal (id="clinicStaffModal"):
+
+- List of all clinic staff
+- Filter by role: Doctor / Nurse / Receptionist / Pharmacist
+- Filter by status: Active / Inactive
+
+Each staff card:
+┌─────────────────────────────────────────┐
+│ 👨‍⚕️ Dr. Mugisha David                    │
+│ Role: Doctor · General Medicine         │
+│ Joined: 1 June 2026                     │
+│ Today: 12 appointments                  │
+│ This month: 245 patients, UGX 4.2M      │
+│ [👁 View Profile] [✏️ Edit] [⋮]        │
+└─────────────────────────────────────────┘
+
+⋮ More menu:
+- View full profile
+- View activity log
+- Suspend/Activate
+- Change role
+- Reset password
+
+Doctor detail view shows:
+- Profile
+- Schedule (working hours)
+- Appointment history
+- Revenue generated
+- Patient feedback
+- Performance metrics
+
+═══════════════════════════════════════════════════════════════
+PART F: CLINIC SETTINGS
+═══════════════════════════════════════════════════════════════
+
+When Clinic Admin taps Settings (inside Account tab):
+
+Clinic-specific settings:
+- Clinic name + tagline (links to Institution Branding)
+- Operating hours
+- Contact information
+- Emergency contact
+- Appointment slot duration (15/30/60 min)
+- Prescription format options
+- Bill template
+- Insurance providers list (manage)
+- Email/SMS templates
+- Notification preferences
+
+═══════════════════════════════════════════════════════════════
+PART G: MULTI-BRANCH DASHBOARD (if applicable)
+═══════════════════════════════════════════════════════════════
+
+If clinic has multiple branches:
+
+Add branch comparison view:
+- Table: Branch, Patients, Revenue, Appointments, Avg Score
+- Chart: Revenue by branch
+- Filter all reports by branch
+
+Branch manager sees only their branch (role-based).
+
+═══════════════════════════════════════════════════════════════
+PART H: PATIENT COMMUNICATION
+═══════════════════════════════════════════════════════════════
+
+Add bulk communication tools for Clinic Admin:
+
+- Send SMS to all patients
+- Send appointment reminders
+- Send follow-up reminders
+- Send vaccination due reminders
+- Send unpaid bill reminders
+
+Uses existing communication infrastructure from Task 9.
+
+═══════════════════════════════════════════════════════════════
+PART I: INTEGRATION WITH SUPER ADMIN COMMAND CENTER
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Command Center (Task 9) to include Clinic data:
+
+In Analytics tab → add Clinic section:
+- Total clinics: X
+- Total patients across clinics: X
+- Total revenue from clinics: X
+- Top performing clinics
+
+In Content Management → add:
+- Clinic services catalog
+- Insurance providers list
+
+In Payments → add:
+- Clinic subscription payments
+- Clinic revenue share
+
+═══════════════════════════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- Clinic accent: #0D7377 (teal)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Reports:
+- Formal, professional look
+- Clinic logo + branding
+- Clear tables with alternating row colors
+- Summary sections highlighted
+
+Charts:
+- Use Chart.js with consistent color palette
+- Responsive on mobile
+
+═══════════════════════════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Reports require internet for fresh data.
+
+Cache strategy:
+- Dashboard stats cached in IndexedDB
+- Show "Last updated X ago" when offline
+- Reports can use cached data with warning badge
+
+═══════════════════════════════════════════════════════════════
+PART L: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes if not present:
+1. clinic_appointments: institutionId (asc) + appointmentDate (desc)
+2. clinic_visits: institutionId (asc) + visitDate (desc)
+3. clinic_billing: institutionId (asc) + billDate (desc) + paymentStatus (asc)
+4. clinic_payments: institutionId (asc) + paymentDate (desc)
+5. clinic_prescriptions: institutionId (asc) + createdAt (desc)
+6. clinic_pharmacy_inventory: institutionId (asc) + category (asc)
+
+═══════════════════════════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with: 1 Clinic Admin + Doctor + Pharmacist + Patient
+
+A. Dashboard:
+   1. Login as Clinic Admin
+   2. Verify: dashboard shows today + this month stats
+   3. Verify: quick actions work
+   4. Verify: today's appointments list
+   5. Verify: alerts section
+
+B. Financial reports:
+   1. Open Reports → Financial → Revenue Summary
+   2. Test date range: last 7 days, last 30 days
+   3. Export PDF → verify contents
+   4. Export Excel → open and verify
+   5. Test Unpaid Bills report → check aging
+   6. Test Daily Reconciliation
+
+C. Operational reports:
+   1. Patient Statistics → verify numbers
+   2. Appointment Analytics → check no-show rate
+   3. Service Performance → verify top services
+   4. Staff Performance → check doctor metrics
+
+D. Medical reports:
+   1. Diagnosis Summary → top diagnoses
+   2. Prescription Analytics → most prescribed
+   3. Chronic Disease → list
+   4. Vaccination Records
+
+E. Compliance reports:
+   1. MoH Compliance → export PDF
+   2. Pharmacy Regulatory → check expiry report
+   3. Privacy Audit → check access log
+
+F. Custom reports:
+   1. Build a custom report
+   2. Save as template
+   3. Regenerate from template
+
+G. Analytics dashboard:
+   1. Open Analytics modal
+   2. Verify: charts render (revenue, patients, peaks)
+   3. Verify: doctor performance table
+
+H. Staff management:
+   1. Open Staff modal
+   2. View doctor profile
+   3. Check activity log
+   4. Test suspend/activate
+
+I. Clinic settings:
+   1. Change appointment slot duration
+   2. Add an insurance provider
+   3. Save and verify
+
+J. Multi-branch (if applicable):
+   1. Create a second branch
+   2. Filter reports by branch
+   3. Test branch manager role
+
+K. Patient communication:
+   1. Send bulk SMS to 10 patients
+   2. Verify: messages delivered
+
+L. Super Admin view:
+   1. Login as Super Admin
+   2. Command Center → Analytics → see Clinic section
+   3. Verify: aggregated clinic metrics
+
+M. Offline:
+   1. Turn off WiFi
+   2. Dashboard loads cached stats
+   3. Reports show "requires internet"
+   4. Charts show cached data with warning
+
+N. Full regression (Tasks 1-11):
+   TASK 1-10: all pass
+   TASK 11:
+   ☐ Clinic institution type
+   ☐ 6 clinic roles
+   ☐ Patient registration
+   ☐ Appointment scheduling
+   ☐ Check-in flow
+   ☐ Vitals recording
+   ☐ Doctor consultation
+   ☐ Prescriptions
+   ☐ Pharmacy inventory
+   ☐ Product scanner
+   ☐ Billing
+   ☐ Partial payments
+   ☐ Insurance claims
+   ☐ Clinic dashboard
+   ☐ Reports (financial, operational, medical, compliance)
+   ☐ Analytics
+   ☐ Staff management
+   ☐ Multi-branch
+
+═══════════════════════════════════════════════════════════════
+PART N: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+After all tests pass:
+1. Remove console.log debug statements
+2. Add code comments for:
+   - Report generation logic
+   - Analytics calculations
+   - Chart data aggregation
+3. Check for unused imports
+4. Verify no syntax errors
+5. Ensure no memory leaks from charts (destroy on modal close)
+
+═══════════════════════════════════════════════════════════════
+PART O: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 11 feature completeness:
+   ☐ Step 1: Foundation + Patients + Appointments + Prescriptions
+   ☐ Step 2: Pharmacy + Product Scanner + Billing + Insurance
+   ☐ Step 3: Dashboard + Reports + Analytics + Staff
+
+2. Regression: Tasks 1-10 still pass? ✅/❌
+3. Performance benchmarks met?
+4. Recommendations for Task 12
+
+If all pass:
+"Task 11 fully complete — Clinic/Pharmacy/Drug Shop Management ready. 
+Ready for Task 12 (Automated Payments)."
+
+═══════════════════════════════════════════════════════════════
+PART P: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-10 or Steps 1-2 of Task 11
+- Do NOT allow non-clinic-admin to view financial reports
+- Do NOT expose patient medical data to unauthorized staff
+- Do NOT lose chart state (destroy charts on modal close)
+- Do NOT allow deletion of financial records (only reversal)
+- Do NOT remove Education or MFI sector features
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts A-K, run regression (Part M), report (Part O).
+
+Confirm when done with:
+"Task 11 fully complete — Clinic/Pharmacy Management ready. 
+Ready for Task 12."
+
+Report:
+- Feature checklist
+- Regression results
+- Screenshots: Clinic dashboard, financial reports, operational 
+  reports, medical reports, analytics charts, staff management
