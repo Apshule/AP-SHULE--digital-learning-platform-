@@ -2891,6 +2891,8 @@
                                 <button type="button" data-settings-help="support">📞 Contact Support</button>
                                 <button type="button" data-settings-help="privacy">📄 Privacy Policy</button>
                                 <button type="button" data-settings-help="terms">📜 Terms of Service</button>
+                                 <button type="button" id="toggleLargeTextBtn" aria-pressed="false">🔠 Large text</button>
+                                 <button type="button" id="toggleContrastBtn" aria-pressed="false">◐ High contrast</button>
                             </div>
                             <div style="text-align:center;color:#777;font-size:11px;margin-top:14px;">Made with ❤️ in Uganda 🇺🇬</div>
                         </div>
@@ -3621,6 +3623,7 @@
     let _globalSyncFailed = false;
     let _settingsAccordionHome = null;
     let _settingsLastSyncAt = null;
+    let _storageBreakdownCache = { at: 0, value: null };
     function setGlobalSyncStatus(summary, mode, failed) {
         const button=document.getElementById('globalSyncStatusBtn');
         const statusText=document.getElementById('globalSyncStatusText');
@@ -3727,11 +3730,13 @@
     async function refreshSettingsDashboard(settings) {
         if(!Offline) return;
         settings=settings||await Offline.getSettings(currentUser?.uid);
+        const cachedBreakdown=(_storageBreakdownCache.value && Date.now()-_storageBreakdownCache.at<30*1000) ? _storageBreakdownCache.value : null;
         const [mode, breakdown, history]=await Promise.all([
             resolveConnectionMode(),
-            Offline.getStorageBreakdown(),
+            cachedBreakdown ? Promise.resolve(cachedBreakdown) : Offline.getStorageBreakdown(),
             Offline.listSyncHistory(currentUser?.uid)
         ]);
+        if(!cachedBreakdown) _storageBreakdownCache={at:Date.now(),value:breakdown};
         await refreshOfflineUi(mode);
         const downloaded=document.getElementById('settingsDownloadedBytes'), uploaded=document.getElementById('settingsUploadedBytes');
         if(downloaded) downloaded.textContent=formatOfflineBytes(settings.downloadedBytes);
@@ -3882,6 +3887,7 @@
             button.disabled=true;
             try {
                 await Offline.clearStorageCategory(category);
+                _storageBreakdownCache={at:0,value:null};
                 await refreshSettingsDashboard();
                 showNotification('Cached data cleared','success');
             } catch(error) { console.error('Cache clear failed:',error); showNotification('Unable to clear cached data','error'); }
@@ -3902,6 +3908,16 @@
             catch(error) { console.error('Language save failed:',error); showNotification('Unable to save language settings','error'); }
         });
         document.getElementById('refreshSettingsUsageBtn')?.addEventListener('click',()=>refreshSettingsDashboard().catch(()=>showNotification('Unable to refresh storage data','error')));
+        const applyAccessibility=()=>{
+            const large=localStorage.getItem('apshule.largeText')==='true', contrast=localStorage.getItem('apshule.highContrast')==='true';
+            document.documentElement.classList.toggle('large-text-mode',large);
+            document.documentElement.classList.toggle('high-contrast-mode',contrast);
+            document.getElementById('toggleLargeTextBtn')?.setAttribute('aria-pressed',String(large));
+            document.getElementById('toggleContrastBtn')?.setAttribute('aria-pressed',String(contrast));
+        };
+        document.getElementById('toggleLargeTextBtn')?.addEventListener('click',()=>{ localStorage.setItem('apshule.largeText',String(localStorage.getItem('apshule.largeText')!=='true')); applyAccessibility(); });
+        document.getElementById('toggleContrastBtn')?.addEventListener('click',()=>{ localStorage.setItem('apshule.highContrast',String(localStorage.getItem('apshule.highContrast')!=='true')); applyAccessibility(); });
+        applyAccessibility();
         applyTranslations(currentAppLanguage);
     }
     async function syncOfflineViews(items) {
