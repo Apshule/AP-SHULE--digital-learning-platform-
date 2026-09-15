@@ -2345,6 +2345,7 @@
                 <button class="command-action-btn" data-command-action="ncdc"><span>🎓</span>NCDC/UNEB</button>
                 <button class="command-action-btn" data-command-action="live"><span>📡</span>Live</button>
                  <button class="command-action-btn" id="seedMfiCollateralTypesBtn" type="button"><span>🌱</span>Seed MFI Types</button>
+                 <button class="command-action-btn" id="seedMfiLoanProductsBtn" type="button"><span>🌱</span>Seed MFI Loan Products</button>
                  <button class="command-action-btn" id="seedFarmAnimalTypesBtn" type="button"><span>🌱</span>Seed Farm Animal Types</button>
                 <button class="command-action-btn" data-command-action="announce"><span>📢</span>Announce</button>
                 <button class="command-action-btn" data-command-action="reports"><span>📊</span>Reports</button>
@@ -2405,6 +2406,11 @@
         <div id="mfiReportsPage" class="page mfi-page">
             <div class="mfi-section" style="margin-top:0;">📊 MFI Reports</div>
             <div class="mfi-panel-card"><p class="mfi-form-help">Loan Director and MFI Admin reporting foundation. Exports contain customer and collateral records for the selected institution.</p><div class="mfi-form-actions" style="justify-content:flex-start;"><button id="mfiExportCustomersBtn" class="mfi-secondary-btn" type="button">Export customers CSV</button><button id="mfiExportCollateralBtn" class="mfi-primary-btn" type="button">Export collateral CSV</button></div><div id="mfiReportStatus" class="mfi-form-help" style="margin-top:10px;"></div></div>
+        </div>
+        <div id="mfiLoansPage" class="page mfi-page">
+            <div class="mfi-section" style="margin-top:0;display:flex;justify-content:space-between;align-items:center;">💼 Loan Portfolio <div style="display:flex;gap:8px;flex-wrap:wrap;"><button id="mfiRecordLoanPaymentBtn" class="mfi-secondary-btn" type="button">💰 Record Payment</button><button id="mfiNewLoanBtn" class="mfi-primary-btn" type="button">＋ New Loan</button></div></div>
+            <div class="mfi-stats-grid"><div class="mfi-stat-card"><strong id="mfiLoanTotalCount">—</strong><span>Total Loans</span></div><div class="mfi-stat-card"><strong id="mfiLoanPendingCount">—</strong><span>Pending Approval</span></div><div class="mfi-stat-card"><strong id="mfiLoanDisbursedTotal">UGX —</strong><span>Disbursed</span></div><div class="mfi-stat-card"><strong id="mfiLoanOutstandingTotal">UGX —</strong><span>Outstanding</span></div></div>
+            <div class="mfi-panel-card"><div class="mfi-filter-row"><input id="mfiLoanSearch" type="search" placeholder="Search loan number or customer" aria-label="Search loans"><select id="mfiLoanStatusFilter" aria-label="Filter loans"><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="under_review">Under review</option><option value="approved">Approved</option><option value="disbursed">Disbursed</option><option value="repaying">Repaying</option><option value="overdue">Overdue</option><option value="fully_repaid">Fully repaid</option><option value="rejected">Rejected</option></select><select id="mfiLoanProductFilter" aria-label="Filter loan product"><option value="">All products</option></select></div><div id="mfiLoanPortfolioList"><div class="mfi-activity-item">Loading loans…</div></div></div>
         </div>
         <div id="mfiManagerHomePage" class="page mfi-page">
             <div class="mfi-hero"><h2>🏦 <span id="mfiManagerInstitutionName">MFI Name — Manager View</span></h2><p>Welcome, <strong id="mfiManagerName">Loan Manager</strong>. Review collateral, coordinate verification, and record decisions.</p></div>
