@@ -1,0 +1,61 @@
+Task 15 — Bug Fixes (Two Issues):
+
+BUG 1 — SUBSCRIPTION PLAN NOT WORKING
+The subscription plans on the Home screen are not functioning:
+- Tapping a plan does not open the payment flow
+- Nothing happens when a user taps Subscribe
+- Some users see "Online payment is coming soon" or nothing at all
+
+Fix:
+- Make each subscription plan tappable
+- On tap, open the payment modal
+- Payment modal should show:
+  * Plan name and price
+  * Payment method selector (MTN Mobile Money, Airtel Money)
+  * Phone number input
+  * Continue button
+- If Yo! Payments is not configured, show a clear message:
+  "Please contact your school admin to subscribe"
+- Ensure the plan price shown matches the plan selected
+- Test: tap Daily, Weekly, Monthly, Term, Half Year, Full Year 
+  and confirm each opens the payment flow correctly
+
+BUG 2 — NOTIFICATIONS STILL APPEAR IN TOP RIGHT CORNER
+Contextual messages are still showing in the top right corner as 
+floating toasts when a user taps on a specific item. They should 
+appear ON or NEAR the tapped item instead.
+
+Fix for ALL contextual messages:
+- Move the message to appear directly below or on top of the 
+  tapped element
+- Use a small tooltip or inline banner at the tap location
+- Auto-hide after about 3 seconds with a smooth fade
+- Do NOT use the top-right toast for messages tied to a 
+  specific element
+
+Apply this to ALL contextual cases:
+- Tapping a class with no subjects
+- Tapping a subject with no video
+- Tapping a subscription plan
+- Tapping a resource with no PDF
+- Tapping a live lesson with no enrollment
+- Tapping any feature that is empty or unavailable
+
+Keep the top-right toast ONLY for global system messages like:
+- Sync complete
+- Payment confirmed
+- Login successful
+- Network status changes
+
+TESTING:
+1. Tap any subscription plan — payment modal or clear message opens
+2. Tap a class with 0 subjects — message appears under the class card
+3. Tap a subject with no video — message appears next to the subject
+4. Confirm no contextual messages show in the top right corner
+5. Confirm global messages still work in the top right
+
+Do NOT rebuild the app. Do NOT break Tasks 1 through 15.
+
+Confirm when done with:
+"Task 15 Bug Fixes complete — Subscription plans work, 
+contextual messages appear at tap location"
