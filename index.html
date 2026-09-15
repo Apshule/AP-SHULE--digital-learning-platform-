@@ -139,6 +139,17 @@
          .apshule-contextual-message.error { background:#fff0f0; border-color:#ff9b9b; color:#8a1f1f; }
          .apshule-contextual-message.success { background:#effcf3; border-color:#8fdfaa; color:#216b39; }
          .apshule-contextual-message.is-fading { opacity:0; transform:translateY(-3px); }
+         .subscription-pay-modal { position:fixed; inset:0; z-index:9100; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(22,13,48,.75); }
+         .subscription-pay-modal.show { display:flex; }
+         .subscription-pay-card { width:min(100%,420px); box-sizing:border-box; padding:22px; border-radius:22px; background:#fff; box-shadow:0 20px 60px rgba(20,10,50,.3); }
+         .subscription-pay-card h3 { margin:0; color:#4B2E9E; }
+         .subscription-pay-field { display:block; margin-top:12px; color:#413852; font-size:12px; font-weight:700; }
+         .subscription-pay-field input, .subscription-pay-field select { display:block; width:100%; box-sizing:border-box; margin-top:6px; padding:11px 12px; border:1px solid #ddd5eb; border-radius:11px; font:inherit; font-size:13px; }
+         .subscription-pay-status { min-height:20px; margin-top:12px; color:#6c617d; font-size:12px; line-height:1.4; }
+         .subscription-pay-actions { display:flex; gap:8px; margin-top:14px; }
+         .subscription-pay-actions button { flex:1; border:0; border-radius:20px; padding:11px 12px; cursor:pointer; font-weight:800; }
+         .subscription-pay-cancel { background:#f2eff8; color:#4B2E9E; }
+         .subscription-pay-continue { background:#4B2E9E; color:#fff; }
         .global-settings-modal { position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,13,48,.75); }
         .global-settings-modal.show { display:flex; }
         .global-settings-shell { display:flex; flex-direction:column; width:100%; max-width:560px; max-height:92vh; overflow:hidden; background:#fff; border-radius:22px; box-shadow:0 15px 55px rgba(20,10,50,.35); }
@@ -2652,6 +2663,25 @@
             <div style="display:flex;gap:8px;">
                 <button id="livePlanPayCancelBtn" style="flex:1;background:#f5f5f5;color:#333;border:none;padding:12px;border-radius:20px;font-weight:600;cursor:pointer;">Cancel</button>
                 <button id="livePlanPaySubmitBtn" style="flex:2;background:#4B2E9E;color:white;border:none;padding:12px;border-radius:20px;font-weight:700;cursor:pointer;">💸 Submit Payment</button>
+            </div>
+        </div>
+    </div>
+    <div id="subscriptionPayModal" class="subscription-pay-modal" role="dialog" aria-modal="true" aria-labelledby="subscriptionPayTitle">
+        <div class="subscription-pay-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <div><h3 id="subscriptionPayTitle">💳 Subscribe</h3><div id="subscriptionPayPlanSummary" style="margin-top:5px;color:#665b76;font-size:13px;"></div></div>
+                <button id="subscriptionPayCloseBtn" type="button" aria-label="Close subscription payment" style="border:0;background:#f2eff8;color:#4B2E9E;border-radius:50%;width:34px;height:34px;font-size:22px;cursor:pointer;">&times;</button>
+            </div>
+            <label class="subscription-pay-field">Payment method
+                <select id="subscriptionPayMethod"><option value="MTN">MTN Mobile Money</option><option value="Airtel">Airtel Money</option></select>
+            </label>
+            <label class="subscription-pay-field">Phone number
+                <input id="subscriptionPayPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+256700000000">
+            </label>
+            <div id="subscriptionPayStatus" class="subscription-pay-status" aria-live="polite"></div>
+            <div class="subscription-pay-actions">
+                <button id="subscriptionPayCancelBtn" class="subscription-pay-cancel" type="button">Cancel</button>
+                <button id="subscriptionPayContinueBtn" class="subscription-pay-continue" type="button">Continue</button>
             </div>
         </div>
     </div>
