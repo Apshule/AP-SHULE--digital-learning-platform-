@@ -22,6 +22,20 @@ service cloud.firestore {
         && institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId;
     }
 
+    function isTimetableUser() {
+      return signedIn() && role() in ['school', 'school_admin', 'headteacher', 'teacher', 'individual', 'student', 'superadmin'];
+    }
+
+    function sameSchool(institutionId) {
+      return isSuperAdmin() || (isTimetableUser()
+        && (institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.schoolId
+          || institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId));
+    }
+
+    function canManageTimetable() {
+      return isSuperAdmin() || (signedIn() && role() in ['school', 'school_admin', 'headteacher']);
+    }
+
     function isClinicUser() {
       return signedIn() && role() in ['clinic_admin', 'doctor', 'nurse', 'receptionist', 'pharmacist', 'patient'];
     }
@@ -606,9 +620,53 @@ service cloud.firestore {
       allow delete: if isFarmAdmin() && sameFarm(resource.data.farmId);
     }
 
+    // Timetable records are explicitly scoped to the user's school. They are
+    // excluded from the authenticated catch-all below so unrelated signed-in
+    // accounts cannot read or mutate another school's schedule.
+    match /school_timetable_config/{configId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_classes/{classId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_subjects/{subjectId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_teacher_assignments/{assignmentId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /timetable_teacher_duty/{dutyId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_combined_periods/{periodId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_timetable_expected_outcomes/{outcomeId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+    match /school_timetables/{timetableId} {
+      allow read: if sameSchool(resource.data.institutionId);
+      allow create, update: if canManageTimetable() && sameSchool(request.resource.data.institutionId);
+      allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|mfi_credit_note_refund_requests|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|mfi_credit_note_refund_requests|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications|school_timetable_config|school_classes|school_subjects|school_teacher_assignments|timetable_teacher_duty|school_combined_periods|school_timetable_expected_outcomes|school_timetables)(/.*)?$');
     }
   }
 }

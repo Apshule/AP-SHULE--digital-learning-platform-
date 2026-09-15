@@ -78,7 +78,7 @@ describe("NCDC course storage contracts", () => {
 
   it("declares offline module and progress stores with sync APIs", () => {
     const source = readFileSync(new URL("offline-manager.js", projectRoot), "utf8");
-    expect(source).toContain("var DB_VERSION = 23");
+    expect(source).toContain("var DB_VERSION = 24");
     expect(source).toContain("offline_ncdc_modules");
     expect(source).toContain("offline_teacher_progress");
     expect(source).toContain("cacheNcdcModules");

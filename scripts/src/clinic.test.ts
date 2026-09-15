@@ -104,7 +104,7 @@ describe("Task 11 Step 1 clinic foundation contracts", () => {
 
   it("keeps clinic offline stores in the IndexedDB sync contract", () => {
     for (const value of [
-       "var DB_VERSION = 23",
+       "var DB_VERSION = 24",
       "offline_clinic_visits",
       "offline_clinic_prescriptions",
       "offline_clinic_checkins",
@@ -185,7 +185,7 @@ describe("Task 11 Step 3 clinic dashboard, reports, and administration contracts
       )).toBe(true);
     }
     for (const value of [
-      "var DB_VERSION = 23",
+      "var DB_VERSION = 24",
       "offline_clinic_dashboard",
       "if (oldVersion < 18 &&",
       "cacheClinicDashboard",

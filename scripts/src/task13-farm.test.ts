@@ -57,7 +57,7 @@ describe("Task 13 Step 1 farm foundation contracts", () => {
     expect(indexSource).toContain("faceEmbedding");
     expect(indexSource).toContain("OfflineManager.queueFarmMovement");
     expect(indexSource).toContain("OfflineManager.queueFarmAttendance");
-    expect(offlineSource).toContain("var DB_VERSION = 23");
+    expect(offlineSource).toContain("var DB_VERSION = 24");
     for (const value of ["offline_farm_movements", "offline_farm_attendance", "offline_farm_reports"]) {
       expect(offlineSource).toContain(value);
     }

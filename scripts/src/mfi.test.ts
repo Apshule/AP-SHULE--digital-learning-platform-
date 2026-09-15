@@ -295,7 +295,7 @@ describe("Task 14 Step 1 full MFI loan lifecycle contracts", () => {
   });
 
   it("adds versioned offline loan draft and payment queues with sync hooks", () => {
-    expect(offlineSource).toContain("var DB_VERSION = 23");
+    expect(offlineSource).toContain("var DB_VERSION = 24");
     expect(offlineSource).toContain("offline_mfi_loans");
     expect(offlineSource).toContain("offline_mfi_loan_payments");
     for (const value of [
@@ -423,10 +423,11 @@ describe("Task 14 Step 2 — partial payments, risk controls, and portals", () =
   });
 
   it("J. preserves offline schedule and payment records, while keeping restructures online-only", () => {
-    for (const value of ["DB_VERSION = 23", "offline_mfi_loan_schedules", "cacheMfiLoanSchedule", "queueMfiLoanPayment", "scheduleAfter", "Restructure requests require internet", "Credit note operations require internet"]) {
+    for (const value of ["DB_VERSION = 24", "offline_mfi_loan_schedules", "cacheMfiLoanSchedule", "queueMfiLoanPayment", "scheduleAfter", "Restructure requests require internet", "Credit note operations require internet"]) {
       expect(indexSource + offlineSource).toContain(value);
     }
     expect(offlineSource).toContain("if (oldVersion < 23");
+    expect(offlineSource).toContain("if (oldVersion < 24");
   });
 
   it("K. keeps Step 1 lifecycle surfaces and all nine Step 2 indexes intact", () => {

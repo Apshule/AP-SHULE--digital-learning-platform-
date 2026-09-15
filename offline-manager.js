@@ -1844,6 +1844,25 @@
         });
       });
     },
+    cacheTimetableRecord: function (storeName, record) {
+      record = Object.assign({}, record || {});
+      if (!storeName || !record.institutionId) return fail('A timetable store and institution are required');
+      if (!record.localId && storeName !== 'offline_timetable_config' && storeName !== 'offline_timetables') record.localId = randomId('timetable-');
+      if (storeName === 'offline_timetable_config') record.configKey = record.configKey || record.institutionId;
+      if (storeName === 'offline_timetables') record.timetableId = record.timetableId || record.id || randomId('timetable-');
+      record.updatedAt = record.updatedAt || new Date().toISOString();
+      return putRecord(storeName, record).then(function () { return record; });
+    },
+    listTimetableRecords: function (storeName, institutionId) {
+      return allRecords(storeName).then(function (items) {
+        return items.filter(function (item) { return !institutionId || item.institutionId === institutionId; }).map(function (item) {
+          return Object.assign({}, item, { id: item.id || item.localId || item.timetableId || item.configKey });
+        });
+      });
+    },
+    getTimetableConfig: function (institutionId) {
+      return getRecord('offline_timetable_config', institutionId);
+    },
     cacheClinicDashboard: function (dashboard) {
       dashboard = dashboard || {};
       if (!dashboard.institutionId) return fail('An institution is required for clinic dashboard caching');
