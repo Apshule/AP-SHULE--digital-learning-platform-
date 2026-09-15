@@ -267,6 +267,7 @@ service cloud.firestore {
       allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
       allow update: if isSuperAdmin()
         || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName', 'phone', 'email', 'nationalId', 'dateOfBirth', 'gender', 'occupation', 'monthlyIncome', 'businessName', 'businessAddress', 'physicalAddress', 'branchId', 'branchName', 'maritalStatus', 'spouseName', 'spousePhone', 'spouseOccupation', 'spouseNationalId', 'spouseConsent', 'nextOfKinName', 'nextOfKinPhone', 'nextOfKinRelationship', 'nextOfKinAddress', 'guarantors', 'photoPath', 'nationalIdFrontPath', 'nationalIdBackPath', 'updatedAt', 'a0MigratedAt'])
         || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_director'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'blacklistReason', 'blacklistedAt', 'blacklistRemovedAt', 'blacklistRemovedBy']);
       allow delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
@@ -336,8 +337,7 @@ service cloud.firestore {
         || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
       allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
       allow update: if isSuperAdmin()
-        || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin'
-        || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_manager'
+        || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director']
         || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_officer'
           && resource.data.status in ['draft', 'submitted'];
       allow delete: if false;
@@ -345,35 +345,35 @@ service cloud.firestore {
     match /mfi_loan_repayment_schedule/{installmentId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
         || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager'];
-      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer', 'loan_director'];
       allow delete: if false;
     }
     match /mfi_loan_payments/{paymentId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
         || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer', 'loan_director'];
       allow update, delete: if false;
     }
     match /mfi_loan_approvals/{approvalId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer', 'loan_director'];
       allow update, delete: if false;
     }
     match /mfi_loan_documents/{documentId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
       allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
     match /mfi_loan_audit/{auditId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
       allow update, delete: if false;
     }
     match /mfi_loan_installment_applications/{applicationId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
         || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
       allow update, delete: if false;
     }
     match /mfi_loan_overdue_log/{overdueId} {
@@ -392,7 +392,7 @@ service cloud.firestore {
     match /mfi_loan_restructures/{restructureId} {
       allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
         || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
-      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
       allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
       allow delete: if false;
     }
@@ -608,7 +608,7 @@ service cloud.firestore {
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|mfi_credit_note_refund_requests|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications)(/.*)?$');
     }
   }
 }

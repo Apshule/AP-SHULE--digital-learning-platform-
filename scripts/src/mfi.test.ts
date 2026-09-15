@@ -450,4 +450,46 @@ describe("Task 14 Step 2 — partial payments, risk controls, and portals", () =
     expect(indexSource).toContain("mfiGenerateLoanSchedule");
     expect(rulesSource).toContain("match /mfi_late_fee_config/{configId}");
   });
+
+  it("validates A0 family fields and rejects incomplete guarantor profiles", () => {
+    const match = indexSource.match(/function mfiValidateCustomerA0\(data\)\{([\s\S]*?)\n    \}/);
+    if (!match) throw new Error("A0 validator was not found");
+    const context = vm.createContext({});
+    vm.runInContext(`function mfiValidateCustomerA0(data){${match[1]}}\nthis.validate=mfiValidateCustomerA0;`, context);
+    const validate = context.validate as (data: Record<string, unknown>) => string;
+    expect(validate({ maritalStatus: "Married", spouseName: "", spousePhone: "", nextOfKinName: "N", nextOfKinPhone: "1", nextOfKinRelationship: "Parent", guarantors: [] })).toContain("Spouse");
+    expect(validate({ maritalStatus: "Single", nextOfKinName: "", nextOfKinPhone: "", nextOfKinRelationship: "", guarantors: [] })).toContain("Next of Kin");
+    expect(validate({ maritalStatus: "Single", nextOfKinName: "N", nextOfKinPhone: "1", nextOfKinRelationship: "Parent", guarantors: [{ fullName: "G", phone: "", relationship: "" }] })).toContain("guarantor");
+    expect(validate({ maritalStatus: "Single", nextOfKinName: "N", nextOfKinPhone: "1", nextOfKinRelationship: "Parent", guarantors: [{ fullName: "G", phone: "2", relationship: "Friend" }] })).toBe("");
+  });
+
+  it("enforces one-or-two guarantors for products that require them", () => {
+    const match = indexSource.match(/function mfiValidateLoanApplication\(data\)\{([\s\S]*?)\n    \}/);
+    if (!match) throw new Error("Loan validator was not found");
+    const context = vm.createContext({ mfiMoney: (value: unknown) => String(value) });
+    vm.runInContext(`function mfiValidateLoanApplication(data){${match[1]}}\nthis.validate=mfiValidateLoanApplication;`, context);
+    const validate = context.validate as (data: any) => string;
+    const base = { customer: { id: "c1" }, product: { id: "p1", minAmount: 1, maxAmount: 100, minTermMonths: 1, maxTermMonths: 12, requiresCollateral: false, requiresGuarantor: true }, amount: 10, term: 6, purpose: "stock", collateralIds: [], newGuarantor: { fullName: "", phone: "", relationship: "" } };
+    expect(validate({ ...base, guarantorIds: [] })).toContain("one or two");
+    expect(validate({ ...base, guarantorIds: ["c2"], newGuarantor: { fullName: "G2", phone: "2", relationship: "Friend" } })).toBe("");
+    expect(validate({ ...base, guarantorIds: ["c2", "c3"], newGuarantor: { fullName: "G3", phone: "3", relationship: "Friend" } })).toContain("one or two");
+  });
+
+  it("classifies loan exposure from actual days overdue", () => {
+    const match = indexSource.match(/function mfiLoanClassification\(loan\)\{([\s\S]*?)\n    \}/);
+    if (!match) throw new Error("Loan classification helper was not found");
+    const context = vm.createContext({ Date });
+    vm.runInContext(`function mfiLoanDaysOverdue(loan){const due=new Date(loan.nextPaymentDueDate||loan.expectedPaybackDate||0).getTime();return due&&due<Date.now()?Math.max(0,Math.floor((Date.now()-due)/86400000)):0;}\nfunction mfiLoanClassification(loan){${match[1]}}\nthis.classify=mfiLoanClassification;`, context);
+    const classify = context.classify as (loan: Record<string, unknown>) => string;
+    expect(classify({ nextPaymentDueDate: new Date(Date.now() - 91 * 86400000).toISOString() })).toBe("Loss");
+    expect(classify({ nextPaymentDueDate: new Date(Date.now() - 31 * 86400000).toISOString() })).toBe("Substandard");
+    expect(classify({ nextPaymentDueDate: new Date(Date.now() + 86400000).toISOString() })).toBe("Performing");
+  });
+
+  it("keeps every loan lifecycle collection outside the authenticated catch-all rule", () => {
+    for (const collection of ["microfinance_loans", "mfi_loan_products", "mfi_loan_repayment_schedule", "mfi_loan_payments", "mfi_loan_approvals", "mfi_loan_documents", "mfi_loan_audit", "mfi_loan_restructures", "mfi_loan_writeoffs", "mfi_credit_notes", "mfi_late_fee_config"]) {
+      expect(rulesSource).toContain(collection);
+    }
+    expect(rulesSource).toContain("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName'");
+  });
 });

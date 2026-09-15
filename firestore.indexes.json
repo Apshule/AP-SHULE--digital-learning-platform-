@@ -313,6 +313,14 @@
       ]
     },
     {
+      "collectionGroup": "mfi_customers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "maritalStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "mfi_collateral",
       "queryScope": "COLLECTION",
       "fields": [
@@ -1110,6 +1118,40 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "institutionId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "decision", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_audit",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_documents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "loanId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_repayment_schedule",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "dueDate", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
       ]
     }
   ],
