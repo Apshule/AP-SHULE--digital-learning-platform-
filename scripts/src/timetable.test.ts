@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const root = resolve(process.cwd(), "..");
 const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
 const offlineSource = readFileSync(resolve(root, "offline-manager.js"), "utf8");
+const manifestSource = readFileSync(resolve(root, "manifest.json"), "utf8");
 const rulesSource = readFileSync(resolve(root, "firestore.rules"), "utf8");
 const indexesSource = readFileSync(resolve(root, "firestore.indexes.json"), "utf8");
 
@@ -60,6 +61,25 @@ describe("Task 15 bug fixes", () => {
     expect(indexSource).toContain("addEventListener('popstate'");
     expect(indexSource).toContain("apshulehistorychange");
     expect(indexSource).toContain("_appHistoryRestoring");
+  });
+});
+
+describe("APSHULE branding consistency", () => {
+  it("uses the approved brand metadata and PWA name", () => {
+    expect(indexSource).toContain("<title>APSHULE - Digital Learning Platform</title>");
+    expect(indexSource).toContain('meta property="og:title"       content="APSHULE"');
+    expect(indexSource).toContain('meta name="description" content="APSHULE is a multi-sector platform for education, microfinance, clinic, and farming management in Uganda."');
+    expect(manifestSource).toContain('"name": "APSHULE"');
+    expect(manifestSource).toContain('"short_name": "APSHULE"');
+    expect(indexSource).toContain('content="https://appshule.com/"');
+  });
+
+  it("removes spaced and mixed-case user-facing brand variants", () => {
+    expect(indexSource).not.toMatch(/\bAP SHULE\b/);
+    expect(indexSource).not.toMatch(/\b(?:Apshule|ApShule)\b/);
+    expect(indexSource).toContain("APSHULE Digital Learning Platform");
+    expect(indexSource).toContain('id="appTagline"');
+    expect(indexSource).toContain("educationRoles");
   });
 });
 
