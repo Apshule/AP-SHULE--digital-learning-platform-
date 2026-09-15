@@ -9777,22 +9777,97 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const isAssigned = schoolAssignedPlanId && p.id === schoolAssignedPlanId;
             const highlightBorder = isAssigned ? 'box-shadow:0 0 0 3px #FFD700,0 4px 16px rgba(255,215,0,0.4);position:relative;' : '';
             const badge = isAssigned ? `<div style="position:absolute;top:-8px;right:8px;background:#FFD700;color:#333;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;">⭐ Your School Plan</div>` : '';
-            return `<div class="payment-card ${colorClass}" style="${bgStyle}${highlightBorder}position:relative;">
+            return `<div class="payment-card ${colorClass}" data-plan="${escHtml(p.name)}" data-price="${Number(p.price)||0}" style="${bgStyle}${highlightBorder}position:relative;" onclick="handleSubscribe(this)">
                 ${badge}
                 <div>${escHtml(p.name)}</div>
                 <div class="payment-plan-price">UGX ${Number(p.price).toLocaleString()}</div>
                 <div style="font-size:10px;opacity:0.8;">${escHtml(p.duration||'')}</div>
-                <button class="subscribe-btn-small" data-plan="${escHtml(p.name)}" data-price="${p.price}" onclick="handleSubscribe(this)">Subscribe</button>
+                <button class="subscribe-btn-small" data-plan="${escHtml(p.name)}" data-price="${p.price}" onclick="event.stopPropagation();handleSubscribe(this)">Subscribe</button>
             </div>`;
         }).join('');
     }
 
     window.handleSubscribe = function(btn) {
-        if(!currentUser) { alert('Please login first'); return; }
-        const plan = btn.getAttribute('data-plan');
-        const amount = parseInt(btn.getAttribute('data-price'));
-        initiateFlutterwavePayment(plan, amount, currentUser.email, currentUser.phone||"N/A", currentUser.name, {type:'subscription'});
+        const trigger=btn?.closest?.('.payment-card')||btn;
+        if(!currentUser) { showContextualMessage(trigger,'Please log in to subscribe.','error'); return; }
+        const plan = String(btn?.getAttribute('data-plan')||'').trim();
+        const amount = Number(btn?.getAttribute('data-price')||0);
+        if(!plan || !Number.isFinite(amount) || amount<=0) {
+            showContextualMessage(trigger,'This subscription plan is not available right now.','error');
+            return;
+        }
+        subscriptionPaymentContext={plan,amount,trigger};
+        document.getElementById('subscriptionPayPlanSummary').textContent=`${plan} · UGX ${amount.toLocaleString()}`;
+        document.getElementById('subscriptionPayPhone').value=currentUser.phone||'';
+        document.getElementById('subscriptionPayMethod').value='MTN';
+        document.getElementById('subscriptionPayStatus').textContent='';
+        document.getElementById('subscriptionPayContinueBtn').disabled=false;
+        document.getElementById('subscriptionPayModal').classList.add('show');
     };
+
+    function closeSubscriptionPayment() {
+        document.getElementById('subscriptionPayModal')?.classList.remove('show');
+        subscriptionPaymentContext=null;
+    }
+
+    async function submitSubscriptionPayment() {
+        const context=subscriptionPaymentContext;
+        if(!context || !currentUser?.uid) return;
+        const status=document.getElementById('subscriptionPayStatus');
+        const button=document.getElementById('subscriptionPayContinueBtn');
+        const phone=document.getElementById('subscriptionPayPhone')?.value.trim()||'';
+        const method=document.getElementById('subscriptionPayMethod')?.value||'';
+        if(!/^\+?[0-9]{8,15}$/.test(phone)) {
+            if(status) status.textContent='Enter a valid mobile-money phone number.';
+            return;
+        }
+        if(button) button.disabled=true;
+        if(status) status.textContent='Starting payment…';
+        try {
+            const institutionId=String(currentUser.schoolId||currentUser.institutionId||currentUser.uid);
+            const billReference=`SUB-${currentUser.uid}-${context.plan.replace(/[^a-z0-9]+/gi,'-').toUpperCase()}-${Date.now()}`;
+            const result=await api('/api/payments/initiate',{
+                method:'POST',
+                body:JSON.stringify({
+                    clientId:currentUser.uid,
+                    clientName:currentUser.name||currentUser.email||'Student',
+                    clientPhone:phone,
+                    institutionId,
+                    sector:'Education Subscription',
+                    billReference,
+                    totalAmount:context.amount,
+                    amountPaid:context.amount,
+                    paymentMethod:method,
+                    subscriptionPlan:context.plan
+                })
+            });
+            if(status) status.textContent='Payment request sent. Check your phone for the PIN prompt.';
+            if(button) button.disabled=true;
+            if(result.transactionId && db) {
+                onSnapshot(doc(db,'payment_transactions',result.transactionId),snap=>{
+                    if(!snap.exists()) return;
+                    const payment=snap.data()||{};
+                    const key=String(payment.status||'').toLowerCase();
+                    if(status && key==='completed') status.textContent='Payment confirmed. Your subscription is being activated.';
+                    if(status && key==='failed') status.textContent='Payment failed. Please try again.';
+                });
+            }
+        } catch(error) {
+            const raw=String(error?.message||'Payment could not be started.');
+            const message=/not configured|credentials/i.test(raw) ? 'Please contact your school admin to subscribe' : raw;
+            closeSubscriptionPayment();
+            showContextualMessage(context.trigger,message,'error');
+        } finally {
+            if(button && document.getElementById('subscriptionPayModal')?.classList.contains('show')) button.disabled=false;
+        }
+    };
+
+    document.getElementById('subscriptionPayCloseBtn')?.addEventListener('click',closeSubscriptionPayment);
+    document.getElementById('subscriptionPayCancelBtn')?.addEventListener('click',closeSubscriptionPayment);
+    document.getElementById('subscriptionPayContinueBtn')?.addEventListener('click',submitSubscriptionPayment);
+    document.getElementById('subscriptionPayModal')?.addEventListener('click',event=>{
+        if(event.target.id==='subscriptionPayModal') closeSubscriptionPayment();
+    });
 
     function renderSubscriptionPlansAdmin() {
         const c = document.getElementById('plansAdminList'); if(!c) return;
