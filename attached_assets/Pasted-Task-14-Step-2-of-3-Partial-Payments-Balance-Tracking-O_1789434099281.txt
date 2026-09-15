@@ -1,0 +1,147 @@
+Task 14 — Step 2 of 3: Partial Payments + Balance Tracking + Overdue Monitoring + Credit Notes + Late Fees + Restructuring
+
+CONTEXT:
+- Task 14 Step 1 complete: Loan application, approval, disbursement, repayment schedule
+- Step 1 built: 6 loan products, 7-step application, manager approval, auto disbursement, payment recording, basic customer self-service
+- Step 2 now adds: Partial payments, balance tracking across installments, overdue monitoring, credit notes, late fees, restructuring, and write-off workflow
+
+GOAL OF STEP 2:
+- Handle partial payments across installments with proper application
+- Track unpaid balance per installment + loan
+- Monitor overdue accounts and escalate
+- Auto-apply late fees
+- Generate credit notes for overpayments
+- Support loan restructuring
+- Support write-off workflow (Director approval)
+- Complete customer self-service portal
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. mfi_loan_installment_applications
+   Fields:
+   - applicationId (auto)
+   - loanId (reference)
+   - paymentId (reference to mfi_loan_payments)
+   - installmentId (reference)
+   - amountAppliedToInstallment (number)
+   - amountToPrincipal (number)
+   - amountToInterest (number)
+   - amountToFees (number)
+   - amountToLateFee (number)
+   - appliedAt (timestamp)
+
+2. mfi_loan_overdue_log
+   Fields:
+   - overdueId (auto)
+   - loanId (reference)
+   - installmentId (reference)
+   - customerId
+   - customerName
+   - customerPhone
+   - daysOverdue (number)
+   - amountOverdue (number)
+   - lateFeeApplied (number)
+   - escalationLevel (1 = notice, 2 = warning, 3 = final, 4 = legal)
+   - actionsTaken (array):
+     * { type: 'sms', sentAt, message }
+     * { type: 'call', calledAt, notes }
+     * { type: 'email', sentAt }
+     * { type: 'field_visit', visitedAt, visitedBy }
+   - currentStatus (open / resolved / escalated / legal)
+   - resolvedAt (timestamp)
+   - resolvedBy (uid)
+   - notes
+   - createdAt
+   - updatedAt
+
+3. mfi_credit_notes (loan-specific)
+   Fields:
+   - creditNoteId (auto)
+   - customerId
+   - customerName
+   - loanId (reference, if applicable)
+   - institutionId
+   - reason (overpayment / compensation / adjustment / refund)
+   - creditAmount (number)
+   - usedAmount (number, default 0)
+   - balanceRemaining (number)
+   - status (active / used / expired / refunded)
+   - expiryDate (date, default +12 months)
+   - notes
+   - createdBy
+   - createdAt
+   - updatedAt
+
+4. mfi_loan_restructures
+   Fields:
+   - restructureId (auto)
+   - loanId (reference)
+   - reason (financial_hardship / business_downturn / natural_disaster / other)
+   - originalTerms (object):
+     * amount, interestRate, termMonths, monthlyPayment
+   - newTerms (object):
+     * amount, interestRate, termMonths, monthlyPayment
+   - extensionMonths (number)
+   - newExpectedPaybackDate
+   - approvedBy (uid)
+   - approvedByName
+   - approvedAt (timestamp)
+   - comments
+   - createdAt
+   - createdBy
+
+5. mfi_loan_writeoffs
+   Fields:
+   - writeoffId (auto)
+   - loanId (reference)
+   - customerId
+   - outstandingBalance (number)
+   - reason (uncollectible / deceased / business_closed / other)
+   - requestedBy (uid)
+   - requestedAt (timestamp)
+   - approvedBy (uid)
+   - approvedAt (timestamp)
+   - directorComments
+   - status (pending / approved / rejected)
+   - createdAt
+
+6. mfi_late_fee_config
+   Fields:
+   - configId (auto)
+   - institutionId
+   - gracePeriodDays (number, default 3)
+   - lateFeeType (Fixed / Percentage)
+   - lateFeeAmount (number — fixed UGX)
+   - lateFeePercentage (number — % of overdue amount)
+   - maxLateFeeCap (number — maximum UGX)
+   - compoundingEnabled (boolean, default false)
+   - escalationRules (array):
+     * { daysAfterDue, action: 'sms'|'call'|'field_visit'|'legal', message }
+   - updatedAt
+   - updatedBy
+
+═══════════════════════════════════════════════════════════════
+PART B: PARTIAL PAYMENT APPLICATION LOGIC
+═══════════════════════════════════════════════════════════════
+
+When a customer pays LESS than the installment amount:
+
+EXAMPLE:
+- Installment 1: UGX 225,558 due (125,558 principal + 100,000 interest)
+- Customer pays: UGX 100,000
+- Remaining: UGX 125,558
+
+APPLICATION ORDER:
+When payment arrives, apply in this priority:
+1. **Late fees first** (if any)
+2. **Interest** of the current installment
+3. **Principal** of the current installment
+4. Any remainder → next installment
+
+LOGIC (function applyPaymentToLoan):
