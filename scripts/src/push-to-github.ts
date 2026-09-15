@@ -52,6 +52,7 @@ const FILES = [
   "firestore.indexes.json",
   ".agents/memory/MEMORY.md",
   ".agents/memory/github-pages-push-allowlist.md",
+  ".agents/memory/pwa-release-cache-invalidation.md",
   "CNAME",
   "sw.js",
   "firebase-messaging-sw.js",
