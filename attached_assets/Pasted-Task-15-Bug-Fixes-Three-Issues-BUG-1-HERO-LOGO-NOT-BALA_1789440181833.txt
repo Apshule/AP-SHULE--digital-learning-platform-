@@ -1,0 +1,67 @@
+Task 15 — Bug Fixes (Three Issues):
+
+BUG 1 — HERO LOGO NOT BALANCED
+The large logo image at the top of the landing page hero section is 
+not properly balanced. It appears off-center and the visual does not 
+look polished.
+
+Fix:
+- Center the hero image horizontally on all screen sizes
+- Give it proper breathing room (padding around it)
+- Ensure the image does not overlap with the trust badges above it
+- On mobile (under 500px) it should be smaller and centered
+- On tablet (500 to 900px) it should be medium sized and centered
+- On desktop (above 900px) it can be larger and to the side of the 
+  hero text (or centered if it looks better)
+- Ensure the same logo image does not appear twice anywhere on the 
+  landing page
+
+BUG 2 — DESKTOP / TABLET / PHONE BADGE NOT AUTO-HIDING
+The Desktop, Tablet, Phone indicator badge at the bottom of the screen 
+should auto-hide after 10 seconds with a smooth fade-out. Right now it 
+stays on screen indefinitely.
+
+Fix:
+- Find the badge element with the ID responsiveDemoNotice
+- On page load, wait 10 seconds
+- Then fade it out smoothly (opacity transition over 1 second)
+- Then hide it completely (display none)
+- It should only show once per session — if the user navigates 
+  through the app, do not re-show it
+- Test: load appshule.com, wait 12 seconds, badge should be gone
+
+BUG 3 — PHONE BACK BUTTON EXITS APP INSTEAD OF GOING BACK
+When a user taps the physical back button on an Android phone, the app 
+should navigate to the previous screen. Right now it exits the app 
+immediately.
+
+Fix:
+- Add a history state management system using window.history.pushState
+- Whenever the user navigates to a new page or opens a modal, push a 
+  new history state with a unique identifier
+- Listen for the popstate event
+- When popstate fires:
+  * If a modal is open, close the modal
+  * Else if the user is on a sub-page (not Home), navigate to Home
+  * Else if the user is on Home, allow the browser default (exit)
+- This should work for:
+  * Landing page → Login screen (back returns to landing)
+  * Home → Resources (back returns to Home)
+  * Home → Live Lessons (back returns to Home)
+  * Any modal open (back closes the modal)
+  * Video player open (back closes the player)
+  * Any full-screen view (back returns to previous)
+- Test on Android Chrome: open appshule.com, navigate through several 
+  screens, tap back button each time — should go back one step, not 
+  exit the app
+
+IMPORTANT:
+- Do NOT break any existing features from Tasks 1 through 15
+- Do NOT rebuild the app
+- Only fix the three issues above
+- Test each fix individually
+- Report back with confirmation that all three are fixed
+
+Confirm when done with:
+"Task 15 Bug Fixes complete — Logo balanced, Badge auto-hides after 
+10 seconds, Back button navigation working"
