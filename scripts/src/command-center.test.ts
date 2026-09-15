@@ -83,8 +83,8 @@ describe("Task 9 Step 1 command center contracts", () => {
   });
 
   it("forces installed phones to refresh the released app shell", () => {
-    expect(serviceWorkerSource).toContain("appshule-offline-v2");
-    expect(indexSource).toContain('register("/sw.js?v=20260915-2"');
+    expect(serviceWorkerSource).toContain("appshule-offline-v3");
+    expect(indexSource).toContain('register("/sw.js?v=20260915-3"');
     expect(indexSource).toContain("scope: \"/\"");
   });
 
