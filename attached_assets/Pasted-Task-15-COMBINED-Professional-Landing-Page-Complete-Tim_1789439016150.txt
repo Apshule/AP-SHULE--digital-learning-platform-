@@ -1,0 +1,802 @@
+Task 15 — COMBINED: Professional Landing Page + Complete Timetable Generator
+
+CONTEXT:
+- Tasks 1-14 complete. AppShule is a 4-sector platform (Education, MFI, Clinic, Farming)
+- Task 15 adds TWO major deliverables in one build:
+  1. A professional marketing landing page at appshule.com root
+  2. A complete Timetable Generator for schools (Primary + Secondary, with streams, teacher duty, and print-ready output)
+
+IMPORTANT STYLE RULES:
+- Use emojis for visual appeal (sector cards, feature highlights)
+- Do NOT use hash symbols or special characters in visible text
+- Only color codes in code blocks are allowed with hash symbols
+- All headings must be plain text with emojis where appropriate
+- Use proper HTML lists, not markdown bullets
+
+BUILD ORDER:
+- PART A: Landing Page
+- PART B through PART I: Timetable Generator
+- PART J: Testing + Regression
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+================================================================
+PART A: PROFESSIONAL LANDING PAGE (at appshule.com root)
+================================================================
+
+GOAL:
+Replace the current root page with a professional marketing landing page.
+Keep the app accessible via Login and Sign Up buttons.
+
+DESIGN PRINCIPLES:
+- Modern, clean layout
+- Attractive colors, professional tone
+- Mobile-first responsive
+- Fast loading under 2 seconds
+- Works offline (cached via Task 2)
+- SEO friendly
+
+COLOR PALETTE:
+- Primary: #4B2E9E (AppShule purple)
+- Accent: #FF8C42 (Orange)
+- Success: #4CAF50 (Green)
+- Dark text: #1a1a1a
+- Light background: #fafafa
+- White cards with soft shadows
+
+SECTIONS (in order):
+
+1. STICKY HEADER
+- Left: AppShule logo plus APSHULE text
+- Center: Navigation links (Features, For Schools, For MFIs, For Clinics, For Farms, Pricing, Contact)
+- Right: Login button opens login modal, Get Started button opens signup
+- Mobile: hamburger menu
+
+2. HERO SECTION
+- Large headline: One Platform. Four Sectors. Infinite Possibilities.
+- Sub-headline: Empower your school, MFI, clinic, or farm with Africa's most comprehensive management platform.
+- Two CTA buttons:
+  * Start Free Trial opens signup
+  * Watch Demo opens video modal
+- Hero image on right side desktop, below on mobile
+- Trust badges row: Built in Uganda, NCDC Aligned, UMRA Compliant, Offline-First
+
+3. FOUR SECTORS SECTION
+- Section title: Choose Your Sector
+- 4 large cards, one per sector
+- Each card is clickable and takes the visitor to the signup page
+- Each card shows icon, title, 3 to 4 bullet features, Learn More button
+
+  Card 1: Education Sector
+  - Icon: school building
+  - Title: For Schools
+  - Features:
+    * Video tutorials and PDF library
+    * NCDC-aligned teacher courses
+    * Automated report cards
+    * Project integrity and UNEB continuous assessment
+    * Timetable generator with teacher duty
+    * Facial recognition attendance
+
+  Card 2: Microfinance Sector
+  - Icon: bank
+  - Title: For Microfinance Institutions
+  - Features:
+    * Full loan lifecycle management
+    * Collateral scoring zero to one hundred
+    * UMRA-compliant reports
+    * Partial payments and credit notes
+    * Automated disbursements via mobile money
+    * Facial recognition for borrower verification
+
+  Card 3: Clinic and Pharmacy Sector
+  - Icon: hospital
+  - Title: For Clinics and Pharmacies
+  - Features:
+    * Patient records and appointments
+    * Pharmacy inventory with product scanner
+    * Billing and insurance claims
+    * Prescription management
+    * Multi-branch support
+    * Facial recognition for patient identification
+
+  Card 4: Farming Sector
+  - Icon: plant
+  - Title: For Farms
+  - Features:
+    * Animal movement tracking
+    * Egg counting via camera
+    * Worker attendance
+    * Feed and produce tracking
+    * Farm sales and expenses
+    * Facial recognition for worker attendance
+
+4. FACIAL RECOGNITION SYSTEM SECTION (NEW)
+- Section title: One Face. Four Sectors. Endless Possibilities.
+- Subtitle: AppShule's built-in facial recognition works offline across every sector
+- 4 columns showing how it applies:
+
+  Column 1: Education
+  - Student attendance tracking
+  - Teacher verification
+  - Exam candidate identification
+  - Works offline
+
+  Column 2: Microfinance
+  - Borrower identity verification
+  - KYC compliance checks
+  - Guarantor confirmation
+  - Reduces fraud risk
+
+  Column 3: Clinic and Pharmacy
+  - Patient identification for records
+  - Staff attendance tracking
+  - Prescription verification
+  - Product recognition for fast checkout
+
+  Column 4: Farming
+  - Worker attendance
+  - Animal type recognition for auto-count
+  - Farm security and visitor logs
+  - Works without internet
+
+- Big callout underneath: One scan. Instant verification. Works offline.
+
+5. KEY FEATURES SECTION
+- Section title: Why Institutions Choose AppShule
+- Grid of 8 feature cards:
+  * Offline-First: Works without internet
+  * Multi-Device: Phones, tablets, laptops, desktops
+  * Seven Languages: English, Luganda, Lusoga, Runyankore, Runyoro, Acholi, Swahili
+  * AI-Powered: Automatic lesson plans and activity generation
+  * Yo! Payments Integration: Automated collections and disbursements
+  * Institution Branding: Add your logo alongside AppShule
+  * Timetable Generator: One-click NCDC-aligned timetables
+  * PDPO Compliant: Data security and privacy built-in
+
+6. SEE ALL FEATURES SECTION (COLLAPSIBLE)
+- Section title: Everything Inside AppShule
+- Subtitle: Tap to explore every feature across all four sectors
+- Accordion with collapsed sections, one per sector
+- When a section is expanded, it shows all features in that sector as clickable items
+- When a visitor taps any feature, they are taken to the signup or login page
+- This allows visitors to see the depth of the platform without overwhelming the default view
+
+  Education Section when expanded:
+  - NCDC Teacher Retooling Course
+  - Curriculum Document Linker
+  - Auto Lesson Plan Generator
+  - Triangulation Assessment
+  - Project Integrity System
+  - UNEB Continuous Assessment Export
+  - Learner Portfolio S1 to S4
+  - Video Studio with three modes
+  - Cartoon Studio in seven languages
+  - AI Auto-Video Generation
+  - Digital Teacher Twin
+  - Offline video slideshows
+  - Automated report cards
+  - Facial recognition attendance
+  - Timetable generator with streams and teacher duty
+  - SMS communication with parents
+  - Live lessons
+  - Student weak areas tracking
+  - Offline-first PWA
+  - And more
+
+  Microfinance Section when expanded:
+  - Customer registration with spouse and next of kin
+  - Two guarantors with ID uploads
+  - Loan products catalog
+  - Loan application workflow
+  - Manager and Director approval chain
+  - Collateral scoring zero to one hundred
+  - Verification workflow with field visits and valuers
+  - Loan disbursement via mobile money
+  - Auto-generated repayment schedule
+  - Partial payments and credit notes
+  - Overdue monitoring with escalation
+  - Late fee automation
+  - Loan restructuring
+  - Write-off workflow
+  - UMRA-compliant reports
+  - Director dashboard with PAR 30, PAR 60, PAR 90
+  - Facial recognition for borrower verification
+  - And more
+
+  Clinic and Pharmacy Section when expanded:
+  - Patient registration and records
+  - Appointment scheduling
+  - Check-in and vitals recording
+  - Doctor consultation workflow
+  - Prescription management
+  - Pharmacy inventory
+  - Product scanner using facial recognition
+  - Billing and payments
+  - Insurance claims workflow
+  - Multi-branch support
+  - Compliance reports
+  - Patient self-service portal
+  - Facial recognition for patient identification
+  - And more
+
+  Farming Section when expanded:
+  - Farm institution setup
+  - Animal type registry
+  - Farm camera management
+  - Animal movement tracking with direction
+  - Auto-counting of cows, goats, sheep, pigs, chicken, cocks
+  - Missing animal alerts
+  - Egg tray counting via camera
+  - Worker attendance via facial recognition
+  - Farm inventory for feed and supplies
+  - Feed consumption tracking
+  - Produce tracking for milk, eggs, meat, and more
+  - Farm sales tracking
+  - Farm expenses tracking
+  - Daily financial summary
+  - Farm dashboard and reports
+  - And more
+
+7. HOW IT WORKS SECTION
+- 4 step visual guide:
+  * Step 1: Sign up for your sector
+  * Step 2: Choose your subscription plan
+  * Step 3: Start managing instantly
+  * Step 4: Track progress with real-time dashboards
+
+8. PRICING SECTION
+- Section title: Simple, Transparent Pricing
+- Toggle: Monthly or Yearly
+- 4 pricing columns, one per sector:
+  * Education plans
+  * Microfinance plans
+  * Clinic and Pharmacy plans
+  * Farm plans
+- Each plan shows features list and a Choose Plan button that goes to signup
+- Most popular plan highlighted
+
+9. TESTIMONIALS SECTION
+- Section title: Trusted by Institutions Across Uganda
+- 4 testimonial cards with placeholder text, name, role, and photo
+
+10. STATS SECTION
+- Big numbers:
+  * 500 or more schools
+  * 50,000 or more students
+  * 500M or more UGX processed
+  * 99.9 percent uptime
+
+11. CTA SECTION
+- Large banner: Ready to transform your institution?
+- Two buttons: Start Free Trial and Talk to Sales
+
+12. FOOTER
+- 4 columns:
+  * About AppShule with logo, description, social icons
+  * Product links for each sector
+  * Company links for About Us, Careers, Blog, Contact
+  * Legal links for Privacy Policy, Terms of Service, PDPO Compliance
+- Bottom bar: Made with love in Uganda, copyright 2026 AppShule
+- WhatsApp floating button at bottom-right
+
+INTERACTIONS:
+- Login button opens the existing login screen
+- Sign Up button opens the existing signup flow
+- Every sector card click goes to signup
+- Every feature item in the See All Features accordion goes to signup or login
+- Smooth scroll between sections
+- Sticky header on scroll
+- Back-to-top button when scrolled
+
+TECHNICAL:
+- Single HTML section at appshule.com root
+- Uses existing CSS framework
+- No external dependencies beyond what is already loaded
+- Works offline via Service Worker
+- SEO meta tags for title, description, og:image
+
+================================================================
+PART B: TIMETABLE GENERATOR — DATA FOUNDATION
+================================================================
+
+GOAL:
+Build the data foundation for a complete timetable generator that handles streams, teacher assignment, duty, and print.
+
+NEW FIRESTORE COLLECTIONS:
+
+1. school_timetable_config
+Fields:
+- configId (auto)
+- institutionId
+- level (Primary or Secondary)
+- periodsPerDay (number)
+- periodDurationMinutes (number)
+- dayStartTime (for example 08:00)
+- breakStartTime, breakEndTime
+- lunchStartTime, lunchEndTime
+- hasAssembly (boolean), assemblyStartTime, assemblyEndTime
+- daysOfWeek (array, default Monday to Friday)
+- term (Term 1, 2, or 3)
+- year
+- updatedBy
+- updatedAt
+
+2. school_classes
+Fields:
+- classId (auto)
+- institutionId
+- level (Primary or Secondary)
+- className (for example P.1 or S.1)
+- streamName (for example A, East, Science)
+- displayName (for example P.1 A or S.1 East)
+- classTeacherId (uid)
+- classTeacherName
+- roomName
+- studentCount
+- isActive
+- createdBy
+- createdAt
+
+3. school_subjects
+Fields:
+- subjectId (auto)
+- institutionId
+- level (Primary or Secondary)
+- name (full name, for example Mathematics)
+- abbreviation (for example MATH)
+- color (hex for visual identification)
+- periodsPerWeek (number)
+- applicableClasses (array)
+- isActive
+- createdBy
+- createdAt
+
+4. timetable_teacher_duty
+Fields:
+- dutyId (auto)
+- institutionId
+- term
+- year
+- dayOfWeek
+- periodNumber
+- dutyType (Assembly, Break, Lunch, General Duty, Class Duty)
+- teacherId (uid)
+- teacherName
+- location
+- notes
+- createdAt
+
+5. school_timetables
+Fields:
+- timetableId (auto)
+- institutionId
+- classId (reference)
+- streamId (same as classId typically)
+- term
+- year
+- weekTemplate (object with Monday to Friday entries)
+- status (draft or published)
+- generatedBy
+- generatedAt
+- publishedAt
+- lastEditedBy
+- lastEditedAt
+
+6. school_combined_periods
+Fields:
+- combinationId (auto)
+- institutionId
+- term
+- year
+- classIds (array, 2 or more streams combined)
+- subjectId
+- teacherId
+- dayOfWeek
+- periodNumber
+- roomName
+- notes
+- createdAt
+
+7. school_timetable_expected_outcomes
+Fields:
+- outcomeId (auto)
+- institutionId
+- subjectId
+- classLevel
+- outcomes (array of strings)
+- updatedBy
+- updatedAt
+
+SEED NCDC SUBJECTS:
+
+PRIMARY P1 to P3:
+- L1 (Literacy I) with 5 periods per week, color #FF6B6B
+- L2 (Literacy II) with 5 periods per week, color #FF8C42
+- NUM (Numeracy) with 5 periods per week, color #4ECDC4
+- ENV (Environmental) with 3 periods per week, color #45B7D1
+- CA (Creative Arts) with 2 periods per week, color #96CEB4
+- PE (Physical Education) with 2 periods per week, color #FFEAA7
+- RE (Religious Education) with 2 periods per week, color #DDA0DD
+
+PRIMARY P4 to P7:
+- ENG (English) with 5 periods per week, color #4B2E9E
+- MATH (Mathematics) with 5 periods per week, color #2196F3
+- SCI (Science) with 4 periods per week, color #4CAF50
+- SST (Social Studies) with 4 periods per week, color #FF9800
+- RE (Religious Education) with 2 periods per week, color #9C27B0
+- LL (Local Language) with 3 periods per week, color #795548
+- CA (Creative Arts) with 2 periods per week, color #00BCD4
+- PE (Physical Education) with 2 periods per week, color #F44336
+
+SECONDARY S1 to S4:
+- ENG (English), 6 periods per week, color #4B2E9E
+- MATH (Mathematics), 6 periods per week, color #2196F3
+- BIO (Biology), 5 periods per week, color #4CAF50
+- CHEM (Chemistry), 5 periods per week, color #9C27B0
+- PHY (Physics), 5 periods per week, color #FF5722
+- GEO (Geography), 4 periods per week, color #795548
+- HIST (History), 4 periods per week, color #8D6E63
+- DIV (Divinity), 3 periods per week, color #607D8B
+- LIT (Literature), 3 periods per week, color #E91E63
+- ECON (Economics), 3 periods per week, color #009688
+- ICT (ICT), 3 periods per week, color #3F51B5
+- COMM (Commerce), 3 periods per week, color #FFC107
+- ENT (Entrepreneurship), 3 periods per week, color #FF9800
+- LUG (Luganda), 3 periods per week, color #8BC34A
+- ISLAM (Islamic Studies), 3 periods per week, color #00BCD4
+- FINEART (Fine Art), 3 periods per week, color #F44336
+- SUB-ICT (Subsidiary ICT), 2 periods per week, color #607D8B
+- PE (Physical Education), 2 periods per week, color #4CAF50
+- SPORTS, 2 periods per week, color #FF6B6B
+- PRACTICAL, 2 periods per week, color #455A64
+
+SECONDARY S5 to S6 (Arts stream):
+- Principal subjects with 5 periods per week: LIT, HIST, GEO, DIV, ECON
+- Subsidiary subjects with 2 periods per week: ICT, SUB-ICT, LUG, ISLAM, FINEART
+
+SECONDARY S5 to S6 (Sciences stream):
+- Principal subjects with 5 periods per week: BIO, CHEM, PHY, MATH
+- Subsidiary subjects with 2 periods per week: ICT, SUB-ICT
+- Practicals with 3 periods per week: PRACTICAL
+
+SEED EXPECTED OUTCOMES:
+For each subject, provide 3 to 5 expected learning outcomes per class level.
+Super Admin and School Admin can add custom outcomes.
+
+Examples:
+P.5 MATH outcomes:
+- Understand place value up to millions
+- Perform addition and subtraction of fractions
+- Apply multiplication and division to real-life problems
+- Measure length, weight, and capacity accurately
+- Interpret simple graphs and charts
+
+S.2 BIO outcomes:
+- Explain the structure and function of plant cells
+- Describe the process of photosynthesis
+- Identify and classify different plant species
+- Understand the role of plants in the ecosystem
+- Apply biological concepts to real-world scenarios
+
+================================================================
+PART C: TIMETABLE GENERATOR — SETUP UI
+================================================================
+
+SCHOOL ADMIN FLOW:
+
+1. SCHOOL SETUP WIZARD (first time)
+- Step 1: Confirm classes offered (P1 to P7 or S1 to S6)
+- Step 2: Add streams for each class
+- Step 3: Configure period times
+- Step 4: Assign class teachers
+- Step 5: Assign teachers to subjects
+- Step 6: Generate timetables
+
+2. STREAMS MANAGEMENT
+Add to Admin Panel a card titled Classes and Streams:
+- List of classes with their streams
+- Add Class button to select level and class name
+- Add Stream button under each class
+- Rename and Delete options for each stream
+- Bulk add option to add streams A through H to all primary classes
+
+3. SUBJECT MANAGEMENT
+Add to Admin Panel a card titled Subjects:
+- List of subjects (seeded plus custom)
+- Add Subject button
+- Edit abbreviation, color, and periods per week
+- Mark as active or inactive
+- Set applicable classes
+
+4. TEACHER ASSIGNMENT
+Add to Admin Panel a card titled Teacher Assignments:
+- For each teacher, define which subjects they teach and to which classes
+- Store in teacher_assignments collection:
+  fields: teacherId, teacherName, assignments array with subjectId, classId, periodsPerWeek
+
+5. DUTY ROSTER
+Add to Admin Panel a card titled Teacher Duty Roster:
+- Assign teachers to Assembly duty, Break duty, Lunch duty, and General school duty
+- Show duty teachers on the timetable itself
+
+6. COMBINED PERIODS
+- Admin can combine 2 or more streams for specific subjects
+- Add Combined Period button
+- Select classes, subject, teacher, day, and period
+
+================================================================
+PART D: TIMETABLE AUTO-GENERATION ALGORITHM
+================================================================
+
+CORE FUNCTION generateTimetable with parameters institutionId, term, year, and options:
+
+INPUT:
+- All classes and their streams
+- All subjects with periods per week
+- All teachers with assignments
+- Duty roster
+- Config with periods, times, breaks
+- Options:
+  * Avoid teacher clashes (default yes)
+  * Avoid room clashes (default yes)
+  * Balance subject spread across week (default yes)
+  * Keep practicals together (default yes)
+  * Show expected outcomes column (default yes)
+
+ALGORITHM:
+
+Step 1: For each stream, compute total weekly periods needed.
+Step 2: Build week template using constraint-based scheduling.
+Step 3: Insert fixed entries for Assembly, Break, Lunch, and Duty teachers.
+Step 4: Handle combined periods and lock them.
+Step 5: Run conflict check for teacher clashes, room clashes, subject overload, and subject underload.
+Step 6: Run optimization pass with swaps up to twenty iterations.
+Step 7: Save as draft and notify admin.
+
+MANUAL EDITING:
+Admin can drag and drop subjects between periods, reassign teachers, add or remove a subject, mark any period as free or study, and add duty assignments. Conflict detection updates in real time with red highlights on clashes.
+
+================================================================
+PART E: TIMETABLE VIEWS (ROLE-BASED)
+================================================================
+
+1. SCHOOL ADMIN VIEW
+- Master timetable showing all streams side by side
+- Switch between Class Timetable and Teacher Timetable view
+- Filters for Level, Class, Stream, Teacher, and Term
+- Generate button to auto-generate
+- Edit mode with drag and drop
+- Publish button when ready
+- Print per stream, per class, or all
+
+2. TEACHER VIEW
+- Personal schedule across all classes they teach
+- Duty roster assignments
+- Today's schedule highlighted
+- Print My Timetable and Export PDF options
+
+3. STUDENT VIEW
+- Own class timetable
+- Expected outcomes per subject shown
+- Download PDF and Print options
+
+4. SUPER ADMIN VIEW
+- Cross-school timetable overview
+- Filter by school, term, and level
+- View any school's timetable
+- Generate or regenerate for any school
+
+================================================================
+PART F: PRINT-READY OUTPUT
+================================================================
+
+CRITICAL REQUIREMENT:
+Timetables must be print-ready in A4 landscape with clean layout.
+
+PRINT FEATURES:
+- Print button on every timetable view
+- Download PDF generates professional PDF using jsPDF
+- Export Excel using SheetJS
+
+PDF LAYOUT:
+- Header with school logo from institution branding, school name centered and bold, subtitle GENERAL OFFICIAL TIMETABLE with term and year, class or stream name if single stream
+- Body with table showing DAY, CLASS, then PERIOD 1 through PERIOD N, with a time row at the top
+- Assembly, Break, and Lunch rows highlighted in different colors
+- Subject abbreviations used
+- Teacher names in small text under subject optionally
+- Duty Section below the table titled TEACHERS ON DUTY THIS WEEK with Day, Teacher Name, and Duty Type
+- Expected Outcomes Section titled EXPECTED LEARNING OUTCOMES per subject with 3 to 5 outcomes listed
+- Footer with Key listing full subject names, date generated, and Generated by AppShule
+
+PDF FILENAME:
+Timetable underscore ClassName underscore Term underscore Year dot pdf
+
+PRINT OPTIMIZATION:
+- A4 landscape orientation
+- Margins of 10 mm
+- Font Helvetica 9 pt for subject and 7 pt for teacher
+- Alternating row colors for readability
+- Break and Lunch rows in light grey
+- Subject abbreviations in bold
+
+BULK PRINT:
+- Print All Classes generates one PDF per class
+- Print All Streams of a class generates one PDF per stream
+- Combined into a single ZIP download or sequential downloads
+
+================================================================
+PART G: TIMETABLE STYLING
+================================================================
+
+Match AppShule design:
+- Primary color purple
+- Education accent purple
+- Success green
+- Warning orange
+
+TIMETABLE TABLE STYLING:
+- Header row purple background with white text
+- Time column light purple background
+- Class rows alternating white and light grey
+- Break and Lunch rows in yellow or grey with BREAK or LUNCH text
+- Duty section with light orange background
+- Subject cells colored per subject color
+
+EDIT MODE:
+- Drag handles on subjects
+- Red highlight on clash
+- Green highlight on valid drop
+- Undo and Redo buttons
+
+================================================================
+PART H: OFFLINE SUPPORT
+================================================================
+
+Timetables work offline:
+- Cached in IndexedDB after first view
+- Accessible without internet
+- Syncs when online
+- Print works offline using cached data
+
+================================================================
+PART I: FIRESTORE INDEXES
+================================================================
+
+Add composite indexes:
+1. school_classes with institutionId, level, className
+2. school_subjects with institutionId, level
+3. school_timetables with institutionId, term, year
+4. school_timetables with classId, term, year
+5. timetable_teacher_duty with institutionId, term, year
+6. school_combined_periods with institutionId, term, year
+
+================================================================
+PART J: DATA MIGRATION AND SEEDING
+================================================================
+
+When the first school admin logs in after Task 15 deploy:
+1. Check if school_timetable_config exists for their institution
+2. If not, run setup wizard
+3. Seed NCDC subjects automatically
+4. Seed expected outcomes for standard subjects
+5. Show admin message that their school is ready to add streams and generate timetables
+
+Super Admin button titled Seed Timetable Data for All Schools for bulk setup.
+
+================================================================
+PART K: TESTING
+================================================================
+
+LANDING PAGE TESTS:
+A1. Load appshule.com root and confirm landing page shows
+A2. Confirm all sections visible
+A3. Confirm mobile responsive at 375 px
+A4. Confirm Login button opens login screen
+A5. Confirm Sign Up button opens signup
+A6. Confirm smooth scroll works
+A7. Confirm landing page loads under 2 seconds
+A8. Confirm every sector card click opens signup
+A9. Confirm See All Features accordion expands and each item goes to signup or login
+A10. Confirm facial recognition section shows all 4 sectors
+
+TIMETABLE TESTS:
+B1. School Admin logs in
+B2. Setup wizard runs first time
+B3. Add streams to P.1 with A and B
+B4. Assign teachers to subjects
+B5. Click Generate Timetable
+B6. Confirm P.1 A timetable shows with correct subject distribution
+B7. Confirm P.1 B timetable shows
+B8. Confirm no teacher clashes
+B9. Confirm Break and Lunch correctly placed
+B10. Add teacher duty roster
+B11. Confirm duty assignments show on timetable
+B12. Add combined period for P.1 A and P.1 B for PE
+B13. Confirm combined period shows correctly
+B14. Edit timetable by dragging a subject from Monday 8 AM to Monday 10:30 AM
+B15. Confirm change saved with no conflict
+B16. Click Print and confirm PDF downloads with correct layout
+B17. Confirm PDF includes duty teachers section
+B18. Confirm PDF includes expected outcomes section
+B19. Confirm PDF has subject key at bottom
+B20. Teacher logs in and sees personal timetable
+B21. Student logs in and sees class timetable
+B22. Super Admin can view cross-school timetables
+
+PRINT TESTS:
+C1. Print PDF for single stream
+C2. Confirm formatting matches primary example
+C3. Confirm school name appears (using the actual school name, not a placeholder)
+C4. Print all streams of P.5 and confirm ZIP with multiple PDFs
+C5. Confirm each PDF is print-ready
+
+REGRESSION:
+D1. Tasks 1 through 14 still work
+D2. Confirm no console errors
+D3. Confirm offline mode still works
+D4. Confirm login and signup still work
+
+================================================================
+PART L: DO NOT
+================================================================
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1 through 14
+- Do NOT include any school name in the timetable generator (use the logged-in school's own name)
+- Do NOT drop stream support
+- Do NOT skip duty teachers in print output
+- Do NOT skip expected outcomes in print output
+- Do NOT allow teacher clashes
+- Do NOT allow room clashes
+- Do NOT lose timetable data on regeneration
+- Do NOT expose cross-school timetables to non-super-admin users
+- Do NOT lose offline cache of timetables
+- Do NOT use hash symbols or special characters in visible text
+- Do NOT remove emojis from the landing page (they add visual appeal)
+
+================================================================
+BUILD ORDER
+================================================================
+
+Phase 1: Landing Page (PART A)
+Phase 2: Timetable data foundation (PART B)
+Phase 3: Setup UI (PART C)
+Phase 4: Auto-generation algorithm (PART D)
+Phase 5: Role-based views (PART E)
+Phase 6: Print-ready output (PART F)
+Phase 7: Styling (PART G)
+Phase 8: Offline and Indexes (PART H and I)
+Phase 9: Data migration and seeding (PART J)
+Phase 10: Testing and Regression (PART K)
+
+================================================================
+FINAL REPORT
+================================================================
+
+Report back with:
+
+1. Landing Page:
+- All sections built
+- Mobile responsive
+- Login and Signup working
+- Fast loading
+- Facial recognition section visible
+- See All Features accordion working
+
+2. Timetable Generator:
+- Data foundation complete
+- Setup wizard works
+- Auto-generation works
+- No teacher clashes
+- Duty teachers integrated
+- Expected outcomes included
+- Print PDF ready
+- Stream support working
+- Combined periods working
+- Role-based views working
+
+3. Regression: Tasks 1 through 14 still pass
+
+If all pass, confirm with:
+Task 15 fully complete. Landing Page and Timetable Generator ready. Ready for final verification.

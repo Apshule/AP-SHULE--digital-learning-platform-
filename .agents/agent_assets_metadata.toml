@@ -6,3 +6,18 @@ id = "O-SqDNrQHlh7H20oJf-F4"
 uri = "file://apshule.tar.gz"
 type = "unspecified"
 title = "APSHULE index.html (tar.gz)"
+logical_id = "b788d763-dbba-44eb-8dbb-6ccf202c0e00"
+
+[[outputs]]
+id = "t849J5ENwb3qsMhPM3MtV"
+uri = "file://screenshots/mfi-step3-final-home.jpg"
+type = "image"
+title = "MFI Step 3 final preview"
+description = "Final proxied preview capture after the MFI Step 3 implementation and workflow restart."
+logical_id = "2e4d87bc-a73e-4e60-a701-6963e0b97f74"
+content_hash = "sha256:acbd250f6cd22e79ef743163e724359ebc1571b5999544f87354f9f6272be7cf"
+size = 96144
+mtime_ms = 1789436552232
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:09c01df3-ff3e-484b-8185-dd25a9bb1317/2e4d87bc-a73e-4e60-a701-6963e0b97f74/53bc5463-67b0-46c4-9c1c-c05d7801a4a8"
+storage_version_token = "1789436564062477"
+content_type = "image/jpeg"

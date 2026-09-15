@@ -20,3 +20,9 @@ For clinic administration, cache the dashboard snapshot by institution but keep 
 **Why:** Operational metrics are useful during connectivity loss, while financial, compliance, and medical exports need current server data and clear freshness boundaries.
 
 **How to apply:** Store the complete institution snapshot in the versioned clinic dashboard store, expose its updated time in the dashboard, and show a reconnect requirement in report views.
+
+For later migrations, source-based regression checks should assert the new database version while also keeping assertions for the immediately preceding upgrade branch.
+
+**Why:** A version bump can otherwise make the suite pass while accidentally removing the migration path that upgrades existing offline databases.
+
+**How to apply:** Update the current-version expectation and retain checks for every prior migration boundary that remains in `onupgradeneeded`.
