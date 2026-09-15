@@ -1,0 +1,113 @@
+Task 15 — Bug Fixes (Four Issues on Sync Status and Notifications):
+
+BUG 1 — SYNC STATUS MODAL MISSING CLOSE BUTTON
+The Sync Status popup that opens when you tap the sync indicator 
+does not have an X close button. Users must tap [Sync Now] to close 
+it, which is not the intended behavior.
+
+Fix:
+- Add a small X button in the top right corner of the Sync Status popup
+- Tapping X closes the popup without syncing
+- Tapping outside the popup should also close it (backdrop dismiss)
+- Tapping the physical back button on the phone should also close it
+- Do NOT remove the [Sync Now] button inside — that stays for 
+  triggering a manual sync
+
+BUG 2 — YELLOW AND GREEN DOTS HAVE UNCLEAR MEANING
+Next to the Sync Status indicator in the app header, there are two 
+colored dots — one yellow and one green. Their purpose is not 
+explained anywhere, and users cannot tell what they mean.
+
+Fix:
+- Keep the green dot and make it clearly represent ONLINE status
+  * Green dot with tooltip: "Online"
+  * When online, dot is solid green
+  * When offline, dot turns red with tooltip "Offline"
+- Either:
+  Option A: Remove the yellow dot entirely (if it has no distinct 
+    purpose)
+  Option B: Give the yellow dot a clear meaning and label:
+    * Yellow dot = pending items waiting to sync
+    * When 0 pending items: yellow dot is hidden
+    * When 1 or more pending items: yellow dot shows
+    * Tooltip: "Pending items: 3"
+- Choose Option B if there are genuinely pending items to indicate. 
+  Choose Option A if the yellow dot was added without purpose.
+
+Preference: Option B — Yellow for pending, Green for online. Both 
+dots should have tooltips explaining their meaning.
+
+Add small text labels below the dots if needed (visible only when 
+the user first opens the app, so they understand what the colors mean).
+
+BUG 3 — NOTIFICATIONS APPEAR IN WRONG LOCATION
+When a user taps something that has no content available (for 
+example, tapping a class with no videos), the "not available" 
+message appears in the top right corner of the screen as a floating 
+toast.
+
+This is confusing because:
+- The message is far away from what the user tapped
+- The user may not notice the message
+- The user might not connect the message to their action
+
+Fix:
+- Change ALL "not available" or "not found" messages to appear 
+  directly on or near the item the user tapped
+- Use a local tooltip or bubble that appears next to the tapped 
+  element (for about 3 seconds, then fades)
+- Example: if user taps "Primary 1" and no subjects are loaded, 
+  show a small message right below the Primary 1 card: 
+  "No subjects available yet"
+- Do NOT use the global top-right toast for these contextual 
+  messages
+- Keep the top-right toast ONLY for global system messages like 
+  "Sync complete" or "Payment confirmed" — messages that are not 
+  tied to a specific tapped element
+
+Apply this to:
+- Class taps with no subjects
+- Subject taps with no video content
+- Resource taps with no PDF
+- Live lesson taps with no enrollment
+- Any other "not available" contextual message
+
+BUG 4 — GENERAL UI POLISH
+While fixing the above:
+- Verify the sync indicator in the header is tappable and obvious
+- Ensure the app header shows the correct brand: APSHULE with 
+  "Let's Learn With Ease From Anywhere at Anytime" as subtitle
+- The two-dot indicator (yellow and green) should sit next to the 
+  gear icon and the sync icon in a clean row
+- Add a subtle pulse animation on the green dot when a sync is 
+  in progress
+
+TESTING:
+1. Open appshule.com and login
+2. Tap the sync indicator in the header
+3. Confirm the popup has an X button in the top right
+4. Tap the X — popup closes
+5. Tap the sync indicator again, then tap outside the popup — 
+   popup closes
+6. Confirm the green dot in the header shows "Online" tooltip
+7. Turn off WiFi — confirm green dot turns red and tooltip says 
+   "Offline"
+8. Make a small change (like saving a draft) that creates a pending 
+   item — confirm the yellow dot appears with a count
+9. Sync the pending item — confirm the yellow dot disappears
+10. Tap "Primary 1" with no subjects loaded
+11. Confirm the message "No subjects available yet" appears right 
+    below the Primary 1 card, not in the top right
+12. Tap on any subject with no video
+13. Confirm the message appears next to the subject card
+
+IMPORTANT:
+- Do NOT break any features from Tasks 1 through 15
+- Do NOT rebuild the app
+- Only fix the four issues above
+- Test each fix on both phone (Android Chrome) and desktop browser
+- Report back with confirmation
+
+Confirm when done with:
+"Task 15 Bug Fixes complete — Sync popup has X button, Dots 
+clarified with tooltips, Contextual messages appear at tap location"

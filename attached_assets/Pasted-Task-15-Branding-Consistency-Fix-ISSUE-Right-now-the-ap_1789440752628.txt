@@ -1,0 +1,106 @@
+Task 15 — Branding Consistency Fix:
+
+ISSUE:
+Right now the app has inconsistent branding:
+- The domain uses "appshule" (all lowercase, single word)
+- Most of the app uses "APSHULE" (all caps, single word)
+- Some sections — especially Education related pages, logos, and 
+  taglines — use "AP SHULE Digital Learning Platform" (two words 
+  with a space)
+- The hero section, badges, and headers show a mix of these variants
+
+This inconsistency makes the brand look unpolished and unprofessional.
+
+REQUIRED BRANDING RULES:
+
+1. DOMAIN (URL):
+- Keep the domain exactly as it is: appshule.com
+- This is the official domain and must not change
+- All links, QR codes, and share links must use appshule.com
+
+2. MAIN BRAND NAME:
+- Use "APSHULE" (all caps, single word) everywhere as the primary 
+  brand name
+- This applies to:
+  * App headers and titles
+  * Login screen title
+  * Splash screen
+  * Email signatures
+  * SMS notifications
+  * PDF reports headers
+  * Landing page headlines
+  * Footer copyright
+  * Notification titles
+  * Terms and Conditions
+  * Privacy Policy
+
+3. EDUCATION SECTOR SUB-BRAND:
+- For the Education sector specifically, use the sub-brand:
+  "APSHULE Digital Learning Platform"
+- This appears in:
+  * The Education sector card on the landing page
+  * The login screen tagline when logged in as a school or student
+  * The main app logo in the Education module (as a subtitle under 
+    the main APSHULE logo)
+  * Education-specific PDF headers (report cards, admission forms, 
+    CEB reports)
+  * Student and Teacher app headers
+- Format: "APSHULE Digital Learning Platform" with the word 
+  "APSHULE" bold and the phrase "Digital Learning Platform" in 
+  regular weight
+
+4. WHAT TO REMOVE:
+- Remove all instances of "AP SHULE" (two words with space) from 
+  the app
+- Remove all instances of "Apshule" (mixed case) from the app
+- Remove all instances of "ap shule" (lowercase with space) from 
+  the app
+- Keep only "APSHULE" or "APSHULE Digital Learning Platform"
+
+5. WHERE TO APPLY THE FIX:
+Search the entire codebase for these strings and replace consistently:
+- "AP SHULE" → "APSHULE"
+- "Apshule" → "APSHULE"
+- "ap shule" → "APSHULE"
+- "Apshule Digital Learning Platform" → "APSHULE Digital Learning Platform"
+- "AP SHULE Digital Learning Platform" → "APSHULE Digital Learning Platform"
+- In the Education context only, keep "APSHULE Digital Learning Platform"
+
+6. LOGO AND IMAGE ALT TEXT:
+- Update all image alt text attributes to say "APSHULE" or 
+  "APSHULE Digital Learning Platform"
+- Update favicon reference if any alt text exists
+
+7. META TAGS:
+- Page title: "APSHULE - Digital Learning Platform"
+- Meta description: "APSHULE is a multi-sector platform for 
+  education, microfinance, clinic, and farming management in Uganda."
+- Open Graph title: "APSHULE"
+
+8. DO NOT CHANGE:
+- The domain name appshule.com must remain lowercase
+- Firebase project IDs (they are technical, not user-facing)
+- Any code variable names, function names, or database collection 
+  names
+- Only user-facing text should be changed
+
+TESTING:
+1. Open appshule.com and check the landing page hero
+2. Look at the browser tab title — should read "APSHULE - Digital Learning Platform"
+3. Login as a student or school admin — header should show "APSHULE" 
+   with "Digital Learning Platform" as subtitle
+4. Login as MFI or Clinic user — header should show only "APSHULE"
+5. Download any PDF report — header should match the context
+6. Check the footer — copyright should say "APSHULE"
+7. Search the entire app for "AP SHULE" — should find zero results
+
+IMPORTANT:
+- Do NOT rebuild the app
+- Do NOT break any features from Tasks 1 through 15
+- Only update user-facing brand text
+- Keep all code variables and database names untouched
+
+Confirm when done with:
+"Branding consistency fix complete — APSHULE used consistently 
+across the app, APSHULE Digital Learning Platform applied to 
+Education sector, no more mixed-case or spaced variants"
