@@ -38,6 +38,31 @@ describe("Task 15 landing page", () => {
   });
 });
 
+describe("Task 15 bug fixes", () => {
+  it("keeps one balanced hero logo and responsive sizing rules", () => {
+    expect((indexSource.match(/class="landing-hero-image"/g) ?? [])).toHaveLength(1);
+    expect(indexSource).toContain("object-fit:contain");
+    expect(indexSource).toContain("transform:none");
+    expect(indexSource).toContain("@media(max-width:499px)");
+  });
+
+  it("auto-hides the responsive demo notice once per session", () => {
+    expect(indexSource).toContain('id="responsiveDemoNotice"');
+    expect(indexSource).toContain("apshuleResponsiveDemoNoticeSeen");
+    expect(indexSource).toContain("}, 10000);");
+    expect(indexSource).toContain("responsiveNotice.style.display = 'none'");
+    expect(indexSource).not.toContain("54000");
+  });
+
+  it("uses browser history for pages, modals, and back-button restoration", () => {
+    expect(indexSource).toContain("window.appHistory");
+    expect(indexSource).toContain("history.pushState");
+    expect(indexSource).toContain("addEventListener('popstate'");
+    expect(indexSource).toContain("apshulehistorychange");
+    expect(indexSource).toContain("_appHistoryRestoring");
+  });
+});
+
 describe("Task 15 timetable data contract", () => {
   it("uses every required Firestore collection", () => {
     for (const collection of [

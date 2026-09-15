@@ -848,7 +848,7 @@
         .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; border: 2px solid #4B2E9E; background: #f0f0f0; }
         .payment-loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; flex-direction: column; gap: 15px; }
         .default-avatar { background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 40px; color: white; }
-        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 13px; padding: 8px 16px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; pointer-events: none; backdrop-filter: blur(6px); font-family: monospace; white-space: nowrap; }
+        .demo-notice { background: rgba(0,0,0,0.85); color: white; font-size: 13px; padding: 8px 16px; position: fixed; bottom: 80px; right: 10px; border-radius: 30px; z-index: 999; pointer-events: none; backdrop-filter: blur(6px); font-family: monospace; white-space: nowrap; transition: opacity 1s ease; }
         @media (max-width: 480px) { .demo-notice { font-size: 10px; bottom: 70px; } }
 
         /* ===== NCDC COURSE INTEGRATION ===== */
@@ -1106,9 +1106,9 @@
         .landing-sub { max-width:610px; color:rgba(255,255,255,.84); font-size:17px; line-height:1.65; margin:0 0 28px; }
         .landing-cta-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
         .landing-hero .landing-btn-secondary { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.5); }
-        .landing-hero-art { position:relative; min-height:360px; display:grid; place-items:center; }
+        .landing-hero-art { position:relative; min-height:400px; display:grid; place-items:center; padding:24px 16px; }
         .landing-hero-art::before { content:''; position:absolute; width:340px; height:340px; border-radius:50%; background:rgba(255,255,255,.09); }
-        .landing-hero-image { position:relative; width:min(100%,400px); aspect-ratio:4/3; object-fit:cover; border:8px solid rgba(255,255,255,.82); border-radius:28px; box-shadow:0 28px 70px rgba(20,7,70,.35); transform:rotate(2deg); }
+        .landing-hero-image { position:relative; display:block; width:min(100%,420px); height:auto; aspect-ratio:1; object-fit:contain; padding:16px; margin:0 auto; background:rgba(255,255,255,.96); border:8px solid rgba(255,255,255,.82); border-radius:28px; box-shadow:0 28px 70px rgba(20,7,70,.35); transform:none; }
         .landing-trust { display:flex; flex-wrap:wrap; gap:10px; margin-top:30px; }
         .landing-trust span { padding:8px 11px; border-radius:999px; border:1px solid rgba(255,255,255,.24); background:rgba(255,255,255,.09); color:rgba(255,255,255,.86); font-size:11px; font-weight:700; }
         .landing-section { padding:78px 0; }
@@ -1184,8 +1184,9 @@
         .landing-demo-card h3 { margin:0 0 8px; color:#39236f; }
         .landing-demo-card p { color:#716881; line-height:1.6; font-size:13px; }
         .landing-demo-close { float:right; border:0; background:transparent; color:#4B2E9E; font-size:26px; cursor:pointer; }
-        @media(max-width:900px){.landing-nav{gap:11px}.landing-nav a{font-size:11px}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials{grid-template-columns:repeat(2,1fr)}.landing-footer-grid{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:680px){.landing-shell{width:min(100% - 24px,520px)}.landing-header-inner{min-height:64px}.landing-mobile-menu{display:block;margin-left:auto}.landing-nav,.landing-header-actions{display:none}.landing-header.open .landing-nav{display:flex;position:absolute;top:64px;left:0;right:0;padding:15px 18px;flex-direction:column;align-items:flex-start;background:#fff;border-bottom:1px solid #eee9f8;box-shadow:0 12px 20px rgba(61,34,128,.1)}.landing-header.open .landing-header-actions{display:flex;position:absolute;top:230px;left:18px;right:18px;padding:12px 0;background:#fff}.landing-hero{padding:58px 0 48px}.landing-hero-grid{grid-template-columns:1fr;gap:32px}.landing-headline{font-size:43px}.landing-sub{font-size:15px}.landing-hero-art{min-height:250px}.landing-hero-image{width:min(92%,360px)}.landing-section{padding:56px 0}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials,.landing-steps,.landing-stats-grid{grid-template-columns:1fr}.landing-footer-grid{grid-template-columns:1fr 1fr}.landing-accordion-body .landing-list{columns:1}.landing-sector-card{min-height:0}.landing-stats-grid{gap:24px}}
+         @media(max-width:900px){.landing-nav{gap:11px}.landing-nav a{font-size:11px}.landing-hero-grid{grid-template-columns:1fr;gap:36px}.landing-hero-art{min-height:340px;padding:24px 12px}.landing-hero-image{width:min(70vw,340px)}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials{grid-template-columns:repeat(2,1fr)}.landing-footer-grid{grid-template-columns:repeat(2,1fr)}}
+         @media(max-width:680px){.landing-shell{width:min(100% - 24px,520px)}.landing-header-inner{min-height:64px}.landing-mobile-menu{display:block;margin-left:auto}.landing-nav,.landing-header-actions{display:none}.landing-header.open .landing-nav{display:flex;position:absolute;top:64px;left:0;right:0;padding:15px 18px;flex-direction:column;align-items:flex-start;background:#fff;border-bottom:1px solid #eee9f8;box-shadow:0 12px 20px rgba(61,34,128,.1)}.landing-header.open .landing-header-actions{display:flex;position:absolute;top:230px;left:18px;right:18px;padding:12px 0;background:#fff}.landing-hero{padding:58px 0 48px}.landing-hero-grid{grid-template-columns:1fr;gap:32px}.landing-headline{font-size:43px}.landing-sub{font-size:15px}.landing-hero-art{min-height:280px;padding:20px 12px}.landing-hero-image{width:min(78vw,290px);padding:12px}.landing-section{padding:56px 0}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials,.landing-steps,.landing-stats-grid{grid-template-columns:1fr}.landing-footer-grid{grid-template-columns:1fr 1fr}.landing-accordion-body .landing-list{columns:1}.landing-sector-card{min-height:0}.landing-stats-grid{gap:24px}}
+         @media(max-width:499px){.landing-hero-image{width:min(72vw,240px)}.landing-hero-art{min-height:240px;padding:16px 8px}.landing-hero-art::before{width:230px;height:230px}}
         /* ── Timetable Generator ── */
         .timetable-page { padding-bottom:100px; }
         .timetable-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; }
@@ -1476,14 +1477,154 @@
 <!-- INSTANT LOGIN — show form immediately; buttons enabled once Firebase loads -->
 <script>
 (function(){
+    var _appHistoryPage = 'landing';
+    var _appHistoryModal = null;
+    var _appHistoryReady = false;
+    var _appHistoryIgnoringMutations = false;
+    var _appHistorySequence = 0;
+    var _appHistoryModalSelector = '#landingDemoModal,#videoModal,.settings-modal,.global-settings-modal,.command-fullscreen-modal,.modal,[role="dialog"]';
+
+    function appHistoryState(kind, page, modalId) {
+        return {
+            apshuleHistory: true,
+            kind: kind,
+            page: page,
+            modalId: modalId || null,
+            identifier: `apshule-${kind}-${++_appHistorySequence}`
+        };
+    }
+
+    function appHistoryVisibleModals() {
+        return Array.from(document.querySelectorAll(_appHistoryModalSelector)).filter(function(element) {
+            return element.classList.contains('show') && getComputedStyle(element).display !== 'none';
+        });
+    }
+
+    function appHistoryCloseModals() {
+        var visible = appHistoryVisibleModals();
+        if(visible.some(function(element){ return element.id === 'videoModal'; }) && typeof window.closeVideoModal === 'function') {
+            window.closeVideoModal();
+        }
+        visible.forEach(function(element){ element.classList.remove('show'); });
+    }
+
+    function appHistoryIgnoreNextMutations() {
+        _appHistoryIgnoringMutations = true;
+        setTimeout(function(){ _appHistoryIgnoringMutations = false; }, 0);
+    }
+
+    function appHistorySyncModal() {
+        if(!_appHistoryReady || _appHistoryIgnoringMutations) return;
+        var visible = appHistoryVisibleModals();
+        var modal = visible[visible.length - 1];
+        var modalId = modal ? (modal.id || 'dialog') : null;
+        if(modalId === _appHistoryModal) return;
+        if(modalId) {
+            _appHistoryModal = modalId;
+            history.pushState(appHistoryState('modal', _appHistoryPage, modalId), '', location.href);
+        } else if(_appHistoryModal) {
+            _appHistoryModal = null;
+            history.back();
+        }
+    }
+
+    function appHistoryInit() {
+        if(_appHistoryReady) return;
+        var initialPage = document.getElementById('appScreen')?.classList.contains('hidden') ? 'landing' : 'home';
+        var state = history.state;
+        if(!state || state.apshuleHistory !== true) {
+            history.replaceState(appHistoryState('page', initialPage), '', location.href);
+            state = history.state;
+        }
+        _appHistoryPage = state?.page || initialPage;
+        _appHistoryModal = state?.kind === 'modal' ? state.modalId : null;
+        _appHistoryReady = true;
+        new MutationObserver(appHistorySyncModal).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class']});
+    }
+
+    function appHistoryPushPage(page) {
+        appHistoryInit();
+        var hadModal = Boolean(_appHistoryModal || appHistoryVisibleModals().length);
+        if(_appHistoryPage === page && !hadModal) return;
+        if(hadModal) {
+            appHistoryIgnoreNextMutations();
+            appHistoryCloseModals();
+        }
+        _appHistoryPage = page;
+        _appHistoryModal = null;
+        var state = appHistoryState('page', page);
+        if(hadModal) history.replaceState(state, '', location.href);
+        else history.pushState(state, '', location.href);
+    }
+
+    function appHistoryReplacePage(page) {
+        appHistoryInit();
+        _appHistoryPage = page;
+        _appHistoryModal = null;
+        history.replaceState(appHistoryState('page', page), '', location.href);
+    }
+
+    window.appHistory = { init: appHistoryInit, pushPage: appHistoryPushPage, replacePage: appHistoryReplacePage };
+    window.addEventListener('popstate', function(event) {
+        if(!_appHistoryReady) appHistoryInit();
+        var state = event.state;
+        _appHistoryIgnoringMutations = true;
+        if(state?.apshuleHistory && state.kind === 'modal') {
+            _appHistoryPage = state.page || _appHistoryPage;
+            _appHistoryModal = state.modalId || null;
+        } else {
+            appHistoryCloseModals();
+            _appHistoryPage = state?.page || 'landing';
+            _appHistoryModal = null;
+        }
+        window.dispatchEvent(new CustomEvent('apshulehistorychange', { detail: state || { page: _appHistoryPage, kind: 'page' } }));
+        setTimeout(function(){ _appHistoryIgnoringMutations = false; }, 0);
+    });
+
     // Show landing page right away — no waiting for Firebase CDN
     document.addEventListener('DOMContentLoaded', function(){
+        appHistoryInit();
         var splash   = document.getElementById('splashScreen');
         var landing  = document.getElementById('landingScreen');
         if(splash)   splash.style.display = 'none';
         if(landing)  landing.classList.remove('hidden');
+        var responsiveNotice = document.getElementById('responsiveDemoNotice');
+        var responsiveNoticeKey = 'apshuleResponsiveDemoNoticeSeen';
+        if(responsiveNotice) {
+            var noticeSeen = false;
+            try { noticeSeen = sessionStorage.getItem(responsiveNoticeKey) === '1'; } catch(e) {}
+            if(noticeSeen) {
+                responsiveNotice.style.display = 'none';
+            } else {
+                try { sessionStorage.setItem(responsiveNoticeKey, '1'); } catch(e) {}
+                responsiveNotice.style.opacity = '1';
+                setTimeout(function(){
+                    responsiveNotice.style.opacity = '0';
+                    setTimeout(function(){
+                        responsiveNotice.style.display = 'none';
+                    }, 1000);
+                }, 10000);
+            }
+        }
+        window.addEventListener('apshulehistorychange', function(event){
+            var state = event.detail || {};
+            if(state.kind === 'modal') return;
+            if(state.page === 'landing') {
+                document.getElementById('landingScreen')?.classList.remove('hidden');
+                document.getElementById('loginScreen')?.classList.add('hidden');
+                document.getElementById('appScreen')?.classList.add('hidden');
+            } else if(state.page === 'login') {
+                document.getElementById('landingScreen')?.classList.add('hidden');
+                document.getElementById('loginScreen')?.classList.remove('hidden');
+                document.getElementById('appScreen')?.classList.add('hidden');
+            } else if(typeof window.navigateTo === 'function') {
+                window._appHistoryRestoring = true;
+                try { window.navigateTo(state.page || 'home'); } finally { window._appHistoryRestoring = false; }
+            }
+        });
         // CTA buttons: "Sign Up Free" → show login on Sign Up tab
         function goToLogin(tab) {
+            window.appHistory?.pushPage('login');
             var ld = document.getElementById('landingScreen');
             var lg = document.getElementById('loginScreen');
             if(ld) ld.classList.add('hidden');
@@ -15050,6 +15191,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             navigateSuperAdmin('dashboard');
             return;
         }
+         if(!window._appHistoryRestoring) window.appHistory?.pushPage(pageId);
         closeVideoModal();
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page'));
         let tp = document.getElementById(`${pageId}Page`);
@@ -15098,6 +15240,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
+         window.appHistory?.replacePage('home');
         updateGreeting();
         let address = currentUser.address || 'Not set';
         document.getElementById('accountInfo').innerHTML = `
@@ -16089,6 +16232,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     document.getElementById('logoutBtn')?.addEventListener('click', async () => {
         offlineSession=false;
         clearSessionData();
+         window.appHistory?.replacePage('landing');
         document.getElementById('landingScreen').classList.remove('hidden');
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.add('hidden');
@@ -16106,11 +16250,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(user) {
             await loadUserAndShowApp(user);
             loadBrandLogo().catch(()=>{}); // load logo in background, don't block
-            // Show device banner for 5 min after login then auto-hide
-            const _banner = document.getElementById('responsiveDemoNotice');
-            if(_banner){ _banner.style.display='block'; _banner.style.opacity='1'; setTimeout(()=>{ _banner.style.transition='opacity 1s'; _banner.style.opacity='0'; setTimeout(()=>{ _banner.style.display='none'; _banner.style.opacity=''; _banner.style.transition=''; },1000); }, 54000); }
         } else {
             clearSessionData();
+            window.appHistory?.replacePage('landing');
             document.getElementById('landingScreen').classList.remove('hidden');
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('appScreen').classList.add('hidden');
