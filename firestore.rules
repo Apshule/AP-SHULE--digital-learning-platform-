@@ -326,6 +326,50 @@ service cloud.firestore {
         && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
       allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
     }
+    match /mfi_loan_products/{productId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create, update: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() == 'mfi_admin';
+      allow delete: if isSuperAdmin();
+    }
+    match /microfinance_loans/{loanId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer'];
+      allow update: if isSuperAdmin()
+        || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin'
+        || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_manager'
+        || sameMfiInstitution(resource.data.institutionId) && role() == 'loan_officer'
+          && resource.data.status in ['draft', 'submitted'];
+      allow delete: if false;
+    }
+    match /mfi_loan_repayment_schedule/{installmentId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow delete: if false;
+    }
+    match /mfi_loan_payments/{paymentId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow update, delete: if false;
+    }
+    match /mfi_loan_approvals/{approvalId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_officer'];
+      allow update, delete: if false;
+    }
+    match /mfi_loan_documents/{documentId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update, delete: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() == 'mfi_admin';
+    }
+    match /mfi_loan_audit/{auditId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update, delete: if false;
+    }
 
     // Clinic records are institution-scoped. Reception can manage demographics
     // and scheduling, but cannot read visits or prescriptions.

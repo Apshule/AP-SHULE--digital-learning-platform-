@@ -844,6 +844,8 @@
       allRecords('offline_farm_egg_collections'),
       allRecords('offline_farm_feed_consumption'),
       allRecords('offline_farm_inventory'),
+      allRecords('offline_mfi_loans'),
+      allRecords('offline_mfi_loan_payments'),
       Promise.all(STORAGE_CONTENT_STORES.map(function (store) { return allRecords(store); }))
     ])
       .then(function (records) {
@@ -868,8 +870,11 @@
            var farmAttendance = records[18].filter(function (item) { return item.syncStatus === 'pending'; });
             var farmEggCollections = records[19].filter(function (item) { return item.syncStatus === 'pending'; });
             var farmFeedConsumption = records[20].filter(function (item) { return item.syncStatus === 'pending'; });
-            var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins, clinicInventory, clinicScans, clinicDispensing, clinicBilling, clinicPayments, clinicClaims, farmMovements, farmAttendance, farmEggCollections, farmFeedConsumption);
-            var cachedSize = records[22].reduce(function (total, items) {
+            var farmInventory = records[21].filter(function (item) { return item.syncStatus === 'pending'; });
+            var mfiLoans = records[22].filter(function (item) { return item.syncStatus === 'pending'; });
+            var mfiLoanPayments = records[23].filter(function (item) { return item.syncStatus === 'pending'; });
+            var pending = projects.concat(caRecords, views, teacherProgress, favorites, mfiCustomers, mfiCollateral, mfiVerification, clinicVisits, clinicPrescriptions, clinicCheckins, clinicInventory, clinicScans, clinicDispensing, clinicBilling, clinicPayments, clinicClaims, farmMovements, farmAttendance, farmEggCollections, farmFeedConsumption, mfiLoans, mfiLoanPayments);
+            var cachedSize = records[24].reduce(function (total, items) {
           return total + items.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0);
         }, 0);
         return {
@@ -894,6 +899,9 @@
            farmAttendance: farmAttendance.length,
             farmEggCollections: farmEggCollections.length,
             farmFeedConsumption: farmFeedConsumption.length,
+          farmInventory: farmInventory.length,
+          mfiLoans: mfiLoans.length,
+          mfiLoanPayments: mfiLoanPayments.length,
           total: pending.length,
           size: pending.reduce(function (sum, item) { return sum + Number(item.size || sizeOf(item)); }, 0),
           cachedSize: cachedSize
@@ -923,7 +931,9 @@
            allRecords('offline_farm_movements'),
            allRecords('offline_farm_attendance'),
            allRecords('offline_farm_egg_collections'),
-           allRecords('offline_farm_feed_consumption')
+           allRecords('offline_farm_feed_consumption'),
+           allRecords('offline_mfi_loans'),
+           allRecords('offline_mfi_loan_payments')
       ]).then(function (records) {
         var projects = records[0].filter(function (item) { return item.syncStatus === 'pending' || item.syncStatus === 'syncing'; });
         var caRecords = records[1].filter(function (item) { return item.synced === false || item.syncStatus === 'pending'; });
@@ -944,14 +954,16 @@
            var farmAttendance = records[16].filter(function (item) { return item.syncStatus === 'pending'; });
             var farmEggCollections = records[17].filter(function (item) { return item.syncStatus === 'pending'; });
             var farmFeedConsumption = records[18].filter(function (item) { return item.syncStatus === 'pending'; });
-            var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length + clinicVisits.length + clinicPrescriptions.length + clinicCheckins.length + clinicInventory.length + clinicScans.length + clinicDispensing.length + clinicBilling.length + clinicPayments.length + clinicClaims.length + farmMovements.length + farmAttendance.length + farmEggCollections.length + farmFeedConsumption.length;
+            var mfiLoans = records[19].filter(function (item) { return item.syncStatus === 'pending'; });
+            var mfiLoanPayments = records[20].filter(function (item) { return item.syncStatus === 'pending'; });
+            var total = projects.length + caRecords.length + views.length + mfiCustomers.length + mfiCollateral.length + mfiVerification.length + clinicVisits.length + clinicPrescriptions.length + clinicCheckins.length + clinicInventory.length + clinicScans.length + clinicDispensing.length + clinicBilling.length + clinicPayments.length + clinicClaims.length + farmMovements.length + farmAttendance.length + farmEggCollections.length + farmFeedConsumption.length + mfiLoans.length + mfiLoanPayments.length;
         if (mode === 'offline') return { status: 'offline', mode: mode, uploaded: 0, pending: total };
         if (mode === 'mobile' && !options.force && options.auto && !options.allowMobile) {
           return { status: 'mobile-paused', mode: mode, uploaded: 0, pending: total };
         }
         var context = { mode: mode, api: API };
         /* Every push completes before any pull begins. */
-           var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false, clinicVisits: false, clinicPrescriptions: false, clinicCheckins: false, clinicInventory: false, clinicScans: false, clinicDispensing: false, clinicBilling: false, clinicPayments: false, clinicClaims: false, farmMovements: false, farmAttendance: false, farmEggCollections: false, farmFeedConsumption: false };
+           var pushed = { projects: false, caRecords: false, views: false, mfiCustomers: false, mfiCollateral: false, mfiVerification: false, clinicVisits: false, clinicPrescriptions: false, clinicCheckins: false, clinicInventory: false, clinicScans: false, clinicDispensing: false, clinicBilling: false, clinicPayments: false, clinicClaims: false, farmMovements: false, farmAttendance: false, farmEggCollections: false, farmFeedConsumption: false, mfiLoans: false, mfiLoanPayments: false };
         return Promise.resolve()
           .then(function () {
             if (!syncHooks.pushProjects || !projects.length) return null;
@@ -1048,6 +1060,16 @@
               return syncHooks.pushFarmFeedConsumption(farmFeedConsumption, context);
             })
             .then(function (result) { if (syncHooks.pushFarmFeedConsumption && farmFeedConsumption.length) pushed.farmFeedConsumption = true; return result; })
+            .then(function () {
+              if (!syncHooks.pushMfiLoans || !mfiLoans.length) return null;
+              return syncHooks.pushMfiLoans(mfiLoans, context);
+            })
+            .then(function (result) { if (syncHooks.pushMfiLoans && mfiLoans.length) pushed.mfiLoans = true; return result; })
+            .then(function () {
+              if (!syncHooks.pushMfiLoanPayments || !mfiLoanPayments.length) return null;
+              return syncHooks.pushMfiLoanPayments(mfiLoanPayments, context);
+            })
+            .then(function (result) { if (syncHooks.pushMfiLoanPayments && mfiLoanPayments.length) pushed.mfiLoanPayments = true; return result; })
           .then(function () {
             return Promise.all((pushed.projects ? projects.map(function (item) { return putRecord('offline_projects', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
               .concat(pushed.caRecords ? caRecords.map(function (item) { return putRecord('offline_ca_records', Object.assign({}, item, { synced: true, syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
@@ -1067,7 +1089,9 @@
                 .concat(pushed.farmMovements ? farmMovements.map(function (item) { return putRecord('offline_farm_movements', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                  .concat(pushed.farmAttendance ? farmAttendance.map(function (item) { return putRecord('offline_farm_attendance', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
                  .concat(pushed.farmEggCollections ? farmEggCollections.map(function (item) { return putRecord('offline_farm_egg_collections', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
-                 .concat(pushed.farmFeedConsumption ? farmFeedConsumption.map(function (item) { return putRecord('offline_farm_feed_consumption', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
+                 .concat(pushed.farmFeedConsumption ? farmFeedConsumption.map(function (item) { return putRecord('offline_farm_feed_consumption', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                 .concat(pushed.mfiLoans ? mfiLoans.map(function (item) { return putRecord('offline_mfi_loans', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : [])
+                 .concat(pushed.mfiLoanPayments ? mfiLoanPayments.map(function (item) { return putRecord('offline_mfi_loan_payments', Object.assign({}, item, { syncStatus: 'synced', syncedAt: Date.now() })); }) : []));
           })
           .then(function () {
             var pullResult = syncHooks.pull ? syncHooks.pull(context) : {};

@@ -204,3 +204,119 @@ describe("Task 10 Step 1 MFI foundation contracts", () => {
     }
   });
 });
+
+function loadLoanPreview() {
+  const match = indexSource.match(/function mfiLoanPreview\([\s\S]*?\n    }\n    function mfiLoanPreviewHtml/);
+  if (!match) throw new Error("MFI loan preview was not found");
+  const source = match[0].replace(/\n    function mfiLoanPreviewHtml[\s\S]*$/, "");
+  const context = vm.createContext({});
+  vm.runInContext(`${source}\nthis.mfiLoanPreview = mfiLoanPreview;`, context);
+  return context.mfiLoanPreview as (
+    principal: number,
+    rate: number,
+    term: number,
+    type: string,
+    processing?: number,
+    insurance?: number
+  ) => Record<string, number>;
+}
+
+describe("Task 14 Step 1 full MFI loan lifecycle contracts", () => {
+  it("declares the loan lifecycle collections and role-specific surfaces", () => {
+    for (const value of [
+      "mfi_loan_products",
+      "microfinance_loans",
+      "mfi_loan_repayment_schedule",
+      "mfi_loan_payments",
+      "mfi_loan_approvals",
+      "mfiLoansPage",
+      "loanApplicationModal",
+      "loanReviewModal",
+      "loanDisbursementModal",
+      "recordLoanPaymentModal",
+      "mfiBorrowerLoansList",
+      "mfiSyncOfflineLoan",
+      "mfiSyncOfflineLoanPayment",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("mfiLoanCanApprove");
+    expect(indexSource).toContain("mfiLoanCanDisburse");
+    expect(indexSource).toContain("mfiLoanCanRecordPayment");
+  });
+
+  it("calculates flat and reducing-balance repayment amounts with fees", () => {
+    const preview = loadLoanPreview();
+    expect(preview(1_000_000, 5, 4, "Flat", 2, 1)).toMatchObject({
+      installment: 302_500,
+      totalInterest: 200_000,
+      totalFees: 10_000,
+      totalRepayment: 1_210_000,
+      processingFee: 20_000,
+      insuranceFee: 10_000,
+    });
+    const reducing = preview(1_000_000, 3, 4, "Reducing Balance", 2, 1);
+    expect(reducing.totalInterest).toBeGreaterThan(0);
+    expect(reducing.totalRepayment).toBeGreaterThan(1_000_000);
+    expect(reducing.processingFee).toBe(20_000);
+    expect(reducing.insuranceFee).toBe(10_000);
+  });
+
+  it("keeps borrower access read-only and institution scoped in Firestore rules", () => {
+    expect(rulesSource).toContain("match /mfi_loan_products/{productId}");
+    expect(rulesSource).toContain("match /microfinance_loans/{loanId}");
+    expect(rulesSource).toContain("match /mfi_loan_repayment_schedule/{installmentId}");
+    expect(rulesSource).toContain("match /mfi_loan_payments/{paymentId}");
+    expect(rulesSource).toContain("match /mfi_loan_approvals/{approvalId}");
+    expect(rulesSource).toContain("match /mfi_loan_documents/{documentId}");
+    expect(rulesSource).toContain("role() == 'borrower' && resource.data.customerId == request.auth.uid");
+    expect(rulesSource).toContain("allow delete: if false;");
+    expect(rulesSource).toContain("sameMfiInstitution(request.resource.data.institutionId)");
+  });
+
+  it("declares all nine loan lifecycle composite indexes", () => {
+    const required: Array<[string, string[]]> = [
+      ["microfinance_loans", ["institutionId", "status"]],
+      ["microfinance_loans", ["customerId", "createdAt"]],
+      ["microfinance_loans", ["institutionId", "nextPaymentDueDate"]],
+      ["microfinance_loans", ["status", "nextPaymentDueDate"]],
+      ["mfi_loan_repayment_schedule", ["loanId", "installmentNumber"]],
+      ["mfi_loan_repayment_schedule", ["dueDate", "status"]],
+      ["mfi_loan_payments", ["loanId", "paymentDate"]],
+      ["mfi_loan_payments", ["institutionId", "paymentDate"]],
+      ["mfi_loan_products", ["institutionId", "isActive"]],
+    ];
+    for (const [collectionGroup, fields] of required) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+  });
+
+  it("adds versioned offline loan draft and payment queues with sync hooks", () => {
+    expect(offlineSource).toContain("var DB_VERSION = 22");
+    expect(offlineSource).toContain("offline_mfi_loans");
+    expect(offlineSource).toContain("offline_mfi_loan_payments");
+    for (const value of [
+      "queueMfiLoan",
+      "listMfiLoans",
+      "markMfiLoanSynced",
+      "queueMfiLoanPayment",
+      "listMfiLoanPayments",
+      "markMfiLoanPaymentSynced",
+      "pushMfiLoans",
+      "pushMfiLoanPayments",
+    ]) {
+      expect(indexSource + offlineSource).toContain(value);
+    }
+  });
+
+  it("guards against negative balances and exposes borrower progress, schedules, and history", () => {
+    expect(indexSource).toContain("Math.max(0,Number(loan.balanceRemaining||0)-amount)");
+    expect(indexSource).toContain("status:balance<=0?'fully_repaid':'repaying'");
+    expect(indexSource).toContain("Payment history");
+    expect(indexSource).toContain("Repayment schedule");
+    expect(indexSource).toContain("Pay Now");
+  });
+});
