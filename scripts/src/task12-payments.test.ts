@@ -3,12 +3,21 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
+const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
 const route = readFileSync(resolve(root, "artifacts/api-server/src/routes/yo-payments.ts"), "utf8");
 const firebaseAdminToken = readFileSync(resolve(root, "artifacts/api-server/src/lib/firebase-admin-token.ts"), "utf8");
 const rules = readFileSync(resolve(root, "firestore.rules"), "utf8");
 const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"), "utf8")) as { indexes: Array<{ collectionGroup: string }> };
 
 describe("Task 12 payment backend contracts", () => {
+  it("keeps the education subscription modal on the authenticated payment boundary", () => {
+    expect(indexSource).toContain("window.task12Api = api");
+    expect(indexSource).toContain("const paymentApi=window.task12Api");
+    expect(indexSource).toContain("Payment provider not yet configured. Please contact support.");
+    for (const plan of ["Daily", "Weekly", "Monthly", "Term Plan", "Half Year", "Full Year"]) {
+      expect(indexSource).toContain(`name:'${plan}'`);
+    }
+  });
   it("exposes authenticated payment and public webhook routes", () => {
     for (const path of ["/payments/config/status", "/payments/config", "/payments/config/test", "/payments/beneficiaries/verify", "/payments/initiate", "/payments/summary", "/payments/credits/apply", "/payments/reminders/run", "/payments/disbursements", "/webhooks/yo/ipn", "/webhooks/yo/failure", "/webhooks/yo/disbursement"]) expect(route).toContain(path);
     expect(route).toContain("NonBlocking");

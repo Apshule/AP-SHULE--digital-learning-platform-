@@ -44,6 +44,7 @@ const FILES = [
   "scripts/src/task13-farm.test.ts",
   "scripts/src/settings.test.ts",
   "scripts/src/command-center.test.ts",
+  "scripts/src/task12-payments.test.ts",
   "scripts/src/mfi.test.ts",
   "scripts/src/timetable.test.ts",
   "scripts/src/push-to-github.ts",

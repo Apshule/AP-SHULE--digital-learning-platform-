@@ -2726,6 +2726,8 @@
                 <button class="command-action-btn" data-command-action="announce"><span>📢</span>Announce</button>
                 <button class="command-action-btn" data-command-action="reports"><span>📊</span>Reports</button>
             </div>
+            <div class="command-section-title">⚠️ Attention needed</div>
+            <div id="commandAlerts" class="command-activity-card"><div class="command-activity-item">Checking platform alerts…</div></div>
             <div class="command-section-title">📋 Recent Activity</div>
             <div id="commandRecentActivity" class="command-activity-card"><div class="command-activity-item">Loading recent activity…</div></div>
         </div>
@@ -4859,7 +4861,8 @@
         _settingsLastSyncAt=settings.lastSyncAt||_settingsLastSyncAt;
         setGlobalSyncStatus(summary,mode,_globalSyncFailed);
         const syncText=mode==='offline' ? `Sync Now (${summary.total} items) - Connect to internet` : `Sync Now (${summary.total} items - ${formatOfflineBytes(summary.size)})`;
-        [document.getElementById('headerSyncNowBtn'),document.getElementById('accountSyncNowBtn')].forEach(btn=>{if(btn){const span=btn.querySelector('.sync-label');if(span)span.textContent=syncText;else btn.textContent=syncText;}});
+        const compactSyncText=summary.total ? `${summary.total} pending` : mode==='offline' ? 'Offline' : 'Synced';
+        [document.getElementById('headerSyncNowBtn'),document.getElementById('accountSyncNowBtn')].forEach(btn=>{if(btn){const span=btn.querySelector('.sync-label');if(span){span.textContent=window.innerWidth<=680?compactSyncText:syncText;}else btn.textContent=syncText;btn.title=syncText;}});
         const total=document.getElementById('totalCachedSize');
         if(total) total.textContent=formatOfflineBytes(summary.cachedSize);
         const modeBadge=document.getElementById('settingsConnectionMode');
@@ -9751,7 +9754,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             renderSubscriptionPlansGrid();
             renderSubscriptionPlansAdmin();
         }, (error) => {
-            console.error('Subscription plans listener failed:', error.code || 'unknown', error.message || error);
+            console.warn('Subscription plans listener unavailable:', error.code || 'unknown', error.message || error);
             subscriptionPlans = [];
             renderSubscriptionPlansGrid();
             renderSubscriptionPlansAdmin();
@@ -9762,7 +9765,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function renderSubscriptionPlansGrid() {
         const grid = document.getElementById('paymentPlansGrid');
         if(!grid) return;
-        const plans = subscriptionPlans.length ? subscriptionPlans : DEFAULT_SUBSCRIPTION_PLANS;
+        const planKey = name => String(name||'').trim().toLowerCase().replace(/\bplan\b/g,'').replace(/[^a-z0-9]+/g,'');
+        const remoteByKey = new Map((subscriptionPlans||[]).map(plan => [planKey(plan.name), plan]));
+        const canonicalPlans = DEFAULT_SUBSCRIPTION_PLANS.map(defaultPlan => {
+            const remote = remoteByKey.get(planKey(defaultPlan.name));
+            return remote ? {...defaultPlan, ...remote, name:defaultPlan.name} : defaultPlan;
+        });
+        const canonicalKeys = new Set(canonicalPlans.map(plan => planKey(plan.name)));
+        const plans = canonicalPlans.concat((subscriptionPlans||[]).filter(plan => !canonicalKeys.has(planKey(plan.name))));
         // Get the school's assigned plan for this user (school admin or school student)
         let schoolAssignedPlanId = null;
         if(currentUser) {
@@ -9827,7 +9837,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         try {
             const institutionId=String(currentUser.schoolId||currentUser.institutionId||currentUser.uid);
             const billReference=`SUB-${currentUser.uid}-${context.plan.replace(/[^a-z0-9]+/gi,'-').toUpperCase()}-${Date.now()}`;
-            const result=await api('/api/payments/initiate',{
+            const paymentApi=window.task12Api;
+            if(typeof paymentApi!=='function') throw new Error('Payment provider not yet configured. Please contact support.');
+            const result=await paymentApi('/api/payments/initiate',{
                 method:'POST',
                 body:JSON.stringify({
                     clientId:currentUser.uid,
@@ -9855,7 +9867,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             }
         } catch(error) {
             const raw=String(error?.message||'Payment could not be started.');
-            const message=/not configured|credentials/i.test(raw) ? 'Please contact your school admin to subscribe' : raw;
+            const message=/not configured|credentials/i.test(raw) ? 'Payment provider not yet configured. Please contact support.' : raw;
             closeSubscriptionPayment();
             showContextualMessage(context.trigger,message,'error');
         } finally {
@@ -9903,7 +9915,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             renderTeachersAdmin();
             populateVideoTeacherDropdown();
         }, (error) => {
-            console.error('Teacher listener failed:', error.code || 'unknown', error.message || error);
+            console.warn('Teacher listener unavailable:', error.code || 'unknown', error.message || error);
         });
     }
 
@@ -9941,7 +9953,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const mp = document.getElementById('editMonthlyPrice'); if(mp && d.monthlyPrice) mp.value = d.monthlyPrice;
             const tp = document.getElementById('editTermlyPrice');  if(tp && d.termlyPrice)  tp.value = d.termlyPrice;
         }, (error) => {
-            console.error('Student Q&A listener failed:', error.code || 'unknown', error.message || error);
+            console.warn('Student Q&A listener unavailable:', error.code || 'unknown', error.message || error);
             c.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
@@ -10721,7 +10733,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         onSnapshot(q, (snap) => {
             renderVQAItems(snap.docs, 'teacherVideoQList', currentUser.uid, currentUser.name);
         }, (error) => {
-            console.error('Teacher Q&A listener failed:', error.code || 'unknown', error.message || error);
+            console.warn('Teacher Q&A listener unavailable:', error.code || 'unknown', error.message || error);
             const el=document.getElementById('teacherVideoQList');
             if(el) el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
@@ -10733,7 +10745,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         onSnapshot(q, (snap) => {
             renderVQAItems(snap.docs, 'adminVideoQList', currentUser.uid, currentUser.name);
         }, (error) => {
-            console.error('Admin Q&A listener failed:', error.code || 'unknown', error.message || error);
+            console.warn('Admin Q&A listener unavailable:', error.code || 'unknown', error.message || error);
             const el=document.getElementById('adminVideoQList');
             if(el) el.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
@@ -12174,7 +12186,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     renderCards(snap).catch(()=>renderCachedLiveLessons());
                 },
                 (error) => {
-                    console.error('Live lessons listener failed:', error.code || 'unknown', error.message || error);
+                    console.warn('Live lessons listener unavailable:', error.code || 'unknown', error.message || error);
                     renderCachedLiveLessons();
                     const cached = JSON.parse(localStorage.getItem('apshule_live_lessons_cache')||'[]');
                     if(!cached.length) container.innerHTML = `<div style="text-align:center;color:#c62828;padding:20px;font-size:13px;">${escHtml(error.message || 'Live lessons are unavailable right now.')}</div>`;
@@ -13091,31 +13103,62 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(els.clinicInstitutions) els.clinicInstitutions.textContent=values.clinicInstitutions??'—';
         if(els.clinicRevenue) els.clinicRevenue.textContent=values.clinicRevenueLabel||commandFormatMoney(values.clinicRevenue);
     }
+    function commandDateValue(value) {
+        if (!value) return null;
+        if (typeof value?.toDate === 'function') return value.toDate();
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+    }
+    function commandMonthKey(value) {
+        const date=commandDateValue(value);
+        return date ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}` : '';
+    }
+    function commandAmount(row) {
+        return Number(row?.amount ?? row?.total ?? row?.amountPaid ?? row?.paidAmount ?? row?.grossAmount ?? 0) || 0;
+    }
+    function commandUniqueRows(rows) {
+        const seen=new Set();
+        return rows.filter((row,index)=>{
+            const key=String(row?.id||row?.uid||`${row?.name||row?.title||'row'}-${index}`);
+            if(seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
     async function loadCommandDashboard() {
         if(currentUser?.role!=='superadmin'||!db) return;
-        const els={users:document.getElementById('commandTotalUsers'),institutions:document.getElementById('commandActiveInstitutions'),revenue:document.getElementById('commandMonthlyRevenue'),videos:document.getElementById('commandPublishedVideos'),pending:document.getElementById('commandPendingApprovals')};
         try {
-            const [users,schools,institutions,videos,payments,liveRequests,clinicInstitutions,clinicBills]=await Promise.all([
-                getDocs(query(collection(db,'users'),limit(500))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'schools'),limit(200))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'institutions'),limit(200))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'video_library'),limit(500))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'payments'),limit(500))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'liveLessons'),limit(200))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'institutions'),where('type','==','clinic'),limit(200))).catch(()=>({docs:[]})),
-                getDocs(query(collection(db,'clinic_billing'),limit(1000))).catch(()=>({docs:[]}))
+            const [users,schools,institutions,videos,legacyVideos,payments,transactions,paymentTransactions,liveLessons,liveRequests,clinicBills,clinicPayments,auditRows,notifications]=await Promise.all([
+                commandLoad('users',1500), commandLoad('schools',300), commandLoad('institutions',300),
+                commandLoad('video_library',700), commandLoad('videos',700),
+                commandLoad('payments',700), commandLoad('transactions',700), commandLoad('payment_transactions',700),
+                commandLoad('liveLessons',300), commandLoad('liveLessonRequests',300),
+                commandLoad('clinic_billing',1200), commandLoad('clinic_payments',1200),
+                commandLoad('audit_logs',200), commandLoad('notifications',200)
             ]);
-            const institutionRows=[...schools.docs.map(item=>item.data()),...institutions.docs.map(item=>item.data())];
-            const month=new Date().toISOString().slice(0,7);
-            const revenue=payments.docs.map(item=>item.data()).filter(item=>String(item.status||'').toLowerCase()==='approved'&&String(item.createdAt||item.approvedAt||'').slice(0,7)===month).reduce((sum,item)=>sum+Number(item.amount||item.total||0),0);
-            const pending=liveRequests.docs.map(item=>item.data()).filter(item=>String(item.status||'').toLowerCase()==='pending').length;
-            const clinicMonthRevenue=clinicBills.docs.map(item=>item.data()).filter(item=>String(item.billDate||item.createdAt||'').slice(0,7)===month).reduce((sum,item)=>sum+Number(item.paidAmount||0),0);
-            const stats={users:users.docs.length,institutions:institutionRows.filter(item=>item.status!=='suspended'&&item.status!=='inactive').length,revenue,revenueLabel:commandFormatMoney(revenue),videos:videos.docs.map(item=>item.data()).filter(item=>item.status==='published'||item.published===true).length,pending,clinicInstitutions:clinicInstitutions.docs.length,clinicRevenue:clinicMonthRevenue,clinicRevenueLabel:commandFormatMoney(clinicMonthRevenue)};
+            const institutionRows=commandUniqueRows([...schools,...institutions]);
+            const month=commandMonthKey(new Date());
+            const revenueRows=commandUniqueRows([...payments,...transactions,...paymentTransactions]);
+            const revenue=revenueRows.filter(item=>['approved','completed','success','successful','paid','settled'].includes(String(item.status||'').toLowerCase())&&commandMonthKey(item.createdAt||item.approvedAt||item.completedAt||item.paidAt||item.transactionDate||item.date)===month).reduce((sum,item)=>sum+commandAmount(item),0);
+            const approvalRows=commandUniqueRows([...liveLessons,...liveRequests]);
+            const pending=approvalRows.filter(item=>['pending','submitted','awaiting_approval','under_review'].includes(String(item.status||'').toLowerCase())).length;
+            const clinicInstitutionRows=institutionRows.filter(item=>String(item.type||item.facilityType||'').toLowerCase()==='clinic');
+            const clinicMonthRevenue=commandUniqueRows([...clinicBills,...clinicPayments]).filter(item=>commandMonthKey(item.billDate||item.paymentDate||item.createdAt||item.paidAt)===month).reduce((sum,item)=>sum+commandAmount(item),0);
+            const publishedVideoRows=commandUniqueRows([...videos,...legacyVideos]).filter(item=>String(item.status||'').toLowerCase()==='published'||item.published===true);
+            const stats={users:users.length,institutions:institutionRows.filter(item=>!['suspended','inactive'].includes(String(item.status||'').toLowerCase())).length,revenue,revenueLabel:commandFormatMoney(revenue),videos:publishedVideoRows.length,pending,clinicInstitutions:clinicInstitutionRows.length,clinicRevenue:clinicMonthRevenue,clinicRevenueLabel:commandFormatMoney(clinicMonthRevenue)};
             renderCommandStats(stats);
             if(Offline?.cacheCommandStats) Offline.cacheCommandStats(stats).catch(()=>{});
-            const activity=[...users.docs.map(item=>({kind:'New user',name:item.data().name||item.data().email,date:item.data().createdAt})),...institutionRows.map(item=>({kind:'Institution registered',name:item.name,date:item.createdAt}))].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,5);
+            const activity=[...users.map(item=>({kind:'New user',name:item.name||item.email,date:item.createdAt})),...institutionRows.map(item=>({kind:'Institution registered',name:item.name,date:item.createdAt})),...auditRows.map(item=>({kind:item.action||'Platform activity',name:item.actorName||item.userEmail||item.userId,date:item.createdAt||item.timestamp})),...notifications.map(item=>({kind:'Notification',name:item.title||item.body,date:item.createdAt||item.timestamp})),...revenueRows.map(item=>({kind:'Payment',name:item.reference||item.transactionId||item.payerName||item.clientName,date:item.createdAt||item.paidAt||item.completedAt}))].filter(item=>item.name||item.kind).sort((a,b)=>(commandDateValue(b.date)?.getTime()||0)-(commandDateValue(a.date)?.getTime()||0)).slice(0,8);
             const target=document.getElementById('commandRecentActivity');
-            if(target) target.innerHTML=activity.length?activity.map(item=>`<div class="command-activity-item">• ${escHtml(item.kind)}: <strong>${escHtml(item.name||'—')}</strong> <span style="color:#999;">${item.date?new Date(item.date).toLocaleDateString():''}</span></div>`).join(''):'<div class="command-activity-item">No recent activity yet.</div>';
+            if(target) target.innerHTML=activity.length?activity.map(item=>`<div class="command-activity-item">• ${escHtml(item.kind)}: <strong>${escHtml(item.name||'—')}</strong> <span style="color:#999;">${commandDateValue(item.date)?.toLocaleDateString()||''}</span></div>`).join(''):'<div class="command-activity-item">No recent activity yet. New platform events will appear here.</div>';
+            const alerts=[];
+            if(pending) alerts.push(`⏳ ${pending} approval${pending===1?'':'s'} waiting for review.`);
+            const failedPayments=revenueRows.filter(item=>['failed','rejected','cancelled'].includes(String(item.status||'').toLowerCase())&&commandMonthKey(item.createdAt||item.updatedAt)===month).length;
+            if(failedPayments) alerts.push(`⚠️ ${failedPayments} payment${failedPayments===1?'':'s'} failed or was rejected this month.`);
+            const suspendedInstitutions=institutionRows.filter(item=>String(item.status||'').toLowerCase()==='suspended').length;
+            if(suspendedInstitutions) alerts.push(`🔒 ${suspendedInstitutions} institution${suspendedInstitutions===1?'':'s'} suspended.`);
+            const alertTarget=document.getElementById('commandAlerts');
+            if(alertTarget) alertTarget.innerHTML=alerts.length?alerts.map(item=>`<div class="command-activity-item">${escHtml(item)}</div>`).join(''):'<div class="command-activity-item">✅ No critical platform alerts.</div>';
         } catch(error) {
             console.error('Command dashboard failed:',error);
             const cached=Offline?.getCommandStats ? await Offline.getCommandStats().catch(()=>null) : null;
@@ -13478,8 +13521,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     async function commandLoad(collectionName, max=200) {
         if(!db) return [];
-        const snap=await getDocs(query(collection(db,collectionName),limit(max)));
-        return snap.docs.map(item=>({id:item.id,...item.data()}));
+        try {
+            const snap=await getDocs(query(collection(db,collectionName),limit(max)));
+            return snap.docs.map(item=>({id:item.id,...item.data()}));
+        } catch(error) {
+            // Keep other dashboard cards useful when an optional legacy
+            // collection is absent or has not been indexed yet.
+            console.warn(`Command Center could not read ${collectionName}:`, error?.message||error);
+            return [];
+        }
     }
     function commandSetModuleStatus(message, error=false) { const el=document.getElementById('commandModuleStatus'); if(el){el.textContent=message||'';el.style.color=error?'#c62828':'#6d647a';} }
     async function loadCommandModule(kind, tab) {
@@ -17196,6 +17246,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok || data.ok === false && data.error) throw new Error(data.error || `Request failed (${response.status})`);
         return data;
     }
+    // The subscription modal is declared in the main application script.
+    // Expose only this authenticated request helper; payment credentials stay
+    // on the server.
+    window.task12Api = api;
 
     function feeFor(amount) {
         return Math.max(0, Math.round(Number(amount || 0) * Number(state.feePercentage || 0) / 100 + Number(state.feeFixed || 0)));

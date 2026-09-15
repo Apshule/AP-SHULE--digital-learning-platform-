@@ -73,6 +73,14 @@ describe("Task 9 Step 1 command center contracts", () => {
     }
   });
 
+  it("keeps Command Center metrics backed by current and legacy records", () => {
+    for (const value of ["payment_transactions", "transactions", "clinic_payments", "audit_logs", "commandAlerts", "commandUniqueRows", "commandLoad"]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("New platform events will appear here.");
+    expect(indexSource).toContain("No critical platform alerts.");
+  });
+
   it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
     for (const value of [
       "commandAnalyticsRange",
