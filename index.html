@@ -13077,10 +13077,35 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(currentUser?.role!=='superadmin') { showNotification('Only Super Admins can use this action','error'); return false; }
         return true;
     }
-    function closeCommandModal(id) { document.getElementById(id)?.classList.remove('show'); }
-    function openCommandModal(id) { document.getElementById(id)?.classList.add('show'); }
+    function closeCommandBlockingLayers() {
+        document.getElementById('globalSearchOverlay')?.classList.remove('show');
+        document.getElementById('globalSettingsModal')?.classList.remove('show');
+        document.getElementById('subscriptionPayModal')?.classList.remove('show');
+        document.getElementById('drawerOverlay')?.classList.remove('show');
+        document.getElementById('aiDrawer')?.classList.remove('open');
+        document.querySelectorAll('.command-fullscreen-modal.show').forEach(modal=>{
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden','true');
+        });
+        document.body.style.overflow='';
+    }
+    function closeCommandModal(id) {
+        const modal=document.getElementById(id);
+        modal?.classList.remove('show');
+        modal?.setAttribute('aria-hidden','true');
+        if(!document.querySelector('.command-fullscreen-modal.show')) document.body.style.overflow='';
+    }
+    function openCommandModal(id) {
+        closeCommandBlockingLayers();
+        const modal=document.getElementById(id);
+        if(!modal) return;
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden','false');
+        document.body.style.overflow='hidden';
+    }
     function navigateSuperAdmin(section) {
         if(currentUser?.role!=='superadmin') return;
+        closeCommandBlockingLayers();
         const pageId=commandPageIds[section]||commandPageIds.dashboard;
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
         document.getElementById(pageId)?.classList.add('active-page');
@@ -13660,6 +13685,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function initCommandCenter() {
         if(currentUser?.role!=='superadmin') return;
         window._commandCenterInitialized=true;
+        closeCommandBlockingLayers();
         initMfiCommandControls();
         const bottom=document.querySelector('.bottom-nav');
         if(bottom) {
@@ -14616,6 +14642,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(window._mfiCommandControlsInitialized) return;
         window._mfiCommandControlsInitialized=true;
          document.getElementById('seedMfiCollateralTypesBtn')?.addEventListener('click',mfiSeedCollateralTypes);
+         document.getElementById('seedMfiLoanProductsBtn')?.addEventListener('click',mfiSeedLoanProducts);
          document.getElementById('seedFarmAnimalTypesBtn')?.addEventListener('click',farmSeedAnimalTypes);
           document.getElementById('commandInstitutionType')?.addEventListener('change',event=>{document.getElementById('commandMfiInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='mfi');document.getElementById('commandClinicInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='clinic');document.getElementById('commandFarmInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='farm');});
         document.getElementById('commandUserRole')?.addEventListener('change',updateCommandInstitutionOptions);

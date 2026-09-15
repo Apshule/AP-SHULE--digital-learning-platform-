@@ -74,6 +74,14 @@ describe("Task 9 Step 1 command center contracts", () => {
     }
   });
 
+  it("keeps Command Center taps from being intercepted by stale overlays", () => {
+    expect(indexSource).toContain("function closeCommandBlockingLayers");
+    expect(indexSource).toContain("document.getElementById('globalSearchOverlay')?.classList.remove('show')");
+    expect(indexSource).toContain("document.getElementById('drawerOverlay')?.classList.remove('show')");
+    expect(indexSource).toContain("document.querySelectorAll('.command-fullscreen-modal.show')");
+    expect(indexSource).toContain("seedMfiLoanProductsBtn')?.addEventListener('click',mfiSeedLoanProducts");
+  });
+
   it("keeps Command Center metrics backed by current and legacy records", () => {
     for (const value of ["payment_transactions", "transactions", "clinic_payments", "audit_logs", "commandAlerts", "commandUniqueRows", "commandLoad"]) {
       expect(indexSource).toContain(value);
