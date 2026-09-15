@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 22;
+  var DB_VERSION = 23;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -32,6 +32,7 @@
     'offline_mfi_reports',
     'offline_mfi_loans',
     'offline_mfi_loan_payments',
+    'offline_mfi_loan_schedules',
     'offline_clinic_visits',
     'offline_clinic_prescriptions',
     'offline_clinic_checkins',
@@ -195,6 +196,7 @@
                   offline_mfi_verification: 'localId',
                   offline_mfi_portfolio: 'institutionId',
                    offline_mfi_reports: 'localId',
+                   offline_mfi_loan_schedules: 'localId',
                    offline_clinic_visits: 'localId',
                    offline_clinic_prescriptions: 'localId',
                    offline_clinic_checkins: 'localId',
@@ -367,6 +369,11 @@
             if (!loanStore.indexNames.contains('institutionId')) loanStore.createIndex('institutionId', 'institutionId', { unique: false });
             if (!loanStore.indexNames.contains('syncStatus')) loanStore.createIndex('syncStatus', 'syncStatus', { unique: false });
           });
+        }
+        if (oldVersion < 23 && !db.objectStoreNames.contains('offline_mfi_loan_schedules')) {
+          var scheduleStore = db.createObjectStore('offline_mfi_loan_schedules', { keyPath: 'localId' });
+          scheduleStore.createIndex('loanId', 'loanId', { unique: false });
+          scheduleStore.createIndex('institutionId', 'institutionId', { unique: false });
         }
       };
       request.onsuccess = function () {
@@ -1503,6 +1510,20 @@
     markMfiLoanPaymentSynced: function (localId, extra) {
       return getRecord('offline_mfi_loan_payments', localId).then(function (item) {
         return item ? putRecord('offline_mfi_loan_payments', Object.assign({}, item, extra || {}, { syncStatus: 'synced', syncedAt: Date.now() })) : false;
+      });
+    },
+    cacheMfiLoanSchedule: function (schedule) {
+      schedule = schedule || {};
+      if (!schedule.institutionId || !schedule.loanId) return fail('An institution and loan are required');
+      var value = Object.assign({}, schedule, { localId: schedule.localId || 'mfi-schedule-' + schedule.loanId, cachedAt: Date.now() });
+      return putRecord('offline_mfi_loan_schedules', value).then(function () { return value; });
+    },
+    getMfiLoanSchedule: function (loanId) {
+      return getRecord('offline_mfi_loan_schedules', 'mfi-schedule-' + loanId);
+    },
+    listMfiLoanSchedules: function (institutionId) {
+      return allRecords('offline_mfi_loan_schedules').then(function (items) {
+        return items.filter(function (item) { return !institutionId || item.institutionId === institutionId; });
       });
     },
     queueFarmMovement: function (movement) {

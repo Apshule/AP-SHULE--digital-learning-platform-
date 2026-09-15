@@ -370,6 +370,51 @@ service cloud.firestore {
       allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
       allow update, delete: if false;
     }
+    match /mfi_loan_installment_applications/{applicationId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update, delete: if false;
+    }
+    match /mfi_loan_overdue_log/{overdueId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager', 'loan_director'];
+      allow delete: if false;
+    }
+    match /mfi_credit_notes/{creditNoteId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
+      allow delete: if false;
+    }
+    match /mfi_loan_restructures/{restructureId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_manager', 'loan_director'];
+      allow delete: if false;
+    }
+    match /mfi_loan_writeoffs/{writeoffId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() in ['mfi_admin', 'loan_officer', 'loan_manager'];
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_director'];
+      allow delete: if false;
+    }
+    match /mfi_late_fee_config/{configId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId);
+      allow create, update: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() == 'mfi_admin';
+      allow delete: if false;
+    }
+    match /mfi_credit_note_refund_requests/{requestId} {
+      allow read: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId)
+        || (signedIn() && role() == 'borrower' && resource.data.customerId == request.auth.uid);
+      allow create: if isSuperAdmin() || sameMfiInstitution(request.resource.data.institutionId) && role() == 'borrower'
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if isSuperAdmin() || sameMfiInstitution(resource.data.institutionId) && role() in ['mfi_admin', 'loan_director'];
+      allow delete: if false;
+    }
 
     // Clinic records are institution-scoped. Reception can manage demographics
     // and scheduling, but cannot read visits or prescriptions.

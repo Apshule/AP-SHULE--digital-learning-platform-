@@ -1040,6 +1040,77 @@
         { "fieldPath": "institutionId", "order": "ASCENDING" },
         { "fieldPath": "isActive", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "mfi_loan_installment_applications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "loanId", "order": "ASCENDING" },
+        { "fieldPath": "appliedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_overdue_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "currentStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_overdue_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "loanId", "order": "ASCENDING" },
+        { "fieldPath": "daysOverdue", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_credit_notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_credit_notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_restructures",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "loanId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_restructures",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "approvedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_loan_writeoffs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "mfi_late_fee_config",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "institutionId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

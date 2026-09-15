@@ -295,7 +295,7 @@ describe("Task 14 Step 1 full MFI loan lifecycle contracts", () => {
   });
 
   it("adds versioned offline loan draft and payment queues with sync hooks", () => {
-    expect(offlineSource).toContain("var DB_VERSION = 22");
+    expect(offlineSource).toContain("var DB_VERSION = 23");
     expect(offlineSource).toContain("offline_mfi_loans");
     expect(offlineSource).toContain("offline_mfi_loan_payments");
     for (const value of [
@@ -318,5 +318,136 @@ describe("Task 14 Step 1 full MFI loan lifecycle contracts", () => {
     expect(indexSource).toContain("Payment history");
     expect(indexSource).toContain("Repayment schedule");
     expect(indexSource).toContain("Pay Now");
+  });
+});
+
+function loadStep2Allocator() {
+  const match = indexSource.match(/function mfiStep2Today[\s\S]*?window\.mfiApplyPaymentToLoan=mfiApplyPaymentToLoan;/);
+  if (!match) throw new Error("MFI Step 2 payment engine was not found");
+  const source = match[0].replace(/\n    window\.mfiApplyPaymentToLoan=mfiApplyPaymentToLoan;$/, "");
+  const context = vm.createContext({});
+  vm.runInContext(`${source}\nthis.mfiApplyPaymentToLoan = mfiApplyPaymentToLoan; this.mfiStep2EscalationLevel = mfiStep2EscalationLevel;`, context);
+  return {
+    apply: context.mfiApplyPaymentToLoan as (amount: number, rows: Array<Record<string, unknown>>, options?: Record<string, unknown>) => any,
+    level: context.mfiStep2EscalationLevel as (days: number) => number,
+  };
+}
+
+describe("Task 14 Step 2 — partial payments, risk controls, and portals", () => {
+  it("A. marks an installment partially_paid and applies interest before principal", () => {
+    const { apply } = loadStep2Allocator();
+    const result = apply(100_000, [{
+      id: "installment-1",
+      loanId: "loan-1",
+      installmentNumber: 1,
+      dueDate: "2099-11-15",
+      principalDue: 125_558,
+      interestDue: 100_000,
+      totalDue: 225_558,
+      status: "pending",
+    }], { loanId: "loan-1" });
+    expect(result.overpayment).toBe(0);
+    expect(result.applications[0]).toMatchObject({ amountToInterest: 100_000, amountToPrincipal: 0, amountToLateFee: 0 });
+    expect(result.updatedSchedule[0]).toMatchObject({ status: "partially_paid", interestPaid: 100_000, principalPaid: 0, remainingBalance: 125_558 });
+  });
+
+  it("B. cascades across installments and creates an overpayment balance", () => {
+    const { apply } = loadStep2Allocator();
+    const result = apply(250, [
+      { id: "one", installmentNumber: 1, dueDate: "2099-01-01", principalDue: 50, interestDue: 50, totalDue: 100, status: "pending" },
+      { id: "two", installmentNumber: 2, dueDate: "2099-02-01", principalDue: 50, interestDue: 50, totalDue: 100, status: "pending" },
+    ], { loanId: "loan-1" });
+    expect(result.applications.map((row: any) => row.installmentId)).toEqual(["one", "two"]);
+    expect(result.updatedSchedule.every((row: any) => row.status === "paid")).toBe(true);
+    expect(result.overpayment).toBe(50);
+    expect(result.remainingLoanBalance).toBe(0);
+  });
+
+  it("C. applies late fees before interest and principal", () => {
+    const { apply } = loadStep2Allocator();
+    const result = apply(5_000, [{
+      id: "late",
+      installmentNumber: 1,
+      dueDate: "2026-01-01",
+      principalDue: 10_000,
+      interestDue: 5_000,
+      lateFeeApplied: 5_000,
+      status: "overdue",
+    }]);
+    expect(result.applications[0]).toMatchObject({ amountToLateFee: 5_000, amountToInterest: 0, amountToPrincipal: 0 });
+    expect(result.updatedSchedule[0].lateFeeDue).toBe(0);
+    expect(result.updatedSchedule[0].interestBalance).toBe(5_000);
+  });
+
+  it("D. progresses overdue escalation from notice to warning, final, and legal", () => {
+    const { level } = loadStep2Allocator();
+    expect([level(1), level(8), level(15), level(61)]).toEqual([1, 2, 3, 4]);
+    expect(indexSource).toContain("mfiStep2RunOverdueScan");
+    expect(indexSource).toContain("mfi_loan_overdue_log");
+    expect(indexSource).toContain("field_visit");
+  });
+
+  it("E. creates and presents credit notes for overpayments", () => {
+    for (const value of ["mfi_credit_notes", "balanceRemaining", "expiryDate", "mfiStep2CreateCreditNote", "Request refund"]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("overpayment");
+  });
+
+  it("F. requires manager then director approval before restructuring", () => {
+    expect(indexSource).toContain("pending_manager");
+    expect(indexSource).toContain("manager_approved");
+    expect(indexSource).toContain("loan_director");
+    expect(indexSource).toContain("mfi_loan_restructures");
+    expect(indexSource).toContain("status!=='manager_approved'");
+    expect(rulesSource).toContain("match /mfi_loan_restructures/{restructureId}");
+  });
+
+  it("G. requires director approval before a loan becomes written_off", () => {
+    expect(indexSource).toContain("mfi_loan_writeoffs");
+    expect(indexSource).toContain("status:'written_off'");
+    expect(indexSource).toContain("Only a Director can approve write-offs");
+    expect(rulesSource).toContain("match /mfi_loan_writeoffs/{writeoffId}");
+  });
+
+  it("H. exposes borrower progress, partial balances, credit notes, and history", () => {
+    for (const value of ["mfiStep2RenderBorrower", "mfiStep2BorrowerLoanDetails", "mfiStep2CreditNotes", "Pay remaining", "Payment history", "Request restructure"]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("I. exposes portfolio health metrics and overdue officer/manager views", () => {
+    for (const value of ["Repayment rate", "Portfolio at risk", "Loans in arrears", "Overdue Monitoring", "Manager approve", "Director approve"]) {
+      expect(indexSource).toContain(value);
+    }
+  });
+
+  it("J. preserves offline schedule and payment records, while keeping restructures online-only", () => {
+    for (const value of ["DB_VERSION = 23", "offline_mfi_loan_schedules", "cacheMfiLoanSchedule", "queueMfiLoanPayment", "scheduleAfter", "Restructure requests require internet", "Credit note operations require internet"]) {
+      expect(indexSource + offlineSource).toContain(value);
+    }
+    expect(offlineSource).toContain("if (oldVersion < 23");
+  });
+
+  it("K. keeps Step 1 lifecycle surfaces and all nine Step 2 indexes intact", () => {
+    for (const [collectionGroup, fields] of [
+      ["mfi_loan_installment_applications", ["loanId", "appliedAt"]],
+      ["mfi_loan_overdue_log", ["institutionId", "currentStatus"]],
+      ["mfi_loan_overdue_log", ["loanId", "daysOverdue"]],
+      ["mfi_credit_notes", ["customerId", "status"]],
+      ["mfi_credit_notes", ["institutionId", "createdAt"]],
+      ["mfi_loan_restructures", ["loanId", "createdAt"]],
+      ["mfi_loan_restructures", ["institutionId", "approvedAt"]],
+      ["mfi_loan_writeoffs", ["institutionId", "status"]],
+      ["mfi_late_fee_config", ["institutionId"]],
+    ] as Array<[string, string[]]>) {
+      expect(indexes.indexes.some(index =>
+        index.collectionGroup === collectionGroup &&
+        fields.every(field => index.fields.some(item => item.fieldPath === field))
+      )).toBe(true);
+    }
+    expect(indexSource).toContain("mfiLoanCanDisburse");
+    expect(indexSource).toContain("mfiGenerateLoanSchedule");
+    expect(rulesSource).toContain("match /mfi_late_fee_config/{configId}");
   });
 });

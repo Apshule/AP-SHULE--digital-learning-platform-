@@ -8,5 +8,6 @@
 - [Preview build environment](preview-build-environment.md) — Full workspace builds need explicit PORT and BASE_PATH values for the mockup preview.
 - [MFI reporting boundaries](mfi-reporting-boundaries.md) — Director analytics and offline report snapshots are read-only; approvals, borrower edits, and institution-crossing reads stay rule-gated.
 - [IndexedDB version migrations](indexeddb-version-migrations.md) — New offline stores need an explicit versioned upgrade branch, not only an updated initial store list.
+- [MFI installment balance compatibility](mfi-installment-balance-compatibility.md) — Normalize legacy paidAmount/paidPrincipal schedules before applying Step 2 component balances.
 - [Yo payment boundaries](yo-payment-boundaries.md) — Keep Yo credentials, signed callbacks, and balance mutations server-side; clients handle references and status only.
 - [Farm Step 2 offline safety](farm-step2-offline-safety.md) — Cache farm inventory locally and make feed sync idempotent so retries cannot deduct stock twice.
