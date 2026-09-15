@@ -12,3 +12,4 @@
 - [MFI installment balance compatibility](mfi-installment-balance-compatibility.md) — Normalize legacy paidAmount/paidPrincipal schedules before applying Step 2 component balances.
 - [Yo payment boundaries](yo-payment-boundaries.md) — Keep Yo credentials, signed callbacks, and balance mutations server-side; clients handle references and status only.
 - [Farm Step 2 offline safety](farm-step2-offline-safety.md) — Cache farm inventory locally and make feed sync idempotent so retries cannot deduct stock twice.
+- [Command Center overlay guards](command-center-overlay-guards.md) — Clear unrelated fullscreen layers and bind every Super Admin quick action during its own bootstrap.
