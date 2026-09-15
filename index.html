@@ -119,17 +119,21 @@
         .global-settings-btn,.global-sync-status-btn { position:relative; width:38px; height:38px; border:1px solid rgba(255,255,255,.35); border-radius:50%; background:rgba(255,255,255,.16); color:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
         .global-settings-btn i { font-size:17px; }
         .global-sync-status-btn { width:auto; min-width:38px; padding:0 9px; gap:5px; border-radius:20px; font-size:11px; font-weight:800; }
-        .global-sync-dot { width:9px; height:9px; border-radius:50%; background:#bdbdbd; box-shadow:0 0 0 3px rgba(255,255,255,.12); }
-        .global-sync-status-btn[data-status="synced"] .global-sync-dot { background:#69d28b; }
-        .global-sync-status-btn[data-status="pending"] .global-sync-dot { background:#ffd166; }
+         .global-sync-dot { width:9px; height:9px; border-radius:50%; background:transparent; box-shadow:none; }
+         .global-sync-status-btn[data-status="pending"] .global-sync-dot { background:#ffd166; box-shadow:0 0 0 3px rgba(255,209,102,.18); }
         .global-sync-status-btn[data-status="failed"] .global-sync-dot { background:#ff6b6b; }
         .global-sync-count { display:none; }
         .global-sync-status-btn[data-status="pending"] .global-sync-count { display:inline; }
-        .global-sync-popover { position:absolute; top:48px; right:76px; width:245px; z-index:1050; display:none; background:#fff; color:#333; border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(20,10,50,.25); }
+         .global-sync-popover { position:absolute; top:48px; right:76px; width:245px; z-index:1050; display:none; background:#fff; color:#333; border-radius:16px; padding:14px; box-shadow:0 10px 30px rgba(20,10,50,.25); }
         .global-sync-popover.show { display:block; }
         .global-sync-popover h4 { margin:0 0 8px; color:#4B2E9E; font-size:14px; }
         .global-sync-popover p { margin:4px 0; color:#666; font-size:12px; }
         .global-sync-popover button { width:100%; margin-top:9px; border:0; border-radius:20px; padding:9px; background:#4B2E9E; color:#fff; font-weight:800; cursor:pointer; }
+         .global-sync-popover-close { position:absolute; top:8px; right:8px; width:28px !important; height:28px; margin:0 !important; padding:0 !important; border-radius:50% !important; background:#f0ebfb !important; color:#4B2E9E !important; font-size:18px; line-height:1; }
+         .global-sync-popover-close:hover, .global-sync-popover-close:focus-visible { background:#e2d8f7 !important; outline:2px solid #4B2E9E; outline-offset:2px; }
+         .connection-mode-badge[data-online="false"] .connection-dot { background:#ff6b6b; box-shadow:0 0 0 3px rgba(255,107,107,.18); }
+         .connection-mode-badge[data-syncing="true"] .connection-dot { animation:syncOnlinePulse 1.1s ease-in-out infinite; }
+         @keyframes syncOnlinePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.7); opacity:.55; } }
         .global-settings-modal { position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,13,48,.75); }
         .global-settings-modal.show { display:flex; }
         .global-settings-shell { display:flex; flex-direction:column; width:100%; max-width:560px; max-height:92vh; overflow:hidden; background:#fff; border-radius:22px; box-shadow:0 15px 55px rgba(20,10,50,.35); }
@@ -1861,10 +1865,10 @@
             <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div id="appTagline" class="tagline" data-i18n="tagline">Digital Learning Platform</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
-            <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" role="status" aria-live="polite" aria-label="Connection mode: Offline mode">
+            <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" data-online="false" data-syncing="false" role="status" aria-live="polite" aria-label="Offline">
                 <span class="connection-dot" aria-hidden="true"></span><span id="connectionModeLabel" class="connection-label">Offline mode</span>
             </div>
-            <button id="globalSyncStatusBtn" class="global-sync-status-btn" type="button" data-status="offline" aria-label="Offline sync status" aria-expanded="false"><span class="global-sync-dot" aria-hidden="true"></span><span class="global-sync-count">0</span></button>
+            <button id="globalSyncStatusBtn" class="global-sync-status-btn" type="button" data-status="offline" aria-label="Sync status" title="Sync status" aria-expanded="false"><span class="global-sync-dot" aria-hidden="true"></span><span class="global-sync-count">0</span></button>
             <button id="globalSettingsBtn" class="global-settings-btn" type="button" aria-label="Open Settings &amp; Preferences" title="Settings &amp; Preferences"><i class="fas fa-cog" aria-hidden="true"></i></button>
             <button id="headerSyncNowBtn" class="sync-now-btn" type="button" aria-label="Sync now" aria-busy="false"><i class="fas fa-sync-alt" aria-hidden="true"></i><span class="sync-label">Sync Now</span></button>
             <button class="search-icon-btn" id="openGlobalSearchBtn" title="Search everything"><i class="fas fa-search"></i></button>
@@ -1880,6 +1884,7 @@
             </div>
         </div>
         <div id="globalSyncPopover" class="global-sync-popover" role="dialog" aria-label="Sync status">
+            <button id="globalSyncPopoverCloseBtn" class="global-sync-popover-close" type="button" aria-label="Close sync status">&times;</button>
             <h4>Sync status</h4>
             <p id="globalSyncStatusText">Offline — work will sync when connected.</p>
             <p id="globalSyncLastText">Last sync: Not synced yet</p>
