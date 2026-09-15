@@ -88,6 +88,16 @@ describe("Task 9 Step 1 command center contracts", () => {
     expect(indexSource).toContain("scope: \"/\"");
   });
 
+  it("routes normalized role profiles to their sector bootstrap", () => {
+    for (const role of ["super_admin", "school_admin", "student", "mfi admin", "clinic admin", "farm admin"]) {
+      expect(indexSource).toContain(`'${role}'`);
+    }
+    for (const contract of ["function normalizeAppRole", "function profileRole", "function routeAuthenticatedUser", "isClinicRole()", "isFarmRole()", "document.getElementById('adminMenuItem')?.click()"]) {
+      expect(indexSource).toContain(contract);
+    }
+    expect(indexSource).toContain("role==='teacher'?'teacher':'home'");
+  });
+
   it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
     for (const value of [
       "commandAnalyticsRange",

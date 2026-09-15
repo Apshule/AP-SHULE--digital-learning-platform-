@@ -55,7 +55,8 @@ describe("Task 10 Step 1 MFI foundation contracts", () => {
     expect(indexSource).toContain("function isMfiRole");
     expect(indexSource).toContain("function mfiRequireAccess");
     expect(indexSource).toContain("setupMfiNavigation");
-    expect(indexSource).toContain("if(isSuper) navigateSuperAdmin('dashboard'); else if(isMfi)");
+    expect(indexSource).toContain("function routeAuthenticatedUser");
+    expect(indexSource).toContain("role==='teacher'?'teacher':'home'");
   });
 
   it("includes customer, collateral, documents, branches, and seeded type surfaces", () => {

@@ -15526,6 +15526,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
         restoreStandardNavigation();
         navigateTo(role==='teacher'?'teacher':'home');
+        if(isSchoolRole()) document.getElementById('adminMenuItem')?.click();
     }
 
     // ===== LOAD USER =====
