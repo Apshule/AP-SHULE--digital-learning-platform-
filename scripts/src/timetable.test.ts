@@ -87,6 +87,18 @@ describe("Task 15 bug fixes", () => {
     expect(indexSource).toContain("PDF not available");
     expect(indexSource).toContain("Meeting link not available yet");
   });
+
+  it("opens every subscription plan in the Yo payment flow", () => {
+    expect(indexSource).toContain('id="subscriptionPayModal"');
+    expect(indexSource).toContain("data-plan-cycle");
+    for (const plan of ["Daily", "Weekly", "Monthly", "Term", "Half Year", "Full Year"]) {
+      expect(indexSource).toContain(plan);
+    }
+    expect(indexSource).toContain("function submitSubscriptionPayment");
+    expect(indexSource).toContain("api('/api/payments/initiate'");
+    expect(indexSource).toContain("Please contact your school admin to subscribe");
+    expect(indexSource).not.toContain("Online payment is coming soon");
+  });
 });
 
 describe("APSHULE branding consistency", () => {

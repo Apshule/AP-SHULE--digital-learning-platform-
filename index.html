@@ -5892,7 +5892,7 @@
 
     // ===== PAYMENT =====
     function initiateFlutterwavePayment() {
-        showNotification('Online payment is coming soon. Please contact us to arrange payment.', 'info');
+        showContextualMessage(document.activeElement,'Please contact your school admin to subscribe','info');
     }
 
     // ===== FEEDBACK / QUESTIONS =====
