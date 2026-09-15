@@ -1,0 +1,217 @@
+CRITICAL — APPSHULE IS FULLY BROKEN. FIX IMMEDIATELY.
+
+SITUATION REPORT:
+
+The app is not functioning. Multiple critical failures across all sectors.
+
+Evidence from a live test on appshule.com:
+
+1. Student account works (basic education features visible)
+
+2. School Admin account:
+- User logs in successfully
+- But the screen shows the STUDENT home page, not the School Admin dashboard
+- The role detection is failing — a School Admin should see their own 
+  dashboard, not the student view
+
+3. MFI, Clinic, and Farming sectors:
+- These sectors were working in earlier tasks
+- They are now completely broken
+- Users with MFI, Clinic, or Farm roles are not being routed to their 
+  correct dashboards
+
+4. Super Admin Command Center:
+- Initially shows the student home page briefly
+- Then switches to show "APSHULE COMMAND CENTER" header
+- But NONE of the Command Center features work
+- Quick Stats show zeros or placeholders
+- Quick Actions grid is empty or non-functional
+- All management sections (Users, Institutions, Content, Payments, 
+  NCDC, Live, Communication, Analytics, Settings, Security) are blank 
+  or missing
+
+ROOT CAUSE ANALYSIS (most likely):
+
+The Super Admin Command Center is intended to be the CENTRAL HUB for 
+the entire platform. It should:
+- Detect the logged-in user's role
+- Route them to the correct dashboard for their sector
+- For Super Admin: show the Command Center with all management features
+- For School Admin: show the School Admin dashboard
+- For MFI roles: show the MFI dashboard
+- For Clinic roles: show the Clinic dashboard
+- For Farm roles: show the Farm dashboard
+
+Currently, the routing is broken and everyone defaults to the student 
+home page. This suggests:
+- The role detection function is failing
+- OR the routing logic was overwritten during Task 15
+- OR the Command Center was built but is not wired to pull features 
+  from the 4 sectors
+
+WHAT IS REQUIRED — ROLE-BASED ROUTING (must work):
+
+When ANY user logs in, the system must:
+
+Step 1 — Read the user's role from Firestore (users collection)
+
+Step 2 — Route based on role:
+- role = "superadmin" → show APSHULE COMMAND CENTER with all modules
+- role = "school" or "school_admin" → show School Admin Dashboard
+- role = "teacher" → show Teacher Dashboard
+- role = "student" or "individual" → show Student Home
+- role = "loan_officer" / "loan_manager" / "loan_director" / 
+  "mfi_admin" → show MFI Dashboard
+- role = "clinic_admin" / "doctor" / "nurse" / "receptionist" / 
+  "pharmacist" → show Clinic Dashboard
+- role = "farm_admin" / "farm_manager" / "farm_worker" → 
+  show Farm Dashboard
+
+Step 3 — Show the correct bottom navigation for that role:
+- Student: Home, Resources, Live, Alerts, Account, About
+- Teacher: Home, Resources, Dashboard, Alerts, Account, About
+- School Admin: Home, Resources, Live, Alerts, Account, About 
+  + Admin Panel via 3-dot menu
+- MFI roles: Home, Customers, Collateral, Reports, Account
+- Clinic roles: Home, Patients, Appointments, Billing, Account
+- Farm roles: Home, Animals, Workers, Reports, Account
+- Super Admin: Dashboard, Users, Institutions, Analytics, Settings
+
+SUPER ADMIN COMMAND CENTER — MUST BE FULLY FUNCTIONAL:
+
+The APSHULE COMMAND CENTER must serve as the CENTRAL HUB that 
+fetches features from all 4 sectors into one unified interface.
+
+Required functionality for each tab:
+
+Dashboard Tab:
+- Quick Stats: Total Users, Active Institutions, Monthly Revenue, 
+  Published Videos, Pending Approvals, Clinics, Clinic Revenue
+- Quick Actions: 8 or more buttons that open their respective modals 
+  (Users, Institutions, Content, Payments, NCDC, Live, Announce, 
+  Reports)
+- Recent Activity feed with real events
+- Alerts section with pending items
+
+Users Tab:
+- List all users with filters
+- Add / Edit / Delete users
+- Role-based filtering
+- CSV import
+
+Institutions Tab:
+- List all institutions (Schools, MFIs, Clinics, Farms)
+- Add / Edit / Delete
+- Branding editor per institution
+- Filters by type
+
+Analytics Tab:
+- Growth, Engagement, Institutions, Revenue, Content sections
+- Charts that render correctly
+- Date range filters
+
+Settings Tab:
+- Platform settings
+- Subscription pricing
+- Payment gateway config
+- Integration status
+- Security and permissions
+
+All other management modals (Content, Payments, NCDC Control, 
+Live Lesson Control, Communication, Security) must open and show 
+real data.
+
+FIX SEQUENCE:
+
+Phase 1 — Restore role-based routing (MOST CRITICAL):
+1. Locate the login success handler
+2. Read the user's role from the users collection
+3. Route to the correct dashboard for that role
+4. Show the correct bottom navigation
+5. Test with 1 user per role: student, teacher, school admin, 
+   loan officer, clinic admin, farm admin, super admin
+
+Phase 2 — Restore Super Admin Command Center:
+1. Verify the Command Center header shows correctly
+2. Load Quick Stats from Firestore (real counts, not zeros)
+3. Populate Quick Actions grid with 8 working buttons
+4. Wire each Quick Action to open its modal
+5. Load Recent Activity feed with real events
+6. Load Alerts with pending items
+7. Test each tab: Dashboard, Users, Institutions, Analytics, Settings
+
+Phase 3 — Restore MFI, Clinic, Farm dashboards:
+1. Verify each sector's dashboard loads when that role logs in
+2. Verify bottom navigation matches the sector
+3. Verify each sector's features are accessible
+4. Test one user per sector
+
+Phase 4 — Restore School Admin and Teacher dashboards:
+1. Verify School Admin sees their dashboard (not student view)
+2. Verify Teacher sees their dashboard
+3. Verify Admin Panel is accessible via 3-dot menu
+
+Phase 5 — Regression and stability:
+1. Confirm no console errors
+2. Confirm no "api is not defined" errors
+3. Confirm no blank screens
+4. Test all 4 sectors end to end
+
+TESTING CHECKLIST:
+
+For each role, create a test user and verify:
+
+Student:
+- Lands on Student Home with class grid
+- Bottom nav shows: Home, Resources, Live, Alerts, Account, About
+- Can access videos, PDFs, subscriptions
+
+Teacher:
+- Lands on Teacher Dashboard
+- Bottom nav shows: Home, Resources, Dashboard, Alerts, Account, About
+- Can see CBC Teaching Tools, NCDC Course, Lesson Planner
+
+School Admin:
+- Lands on School Admin dashboard (NOT student view)
+- Can access Admin Panel via 3-dot menu
+- Can see Students, Teachers, Report Cards, NCDC Compliance
+
+MFI Loan Officer:
+- Lands on MFI Dashboard
+- Bottom nav shows: Home, Customers, Collateral, Reports, Account
+- Can access loan workflow
+
+MFI Loan Manager:
+- Lands on Manager dashboard
+- Can see pending loan reviews
+
+Clinic Doctor:
+- Lands on Clinic Dashboard
+- Bottom nav shows: Home, Patients, Appointments, Billing, Account
+- Can access patient records
+
+Farm Admin:
+- Lands on Farm Dashboard
+- Bottom nav shows: Home, Animals, Workers, Reports, Account
+- Can access animal tracking, egg counting
+
+Super Admin:
+- Lands on APSHULE COMMAND CENTER
+- Bottom nav shows: Dashboard, Users, Institutions, Analytics, Settings
+- Quick Stats show real numbers
+- Quick Actions grid works
+- Can navigate all management tabs
+
+IMPORTANT:
+- Do NOT rebuild the app
+- Do NOT create new collections or change data
+- Fix the ROUTING logic first — everything else depends on it
+- Then fix the Command Center
+- Then verify each sector
+- Test with real users (one per role)
+- Report back with confirmation for each phase
+
+Confirm when done with:
+"CRITICAL FIX COMPLETE — Role-based routing restored, 
+APSHULE COMMAND CENTER fully functional, all 4 sectors routing 
+correctly to their dashboards, no blank screens"

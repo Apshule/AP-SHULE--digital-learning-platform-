@@ -1,0 +1,120 @@
+Task 15 — CRITICAL BUG FIXES (Multiple Issues):
+
+PRIORITY 1 — SUBSCRIPTION PAYMENT MODAL IS BROKEN
+The subscription payment modal does not work properly.
+
+Current issues:
+- The modal is not centered on screen
+- The Continue button is cut off on the right edge
+- The "api is not defined" error appears in the Term Plan card slot 
+  instead of that plan rendering correctly
+- After entering the phone number and tapping Continue, nothing 
+  happens
+- The card layout is broken in the subscription grid — one of the 
+  plan cards (Term Plan position) shows an error text instead of 
+  the plan
+
+Fix:
+- Center the payment modal properly on all screen sizes
+- Ensure the Continue button is fully visible and not cut off
+- Fix the "api is not defined" error — locate the undefined variable 
+  and either define it or use the correct reference
+- Make sure all 6 subscription plans render correctly: 
+  Daily, Weekly, Monthly, Term Plan, Half Year, Full Year
+- When user taps Continue with MTN or Airtel selected:
+  * Validate phone number format
+  * Either open the Yo! Payments prompt OR show a clear message 
+    "Payment provider not yet configured. Please contact support."
+- Test on 375 px width (mobile) and 1440 px width (desktop)
+
+PRIORITY 2 — SUPER ADMIN COMMAND CENTER IS EMPTY
+The Super Admin Command Center shows Quick Stats with zeros:
+- Total users: 27 (should be higher)
+- Active institutions: 2
+- Monthly revenue: UGX 0
+- Published videos: 0
+- Pending approvals: 0
+- Clinics: 0
+- Clinic revenue this month: UGX 0
+
+Also:
+- Quick Actions section is empty
+- Recent activity is not showing
+- Most admin sections render blank
+
+Fix:
+- Verify all stat queries are pulling correct data from Firestore
+- Show Quick Actions grid with at least 8 buttons: 
+  Users, Institutions, Content, Payments, NCDC, Live, Announce, Reports
+- Show Recent Activity feed with real events
+- Show alerts section with any pending items
+- Test: log in as Super Admin, confirm all stats and quick actions 
+  display correctly
+
+PRIORITY 3 — ONLY EDUCATION SECTOR IS FUNCTIONING
+The user reports that only the Education sector works fully.
+The MFI, Clinic, and Farming sectors are not functional.
+
+Verify each sector:
+- Education: Students, Teachers, School Admins can all log in and 
+  use features
+- MFI: Loan Officers, Managers, Directors should see their own 
+  dashboards when logged in with MFI roles
+- Clinic: Doctors, Nurses, Receptionists should see their dashboards
+- Farming: Farm Admins, Workers should see their dashboards
+
+Fix:
+- Confirm role-based routing sends users to the correct dashboard
+  when they log in
+- If MFI/Clinic/Farming users are being sent to the Education 
+  screen by mistake, correct the role detection
+- Verify each sector's main navigation loads when that role logs in
+- Test: create one user per sector, log in as each, confirm they 
+  see the correct dashboard
+
+PRIORITY 4 — SYNC BUTTON LAYOUT IS BROKEN
+The Sync button in the header is overlapping with other elements:
+- The text "Sync Now (0 items - 0 B)" is cut off at the left
+- The search icon, AI icon, and menu icon are crowded on the right
+- The layout shifts when the sync status changes
+
+Fix:
+- Ensure the sync indicator does not push other header elements 
+  out of place
+- On mobile, if the sync text is too long, shorten it to 
+  "Synced" or "3 pending"
+- Icons on the right should have consistent spacing
+- Test at 375 px width
+
+PRIORITY 5 — GENERAL STABILITY
+After fixing the above:
+- Confirm no console errors on any screen
+- Confirm no "api is not defined" errors anywhere
+- Confirm no broken layout on subscription, command center, or 
+  dashboard pages
+- Confirm all 4 sectors render correctly for their roles
+
+TESTING:
+1. Login as student: tap each subscription plan, confirm modal 
+   opens centered with all fields visible
+2. Enter MTN phone number, tap Continue — should show clear 
+   message or open payment
+3. Login as Super Admin: verify Quick Stats show real data, 
+   Quick Actions grid shows 8 buttons, Recent Activity shows events
+4. Login as MFI Loan Officer: verify MFI dashboard loads
+5. Login as Clinic Doctor: verify Clinic dashboard loads
+6. Login as Farm Admin: verify Farm dashboard loads
+7. Check header on mobile: sync button should not overlap icons
+8. Confirm no "api is not defined" error appears anywhere
+
+IMPORTANT:
+- Do NOT rebuild the app
+- Do NOT break any features from Tasks 1 through 15
+- Fix all 5 priorities in order
+- Test each fix before moving to the next
+- Report back with confirmation for each priority
+
+Confirm when done with:
+"Task 15 Critical Bug Fixes complete — Subscription modal works, 
+Super Admin Command Center functional, all 4 sectors route 
+correctly, header layout fixed, no console errors"
