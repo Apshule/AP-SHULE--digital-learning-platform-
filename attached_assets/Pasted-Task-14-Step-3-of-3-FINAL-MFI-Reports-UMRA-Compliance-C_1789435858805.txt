@@ -1,0 +1,571 @@
+Task 14 — Step 3 of 3 (FINAL): MFI Reports + UMRA Compliance + Customer Form Enhancement + Full Regression (Tasks 1-14)
+
+CONTEXT:
+- Task 14 Steps 1 & 2 complete: Full loan lifecycle + Partial payments + Overdue + Credit notes + Late fees + Restructure + Write-off
+- This is the FINAL step for the entire AppShule project
+- Step 3 delivers: Customer form enhancements, MFI reports, UMRA compliance, MFI Admin/Director dashboards, and full system regression
+
+GOAL OF STEP 3:
+1. Enhance MFI Customer Form (Spouse + NOK + 2 Guarantors)
+2. Complete MFI reporting suite
+3. UMRA-compliant regulatory reports
+4. MFI Director + Admin dashboards
+5. Cross-sector integration with Super Admin
+6. Full regression across all 14 tasks
+7. Production readiness
+
+═══════════════════════════════════════════════════════════════
+PART A0: MFI CUSTOMER FORM ENHANCEMENT (Spouse + NOK + 2 Guarantors)
+═══════════════════════════════════════════════════════════════
+
+CONTEXT:
+- Task 10 built mfi_customers with basic fields
+- Standard MFI practice + UMRA compliance requires:
+  1. Spouse/Next of Kin details
+  2. TWO guarantors per customer (not just one)
+
+A. VERIFY EXISTING mfi_customers FIELDS:
+Check if these fields already exist; if ANY are missing, ADD them via a 
+migration function that does NOT delete existing customer records:
+- maritalStatus
+- spouseName, spousePhone, spouseOccupation, spouseNationalId, spouseConsent
+- nextOfKinName, nextOfKinPhone, nextOfKinRelationship, nextOfKinAddress
+- guarantors (array of 2 objects)
+
+B. SPOUSE / NEXT OF KIN SECTION:
+Extend the MFI Customer Registration form (Task 10) with:
+
+Section 5 — Spouse / Next of Kin:
+- Marital Status (dropdown): Single / Married / Divorced / Widowed / Separated
+- If Married (conditionally shown):
+  * Spouse Full Name (required)
+  * Spouse Phone (required)
+  * Spouse Occupation
+  * Spouse National ID
+  * Spouse Consent (checkbox — consent to use as co-signer if needed)
+- Next of Kin (always required):
+  * NOK Full Name (required)
+  * NOK Phone (required)
+  * NOK Relationship (dropdown): Spouse/Parent/Sibling/Child/Friend/Guardian/Other
+  * NOK Address
+
+C. TWO GUARANTOR SECTIONS:
+Extend the MFI Customer Registration form with TWO guarantor blocks 
+(optional at customer level — required per loan based on product):
+
+Guarantor 1:
+- Full Name
+- Phone
+- National ID
+- Relationship to Customer (dropdown)
+- Occupation
+- Physical Address
+- Employment Type (Employed / Self-employed / Farmer / Retired / Other)
+- Monthly Income (UGX)
+- ID Upload (front + back)
+- Signed Guarantor Form Upload
+
+Guarantor 2 (same fields):
+- Full Name, Phone, National ID, Relationship, Occupation
+- Physical Address, Employment Type, Monthly Income
+- ID Upload (front + back)
+- Signed Guarantor Form Upload
+
+STORAGE (mfi_customers.guarantors array):
+[
+  {
+    fullName, phone, nationalId, relationship, occupation,
+    physicalAddress, employmentType, monthlyIncome,
+    idFrontPath, idBackPath, signedFormPath,
+    verified (boolean), verifiedAt, verifiedBy
+  },
+  { ...guarantor 2... }
+]
+
+D. UPDATE LOAN APPLICATION:
+When applying for a loan that requires guarantors:
+- Show existing customer's guarantors
+- Allow selecting 1 or 2 for this specific loan
+- OR add new guarantors for this loan
+- Store selected guarantors in microfinance_loans.guarantorIds
+
+E. UPDATE CUSTOMER DETAIL VIEW:
+Add a "Guarantors & Family" tab showing:
+- Spouse info
+- Next of Kin
+- Guarantor 1 full profile
+- Guarantor 2 full profile
+- Each with [View ID] [View Signed Form] [Edit] [Remove]
+
+F. INDEXES:
+Add: mfi_customers: institutionId (asc) + maritalStatus (asc)
+
+G. VALIDATION:
+- If Marital Status = "Married": Spouse Name + Phone required
+- If Marital Status = "Single": Spouse section hidden
+- Next of Kin: always required
+- Guarantors: optional at customer level; required per loan
+
+H. TESTING:
+1. Create MFI customer, Marital Status = "Married"
+2. Fill spouse + NOK + both guarantors → save
+3. Verify all fields stored in Firestore
+4. Open customer detail → verify all sections display
+5. Create loan → verify guarantor selection works
+6. Test with "Single" → spouse section hidden
+7. Test without guarantors → customer saves OK
+
+Confirm when done with:
+"Part A0 complete — MFI Customer Form enhanced with Spouse, NOK, 2 Guarantors"
+
+═══════════════════════════════════════════════════════════════
+PART A: MFI REPORTS MODAL
+═══════════════════════════════════════════════════════════════
+
+Add to MFI Admin home → [📊 Reports]:
+
+Full-screen modal (id="mfiReportsModal") with tabs:
+
+TAB 1 — LOAN REPORTS
+1. Loan Register — All loans with Loan# | Customer | Amount | Interest 
+   | Term | Status | Balance. Filter by date range, status, product, 
+   branch. [PDF] [Excel] [CSV]
+2. Disbursement Report — Loans disbursed in period, totals, averages
+3. Repayment Report — All payments received
+4. Arrears/Overdue Report — Aging buckets (1-30, 31-60, 61-90, 90+)
+5. Loan Loss Provision Report — Risk classification per UMRA rules
+
+TAB 2 — PORTFOLIO REPORTS
+1. Portfolio Summary — Total outstanding, customers, avg loan size
+2. Aging Analysis — Bar chart + table by age bucket
+3. Portfolio by Product — count, volume, outstanding per product
+4. Portfolio by Branch — performance ranking
+5. Portfolio at Risk — PAR 30, PAR 60, PAR 90 + industry comparison
+
+TAB 3 — FINANCIAL REPORTS
+1. Income Statement — Interest, fees, late fees, expenses, net profit
+2. Cash Flow Report — Disbursements vs Repayments, net cash flow
+3. Loan Loss Report — Write-offs, provisions, recovery
+4. Profit & Loss — Monthly + yearly with profitability ratios
+
+TAB 4 — CUSTOMER REPORTS
+1. Customer Register — All customers
+2. Top Borrowers — Top 20 by volume + outstanding
+3. Customer Statement — Per-customer full statement
+4. KYC Compliance — Complete vs missing documents
+
+TAB 5 — OFFICER REPORTS
+1. Officer Performance — loans disbursed, active loans, PAR, ranking
+2. Officer Portfolio — portfolio health per officer
+3. Commission Report — commissions owed
+
+TAB 6 — UMRA COMPLIANCE REPORTS (CRITICAL)
+1. Monthly UMRA Report — Disbursements, repayments, outstanding, 
+   PAR 30/60/90, provisions, write-offs. [PDF - UMRA Format]
+2. Quarterly UMRA Report — Consolidated quarterly + commentary
+3. Annual UMRA Report — Full year + financial statements + demographics
+4. AML/CFT Report — Suspicious transactions, >UGX 10M transactions, 
+   PEP screening
+5. Loan Classification Report — Current/Watch/Substandard/Doubtful/Loss
+
+═══════════════════════════════════════════════════════════════
+PART B: UMRA REPORT GENERATION
+═══════════════════════════════════════════════════════════════
+
+Use jsPDF + jsPDF-AutoTable.
+
+Add generateUmraReport(reportType, period):
+
+HEADER:
+- MFI name + logo
+- MFI License Number
+- UMRA Registration Number
+- Report type + period
+
+BODY:
+- Executive summary
+- Data tables in UMRA format
+- Portfolio metrics
+- Compliance indicators
+- Financial statements
+
+FOOTER:
+- Prepared by (name + role)
+- Approved by (name + role)
+- Signature lines
+- Date
+- "For UMRA submission — Confidential"
+
+FILENAME: UMRA_{ReportType}_{YYYY-MM}.pdf
+
+REPORTS:
+- Monthly Prudential Return
+- Quarterly Portfolio Report
+- Annual Financial Statements
+- AML Compliance Report
+- Loan Classification Schedule
+
+═══════════════════════════════════════════════════════════════
+PART C: MFI DIRECTOR DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Bottom nav for Director:
+[🏠 Home] [📊 Portfolio] [⚠️ Risk] [📈 Reports] [👤 Account]
+
+Home:
+┌─────────────────────────────────────────┐
+│ 🏦 {MFI Name} — Director View            │
+├─────────────────────────────────────────┤
+│ 📊 KEY METRICS                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Portfolio│ │ PAR 30   │ │ Repayment│ │
+│ │ UGX 28M  │ │ 3.2%     │ │ Rate 92% │ │
+│ │          │ │ ✅       │ │ ✅       │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Active   │ │ Total    │ │ New      │ │
+│ │ Loans    │ │ Customers│ │ Loans(M) │ │
+│ │ 245      │ │ 480      │ │ 32       │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 📈 6-MONTH TRENDS                        │
+│ [Line: Portfolio growth]                 │
+│ [Line: PAR trend]                        │
+│ [Bar: Monthly disbursements]             │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • PAR 30 exceeded target                │
+│ • 3 restructures pending approval       │
+│ • 2 write-offs pending approval         │
+│ • 5 loans 90+ days overdue              │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [📊 Portfolio] [⚠️ Risk] [📥 UMRA]     │
+│ [📈 Performance] [💰 Approve]           │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART D: DIRECTOR APPROVAL CENTER
+═══════════════════════════════════════════════════════════════
+
+Consolidated approvals:
+- [💰 Approve Restructures] — pending list with current vs proposed terms
+- [📋 Approve Write-offs] — with documents review
+- [💸 Approve Large Loans] — loans above director limit
+
+Each with [✅ Approve] [❌ Reject] + comments.
+
+═══════════════════════════════════════════════════════════════
+PART E: RISK ANALYTICS DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+Modal (id="mfiRiskModal"):
+1. Portfolio at Risk — PAR 30/60/90 cards + trends
+2. Concentration Risk — top 10 borrowers, sector, geography
+3. Collateral Coverage — total vs loans, under-collateralized flags
+4. Customer Credit Quality — risk grade distribution, restructured
+5. Officer Risk — PAR per officer + remediation
+
+═══════════════════════════════════════════════════════════════
+PART F: MFI PERFORMANCE ANALYTICS
+═══════════════════════════════════════════════════════════════
+
+Modal [📈 Performance]:
+1. Growth Metrics — customers, portfolio, disbursements
+2. Operational Efficiency — cost per loan, loans per officer, cycle time
+3. Profitability — revenue per loan, interest trend, cost-to-income
+4. Customer Retention — repeat %, lifetime, referrals
+
+═══════════════════════════════════════════════════════════════
+PART G: SUPER ADMIN CROSS-SECTOR VIEW
+═══════════════════════════════════════════════════════════════
+
+Update Super Admin Command Center Analytics:
+- Total MFIs, customers, portfolio, aggregate PAR
+- Top 5 MFIs by portfolio
+- MFI revenue share
+- Alert: MFIs with PAR > 5%, compliance overdue
+
+═══════════════════════════════════════════════════════════════
+PART H: FULL REGRESSION TESTING (TASKS 1-14)
+═══════════════════════════════════════════════════════════════
+
+TASK 1 — NCDC/UNEB:
+☐ Student CBC & UNEB
+☐ Teacher CBC Tools
+☐ Super Admin NCDC Control
+☐ School Admin Compliance card
+
+TASK 2 — Offline PWA:
+☐ Service worker
+☐ Offline login
+☐ Offline badge
+☐ Sync
+
+TASK 3 — Teacher Earnings:
+☐ Earnings summary
+☐ Offline view tracking
+☐ PDF report
+
+TASK 4 — Project Integrity:
+☐ My Projects
+☐ QR code
+☐ 3-milestone
+☐ Teacher verification + viva
+☐ Duplicate detection
+☐ Evidence Folder
+
+TASK 5 — Curriculum Linker:
+☐ Search online + offline
+☐ 3-tab detail
+☐ AI activity
+☐ Favorites
+
+TASK 6 — NCDC Course:
+☐ 10 modules
+☐ Video/PDF/Quiz/Practical
+☐ CPD certificate
+☐ Verification
+
+TASK 7 — Video Studio:
+☐ Cartoon Studio
+☐ AI Auto-Video
+☐ Series Mode
+☐ Digital Twin UI
+☐ Student/Teacher libraries
+☐ Cost dashboard
+
+TASK 8 — Connection Settings:
+☐ Settings page
+☐ Data saver toggles
+☐ Storage
+☐ Sync history
+☐ User guide
+
+TASK 9 — Super Admin Command Center:
+☐ 5-tab nav
+☐ Dashboard
+☐ Users
+☐ Institutions
+☐ Branding
+☐ Content
+☐ Payments
+☐ NCDC Control
+☐ Live
+☐ Communication
+☐ Analytics
+☐ Settings
+☐ Security
+
+TASK 10 — MFI Collateral:
+☐ Customer registration (with new Spouse/NOK/Guarantors)
+☐ Collateral capture
+☐ Auto-scoring
+☐ Manager review
+☐ Verification workflow
+☐ UMRA reports
+
+TASK 11 — Clinic/Pharmacy:
+☐ Patient records
+☐ Appointments
+☐ Prescriptions
+☐ Inventory
+☐ Product scanner
+☐ Billing
+☐ Insurance
+☐ Dashboard
+
+TASK 12 — Automated Payments:
+☐ Yo! config
+☐ Beneficiaries
+☐ Payment initiation
+☐ IPN webhook
+☐ Auto-disbursement
+☐ Partial payments
+☐ Credit notes
+☐ Reports + Reconciliation
+☐ Statements
+
+TASK 13 — Farming:
+☐ Farm institution
+☐ Animal tracking
+☐ Cameras
+☐ Movement
+☐ Eggs
+☐ Attendance
+☐ Inventory
+☐ Dashboard + Reports
+
+TASK 14 — Full MFI:
+☐ Loan products
+☐ Loan application
+☐ Manager approval
+☐ Disbursement
+☐ Repayment schedule
+☐ Payment recording
+☐ Partial payments
+☐ Overdue + Late fees
+☐ Credit notes
+☐ Restructure
+☐ Write-off
+☐ MFI Reports
+☐ UMRA Reports
+☐ Director Dashboard
+☐ Risk + Performance Analytics
+
+Cross-sector:
+☐ Multi-sector roles work
+☐ Institution branding applies
+☐ Super Admin sees all
+☐ No cross-sector data leakage
+
+═══════════════════════════════════════════════════════════════
+PART I: FIRESTORE INDEXES (FINAL)
+═══════════════════════════════════════════════════════════════
+
+Ensure ALL indexes exist. If missing, add:
+1. microfinance_loans: institutionId + status + createdAt
+2. microfinance_loans: institutionId + expectedPaybackDate
+3. microfinance_loans: branchId + status
+4. mfi_loan_repayment_schedule: institutionId + dueDate + status
+5. mfi_loan_payments: institutionId + paymentDate (desc)
+6. mfi_loan_overdue_log: institutionId + daysOverdue + currentStatus
+7. mfi_credit_notes: institutionId + status
+8. mfi_loan_restructures: institutionId + approvedAt
+9. mfi_loan_writeoffs: institutionId + approvedAt
+10. mfi_customers: institutionId + maritalStatus
+
+═══════════════════════════════════════════════════════════════
+PART J: FIRESTORE SECURITY RULES REVIEW
+═══════════════════════════════════════════════════════════════
+
+Verify rules for all MFI collections:
+- Only authenticated users can read
+- Users see only their own institution's data
+- Super Admin sees all
+- Financial data protected from unauthorized roles
+- Audit logs immutable
+
+Do NOT change rules without documenting in a comment.
+
+═══════════════════════════════════════════════════════════════
+PART K: PRODUCTION READINESS CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+INFRASTRUCTURE:
+☐ All Firestore collections created
+☐ All composite indexes created
+☐ Security rules deployed
+☐ Firebase Storage rules set
+☐ Yo! Payments configured (or sandbox)
+☐ Gemini API key set
+☐ Service worker registered
+☐ PWA manifest correct
+☐ GitHub Pages auto-deploy working
+☐ appshule.com serving latest build
+
+FEATURES:
+☐ All 14 task features implemented
+☐ No console errors
+☐ No broken links
+☐ No missing UI elements
+
+PERFORMANCE:
+☐ App loads <3s on 3G
+☐ Charts render smoothly
+☐ No memory leaks
+☐ Cache size reasonable
+
+SECURITY:
+☐ API keys not in client code
+☐ Webhooks signature-verified
+☐ Role-based access enforced
+☐ Audit logging active
+
+COMPLIANCE:
+☐ NCDC/UNEB aligned
+☐ UMRA compliant
+☐ PDPO compliant (biometric data)
+
+═══════════════════════════════════════════════════════════════
+PART L: STYLING
+═══════════════════════════════════════════════════════════════
+
+- Primary: #4B2E9E
+- MFI accent: #1A5490
+- Success: #4CAF50, Warning: #FF9800, Danger: #dc3545
+- Professional financial layout for reports
+
+═══════════════════════════════════════════════════════════════
+PART M: CODE CLEANUP
+═══════════════════════════════════════════════════════════════
+
+Final cleanup for the ENTIRE APP:
+1. Remove ALL console.log debug statements across all 14 tasks
+2. Add clear comments for major flows
+3. Remove dead code
+4. Verify no unused imports
+5. Ensure no syntax errors
+6. Verify chart instances destroy on modal close
+7. Verify no memory leaks from event listeners
+8. Minify/optimize while keeping readability
+
+═══════════════════════════════════════════════════════════════
+PART N: FINAL REPORT
+═══════════════════════════════════════════════════════════════
+
+Report back with:
+
+1. Task 14 feature completeness:
+   ☐ Part A0: MFI Customer Form (Spouse/NOK/2 Guarantors)
+   ☐ Step 1: Loan Lifecycle
+   ☐ Step 2: Partial Payments + Overdue + Credit Notes + Late Fees
+   ☐ Step 3: Reports + UMRA + Director Dashboard + Risk Analytics
+
+2. Full Regression (Tasks 1-14): ✅/❌ all pass?
+
+3. Production Readiness:
+   ☐ Infrastructure
+   ☐ Features
+   ☐ Performance
+   ☐ Security
+   ☐ Compliance
+
+4. Recommendations for future enhancements
+
+If everything passes:
+"🎉 APPSHULE FULLY COMPLETE 🎉
+All 14 tasks built, tested, and production-ready.
+4-sector platform: Education + MFI + Clinic + Farming
+Ready for public launch."
+
+═══════════════════════════════════════════════════════════════
+PART O: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-13 or Steps 1-2 of Task 14
+- Do NOT change Firestore security rules without documenting
+- Do NOT delete any data
+- Do NOT delete existing customer records when adding Spouse/NOK/Guarantors
+- Do NOT expose API keys
+- Do NOT lose audit logs
+- Do NOT skip any regression test
+- Do NOT open Replit publishing dialog (deploy via GitHub)
+
+═══════════════════════════════════════════════════════════════
+
+Build Part A0 first, then Parts A-G. Then run FULL regression (Part H), 
+production checklist (Part K), cleanup (Part M), report (Part N).
+
+Confirm when done with:
+"🎉 APPSHULE FULLY COMPLETE — All 14 tasks done. Ready for launch."
+
+Report:
+- Full feature checklist
+- Regression results
+- Production readiness status
+- Any remaining issues
+- Screenshots: MFI Customer Form (Spouse/NOK/Guarantors), MFI Reports, 
+  UMRA Report PDF, Director Dashboard, Risk Analytics, Performance Analytics, 
+  Super Admin MFI view
