@@ -1,0 +1,400 @@
+Continue Task 14 Step 2 from where the previous specification 
+was cut off (after applyPaymentToLoan). Here is the complete 
+remaining specification:
+
+═══════════════════════════════════════════════════════════════
+PART B (CONTINUED): CUSTOMER VIEW AFTER PARTIAL PAYMENT
+═══════════════════════════════════════════════════════════════
+
+After partial payment, customer sees:
+┌─────────────────────────────────────────┐
+│ 💰 MY LOAN — LN-2026-00045              │
+├─────────────────────────────────────────┤
+│ Paid: UGX 100,000 of UGX 225,558        │
+│ Remaining for this installment:         │
+│ UGX 125,558                             │
+│                                          │
+│ Progress: ▓▓▓░░░░░░░ 22%               │
+│                                          │
+│ Next Due: 15 Nov 2026                   │
+│                                          │
+│ [💳 Pay Remaining] [📅 View Schedule]   │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART C: OVERDUE MONITORING + ESCALATION
+═══════════════════════════════════════════════════════════════
+
+Daily process (runs every night at 11 PM):
+
+STEP 1 — Find overdue installments:
+- Query mfi_loan_repayment_schedule WHERE dueDate < today AND status != 'paid'
+- For each: compute daysOverdue
+
+STEP 2 — Compute late fees:
+- Check mfi_late_fee_config for the institution
+- If daysOverdue > gracePeriodDays:
+  * If Fixed: lateFee = config.lateFeeAmount
+  * If Percentage: lateFee = overdueAmount × (percentage/100)
+  * Cap at config.maxLateFeeCap
+  * Update installment.lateFeeApplied
+  * Update installment.status = 'overdue'
+
+STEP 3 — Escalation based on days:
+- Day 1-3: Send SMS reminder (gentle)
+- Day 4-7: Send SMS + in-app (firm)
+- Day 8-14: Send SMS + call + email (warning)
+- Day 15-30: SMS + call + field visit scheduled
+- Day 31-60: Final demand letter
+- Day 61+: Legal action referral
+
+STEP 4 — Log to mfi_loan_overdue_log:
+- Record each action taken
+- Update customer's loan status = 'overdue'
+
+STEP 5 — Notify parties:
+- Customer (SMS + in-app)
+- Loan Officer (in-app)
+- Manager (in-app if >30 days)
+
+OVERDUE DASHBOARD (Manager + Officer view):
+┌─────────────────────────────────────────┐
+│ ⚠️ OVERDUE LOANS                         │
+├─────────────────────────────────────────┤
+│ 📊 SUMMARY                               │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ 1-30 days│ │ 31-60    │ │ 61+ days │ │
+│ │ 5 loans  │ │ 2 loans  │ │ 1 loan   │ │
+│ │ UGX 2.1M │ │ UGX 1.5M │ │ UGX 800K │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🔔 ACTIONS THIS WEEK                     │
+│ • 8 SMS sent · 4 calls · 2 field visits │
+│ • 1 legal referral pending               │
+│                                          │
+│ 📋 OVERDUE LOANS                         │
+│ • LN-2026-00012 — Sarah T               │
+│   15 days · UGX 450,000                 │
+│   Escalation: 2 (warning)               │
+│   Last action: SMS 2 days ago           │
+│   [Send SMS] [Log Call] [Escalate]      │
+│                                          │
+│ • LN-2026-00025 — James O               │
+│   45 days · UGX 800,000                 │
+│   Escalation: 3 (field visit)           │
+│   Field visit: 18 Sep                   │
+│   [View Details] [Escalate to Legal]    │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART D: LATE FEE CONFIGURATION UI
+═══════════════════════════════════════════════════════════════
+
+In Settings → Late Fee Configuration (MFI Admin + Super Admin):
+
+- Grace Period: [3] days
+- Late Fee Type: ● Fixed ○ Percentage
+- Late Fee Amount: [5,000] UGX (if Fixed)
+- OR Late Fee Percentage: [5]% of overdue
+- Maximum Cap: [50,000] UGX
+- Compounding: [✓] No
+- Escalation Rules (editable):
+  * Day 1: Send gentle SMS
+  * Day 4: Send firm SMS + in-app
+  * Day 8: Call + SMS
+  * Day 15: Schedule field visit
+  * Day 31: Final demand letter
+  * Day 61: Legal referral
+
+Customize messages for each stage.
+
+LATE FEE DISPLAY ON CUSTOMER LOAN VIEW:
+┌─────────────────────────────────────────┐
+│ ⚠️ OVERDUE                               │
+│ Installment due: 15 Sep 2026            │
+│ Days overdue: 10                        │
+│                                          │
+│ Amount Overdue: UGX 225,558             │
+│ Late Fee Applied: UGX 5,000            │
+│ Total Now Due: UGX 230,558             │
+│                                          │
+│ [💳 Pay Now]                             │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART E: CREDIT NOTES FOR LOAN OVERPAYMENT
+═══════════════════════════════════════════════════════════════
+
+When customer pays MORE than outstanding balance:
+
+FLOW:
+1. Apply remaining to installment (mark paid)
+2. Loan balance = 0 → status = 'fully_repaid'
+3. Create mfi_credit_notes doc with:
+   - reason: 'overpayment'
+   - creditAmount: (overpayment)
+   - balanceRemaining: (overpayment)
+   - status: 'active'
+   - expiryDate: +12 months
+4. Notify customer:
+   "You overpaid UGX {X}. Credit note created. Applies to your 
+    next loan or can be refunded."
+5. Notify MFI Admin
+
+CUSTOMER VIEW (My Loans → Credit Notes):
+┌─────────────────────────────────────────┐
+│ 💰 MY CREDIT NOTES                       │
+├─────────────────────────────────────────┤
+│ ✅ Active Credit: UGX 24,442             │
+│ From: Loan overpayment on 15 Sep 2026   │
+│ Expires: 15 Sep 2027                    │
+│                                          │
+│ [Apply to Next Loan] [Request Refund]   │
+└─────────────────────────────────────────┘
+
+CREDIT USE:
+- When customer takes a new loan, credit auto-applies to reduce 
+  principal
+- Or customer can request refund via mobile money (with MFI Admin 
+  approval)
+
+═══════════════════════════════════════════════════════════════
+PART F: LOAN RESTRUCTURING
+═══════════════════════════════════════════════════════════════
+
+When customer can't pay, MFI can restructure:
+
+TRIGGERS:
+- 3+ missed installments
+- Customer requests (hardship)
+- Business downturn
+- Natural disaster
+
+WORKFLOW:
+1. Loan Officer creates restructure request with:
+   - Reason (financial_hardship / business_downturn / 
+     natural_disaster / other)
+   - Requested new terms (extended term, reduced interest, 
+     reduced monthly payment)
+   - Justification (textarea)
+2. Manager reviews
+3. Director approves
+
+IMPACT:
+- Remaining balance distributed over NEW term
+- New interest rate applies
+- New repayment schedule generated
+- Old schedule marked as 'restructured' (kept for history)
+- New expected payback date
+
+RESTRUCTURE MODAL (id="loanRestructureModal"):
+┌─────────────────────────────────────────┐
+│ 🔄 RESTRUCTURE LOAN                      │
+├─────────────────────────────────────────┤
+│ Loan: LN-2026-00045                      │
+│ Current Balance: UGX 1,550,000          │
+│                                          │
+│ ORIGINAL TERMS:                          │
+│ • Amount: UGX 2,000,000                 │
+│ • Interest: 5%/month                    │
+│ • Term: 12 months                       │
+│ • Monthly: UGX 225,558                  │
+│                                          │
+│ NEW TERMS:                               │
+│ • Amount: UGX 1,550,000 (remaining)    │
+│ • Interest: [3] %/month                 │
+│ • Term: [24] months                     │
+│ • Monthly: UGX 90,000 (auto)            │
+│                                          │
+│ Reason: [Financial hardship ▼]          │
+│ Justification: [textarea required]      │
+│                                          │
+│ [💾 Request Restructure]                │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART G: WRITE-OFF WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+TRIGGERS:
+- Customer deceased
+- Business closed permanently
+- 90+ days overdue with no response
+- Legal action failed
+
+WORKFLOW:
+1. Loan Officer or Manager requests write-off with:
+   - Reason (uncollectible / deceased / business_closed / other)
+   - Explanation (textarea)
+   - Supporting documents (death certificate, closure notice, 
+     legal order)
+2. Director reviews
+3. If approved → loan status = 'written_off'
+4. Accounting entry created
+5. Reported to UMRA
+
+WRITE-OFF MODAL (id="loanWriteoffModal"):
+┌─────────────────────────────────────────┐
+│ ⚠️ WRITE OFF LOAN                        │
+├─────────────────────────────────────────┤
+│ Loan: LN-2026-00025                      │
+│ Customer: James O                        │
+│ Outstanding: UGX 800,000                │
+│ Days Overdue: 120                        │
+│                                          │
+│ Reason:                                  │
+│ ● Customer Deceased                     │
+│ ○ Business Closed                       │
+│ ○ Uncollectible                         │
+│ ○ Other                                 │
+│                                          │
+│ Explanation: [textarea required]        │
+│ Upload Documents: [📎 Add Files]        │
+│                                          │
+│ [📤 Submit for Director Approval]       │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART H: CUSTOMER LOAN PORTAL (ENHANCED)
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────┐
+│ 💰 MY LOANS                              │
+├─────────────────────────────────────────┤
+│ 📊 MY BORROWING SUMMARY                  │
+│ Active Loans: 1                          │
+│ Total Borrowed: UGX 2,000,000           │
+│ Total Repaid: UGX 450,000               │
+│ Outstanding: UGX 1,550,000              │
+│                                          │
+│ LN-2026-00045 — Small Business           │
+│ Progress: ▓▓▓░░░░░░░ 22%               │
+│ Next Due: 15 Nov 2026                   │
+│ Amount Due: UGX 225,558                 │
+│                                          │
+│ [💳 Pay Now] [📅 View Schedule]         │
+│ [📄 Loan Agreement] [📊 Statement]      │
+│ [🔄 Request Restructure]                │
+│                                          │
+│ 💰 CREDIT NOTES: UGX 0                  │
+│ 📊 PAYMENT HISTORY                       │
+│ • 15 Oct 2026 — UGX 225,558 — ✅        │
+│ • 15 Sep 2026 — UGX 100,000 — Partial  │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART I: MFI ADMIN PORTFOLIO VIEW
+═══════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────┐
+│ 🏦 MFI PORTFOLIO OVERVIEW                │
+├─────────────────────────────────────────┤
+│ 📊 TOTAL PORTFOLIO                       │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Active   │ │ Total    │ │ Outstanding│
+│ │ Loans    │ │ Disbursed│ │ Balance  │ │
+│ │ 245      │ │ UGX 45M  │ │ UGX 28M  │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 📈 HEALTH METRICS                        │
+│ • Repayment Rate: 92% ✅                │
+│ • Portfolio at Risk (PAR): 3.2% ⚠️     │
+│ • Loans in Arrears: 8                    │
+│ • Average Loan Size: UGX 184K           │
+│ • Average Term: 11 months                │
+│                                          │
+│ 🚨 ALERTS                                │
+│ • 1 loan >90 days overdue               │
+│ • 2 restructures pending approval        │
+│ • 5 late fees applied this week         │
+│                                          │
+│ 📋 RECENT ACTIVITY                       │
+│ • Disbursed: LN-2026-00050 (UGX 3M)    │
+│ • Repaid: LN-2026-00032 (complete)     │
+│ • Restructured: LN-2026-00018          │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART J: STYLING
+═══════════════════════════════════════════════════════════════
+
+- Primary: #4B2E9E
+- MFI accent: #1A5490
+- Success: #4CAF50, Warning: #FF9800, Danger: #dc3545
+- Overdue amounts in red
+- Late fees highlighted in orange
+- Credit notes in green
+- Restructured loans in purple
+- Written-off loans in dark grey
+- Progress bars: green on-time, orange behind, red overdue
+
+═══════════════════════════════════════════════════════════════
+PART K: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Payment recording works offline:
+- Save payment locally
+- Apply to installment locally
+- Sync to Firestore when online
+
+Overdue views work from cache.
+Restructure requests require internet.
+Credit note operations require internet.
+
+═══════════════════════════════════════════════════════════════
+PART L: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+1. mfi_loan_installment_applications: loanId (asc) + appliedAt (desc)
+2. mfi_loan_overdue_log: institutionId (asc) + currentStatus (asc)
+3. mfi_loan_overdue_log: loanId (asc) + daysOverdue (desc)
+4. mfi_credit_notes: customerId (asc) + status (asc)
+5. mfi_credit_notes: institutionId (asc) + createdAt (desc)
+6. mfi_loan_restructures: loanId (asc) + createdAt (desc)
+7. mfi_loan_restructures: institutionId (asc) + approvedAt (desc)
+8. mfi_loan_writeoffs: institutionId (asc) + status (asc)
+9. mfi_late_fee_config: institutionId (asc)
+
+═══════════════════════════════════════════════════════════════
+PART M: TESTING
+═══════════════════════════════════════════════════════════════
+
+A. Partial payment — installment partially_paid
+B. Multiple installments — cascade application + credit note
+C. Late fee auto-application (Fixed or Percentage)
+D. Escalation progression (day 1-30+)
+E. Credit note creation + usage
+F. Restructure with Manager + Director approval
+G. Write-off with Director approval
+H. Customer portal — all loans, credit notes, history
+I. MFI Admin portfolio — health metrics
+J. Offline payment recording + sync
+K. Regression — Tasks 1-13 + Task 14 Step 1 still work
+
+═══════════════════════════════════════════════════════════════
+PART N: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-13 or Task 14 Step 1
+- Do NOT allow overpayment without credit note
+- Do NOT compound late fees unless configured
+- Do NOT allow write-off without Director approval
+- Do NOT allow restructure without Manager + Director approval
+- Do NOT lose overdue log entries
+- Do NOT skip escalation on overdue accounts
+- Do NOT apply payment to principal before interest
+- Do NOT lose offline payment records
+- Do NOT allow editing of paid installments
+
+═══════════════════════════════════════════════════════════════
+
+Build Parts B (continued) through N. Then run regression 
+(Part M) and report:
+- Which tests A through K passed
+- Any bugs found
+- Screenshots recommended
+
+Confirm when done with:
+"Task 14 Step 2 complete — Partial Payments + Overdue Monitoring 
++ Credit Notes + Late Fees + Restructuring + Write-off built"
