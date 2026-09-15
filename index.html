@@ -132,8 +132,13 @@
          .global-sync-popover-close { position:absolute; top:8px; right:8px; width:28px !important; height:28px; margin:0 !important; padding:0 !important; border-radius:50% !important; background:#f0ebfb !important; color:#4B2E9E !important; font-size:18px; line-height:1; }
          .global-sync-popover-close:hover, .global-sync-popover-close:focus-visible { background:#e2d8f7 !important; outline:2px solid #4B2E9E; outline-offset:2px; }
          .connection-mode-badge[data-online="false"] .connection-dot { background:#ff6b6b; box-shadow:0 0 0 3px rgba(255,107,107,.18); }
+         .connection-mode-badge[data-online="true"] .connection-dot { background:#69d28b; box-shadow:0 0 0 3px rgba(105,210,139,.18); }
          .connection-mode-badge[data-syncing="true"] .connection-dot { animation:syncOnlinePulse 1.1s ease-in-out infinite; }
          @keyframes syncOnlinePulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.7); opacity:.55; } }
+         .apshule-contextual-message { display:block; width:fit-content; max-width:min(92vw,360px); margin:8px 0; padding:9px 12px; border-radius:10px; background:#fff8e8; border:1px solid #ffd166; color:#6b4d00; font-size:12px; line-height:1.4; box-shadow:0 4px 14px rgba(20,10,50,.12); opacity:1; transition:opacity .35s ease, transform .35s ease; }
+         .apshule-contextual-message.error { background:#fff0f0; border-color:#ff9b9b; color:#8a1f1f; }
+         .apshule-contextual-message.success { background:#effcf3; border-color:#8fdfaa; color:#216b39; }
+         .apshule-contextual-message.is-fading { opacity:0; transform:translateY(-3px); }
         .global-settings-modal { position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,13,48,.75); }
         .global-settings-modal.show { display:flex; }
         .global-settings-shell { display:flex; flex-direction:column; width:100%; max-width:560px; max-height:92vh; overflow:hidden; background:#fff; border-radius:22px; box-shadow:0 15px 55px rgba(20,10,50,.35); }
@@ -1253,6 +1258,8 @@
         .connection-mode-badge[data-mode="mobile"] .connection-dot { background:#FFD166; box-shadow:0 0 0 3px rgba(255,209,102,.18); }
         .connection-mode-badge[data-mode="wifi"] .connection-dot { background:#B7F0D0; box-shadow:0 0 0 3px rgba(183,240,208,.18); }
         .connection-mode-badge[data-mode="offline"] { background:rgba(32,121,77,.22); }
+        .connection-mode-badge[data-online="true"] .connection-dot { background:#69d28b; box-shadow:0 0 0 3px rgba(105,210,139,.18); }
+        .connection-mode-badge[data-online="false"] .connection-dot { background:#ff6b6b; box-shadow:0 0 0 3px rgba(255,107,107,.18); }
         .sync-now-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid rgba(255,255,255,.5); border-radius:18px; background:#fff; color:#4B2E9E; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; }
         .sync-now-btn:hover, .sync-now-btn:focus-visible { background:#FFF3E8; outline:3px solid rgba(255,209,102,.42); outline-offset:2px; }
         .sync-now-btn[aria-busy="true"] i { animation:spin .8s linear infinite; }
@@ -1509,7 +1516,12 @@
         if(visible.some(function(element){ return element.id === 'videoModal'; }) && typeof window.closeVideoModal === 'function') {
             window.closeVideoModal();
         }
-        visible.forEach(function(element){ element.classList.remove('show'); });
+        visible.forEach(function(element){
+            element.classList.remove('show');
+            if(element.id === 'globalSyncPopover') {
+                document.getElementById('globalSyncStatusBtn')?.setAttribute('aria-expanded','false');
+            }
+        });
     }
 
     function appHistoryIgnoreNextMutations() {
@@ -1862,7 +1874,7 @@
         <div class="header-left">
             <img id="headerLogoImg" class="header-logo-img logo--responsive" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE">
             <img id="headerSchoolLogoImg" src="" alt="School logo" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);margin-left:6px;flex-shrink:0;">
-            <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div id="appTagline" class="tagline" data-i18n="tagline">Digital Learning Platform</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
+            <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div id="appTagline" class="tagline" data-i18n="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
         </div>
         <div class="header-right">
             <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" data-online="false" data-syncing="false" role="status" aria-live="polite" aria-label="Offline">
@@ -4666,6 +4678,22 @@
     };
 
     // ===== HELPERS =====
+    function showContextualMessage(anchor, msg, type="info") {
+        const rawAnchor = anchor && anchor.nodeType === 1 ? anchor : document.activeElement;
+        const target = rawAnchor?.closest?.('.material-item,.subject-card,.class-card,.ncdc-lesson,.video-studio-card') || rawAnchor;
+        if(!target || target === document.body || target.id === 'notification') {
+            showNotification(msg, type);
+            return;
+        }
+        document.querySelectorAll('.apshule-contextual-message').forEach(item=>item.remove());
+        const message=document.createElement('div');
+        message.className=`apshule-contextual-message ${type}`;
+        message.setAttribute('role','status');
+        message.textContent=msg;
+        target.insertAdjacentElement('afterend',message);
+        setTimeout(()=>message.classList.add('is-fading'),2600);
+        setTimeout(()=>message.remove(),3000);
+    }
     function showNotification(msg, type="success") {
         let n = document.getElementById('notification');
         n.textContent = msg;
@@ -4712,6 +4740,7 @@
     let _storageBreakdownCache = { at: 0, value: null };
     function setGlobalSyncStatus(summary, mode, failed) {
         const button=document.getElementById('globalSyncStatusBtn');
+        const online=navigator.onLine;
         const statusText=document.getElementById('globalSyncStatusText');
         const lastText=document.getElementById('globalSyncLastText');
         const pendingText=document.getElementById('globalSyncPendingText');
@@ -4719,12 +4748,19 @@
         const state=failed ? 'failed' : mode==='offline' ? 'offline' : pending ? 'pending' : 'synced';
         if(button) {
             button.dataset.status=state;
-            button.setAttribute('aria-label', failed ? t('syncFailed') : mode==='offline' ? t('offlineMode') : pending ? `${t('pending')}: ${pending}` : t('allSynced'));
+            const pendingLabel=pending ? `Pending items: ${pending}` : 'No pending items';
+            button.setAttribute('aria-label',pendingLabel);
+            button.title=pending ? pendingLabel : 'No pending items';
             const count=button.querySelector('.global-sync-count'); if(count) count.textContent=String(pending);
         }
         if(statusText) statusText.textContent=failed ? 'Sync failed — try again when your connection is stable.' : mode==='offline' ? 'Offline — work will sync when connected.' : pending ? `${pending} item(s) waiting to sync.` : 'All changes are synced.';
         if(lastText) lastText.textContent=`Last sync: ${_settingsLastSyncAt ? new Date(_settingsLastSyncAt).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) : 'Not synced yet'}`;
         if(pendingText) pendingText.textContent=`Pending items: ${pending}`;
+    }
+    function closeGlobalSyncPopover() {
+        const popover=document.getElementById('globalSyncPopover'), button=document.getElementById('globalSyncStatusBtn');
+        popover?.classList.remove('show');
+        button?.setAttribute('aria-expanded','false');
     }
     function openGlobalSettings() {
         const modal=document.getElementById('globalSettingsModal'), body=document.getElementById('globalSettingsModalBody'), card=document.getElementById('connectionSettingsCard');
@@ -4779,7 +4815,12 @@
         if(!Offline) return;
         mode = mode || await resolveConnectionMode();
         const badge=document.getElementById('connectionModeBadge'), label=document.getElementById('connectionModeLabel');
-        if(badge) { badge.dataset.mode=mode; badge.setAttribute('aria-label','Connection mode: '+Offline.connectionLabel(mode)); }
+        if(badge) {
+            badge.dataset.mode=mode;
+            badge.dataset.online=String(navigator.onLine);
+            badge.title=navigator.onLine ? 'Online' : 'Offline';
+            badge.setAttribute('aria-label',navigator.onLine ? 'Online' : 'Offline');
+        }
         if(label) label.textContent=Offline.connectionLabel(mode);
         const summary=await Offline.getPendingSummary();
         const settings=await Offline.getSettings(currentUser?.uid);
@@ -4865,6 +4906,8 @@
     }
     async function runOfflineSync(manual=false) {
         if(!Offline) return;
+        const connectionBadge=document.getElementById('connectionModeBadge');
+        if(connectionBadge) connectionBadge.dataset.syncing='true';
         try {
             const mode=await resolveConnectionMode(), settings=await Offline.getSettings(currentUser?.uid);
             if(mode==='mobile' && manual && !confirm('Sync pending work using mobile data? Continue?')) return;
@@ -4893,6 +4936,8 @@
             await refreshOfflineUi().catch(()=>{});
             showNotification('Sync failed. Your offline work is still saved on this device.','error');
             throw error;
+        } finally {
+            if(connectionBadge) connectionBadge.dataset.syncing='false';
         }
     }
     function openSettingsInfo(kind) {
@@ -4957,8 +5002,13 @@
             const popover=document.getElementById('globalSyncPopover'), button=document.getElementById('globalSyncStatusBtn');
             const open=popover?.classList.toggle('show'); button?.setAttribute('aria-expanded',open?'true':'false');
         });
+        document.getElementById('globalSyncPopoverCloseBtn')?.addEventListener('click',closeGlobalSyncPopover);
         document.getElementById('globalSyncPopoverBtn')?.addEventListener('click',()=>runOfflineSync(true).catch(()=>{}));
-        document.addEventListener('keydown',event=>{ if(event.key==='Escape') { closeGlobalSettings(); document.querySelectorAll('.settings-modal.show').forEach(modal=>modal.classList.remove('show')); } });
+        document.addEventListener('click',event=>{
+            const popover=document.getElementById('globalSyncPopover'), button=document.getElementById('globalSyncStatusBtn');
+            if(popover?.classList.contains('show') && !popover.contains(event.target) && event.target!==button) closeGlobalSyncPopover();
+        });
+        document.addEventListener('keydown',event=>{ if(event.key==='Escape') { closeGlobalSyncPopover(); closeGlobalSettings(); document.querySelectorAll('.settings-modal.show').forEach(modal=>modal.classList.remove('show')); } });
         const globalShell=document.querySelector('.global-settings-shell');
         let swipeStartY=0;
         globalShell?.addEventListener('touchstart',event=>{ swipeStartY=event.touches[0]?.clientY||0; },{passive:true});
@@ -5840,7 +5890,11 @@
 
     // ===== PDF INLINE VIEWER (NEW) =====
     let _settingsPdfObjectUrl = null;
-    window.openPdfInline = function(url, title, pdfDocId) {
+    window.openPdfInline = function(url, title, pdfDocId, trigger) {
+        if(!url) {
+            showContextualMessage(trigger,'PDF not available yet. Please ask an administrator to add it.','info');
+            return;
+        }
         document.getElementById('pdfModalTitle').innerHTML = `<i class="fas fa-file-pdf"></i> ${title}`;
         document.getElementById('pdfViewModal').classList.add('show');
         const viewer=document.getElementById('pdfViewerIframe');
@@ -5884,10 +5938,15 @@
     function renderClasses() {
         let grid = document.getElementById('classGrid'); if(!grid) return;
         let classes = classData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}')" style="background:linear-gradient(135deg,${c.color}22,white);border:2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background:linear-gradient(135deg,${c.color},${c.color}cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:52px;"></i><div class="class-name" style="color:${c.color};">${c.name}</div><div class="class-details">${currentLevel==='primary'?primarySubjects.length:secondarySubjects.length} Subjects</div></div>`).join('');
+        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}', this)" style="background:linear-gradient(135deg,${c.color}22,white);border:2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background:linear-gradient(135deg,${c.color},${c.color}cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:52px;"></i><div class="class-name" style="color:${c.color};">${c.name}</div><div class="class-details">${currentLevel==='primary'?primarySubjects.length:secondarySubjects.length} Subjects</div></div>`).join('');
     }
 
-    window.selectClass = function(id, name) {
+    window.selectClass = function(id, name, trigger) {
+        const availableSubjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        if(!availableSubjects.length) {
+            showContextualMessage(trigger,`No subjects are available for ${name} yet. Please check back soon.`,'info');
+            return;
+        }
         currentSelectedClassId = { id, name, level: currentLevel };
         document.getElementById('classSelectionSection').style.display = 'none';
         document.getElementById('subjectsSection').style.display = 'block';
@@ -5905,7 +5964,7 @@
             const origIdx = subjects.indexOf(s);
             const color = subjectColors[origIdx % subjectColors.length];
             const isWeak = weakAreas.includes(s);
-            return `<div class="subject-card" onclick="openVideoLesson('${s}')" style="${isWeak?'border:2px solid #FF8C42;position:relative;':''}">
+            return `<div class="subject-card" onclick="openVideoLesson('${s}', this)" style="${isWeak?'border:2px solid #FF8C42;position:relative;':''}">
                 ${isWeak?'<span class="weak-badge">Weak</span>':''}
                 <div class="subject-icon" style="background:${color}"><i class="fas ${getSubjectIcon(s)}"></i></div>
                 <div class="subject-name">${s}</div>
@@ -5914,9 +5973,9 @@
         }).join('');
     }
 
-    window.openVideoLesson = async function(subject) {
+    window.openVideoLesson = async function(subject, trigger) {
         if(!currentUser) { showNotification("Please login first","error"); return; }
-        if(!currentSelectedClassId) { showNotification("Please select a class first","error"); return; }
+        if(!currentSelectedClassId) { showContextualMessage(trigger,"Please select a class first","info"); return; }
         const key = `${currentSelectedClassId.level}_${currentSelectedClassId.id}_${subject}`;
         let vid = videoMappings[key];
         if(!vid && (!navigator.onLine || offlineSession) && Offline) {
@@ -5928,7 +5987,7 @@
                 window._videoMappingData[key] = Object.assign({}, cached, { id:cached.libraryId, cartoonProject:cached });
             }
         }
-        if(!vid) { showNotification(`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`, "info"); return; }
+        if(!vid) { showContextualMessage(trigger,`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`, "info"); return; }
 
         // Build video list for prev/next (all subjects with videos in current class)
         const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
@@ -5998,7 +6057,7 @@
     function renderPdfList() {
         let c = document.getElementById('pdfListContainer'); if(!c) return;
         if(!pdfMaterials.length) { c.innerHTML = '<div style="padding:20px;text-align:center;color:#999;">No PDFs added yet.</div>'; return; }
-        c.innerHTML = pdfMaterials.map(p => `<div class="material-item" onclick="openPdfInline('${p.url}','${escHtml(p.title)}','${p.id}')"><i class="fas fa-file-pdf" style="color:#dc3545;"></i> ${escHtml(p.title)} <small style="color:#999;margin-left:auto;">${p.views||0} views</small></div>`).join('');
+        c.innerHTML = pdfMaterials.map(p => `<div class="material-item" onclick="openPdfInline('${p.url}','${escHtml(p.title)}','${p.id}', this)"><i class="fas fa-file-pdf" style="color:#dc3545;"></i> ${escHtml(p.title)} <small style="color:#999;margin-left:auto;">${p.views||0} views</small></div>`).join('');
     }
 
     function renderPdfAdmin() {
@@ -7221,14 +7280,16 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const lesson=(module.lessons||[]).find(item=>Number(item.lessonOrder)===order);
         if(!lesson||!ncdcLessonReady(Number(module.moduleNumber),order)) return;
         if(lesson.lessonType==='video') {
-            if(!navigator.onLine) { showNotification('Video unavailable offline. Connect to watch.','info'); return; }
+            const lessonButton=document.querySelector(`[data-ncdc-lesson="${order}"]`);
+            if(!navigator.onLine) { showContextualMessage(lessonButton,'Video unavailable offline. Connect to watch.','info'); return; }
             const videoId=extractVideoId(lesson.contentUrl||'');
-            if(!videoId||videoId.toLowerCase().includes('placeholder')) { showNotification('Video unavailable. Contact admin.','info'); return; }
+            if(!videoId||videoId.toLowerCase().includes('placeholder')) { showContextualMessage(lessonButton,'Video unavailable. Contact admin.','info'); return; }
             openNcdcVideo(videoId,lesson.title||module.title,{moduleNumber:module.moduleNumber,lessonOrder:order});
         } else if(lesson.lessonType==='pdf') {
-            if(!lesson.contentUrl) { showNotification('PDF not available. Contact admin.','info'); return; }
+            const lessonButton=document.querySelector(`[data-ncdc-lesson="${order}"]`);
+            if(!lesson.contentUrl) { showContextualMessage(lessonButton,'PDF not available. Contact admin.','info'); return; }
             if(navigator.onLine) openPdfInline(lesson.contentUrl,lesson.title||'NCDC module summary',`ncdc_${module.moduleNumber}`);
-            else showNotification('This PDF is not cached yet. Connect once to open it.','info');
+            else showContextualMessage(lessonButton,'This PDF is not cached yet. Connect once to open it.','info');
             setTimeout(async()=>{await saveNcdcLessonCompletion(module.moduleNumber,2,{readDuration:30});renderNcdcModuleDetail(module.moduleNumber);showNotification('✅ PDF lesson marked read','success');},navigator.onLine?30000:0);
         } else if(lesson.lessonType==='quiz') {
             openNcdcQuiz(module,lesson);
@@ -11687,8 +11748,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     <div style="font-size:12px;color:#888;">👨‍🏫 ${escHtml(l.teacherName)}${l.scheduledDate?' · 📅 '+escHtml(l.scheduledDate):''}</div>
                     ${l.desc?`<div style="font-size:13px;color:#555;margin-top:4px;">${escHtml(l.desc)}</div>`:''}
                     <div style="margin-top:10px;">
-                        ${hasToken
-                            ? `<button onclick="useLiveToken('${d.id}')" style="background:#4CAF50;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;width:100%;">🔗 Join Live Lesson</button>`
+                    ${hasToken
+                            ? `<button onclick="useLiveToken('${d.id}', this)" style="background:#4CAF50;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;width:100%;">🔗 Join Live Lesson</button>`
                             : `<button onclick="requestLiveAccess('${d.id}','${escHtml(l.title)}',${l.accessFee||0})" style="background:#FF8C42;color:white;border:none;padding:10px 20px;border-radius:20px;font-weight:700;cursor:pointer;width:100%;">📅 ${l.accessFee>0?'Pay & Get Access':'Get Free Access'}</button>`
                         }
                     </div>
@@ -11698,12 +11759,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
 
     // Show meeting link to a student using their token (device-locked)
-    window.useLiveToken = async function(lessonId) {
+    window.useLiveToken = async function(lessonId, trigger) {
         if(!currentUser) { showNotification('Please log in first','error'); return; }
         // Find student's token for this lesson
         const tq = query(collection(db,'liveAccess'), where('userId','==',currentUser.uid), where('lessonId','==',lessonId), limit(1));
         const tsnap = await getDocs(tq);
-        if(tsnap.empty) { showNotification('No access token found for this lesson.','error'); return; }
+        if(tsnap.empty) { showContextualMessage(trigger,'No access token found for this lesson.','error'); return; }
         const tokenDoc = tsnap.docs[0];
         const tdata    = tokenDoc.data();
         if(tdata.revoked) { showNotification('This token has been revoked. Contact admin.','error'); return; }
@@ -11720,7 +11781,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(tdata.meetingLink) {
             window.open(tdata.meetingLink,'_blank','noopener');
         } else {
-            showNotification('Meeting link not available yet. Check back soon.','info');
+            showContextualMessage(trigger,'Meeting link not available yet. Check back soon.','info');
         }
     };
 
@@ -15242,12 +15303,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(!docSnap.exists()) return;
             currentUser = { uid: user.uid, ...docSnap.data() };
         }
-        const educationRoles = ['school','school_admin','headteacher','teacher','individual','student'];
-        const educationUser = educationRoles.includes(String(currentUser.role || '').toLowerCase());
         const appTagline = document.getElementById('appTagline');
         if(appTagline) {
-            appTagline.textContent = educationUser ? 'Digital Learning Platform' : '';
-            appTagline.style.display = educationUser ? '' : 'none';
+            appTagline.textContent = "Let's Learn With Ease From Anywhere at Anytime";
+            appTagline.style.display = '';
         }
         document.getElementById('landingScreen').classList.add('hidden');
         document.getElementById('loginScreen').classList.add('hidden');

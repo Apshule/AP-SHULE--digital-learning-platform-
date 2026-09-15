@@ -62,6 +62,31 @@ describe("Task 15 bug fixes", () => {
     expect(indexSource).toContain("apshulehistorychange");
     expect(indexSource).toContain("_appHistoryRestoring");
   });
+
+  it("supports closing the sync popover by control, backdrop, escape, and back", () => {
+    expect(indexSource).toContain('id="globalSyncPopoverCloseBtn"');
+    expect(indexSource).toContain("closeGlobalSyncPopover");
+    expect(indexSource).toContain("!popover.contains(event.target)");
+    expect(indexSource).toContain("element.id === 'globalSyncPopover'");
+    expect(indexSource).toContain('aria-expanded="false"');
+  });
+
+  it("keeps online and pending indicators distinct", () => {
+    expect(indexSource).toContain('data-online="false"');
+    expect(indexSource).toContain("title=navigator.onLine ? 'Online' : 'Offline'");
+    expect(indexSource).toContain("Pending items: ${pending}");
+    expect(indexSource).toContain("data-syncing");
+    expect(indexSource).toContain("@keyframes syncOnlinePulse");
+  });
+
+  it("renders contextual availability messages beside the tapped item", () => {
+    expect(indexSource).toContain("function showContextualMessage");
+    expect(indexSource).toContain("apshule-contextual-message");
+    expect(indexSource).toContain("No video for");
+    expect(indexSource).toContain("Video unavailable offline");
+    expect(indexSource).toContain("PDF not available");
+    expect(indexSource).toContain("Meeting link not available yet");
+  });
 });
 
 describe("APSHULE branding consistency", () => {
@@ -79,7 +104,7 @@ describe("APSHULE branding consistency", () => {
     expect(indexSource).not.toMatch(/\b(?:Apshule|ApShule)\b/);
     expect(indexSource).toContain("APSHULE Digital Learning Platform");
     expect(indexSource).toContain('id="appTagline"');
-    expect(indexSource).toContain("educationRoles");
+    expect(indexSource).toContain("Let's Learn With Ease From Anywhere at Anytime");
   });
 });
 
