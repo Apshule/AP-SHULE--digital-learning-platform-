@@ -107,13 +107,14 @@
         .reset-input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 25px; }
         .reset-btn { background: #FF8C42; color: white; border: none; padding: 10px; border-radius: 25px; width: 100%; cursor: pointer; font-weight: bold; }
         .hidden { display: none; }
-        .header { background: #5B4FCF; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .header { background: #5B4FCF; padding: 20px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width:0; }
+        .header-left { display: flex; align-items: center; gap: 12px; flex: 1 1 auto; min-width:0; }
+        .header-left > div { min-width:0; }
         .header-logo-img { width: 48px; height: 48px; object-fit: contain; border-radius: 12px; background: white; padding: 2px; }
         .app-title { color: white; font-weight: bold; font-size: 16px; }
         .tagline { color: rgba(255,255,255,0.8); font-size: 12px; }
         .greeting { color: white; font-weight: bold; font-size: 14px; margin-top: 4px; }
-        .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
+        .header-right { display: flex; align-items: center; gap: 8px; position: relative; flex:0 0 auto; min-width:0; }
         .ai-icon-btn, .more-menu-btn { background: rgba(255,255,255,0.2); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
         .ai-icon-btn i, .more-menu-btn i { font-size: 20px; color: white; }
         .global-settings-btn,.global-sync-status-btn { position:relative; width:38px; height:38px; border:1px solid rgba(255,255,255,.35); border-radius:50%; background:rgba(255,255,255,.16); color:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
@@ -139,15 +140,15 @@
          .apshule-contextual-message.error { background:#fff0f0; border-color:#ff9b9b; color:#8a1f1f; }
          .apshule-contextual-message.success { background:#effcf3; border-color:#8fdfaa; color:#216b39; }
          .apshule-contextual-message.is-fading { opacity:0; transform:translateY(-3px); }
-         .subscription-pay-modal { position:fixed; inset:0; z-index:9100; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(22,13,48,.75); }
+         .subscription-pay-modal { position:fixed; inset:0; z-index:9100; display:none; align-items:center; justify-content:center; padding:12px; overflow-y:auto; background:rgba(22,13,48,.75); }
          .subscription-pay-modal.show { display:flex; }
-         .subscription-pay-card { width:min(100%,420px); box-sizing:border-box; padding:22px; border-radius:22px; background:#fff; box-shadow:0 20px 60px rgba(20,10,50,.3); }
+         .subscription-pay-card { width:min(100%,420px); max-height:calc(100vh - 24px); overflow:auto; box-sizing:border-box; margin:auto; padding:22px; border-radius:22px; background:#fff; box-shadow:0 20px 60px rgba(20,10,50,.3); }
          .subscription-pay-card h3 { margin:0; color:#4B2E9E; }
          .subscription-pay-field { display:block; margin-top:12px; color:#413852; font-size:12px; font-weight:700; }
          .subscription-pay-field input, .subscription-pay-field select { display:block; width:100%; box-sizing:border-box; margin-top:6px; padding:11px 12px; border:1px solid #ddd5eb; border-radius:11px; font:inherit; font-size:13px; }
          .subscription-pay-status { min-height:20px; margin-top:12px; color:#6c617d; font-size:12px; line-height:1.4; }
-         .subscription-pay-actions { display:flex; gap:8px; margin-top:14px; }
-         .subscription-pay-actions button { flex:1; border:0; border-radius:20px; padding:11px 12px; cursor:pointer; font-weight:800; }
+         .subscription-pay-actions { display:flex; width:100%; gap:8px; margin-top:14px; }
+         .subscription-pay-actions button { flex:1 1 0; min-width:0; border:0; border-radius:20px; padding:11px 12px; cursor:pointer; font-weight:800; }
          .subscription-pay-cancel { background:#f2eff8; color:#4B2E9E; }
          .subscription-pay-continue { background:#4B2E9E; color:#fff; }
         .global-settings-modal { position:fixed; inset:0; z-index:9500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(22,13,48,.75); }
@@ -1205,7 +1206,7 @@
         .landing-demo-card p { color:#716881; line-height:1.6; font-size:13px; }
         .landing-demo-close { float:right; border:0; background:transparent; color:#4B2E9E; font-size:26px; cursor:pointer; }
          @media(max-width:900px){.landing-nav{gap:11px}.landing-nav a{font-size:11px}.landing-hero-grid{grid-template-columns:1fr;gap:36px}.landing-hero-art{min-height:340px;padding:24px 12px}.landing-hero-image{width:min(70vw,340px)}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials{grid-template-columns:repeat(2,1fr)}.landing-footer-grid{grid-template-columns:repeat(2,1fr)}}
-         @media(max-width:680px){.landing-shell{width:min(100% - 24px,520px)}.landing-header-inner{min-height:64px}.landing-mobile-menu{display:block;margin-left:auto}.landing-nav,.landing-header-actions{display:none}.landing-header.open .landing-nav{display:flex;position:absolute;top:64px;left:0;right:0;padding:15px 18px;flex-direction:column;align-items:flex-start;background:#fff;border-bottom:1px solid #eee9f8;box-shadow:0 12px 20px rgba(61,34,128,.1)}.landing-header.open .landing-header-actions{display:flex;position:absolute;top:230px;left:18px;right:18px;padding:12px 0;background:#fff}.landing-hero{padding:58px 0 48px}.landing-hero-grid{grid-template-columns:1fr;gap:32px}.landing-headline{font-size:43px}.landing-sub{font-size:15px}.landing-hero-art{min-height:280px;padding:20px 12px}.landing-hero-image{width:min(78vw,290px);padding:12px}.landing-section{padding:56px 0}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials,.landing-steps,.landing-stats-grid{grid-template-columns:1fr}.landing-footer-grid{grid-template-columns:1fr 1fr}.landing-accordion-body .landing-list{columns:1}.landing-sector-card{min-height:0}.landing-stats-grid{gap:24px}}
+        @media(max-width:680px){.header{padding:12px 10px;gap:6px}.header-left{gap:7px}.header-logo-img{width:42px;height:42px}.app-title,.tagline,.greeting{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.header-right{gap:5px}.connection-mode-badge{width:20px;max-width:20px;overflow:hidden;padding:0;border:0;background:transparent}.connection-mode-badge .connection-label{display:none}.global-settings-btn,.global-sync-status-btn,.sync-now-btn,.search-icon-btn,.ai-icon-btn,.more-menu-btn{width:36px;height:36px;min-width:36px;padding:0}.sync-now-btn .sync-label{display:none}.global-sync-status-btn{padding:0;border-radius:50%}.landing-shell{width:min(100% - 24px,520px)}.landing-header-inner{min-height:64px}.landing-mobile-menu{display:block;margin-left:auto}.landing-nav,.landing-header-actions{display:none}.landing-header.open .landing-nav{display:flex;position:absolute;top:64px;left:0;right:0;padding:15px 18px;flex-direction:column;align-items:flex-start;background:#fff;border-bottom:1px solid #eee9f8;box-shadow:0 12px 20px rgba(61,34,128,.1)}.landing-header.open .landing-header-actions{display:flex;position:absolute;top:230px;left:18px;right:18px;padding:12px 0;background:#fff}.landing-hero{padding:58px 0 48px}.landing-hero-grid{grid-template-columns:1fr;gap:32px}.landing-headline{font-size:43px}.landing-sub{font-size:15px}.landing-hero-art{min-height:280px;padding:20px 12px}.landing-hero-image{width:min(78vw,290px);padding:12px}.landing-section{padding:56px 0}.landing-sector-grid,.landing-face-grid,.landing-feature-grid,.landing-pricing-grid,.landing-testimonials,.landing-steps,.landing-stats-grid{grid-template-columns:1fr}.landing-footer-grid{grid-template-columns:1fr 1fr}.landing-accordion-body .landing-list{columns:1}.landing-sector-card{min-height:0}.landing-stats-grid{gap:24px}}
          @media(max-width:499px){.landing-hero-image{width:min(72vw,240px)}.landing-hero-art{min-height:240px;padding:16px 8px}.landing-hero-art::before{width:230px;height:230px}}
         /* ── Timetable Generator ── */
         .timetable-page { padding-bottom:100px; }
