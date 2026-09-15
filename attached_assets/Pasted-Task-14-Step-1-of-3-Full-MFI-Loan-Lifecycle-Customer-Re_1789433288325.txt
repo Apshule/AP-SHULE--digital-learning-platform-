@@ -1,0 +1,865 @@
+Task 14 — Step 1 of 3: Full MFI Loan Lifecycle — Customer Registration + Loan Application + Approval + Disbursement + Repayment Schedule
+
+CONTEXT:
+- Tasks 1-13 complete. AppShule serves Education + MFI Collateral + 
+  Clinic + Farming sectors
+- Task 10 built MFI Collateral Management (scoring, verification, 
+  review, disbursement of collateral)
+- Task 14 NOW builds the FULL LOAN LIFECYCLE that uses that collateral:
+  * Loan application → Approval → Disbursement → Repayment → Closure
+- Task 14 Step 2 will add: Partial payments + balance tracking + 
+  overdue monitoring + credit notes
+- Task 14 Step 3 will add: Reports + UMRA compliance + final testing
+
+GOAL OF STEP 1:
+- Loan products catalog (Small Business, Group, Agricultural, etc.)
+- Loan application capture
+- Manager approval workflow
+- Loan disbursement (with mobile money/bank via Yo! from Task 12)
+- Expected payback date calculation
+- Repayment schedule auto-generation
+- Payment recording + balance tracking
+
+YOUTUBE / ToS NOTE: Not applicable.
+
+═══════════════════════════════════════════════════════════════
+PART A: NEW FIRESTORE COLLECTIONS
+═══════════════════════════════════════════════════════════════
+
+Create these collections:
+
+1. mfi_loan_products
+   Fields:
+   - productId (auto)
+   - name (Small Business Loan / Group Loan / Agricultural Loan / 
+     Emergency Loan / Education Loan / Salary Loan)
+   - description
+   - minAmount (number, UGX)
+   - maxAmount (number, UGX)
+   - defaultInterestRate (number, % per month)
+   - interestType (Flat / Reducing Balance)
+   - minTermMonths (number)
+   - maxTermMonths (number)
+   - requiresCollateral (boolean)
+   - requiresGuarantor (boolean)
+   - processingFeePercentage (number, %)
+   - insuranceFeePercentage (number, %)
+   - graceP PeriodDays (number, default 0)
+   - repaymentFrequency (Weekly / Bi-weekly / Monthly)
+   - institutionId
+   - isActive (boolean, default true)
+   - createdBy
+   - createdAt
+   - updatedAt
+
+2. microfinance_loans (extension of Task 1 placeholder)
+   Fields:
+   - loanId (auto)
+   - loanNumber (auto: LN-{year}-{sequence})
+   - customerId (reference to mfi_customers from Task 10)
+   - customerName
+   - customerPhone
+   - institutionId
+   - branchId
+   - productId (reference)
+   - productName
+   - requestedAmount (number)
+   - purpose (text)
+   - requestedTermMonths (number)
+   - collateralIds (array — references to mfi_collateral)
+   - guarantorIds (array — optional)
+   - applicationDate (date)
+   - status (draft / submitted / under_review / approved / 
+     rejected / disbursed / repaying / overdue / fully_repaid / 
+     written_off / cancelled)
+   - // Approval fields
+   - approvedBy (uid)
+   - approvedByName
+   - approvedAt (timestamp)
+   - approvedAmount (number — may differ from requested)
+   - approvedInterestRate (number)
+   - approvedInterestType (Flat / Reducing Balance)
+   - approvedTermMonths (number)
+   - approvedGracePeriodDays (number)
+   - approvalNotes (text)
+   - rejectionReason (text, if rejected)
+   // Disbursement fields
+   - disbursementDate (date)
+   - disbursementMethod (Cash / MTN / Airtel / Bank)
+   - disbursementReference (string)
+   - disbursedBy (uid)
+   - disbursedAt (timestamp)
+   // Repayment plan
+   - totalExpectedRepayment (number — principal + interest + fees)
+   - totalPaidSoFar (number, default 0)
+   - balanceRemaining (number)
+   - nextPaymentDueDate (date)
+   - nextPaymentAmount (number)
+   - expectedPaybackDate (date)
+   - actualPaybackDate (date, when fully repaid)
+   // Meta
+   - createdBy
+   - createdAt
+   - updatedAt
+
+3. mfi_loan_repayment_schedule
+   Fields:
+   - installmentId (auto)
+   - loanId (reference)
+   - installmentNumber (1, 2, 3...)
+   - dueDate (date)
+   - principalDue (number)
+   - interestDue (number)
+   - feesDue (number)
+   - totalDue (number)
+   - balanceAfterDue (number)
+   - status (pending / partially_paid / paid / overdue / waived)
+   - paidDate (date)
+   - paidAmount (number)
+   - paymentMethod
+   - transactionId (reference to clinic_payments / payment_transactions)
+   - receivedBy
+   - notes
+   - createdAt
+   - updatedAt
+
+4. mfi_loan_payments
+   Fields:
+   - paymentId (auto)
+   - loanId (reference)
+   - installmentId (reference, if applied to specific installment)
+   - customerId
+   - customerName
+   - amount (number)
+   - paymentDate (date)
+   - paymentMethod (Cash / MTN / Airtel / Bank / Offset)
+   - transactionId (reference to payment_transactions from Task 12)
+   - paymentType (Regular / Partial / Prepayment / Late payment)
+   - appliedToPrincipal (number)
+   - appliedToInterest (number)
+   - appliedToFees (number)
+   - overpaymentAmount (number — goes to credit note)
+   - receivedBy (uid)
+   - receivedByName
+   - notes
+   - createdAt
+
+5. mfi_loan_approvals
+   Fields:
+   - approvalId (auto)
+   - loanId (reference)
+   - level (1 = Officer, 2 = Manager, 3 = Director)
+   - approverId (uid)
+   - approverName
+   - decision (approved / rejected / returned_for_changes)
+   - comments
+   - decidedAt (timestamp)
+   - createdAt
+
+6. mfi_loan_documents
+   Fields:
+   - documentId (auto)
+   - loanId (reference)
+   - documentType (Loan Agreement / ID Copy / Payslip / Bank Statement / 
+     Business License / Collateral Deed / Guarantor Form / Other)
+   - filePath (Firebase Storage URL)
+   - fileName
+   - fileSize
+   - uploadedBy
+   - uploadedAt
+
+═══════════════════════════════════════════════════════════════
+PART B: SEED LOAN PRODUCTS
+═══════════════════════════════════════════════════════════════
+
+Add Super Admin button "🌱 Seed MFI Loan Products":
+
+Seed 6 standard products:
+
+1. Small Business Loan
+   - Amount: UGX 500,000 - 5,000,000
+   - Interest: 5%/month, Reducing Balance
+   - Term: 6-24 months
+   - Collateral: Yes
+   - Guarantor: Yes
+
+2. Group Loan
+   - Amount: UGX 100,000 - 1,000,000
+   - Interest: 3%/month, Flat
+   - Term: 3-12 months
+   - Collateral: No
+   - Guarantor: Group guarantee
+
+3. Agricultural Loan
+   - Amount: UGX 200,000 - 3,000,000
+   - Interest: 4%/month, Reducing Balance
+   - Term: 6-18 months
+   - Collateral: Yes (land/livestock)
+   - Grace period: 30 days
+
+4. Emergency Loan
+   - Amount: UGX 50,000 - 500,000
+   - Interest: 6%/month, Flat
+   - Term: 1-3 months
+   - Collateral: No
+   - Fast approval
+
+5. Education Loan
+   - Amount: UGX 200,000 - 2,000,000
+   - Interest: 3.5%/month, Reducing Balance
+   - Term: 3-12 months
+   - Collateral: No
+   - Guarantor: Yes
+
+6. Salary Loan
+   - Amount: UGX 300,000 - 4,000,000
+   - Interest: 4%/month, Reducing Balance
+   - Term: 3-24 months
+   - Collateral: No
+   - Requires payslip
+
+═══════════════════════════════════════════════════════════════
+PART C: LOAN OFFICER DASHBOARD
+═══════════════════════════════════════════════════════════════
+
+When a Loan Officer logs in:
+
+Bottom nav for Loan Officer:
+[🏠 Home] [👥 Customers] [📋 Loans] [💰 Repayments] [👤 Account]
+
+Home screen:
+
+┌─────────────────────────────────────────┐
+│ 🏦 {MFI Name} — Loan Officer             │
+│ Welcome, {officerName}                   │
+├─────────────────────────────────────────┤
+│ 📊 MY ACTIVITY                           │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Loans    │ │ Pending  │ │ Disbursed│ │
+│ │ Applied  │ │ Approval │ │ This     │ │
+│ │ (Month)  │ │          │ │ Month    │ │
+│ │ 18       │ │ 5        │ │ 12       │ │
+│ │          │ │          │ │ UGX 45M  │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [➕ New Customer] [💼 New Loan]         │
+│ [👥 View Customers] [💰 Record Payment] │
+│                                          │
+│ 📋 MY LOANS AWAITING APPROVAL            │
+│ • LN-2026-00045 — John Doe              │
+│   UGX 2M · Small Business               │
+│   Status: ⏳ With Manager                │
+│                                          │
+│ • LN-2026-00046 — Mary N                │
+│   UGX 1.5M · Agricultural               │
+│   Status: ⏳ With Manager                │
+│                                          │
+│ 🔔 NOTIFICATIONS                         │
+│ • 2 loans returned for changes          │
+│ • 3 payments received today             │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+PART D: LOAN APPLICATION FLOW
+═══════════════════════════════════════════════════════════════
+
+When Loan Officer taps [💼 New Loan]:
+
+Multi-step wizard (id="loanApplicationModal"):
+
+STEP 1 — Select Customer
+- Search bar: name, phone, customer number
+- List of recent customers
+- [+ New Customer] button
+- Selected customer summary shown
+
+STEP 2 — Loan Product
+- Dropdown: Loan Products
+- Show product details:
+  * Amount range
+  * Interest rate
+  * Term range
+  * Requirements (collateral/guarantor)
+- [Next]
+
+STEP 3 — Loan Details
+- Requested Amount (number, UGX)
+  * Validate within product range
+- Purpose (textarea — required)
+- Term (number, months)
+  * Validate within product range
+- Repayment Frequency (dropdown)
+- Auto-calculate:
+  * Monthly installment
+  * Total interest
+  * Total repayment
+  * Processing fee
+  * Insurance fee
+- Show preview:
+  ┌─────────────────────────────────────┐
+  │ LOAN SUMMARY                        │
+  │ Principal: UGX 2,000,000            │
+  │ Interest: 5%/month (Reducing)       │
+  │ Term: 12 months                     │
+  │ Monthly Payment: UGX 225,000        │
+  │ Total Interest: UGX 700,000         │
+  │ Total Repayment: UGX 2,700,000     │
+  │ Processing Fee: UGX 40,000          │
+  │ ─────────────────────────────────── │
+  │ Net Disbursed: UGX 1,960,000       │
+  └─────────────────────────────────────┘
+
+STEP 4 — Collateral
+- If product requires collateral:
+  * [➕ Add Collateral] button
+  * Select from existing customer collateral
+  * Or add new collateral (reuses Task 10 flow)
+  * Show total collateral value + score
+  * Verify coverage vs loan amount
+- Skip if not required
+
+STEP 5 — Guarantor
+- If product requires guarantor:
+  * [➕ Add Guarantor] button
+  * Name, phone, relationship, ID upload
+  * Signed form upload
+- Skip if not required
+
+STEP 6 — Documents
+- Upload required documents:
+  * Customer ID (reuse from customer profile)
+  * Payslip (if salary loan)
+  * Bank statement (optional)
+  * Business license (if business loan)
+  * Collateral deed (if collateral)
+- Upload via camera or file
+
+STEP 7 — Review & Submit
+- Full summary of application
+- Customer details
+- Loan details
+- Collateral/guarantor summary
+- Documents attached
+- [💾 Save as Draft] [📤 Submit for Review]
+
+On Submit:
+- Create microfinance_loans doc with status = "submitted"
+- Create mfi_loan_approvals doc (Level 1, pending)
+- Notify Loan Manager
+- Show confirmation:
+  "✅ Loan Application Submitted
+   Reference: LN-2026-00045
+   Status: Pending Manager Review"
+
+═══════════════════════════════════════════════════════════════
+PART E: MANAGER APPROVAL WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+When Loan Manager logs in:
+
+Bottom nav:
+[🏠 Home] [📋 Pending] [✅ Approved] [📊 Reports] [👤 Account]
+
+Home:
+┌─────────────────────────────────────────┐
+│ 🏦 Manager Dashboard                     │
+├─────────────────────────────────────────┤
+│ 📊 TODAY                                │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Pending  │ │ Approved │ │ Rejected │ │
+│ │ Reviews  │ │ Today    │ │ Today    │ │
+│ │ 5        │ │ 8        │ │ 1        │ │
+│ └──────────┘ └──────────┘ └──────────┘ │
+│                                          │
+│ 🚨 URGENT                                │
+│ • 2 loans pending >24 hours              │
+│ • 1 loan with low collateral score       │
+│                                          │
+│ 🎯 QUICK ACTIONS                         │
+│ [📋 Review Loans] [💰 Record Payment]   │
+│ [📊 Reports] [👥 Customer Portfolio]    │
+│                                          │
+│ 📋 PENDING LOANS                         │
+│ • LN-2026-00045 — John Doe              │
+│   UGX 2M · Small Business                │
+│   Collateral: Land (98/100 ⭐)          │
+│   Score suggests: Approve                │
+│   [Review]                               │
+│                                          │
+│ • LN-2026-00046 — Mary N                │
+│   UGX 1.5M · Agricultural                │
+│   Collateral: None                       │
+│   Guarantor: 2                           │
+│   [Review]                               │
+└─────────────────────────────────────────┘
+
+REVIEW MODAL (id="loanReviewModal"):
+
+Sections:
+1. Application Summary
+2. Customer Profile (with repayment history if any)
+3. Loan Details
+4. Collateral Summary (with score from Task 10)
+5. Guarantor Details
+6. Documents
+7. Manager Decision:
+   Radio buttons:
+   ○ ✅ Approve (with amount/rate/term adjustment possible)
+   ○ ⚠️ Return for Changes (with comments)
+   ○ ❌ Reject (with reason)
+   
+   Adjustment fields (only when Approve):
+   - Approved Amount (default = requested)
+   - Approved Interest Rate (default = product rate)
+   - Approved Term (default = requested)
+   - Grace Period (days)
+   - Comments
+
+On [✅ Approve]:
+1. Update loan:
+   - status = "approved"
+   - approvedBy, approvedAt
+   - approvedAmount, approvedInterestRate, approvedTermMonths
+2. Create mfi_loan_approvals doc
+3. Notify Loan Officer
+4. Generate Repayment Schedule (Part F)
+5. Ready for disbursement
+
+On [⚠️ Return for Changes]:
+- status = "under_review"
+- Notify officer with comments
+
+On [❌ Reject]:
+- status = "rejected"
+- Store rejectionReason
+- Notify officer
+
+═══════════════════════════════════════════════════════════════
+PART F: REPAYMENT SCHEDULE GENERATION
+═══════════════════════════════════════════════════════════════
+
+After approval, auto-generate repayment schedule.
+
+CALCULATION LOGIC:
+
+For REDUCING BALANCE:
+- Monthly rate = approvedInterestRate / 100
+- Monthly payment = P × r × (1+r)^n / ((1+r)^n - 1)
+  where P = principal, r = monthly rate, n = number of months
+- For each month:
+  * interest = remaining balance × r
+  * principal = monthly payment - interest
+  * balance = previous balance - principal
+- Store principalDue, interestDue, balanceAfterDue
+
+For FLAT RATE:
+- Total interest = P × r × n
+- Total repayment = P + total interest + fees
+- Monthly payment = total repayment / n
+- For each month:
+  * principal = P / n
+  * interest = total interest / n
+
+FEES:
+- Processing fee: deducted at disbursement (not in schedule)
+- Insurance fee: spread across installments OR deducted upfront
+
+GRACE PERIOD:
+- If gracePeriod > 0:
+  * First due date = disbursementDate + gracePeriod + firstCycle
+  * Show "First payment due on {date}"
+
+SCHEDULE CREATION:
+- Create N mfi_loan_repayment_schedule docs (one per installment)
+- Set dueDate based on repaymentFrequency
+- Set status = "pending"
+
+EXAMPLE (Small Business Loan):
+- Principal: UGX 2,000,000
+- Interest: 5%/month, Reducing
+- Term: 12 months
+- Monthly payment: UGX 225,558 (approximately)
+- Schedule:
+  ├─ Month 1: Principal 125,558, Interest 100,000, Balance 1,874,442
+  ├─ Month 2: Principal 131,836, Interest 93,722, Balance 1,742,606
+  ├─ Month 3: Principal 138,428, Interest 87,130, Balance 1,604,178
+  ├─ ...
+  └─ Month 12: Principal 214,855, Interest 10,703, Balance 0
+
+═══════════════════════════════════════════════════════════════
+PART G: LOAN DISBURSEMENT
+═══════════════════════════════════════════════════════════════
+
+When Loan Officer or Manager taps [💸 Disburse]:
+
+Modal (id="loanDisbursementModal"):
+
+┌─────────────────────────────────────────┐
+│ 💸 DISBURSE LOAN                         │
+├─────────────────────────────────────────┤
+│ Customer: John Doe                       │
+│ Loan: LN-2026-00045                      │
+│                                          │
+│ Approved Amount: UGX 2,000,000          │
+│ Processing Fee: UGX 40,000              │
+│ Insurance Fee: UGX 20,000               │
+│ Net Disbursed: UGX 1,940,000            │
+│                                          │
+│ Disbursement Method:                     │
+│ ● MTN Mobile Money                      │
+│ ○ Airtel Money                          │
+│ ○ Bank Transfer                         │
+│ ○ Cash                                  │
+│                                          │
+│ Recipient Account:                       │
+│ [+256705732540] (customer phone)        │
+│                                          │
+│ Disbursement Date: [2026-09-15]         │
+│                                          │
+│ Expected Payback Date:                   │
+│ [2027-09-15] (12 months from today)    │
+│                                          │
+│ [💸 Confirm Disbursement]               │
+└─────────────────────────────────────────┘
+
+On Confirm:
+1. Update loan:
+   - status = "disbursed"
+   - disbursementDate
+   - disbursementMethod
+   - disbursementReference (from Yo! or manual)
+   - disbursedBy, disbursedAt
+   - expectedPaybackDate = disbursementDate + approvedTermMonths
+   - nextPaymentDueDate = first schedule due date
+   - nextPaymentAmount = first installment
+2. If via Yo! (Mobile Money):
+   - Call Yo! acwithdrawfunds API (from Task 12)
+   - Include RSA signature
+   - Track disbursement
+3. If via Cash: mark as manual
+4. Generate Loan Agreement PDF
+5. Notify customer:
+   "Your loan of UGX {net} has been disbursed to {account}."
+6. Notify Manager
+7. Log to audit
+
+LOAN AGREEMENT PDF:
+- AppShule + MFI header
+- Customer name + ID
+- Loan amount + interest + term
+- Total repayment + monthly payment
+- Disbursement date + expected payback date
+- Collateral details
+- Guarantor details
+- Signature lines (customer + MFI)
+- QR code for verification
+- Footer: MFI license number
+
+═══════════════════════════════════════════════════════════════
+PART H: PAYMENT RECORDING
+═══════════════════════════════════════════════════════════════
+
+When Loan Officer taps [💰 Record Payment]:
+
+Modal (id="recordLoanPaymentModal"):
+
+┌─────────────────────────────────────────┐
+│ 💰 RECORD LOAN PAYMENT                   │
+├─────────────────────────────────────────┤
+│ Search Loan:                             │
+│ [🔍 LN-2026-00045 or customer name]     │
+│                                          │
+│ Selected:                                │
+│ LN-2026-00045 — John Doe                │
+│ Outstanding: UGX 1,850,000              │
+│ Next Due: 15 Oct 2026 — UGX 225,558    │
+│                                          │
+│ Amount Paid: [225,558]                  │
+│ Payment Date: [15 Oct 2026]             │
+│ Payment Method:                          │
+│ ● Cash ○ MTN ○ Airtel ○ Bank           │
+│                                          │
+│ Transaction Ref: [___________]          │
+│ (for mobile money)                       │
+│                                          │
+│ Apply to:                                │
+│ ● Next installment (Oct)                │
+│ ○ Specific installment                  │
+│ ○ Principal only                         │
+│                                          │
+│ Notes: [___________________]            │
+│                                          │
+│ [💾 Record Payment]                     │
+└─────────────────────────────────────────┘
+
+On Save:
+1. Create mfi_loan_payments doc
+2. Find installment → mark paid (or partially_paid)
+3. Update loan:
+   - totalPaidSoFar += amount
+   - balanceRemaining -= amount
+   - nextPaymentDueDate = next pending installment
+   - nextPaymentAmount = next installment amount
+4. Update customer ledger
+5. If balance == 0:
+   - status = "fully_repaid"
+   - actualPaybackDate = now
+   - Notify customer
+   - Archive loan
+6. Send notification:
+   - Customer: "Payment received. Balance: UGX X"
+   - If mobile money: also via Yo!
+7. Generate receipt PDF
+
+═══════════════════════════════════════════════════════════════
+PART I: LOAN PAYMENT VIEW (Customer)
+═══════════════════════════════════════════════════════════════
+
+When a customer (borrower) logs in and taps "My Loans":
+
+┌─────────────────────────────────────────┐
+│ 💰 MY LOANS                              │
+├─────────────────────────────────────────┤
+│ LN-2026-00045 — Small Business           │
+│                                          │
+│ Loan Amount: UGX 2,000,000              │
+│ Total Paid: UGX 450,000                 │
+│ Balance: UGX 1,550,000                  │
+│                                          │
+│ Next Payment: 15 Nov 2026               │
+│ Amount Due: UGX 225,558                 │
+│                                          │
+│ Progress: ▓▓▓░░░░░░░ 22%               │
+│                                          │
+│ [📅 View Schedule] [💳 Pay Now]         │
+│ [📄 Loan Agreement] [📊 Statement]      │
+└─────────────────────────────────────────┘
+
+Customer CAN:
+- View loan details
+- See repayment schedule
+- View payment history
+- Pay via mobile money (Task 12 integration)
+- Download agreement + statements
+
+Customer CANNOT:
+- Modify loan
+- Change repayment schedule
+- Access other customers' data
+
+═══════════════════════════════════════════════════════════════
+PART J: LOAN OFFICER PORTFOLIO VIEW
+═══════════════════════════════════════════════════════════════
+
+When Loan Officer taps [📋 Loans]:
+
+Tabs: [All] [Draft] [Submitted] [Approved] [Disbursed] [Repaying] 
+[Fully Repaid] [Overdue]
+
+Filters:
+- Date range
+- Customer
+- Amount range
+- Product type
+- Status
+
+List view:
+┌─────────────────────────────────────────┐
+│ LN-2026-00045 — John Doe                │
+│ UGX 2,000,000 · Small Business           │
+│ Status: 🟢 Repaying                     │
+│ Next Due: 15 Nov · Balance: UGX 1,550,000│
+│ [👁 View] [💰 Pay] [📄 Docs] [⋮]       │
+└─────────────────────────────────────────┘
+
+⋮ menu:
+- View full loan detail
+- Edit (if draft only)
+- Download agreement PDF
+- View repayment schedule
+- Add payment
+- View history
+- Restructure (with approval)
+- Write off (with director approval)
+
+═══════════════════════════════════════════════════════════════
+PART K: STYLING
+═══════════════════════════════════════════════════════════════
+
+Match existing design:
+- Primary: #4B2E9E
+- MFI accent: #1A5490 (dark blue)
+- Success: #4CAF50
+- Warning: #FF9800
+- Danger: #dc3545
+
+Loan status colors:
+- Draft: grey
+- Submitted: blue
+- Under Review: yellow
+- Approved: teal
+- Disbursed: purple
+- Repaying: light green
+- Overdue: orange
+- Fully Repaid: green
+- Written Off: dark red
+
+Schedule view:
+- Table format with clear columns
+- Paid rows in green
+- Overdue rows in red
+- Pending rows in white/grey
+
+═══════════════════════════════════════════════════════════════
+PART L: OFFLINE SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Loan application capture works offline:
+- Save draft to IndexedDB
+- Sync when online
+
+Payment recording works offline:
+- Save payment locally
+- Update local balance
+- Sync when online (Task 2 + Task 12 webhook)
+
+Balance/status views work offline from cache.
+
+Customer view works offline from cache.
+
+═══════════════════════════════════════════════════════════════
+PART M: FIRESTORE INDEXES
+═══════════════════════════════════════════════════════════════
+
+Add composite indexes:
+1. microfinance_loans: institutionId (asc) + status (asc)
+2. microfinance_loans: customerId (asc) + createdAt (desc)
+3. microfinance_loans: institutionId (asc) + nextPaymentDueDate (asc)
+4. microfinance_loans: status (asc) + nextPaymentDueDate (asc)
+5. mfi_loan_repayment_schedule: loanId (asc) + installmentNumber (asc)
+6. mfi_loan_repayment_schedule: dueDate (asc) + status (asc)
+7. mfi_loan_payments: loanId (asc) + paymentDate (desc)
+8. mfi_loan_payments: institutionId (asc) + paymentDate (desc)
+9. mfi_loan_products: institutionId (asc) + isActive (asc)
+
+═══════════════════════════════════════════════════════════════
+PART N: TESTING
+═══════════════════════════════════════════════════════════════
+
+Test with 1 Loan Officer + 1 Loan Manager + 1 Customer:
+
+A. Seed loan products:
+   1. Super Admin → Command Center → MFI → Seed Loan Products
+   2. Verify: 6 products in mfi_loan_products
+
+B. Loan application:
+   1. Login as Loan Officer
+   2. Tap [💼 New Loan]
+   3. Select existing customer
+   4. Choose "Small Business Loan"
+   5. Enter UGX 2,000,000 for 12 months
+   6. Add collateral (Land from Task 10)
+   7. Add guarantor
+   8. Upload required docs
+   9. Submit
+   10. Verify: microfinance_loans doc created with status="submitted"
+
+C. Manager review:
+   1. Login as Loan Manager
+   2. See pending loan
+   3. Open review modal
+   4. Verify: all sections load
+   5. Choose ✅ Approve
+   6. Verify: loan status="approved"
+   7. Verify: repayment schedule auto-generated (12 entries)
+   8. Check schedule: correct amounts
+   9. Verify: expected payback date
+
+D. Disbursement:
+   1. Loan Officer taps [💸 Disburse]
+   2. Method: MTN Mobile Money
+   3. Confirm
+   4. Verify:
+      - status="disbursed"
+      - disbursementDate set
+      - expectedPaybackDate = +12 months
+      - Loan Agreement PDF generated
+      - Customer notified
+
+E. Payment recording:
+   1. Customer makes first payment
+   2. Loan Officer records: UGX 225,558
+   3. Verify:
+      - mfi_loan_payments doc created
+      - installment 1 marked paid
+      - loan balance updated
+      - nextPaymentDueDate = month 2
+      - customer notified
+
+F. Partial payment:
+   1. Customer pays only UGX 100,000
+   2. Verify: installment 1 status="partially_paid"
+   3. Verify: balance tracking correct
+
+G. Full repayment:
+   1. Pay all 12 installments
+   2. Verify: status="fully_repaid"
+   3. Verify: actualPaybackDate set
+   4. Verify: customer can download statement
+
+H. Customer view:
+   1. Login as customer
+   2. Open My Loans
+   3. Verify: loan visible
+   4. Verify: schedule visible
+   5. Verify: progress bar correct
+   6. Test [💳 Pay Now] → integration with Task 12
+
+I. Portfolio view:
+   1. Login as Loan Officer
+   2. Open Loans tab
+   3. Filter by status
+   4. Verify: correct loans shown
+   5. Test search by loan number
+
+J. Offline:
+   1. Turn off WiFi
+   2. Capture loan application → saved offline
+   3. Turn on WiFi → syncs
+   4. Verify: appears in Firestore
+
+K. Regression:
+   1. Tasks 1-13 all work
+   2. Task 10 Collateral still functions
+   3. Task 12 Payments still work
+   4. No console errors
+
+═══════════════════════════════════════════════════════════════
+PART O: DO NOT
+═══════════════════════════════════════════════════════════════
+
+- Do NOT rebuild the app
+- Do NOT break Tasks 1-13
+- Do NOT allow disbursement without approval
+- Do NOT allow loans without collateral when required
+- Do NOT skip repayment schedule generation
+- Do NOT allow customer to edit loan
+- Do NOT allow editing after disbursement (only restructure with approval)
+- Do NOT lose repayment schedule data
+- Do NOT allow negative balances
+- Do NOT disburse without signature verification (Yo! API)
+- Do NOT lose loan applications offline
+
+═══════════════════════════════════════════════════════════════
+
+Confirm when done with:
+"Task 14 Step 1 complete — Full MFI Loan Lifecycle (Application + 
+Approval + Disbursement + Repayment Schedule) built"
+
+Report:
+- Which tests A through K passed
+- Any bugs found
+- Screenshots recommended: loan products, loan application wizard, 
+  manager review, disbursement, repayment schedule, payment recording, 
+  customer loan view, portfolio view
