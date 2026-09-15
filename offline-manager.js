@@ -7,7 +7,7 @@
   'use strict';
 
   var DB_NAME = 'appshule-offline';
-  var DB_VERSION = 23;
+  var DB_VERSION = 24;
   var STORE_NAMES = [
     'offline_videos',
     'offline_ca_records',
@@ -48,7 +48,15 @@
     'offline_farm_reports',
     'offline_farm_egg_collections',
     'offline_farm_feed_consumption',
-    'offline_farm_inventory'
+    'offline_farm_inventory',
+    'offline_timetable_config',
+    'offline_timetable_classes',
+    'offline_timetable_subjects',
+    'offline_timetable_assignments',
+    'offline_timetable_duty',
+    'offline_timetable_combined',
+    'offline_timetables',
+    'offline_timetable_outcomes'
   ];
   var FALLBACK_KEY = '__connection__';
   var TEMPLATE_PREFIX = '__ncdc_template__:';
@@ -374,6 +382,24 @@
           var scheduleStore = db.createObjectStore('offline_mfi_loan_schedules', { keyPath: 'localId' });
           scheduleStore.createIndex('loanId', 'loanId', { unique: false });
           scheduleStore.createIndex('institutionId', 'institutionId', { unique: false });
+        }
+        if (oldVersion < 24) {
+          [
+            ['offline_timetable_config', 'configKey'],
+            ['offline_timetable_classes', 'localId'],
+            ['offline_timetable_subjects', 'localId'],
+            ['offline_timetable_assignments', 'localId'],
+            ['offline_timetable_duty', 'localId'],
+            ['offline_timetable_combined', 'localId'],
+            ['offline_timetables', 'timetableId'],
+            ['offline_timetable_outcomes', 'localId']
+          ].forEach(function (definition) {
+            var name = definition[0];
+            if (db.objectStoreNames.contains(name)) return;
+            var timetableStore = db.createObjectStore(name, { keyPath: definition[1] });
+            timetableStore.createIndex('institutionId', 'institutionId', { unique: false });
+            timetableStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+          });
         }
       };
       request.onsuccess = function () {
