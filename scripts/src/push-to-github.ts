@@ -53,6 +53,7 @@ const FILES = [
   ".agents/memory/MEMORY.md",
   ".agents/memory/github-pages-push-allowlist.md",
   "CNAME",
+  "sw.js",
   "firebase-messaging-sw.js",
   "manifest.json",
   "robots.txt",

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
 const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
+const serviceWorkerSource = readFileSync(resolve(root, "sw.js"), "utf8");
 const offlineSource = readFileSync(resolve(root, "offline-manager.js"), "utf8");
 const rulesSource = readFileSync(resolve(root, "firestore.rules"), "utf8");
 const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"), "utf8")) as {
@@ -79,6 +80,12 @@ describe("Task 9 Step 1 command center contracts", () => {
     }
     expect(indexSource).toContain("New platform events will appear here.");
     expect(indexSource).toContain("No critical platform alerts.");
+  });
+
+  it("forces installed phones to refresh the released app shell", () => {
+    expect(serviceWorkerSource).toContain("appshule-offline-v2");
+    expect(indexSource).toContain('register("/sw.js?v=20260915-2"');
+    expect(indexSource).toContain("scope: \"/\"");
   });
 
   it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
