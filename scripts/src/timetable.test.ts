@@ -91,7 +91,7 @@ describe("Task 15 bug fixes", () => {
   it("opens every subscription plan in the Yo payment flow", () => {
     expect(indexSource).toContain('id="subscriptionPayModal"');
     expect(indexSource).toContain("data-plan-cycle");
-    for (const plan of ["Daily", "Weekly", "Monthly", "Term", "Half Year", "Full Year"]) {
+    for (const plan of ["Daily", "Weekly", "Monthly", "Term Plan", "Half Year", "Full Year"]) {
       expect(indexSource).toContain(plan);
     }
     expect(indexSource).toContain("function submitSubscriptionPayment");
