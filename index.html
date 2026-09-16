@@ -4517,7 +4517,7 @@
     function getStorage()   { return storage; }
 
     // Snapshot wrapper: compat has .exists as a property; modular code calls .exists() as a method
-    var _emptySnap = { docs:[], empty:true, size:0, forEach:function(){} };
+    var _emptySnap = { docs:[], empty:true, size:0, forEach:function(){}, docChanges:function(){ return []; } };
     function _wrapDoc(d) {
         if(!d) return { id:'', ref:null, exists:function(){ return false; }, data:function(){ return null; }, metadata:{} };
         return { id:d.id, ref:d.ref, exists:function(){ return d.exists; }, data:function(){ return d.data(); }, metadata:d.metadata };
@@ -4526,7 +4526,10 @@
         if(!snap) return _emptySnap;
         if(typeof snap.docs !== 'undefined') {
             var docs = snap.docs.map(_wrapDoc);
-            return { docs:docs, empty:snap.empty, size:snap.size, forEach:function(fn){ docs.forEach(fn); } };
+            var changes = typeof snap.docChanges === 'function'
+                ? snap.docChanges().map(function(change){ return { type:change.type, doc:_wrapDoc(change.doc) }; })
+                : [];
+            return { docs:docs, empty:snap.empty, size:snap.size, forEach:function(fn){ docs.forEach(fn); }, docChanges:function(){ return changes; } };
         }
         return _wrapDoc(snap);
     }
@@ -16942,7 +16945,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-9", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-10", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {

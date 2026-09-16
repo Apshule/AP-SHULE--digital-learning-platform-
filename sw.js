@@ -1,7 +1,7 @@
 /* Root worker for the offline shell. Firebase push remains in its existing worker. */
 importScripts('/firebase-messaging-sw.js');
 
-var APP_VERSION = 'appshule-offline-v9';
+var APP_VERSION = 'appshule-offline-v10';
 var SHELL_CACHE = APP_VERSION + '-shell';
 var STORAGE_CACHE = APP_VERSION + '-firebase-storage';
 var DATA_CACHE = APP_VERSION + '-data';
