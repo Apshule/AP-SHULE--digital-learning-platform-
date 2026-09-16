@@ -13669,6 +13669,18 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(splashLogo&&branding.showInstitutionLogo!==false&&branding.institutionLogoPath) splashLogo.src=branding.institutionLogoPath;
         if(branding.primaryColor) document.documentElement.style.setProperty('--institution-primary',branding.primaryColor);
     }
+    function clearInstitutionBranding() {
+        try { localStorage.removeItem('apshule_last_institution_branding'); } catch(e) {}
+        const appLogo=document.getElementById('headerLogoImg'), institutionLogo=document.getElementById('headerSchoolLogoImg'), name=document.getElementById('headerInstitutionName');
+        if(appLogo) appLogo.style.display='';
+        if(institutionLogo) { institutionLogo.src=''; institutionLogo.alt='School logo'; institutionLogo.style.display='none'; }
+        if(name) { name.textContent=''; name.style.display='none'; }
+        const loginInstitutionLogo=document.getElementById('loginInstitutionLogoImg');
+        if(loginInstitutionLogo) { loginInstitutionLogo.src=''; loginInstitutionLogo.style.display='none'; }
+        const splashLogo=document.getElementById('splashLogoImg');
+        if(splashLogo) splashLogo.src=document.getElementById('headerLogoImg')?.src||'';
+        document.documentElement.style.removeProperty('--institution-primary');
+    }
     function applyRememberedInstitutionBranding() {
         try { const saved=JSON.parse(localStorage.getItem('apshule_last_institution_branding')||'null'); if(saved) applyInstitutionBranding(saved); } catch(e) {}
     }
@@ -15676,6 +15688,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
         currentUser = { uid:user.uid, ...profile, rawRole, role:profileRole(profile) };
+        clearInstitutionBranding();
         // Do not expose the default student page while the role dashboard is booting.
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
         const appTagline = document.getElementById('appTagline');
