@@ -1,0 +1,55 @@
+Subject: Build Phase 1 Backend for APSHULE (Node.js + Express + Firebase + Render)
+
+Project Context:
+As you know the project we are handling and you know very well my frontend is plain HTML/CSS/JS hosted at https://appshule.com. I need a backend that handles form data, reports, and PDF generation, hosted on Render. The backend must use Firebase (Firestore & Auth) as the database.
+
+Phase 1 Task: Build the Backend Skeleton and Secure Firebase Connection
+
+Task 1: Project Setup
+
+1. Initialize a Node.js project (npm init -y).
+2. Install dependencies: express, cors, dotenv, firebase-admin.
+3. Update package.json to include "start": "node server.js" in the scripts section.
+
+Task 2: Security & Environment Variables
+
+1. Create a .gitignore file and add: node_modules/, .env, firebase-service-account.json.
+2. Create a .env file with placeholders for:
+   · PORT=3000
+   · FIREBASE_PROJECT_ID=
+   · FIREBASE_CLIENT_EMAIL=
+   · FIREBASE_PRIVATE_KEY=
+3. CRITICAL: Do NOT hardcode any secrets. Explain how to get these values from the Firebase Console (Project Settings -> Service Accounts -> Generate New Private Key).
+
+Task 3: Server Setup (server.js)
+Create a server.js file that:
+
+1. Imports express, cors, dotenv, and firebase-admin.
+2. Loads environment variables from .env.
+3. Initializes Firebase Admin using the environment variables.
+   · Note: Ensure the private key handles newline characters properly (e.g., replacing \\n with \n).
+4. Configures CORS to only allow requests from https://appshule.com (and http://localhost:3000 for testing).
+5. Adds express.json() middleware to parse incoming JSON.
+6. Creates a GET /api/health route that returns { ok: true, message: 'APSHULE backend is alive!' }.
+7. Creates a GET /api/test-firebase route that tries to list Firestore collections and returns them to prove the connection works.
+8. Starts the server on process.env.PORT.
+
+Task 4: Local Testing
+
+1. Run npm start locally.
+2. Verify http://localhost:3000/api/health returns the success message.
+3. Verify http://localhost:3000/api/test-firebase successfully connects to Firebase.
+
+Task 5: Deployment to Render
+
+1. Push the project to a GitHub repository.
+2. Go to Render.com, create a new Web Service, and connect the GitHub repo.
+3. Set Build Command: npm install
+4. Set Start Command: npm start
+5. Add the Environment Variables (from the .env file) into the Render Dashboard. Do not upload the .env file to GitHub.
+6. Deploy and verify the public URL works (e.g., https://appshule-api.onrender.com/api/health).
+
+Task 6: Frontend Connection Test
+
+1. Provide a JavaScript snippet using fetch() that I can put in my frontend to test connecting to the deployed backend from appshule.com. 
+Then after that you can proceed with our task which is before this
