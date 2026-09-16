@@ -36,6 +36,7 @@ function saveLastMessage(msg: string): void {
 }
 
 const FILES = [
+  "package.json",
   "index.html",
   "offline-manager.js",
   "scripts/src/ncdc-course.test.ts",
