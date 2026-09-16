@@ -12,6 +12,7 @@ const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"),
 describe("Task 12 payment backend contracts", () => {
   it("keeps the education subscription modal on the authenticated payment boundary", () => {
     expect(indexSource).toContain("window.task12Api = api");
+    expect(indexSource).toContain("window.openYoPayment = openClientPayment");
     expect(indexSource).toContain("const paymentApi=window.task12Api");
     expect(indexSource).toContain("Payment provider not yet configured. Please contact support.");
     for (const plan of ["Daily", "Weekly", "Monthly", "Term Plan", "Half Year", "Full Year"]) {

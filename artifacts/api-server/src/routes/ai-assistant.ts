@@ -12,6 +12,7 @@ const roleSectors: Record<string, Sector> = {
   school: "education",
   school_admin: "education",
   headteacher: "education",
+  education_admin: "education",
   teacher: "education",
   mfi_admin: "mfi",
   loan_officer: "mfi",

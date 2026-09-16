@@ -13051,7 +13051,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
     // ===== SECTOR AI ASSISTANT =====
     let aiDrawerSessionKey = '';
-    const AI_ASSISTANT_ENDPOINT='https://appshule.com/api/ai/assistant';
+    window.APSHULE_API_BASE=window.APSHULE_API_BASE||'https://ap-shule-digital-learning-platform-3.onrender.com';
+    window.apshuleApiUrl=function(path) {
+        const value=String(path||'');
+        if(/^https?:\/\//i.test(value)) return value;
+        const base=String(window.APSHULE_API_BASE||'').replace(/\/+$/,'');
+        return `${base}/${value.replace(/^\/+/,'')}`;
+    };
+    const AI_ASSISTANT_ENDPOINT='https://ap-shule-digital-learning-platform-3.onrender.com/api/ai/assistant';
     function aiAssistantSector() {
         const sector=typeof appRoleSector==='function' ? appRoleSector() : 'unknown';
         return ['education','mfi','clinic','farm','platform'].includes(sector) ? sector : 'platform';
@@ -13119,7 +13126,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!navigator.onLine) return 'The secure AI assistant needs an internet connection. Your offline sector tools are still available.';
         try {
             const token=await auth.currentUser.getIdToken();
-            const endpoint=String(window.APSHULE_API_BASE||AI_ASSISTANT_ENDPOINT).replace(/\/+$/,'');
+            const endpoint=typeof window.apshuleApiUrl==='function'
+                ? window.apshuleApiUrl('/api/ai/assistant')
+                : AI_ASSISTANT_ENDPOINT;
             const response=await fetch(endpoint,{
                 method:'POST',
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
@@ -15688,6 +15697,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     const APP_ROLE_SECTORS = Object.freeze({
         superadmin:'platform',
         school:'education',
+        school_admin:'education',
+        headteacher:'education',
         teacher:'education',
         individual:'education',
         mfi_admin:'mfi',
@@ -17641,7 +17652,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function api(path, options = {}) {
         if (!auth?.currentUser) throw new Error('Please sign in before making a payment.');
         const token = await auth.currentUser.getIdToken();
-        const response = await fetch(path, {
+        const response = await fetch(window.apshuleApiUrl(path), {
             ...options,
             headers: { 'Content-Type': 'application/json', ...(options.headers || {}), Authorization: `Bearer ${token}` }
         });
@@ -17653,6 +17664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose only this authenticated request helper; payment credentials stay
     // on the server.
     window.task12Api = api;
+    window.openYoPayment = openClientPayment;
 
     function feeFor(amount) {
         return Math.max(0, Math.round(Number(amount || 0) * Number(state.feePercentage || 0) / 100 + Number(state.feeFixed || 0)));

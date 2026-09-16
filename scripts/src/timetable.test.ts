@@ -98,7 +98,8 @@ describe("Task 15 bug fixes", () => {
     }
     expect(indexSource).toContain("function submitSubscriptionPayment");
     expect(indexSource).toContain("api('/api/payments/initiate'");
-    expect(indexSource).toContain("Please contact your school admin to subscribe");
+    expect(indexSource).toContain("function initiateYoPayment");
+    expect(indexSource).toContain("window.openYoPayment");
     expect(indexSource).not.toContain("Online payment is coming soon");
   });
 });

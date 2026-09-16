@@ -13,7 +13,8 @@ const appSource = readFileSync(resolve(root, "artifacts/api-server/src/app.ts"),
 
 describe("sector AI assistant contracts", () => {
   it("uses the authenticated server assistant without exposing provider credentials", () => {
-    expect(indexSource).toContain("const AI_ASSISTANT_ENDPOINT='https://appshule.com/api/ai/assistant'");
+    expect(indexSource).toContain("const AI_ASSISTANT_ENDPOINT='https://ap-shule-digital-learning-platform-3.onrender.com/api/ai/assistant'");
+    expect(indexSource).toContain("window.apshuleApiUrl");
     expect(askAiSource).toContain("fetch(endpoint");
     expect(askAiSource).toContain("auth.currentUser.getIdToken()");
     expect(askAiSource).not.toContain("pollinations");
@@ -30,6 +31,7 @@ describe("sector AI assistant contracts", () => {
     for (const sector of ["education", "mfi", "clinic", "farm", "platform"]) {
       expect(routeSource).toContain(`${sector}:`);
     }
+    expect(routeSource).toContain('education_admin: "education"');
   });
 
   it("includes safety guidance for every APSHULE sector", () => {
