@@ -10373,11 +10373,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 byVideo[data.videoKey].amount += (data.amount||0);
                 if(data.paid) byVideo[data.videoKey].paid += (data.amount||0);
             });
-            document.getElementById('teacherTotalEarnings').textContent = Number(totalUnpaid).toLocaleString();
-            document.getElementById('teacherTotalViews').textContent = totalViews;
+            const totalEarningsEl = document.getElementById('teacherTotalEarnings');
+            const totalViewsEl = document.getElementById('teacherTotalViews');
+            if(totalEarningsEl) totalEarningsEl.textContent = Number(totalUnpaid).toLocaleString();
+            if(totalViewsEl) totalViewsEl.textContent = totalViews;
             // Update pendingEarnings in user doc for superadmin to see
             updateDoc(doc(db,"users",currentUser.uid), { pendingEarnings: totalUnpaid }).catch(()=>{});
             const breakdown = document.getElementById('teacherEarningsBreakdown');
+            if(!breakdown) return;
             if(!Object.keys(byVideo).length) { breakdown.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">No completions yet</div>'; return; }
             breakdown.innerHTML = Object.entries(byVideo).map(([key, data]) => {
                 const parts = key.split('_');
