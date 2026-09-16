@@ -15545,6 +15545,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function isSchoolRole(role=currentUser?.role) {
         return ['school','school_admin','headteacher'].includes(normalizeAppRole(role));
     }
+    function isFarmRole(role=currentUser?.role) {
+        return ['farm_admin','farm_manager','farm_worker','farm_director'].includes(normalizeAppRole(role));
+    }
     function routeAuthenticatedUser() {
         const role=currentUser?.role;
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
@@ -16933,7 +16936,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-5", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-6", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {
@@ -17856,7 +17859,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const FARM_WORKER_ROLES=['Herder','Milker','Egg Collector','Feeder','Manager','Security','Cleaner','Vet'];
     let farmState={farm:null,types:[],workers:[],cameras:[],movements:[],summaries:[],attendance:[],eggCollections:[],inventory:[],feedConsumption:[],produce:[],sales:[],expenses:[],section:'home',reportRange:'month',reportType:'animal',workerFilters:{role:'',status:'',sort:'name'},farmChartInstances:[]};
     let farmFaceFile=null;
-    function isFarmRole(role=currentUser?.role){ return FARM_ROLES.includes(role); }
     function farmInstitutionId(){ return currentUser?.farmId||currentUser?.institutionId||''; }
     function farmCanManage(){ return ['superadmin','farm_admin'].includes(currentUser?.role); }
     function farmCanOperate(){ return ['superadmin','farm_admin','farm_manager'].includes(currentUser?.role); }
