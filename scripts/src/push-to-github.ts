@@ -37,6 +37,8 @@ function saveLastMessage(msg: string): void {
 
 const FILES = [
   "package.json",
+  "package-lock.json",
+  "pnpm-lock.yaml",
   "index.html",
   "offline-manager.js",
   "scripts/src/ncdc-course.test.ts",
