@@ -3247,6 +3247,16 @@
                                     <option value="monthly">Monthly</option>
                                 </select>
                             </div>
+                            <div>
+                                <label style="font-size:12px;font-weight:600;color:#4B2E9E;">Sector</label>
+                                <select id="announcementSector" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:10px;margin-top:3px;font-size:13px;">
+                                    <option value="all">All sectors</option>
+                                    <option value="education">Education</option>
+                                    <option value="mfi">Microfinance</option>
+                                    <option value="clinic">Clinic / Pharmacy</option>
+                                    <option value="farm">Farm</option>
+                                </select>
+                            </div>
                             <div id="notifTimesWrap">
                                 <label style="font-size:12px;font-weight:600;color:#4B2E9E;">Times per day</label>
                                 <select id="notifTimesPerDay" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:10px;margin-top:3px;font-size:13px;">
@@ -8489,7 +8499,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const status = document.getElementById('videoAssignStatus');
         try {
             await addDoc(collection(db,'video_assignments'), { videoId, topic:item.topic, classId, subject:item.subject, teacherId:currentUser.uid, teacherName:currentUser.name, message, assignedAt:serverTimestamp() });
-            await addDoc(collection(db,'notifications'), { targetRole:'student', classId, type:'video_assignment', title:`New video from ${currentUser.name || 'your teacher'}`, message:message || `Watch ${item.topic}`, videoId, createdAt:serverTimestamp(), read:false }).catch(()=>{});
+            await addDoc(collection(db,'notifications'), { targetRole:'student', classId, type:'video_assignment', title:`New video from ${currentUser.name || 'your teacher'}`, body:message || `Watch ${item.topic}`, message:message || `Watch ${item.topic}`, videoId, sector:'education', timestamp:new Date().toISOString(), createdAt:serverTimestamp(), read:false }).catch(()=>{});
             if(status) { status.textContent='Assigned to the class.'; status.className='video-studio-status success'; }
         } catch(error) { if(status) { status.textContent=error.message || 'Could not assign video'; status.className='video-studio-status error'; } }
     }
@@ -10117,7 +10127,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         title: '📋 New Admission Form',
                         body: `New form from ${data.fullName} (${data.class}) — ${formNo}. Open Admin Panel → Admissions to review.`,
                         timestamp: new Date().toISOString(),
-                        author: data.fullName || 'Student'
+                        author: data.fullName || 'Student',
+                        sector: 'education'
                     });
                 }
             } catch(_){}
@@ -10263,7 +10274,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!confirm(`Approve admission for ${studentName}?\nStudent will be notified immediately.`)) return;
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'approved', approvedAt:new Date().toISOString(), approvedBy:currentUser?.uid });
-            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your APSHULE admission has been approved. You are now free to study. Welcome to the family! 🎓`, timestamp:new Date().toISOString(), author:'APSHULE Admin' }); sendFcmPush(studentUid,'🎉 Admission Approved!',`Congratulations ${studentName}! Your admission has been approved.`); }
+            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'🎉 Admission Approved!', body:`Congratulations ${studentName}! Your APSHULE admission has been approved. You are now free to study. Welcome to the family! 🎓`, timestamp:new Date().toISOString(), author:'APSHULE Admin', sector:'education' }); sendFcmPush(studentUid,'🎉 Admission Approved!',`Congratulations ${studentName}! Your admission has been approved.`); }
             showNotification(`${studentName} approved ✅`);
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -10274,7 +10285,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const reason=prompt('Reason for declining (leave blank to skip):')||'';
         try {
             await updateDoc(doc(db,'admissionForms',formId),{ admissionStatus:'declined', declineReason:reason, declinedAt:new Date().toISOString(), declinedBy:currentUser?.uid });
-            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'❌ Admission Not Approved', body:`Your APSHULE admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, timestamp:new Date().toISOString(), author:'APSHULE Admin' }); sendFcmPush(studentUid,'❌ Admission Not Approved','Your admission form was not approved. Please contact the school.'); }
+            if(studentUid) { await addDoc(collection(db,'notifications'),{ targetUserId:studentUid, title:'❌ Admission Not Approved', body:`Your APSHULE admission form was not approved at this time.${reason?' Reason: '+reason:''} Please contact the school for guidance.`, timestamp:new Date().toISOString(), author:'APSHULE Admin', sector:'education' }); sendFcmPush(studentUid,'❌ Admission Not Approved','Your admission form was not approved. Please contact the school.'); }
             showNotification('Declined — student notified');
             loadAdmissionFormsAdmin();
         } catch(e){ showNotification('Error: '+e.message,'error'); }
@@ -10697,7 +10708,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 body: `"${(qdata.question||'').substring(0,60)}…"\n\nAnswer: ${answer.substring(0,120)}`,
                 timestamp: new Date().toISOString(),
                 author: responderName,
-                targetUserId: qdata.studentId
+                targetUserId: qdata.studentId,
+                sector: 'education'
             });
             if(qdata.studentId) sendFcmPush(qdata.studentId,'✅ Your question was answered!',`Answer: ${answer.substring(0,80)}`);
             showNotification("Answer sent! Student has been notified. ✅", "success");
@@ -11577,7 +11589,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         body: `${currentUser.name} requests a live lesson: "${title}". Open Admin Panel → Live Lessons to review.`,
                         timestamp: new Date().toISOString(),
                         author: currentUser.name,
-                        targetUserId: adminUid
+                        targetUserId: adminUid,
+                        sector: 'education'
                     });
                 }
             } catch(_){}
@@ -11635,7 +11648,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 createdAt: new Date().toISOString()
             });
             // Notify all users
-            await writeNotification(null, '📡 New Live Lesson Scheduled', `"${title}" ${date?'on '+date:''} — check Live Lessons tab for access.`);
+            await writeNotification(null, '📡 New Live Lesson Scheduled', `"${title}" ${date?'on '+date:''} — check Live Lessons tab for access.`, 'live', {sector:'education'});
             statusEl.style.color='#4CAF50'; statusEl.textContent='✅ Lesson scheduled and visible to students!';
             document.getElementById('adminLiveTitle').value='';
             document.getElementById('adminLiveLink').value='';
@@ -11704,14 +11717,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         await addDoc(collection(db,'notifications'), {
             type:'live', title:'📡 Live Lesson Available!',
             body:`"${l.title}" by ${l.teacherName} is now scheduled. Fee: UGX ${Number(fee).toLocaleString()||'FREE'}. Open the Live tab to join!`,
-            targetUserId:null, timestamp:now, author:'APSHULE Admin'
+            targetUserId:null, timestamp:now, author:'APSHULE Admin', sector:'education'
         });
         // Notify the teacher who submitted the request
         if(l.teacherId) {
             await addDoc(collection(db,'notifications'), {
                 type:'live', title:'✅ Your Live Lesson Was Approved!',
                 body:`Great news! Your lesson "${l.title}" has been approved by the admin and is now visible to all students. ${link?'Join link: '+link:''}`,
-                targetUserId:l.teacherId, timestamp:now, author:'APSHULE Admin'
+                targetUserId:l.teacherId, timestamp:now, author:'APSHULE Admin', sector:'education'
             });
             sendFcmPush(l.teacherId,'✅ Your Live Lesson Was Approved!',`"${l.title}" is now visible to all students.`);
         }
@@ -11763,7 +11776,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 type:'token', title:'🔑 Your Live Lesson Access is Ready!',
                 body:`You have been granted access to "${lesson.title}". Open your Alerts tab and tap "Join Live Lesson" to get your unique link. This link works on ONE device only.`,
                 timestamp:new Date().toISOString(), author:'APSHULE Admin',
-                targetUserId: student.uid, liveToken: token, lessonId
+                targetUserId: student.uid, liveToken: token, lessonId, sector:'education'
             });
             sendFcmPush(student.uid,'🔑 Your Live Lesson Access is Ready!',`You have been granted access to "${lesson.title}". Open Alerts to join.`);
             status.style.color='#4CAF50';
@@ -11837,7 +11850,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             type:'token', title:'🔑 Your Live Lesson Access is Ready!',
             body:`Payment confirmed! Your unique access link for "${lesson.title}" is ready. Open Alerts → "Join Live Lesson". ONE device only.`,
             timestamp:new Date().toISOString(), author:'APSHULE Admin',
-            targetUserId:r.userId, liveToken:token, lessonId:r.lessonId
+            targetUserId:r.userId, liveToken:token, lessonId:r.lessonId, sector:'education'
         });
         sendFcmPush(r.userId,'🔑 Your Live Lesson Access is Ready!',`Your access link for "${lesson.title}" is ready. Open the app to join.`);
         showNotification(`✅ Token generated and sent to ${r.userName}`);
@@ -13246,7 +13259,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         try {
             const credential=await createManagedAuthUser(email,password); const uid=credential?.uid||`profile-${Date.now()}`;
              await setDoc(doc(db,'users',uid),{uid,name,email,phone,role,institutionId:institutionId||null,farmId:['farm_admin','farm_manager','farm_worker'].includes(role)?institutionId||null:null,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid},{merge:true});
-            if(document.getElementById('commandUserWelcome').checked) await addDoc(collection(db,'notifications'),{targetUserId:uid,title:'Welcome to APSHULE',body:`Your ${role} account has been created. Please sign in with the password provided by your administrator.`,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
+            if(document.getElementById('commandUserWelcome').checked) await addDoc(collection(db,'notifications'),{targetUserId:uid,title:'Welcome to APSHULE',body:`Your ${role} account has been created. Please sign in with the password provided by your administrator.`,sector:appRoleSector(role),institutionId:institutionId||null,timestamp:new Date().toISOString(),createdAt:new Date().toISOString(),read:false}).catch(()=>{});
             if(status) status.textContent='✅ User created'; await logSuperAdminAction('create_user',{userId:uid,role}); showNotification('✅ User created','success'); document.getElementById('commandUserForm').reset(); closeCommandModal('commandUserModal'); await loadCommandUsers(); await loadCommandDashboard();
         } catch(error) { console.error('Create user failed:',error); if(status) status.textContent=error?.message||'Unable to create user'; }
     }
@@ -13511,9 +13524,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const form=event.target.closest('#commandAnnouncementForm'); if(!form)return;
             if(form.dataset.previewConfirmed==='yes'){delete form.dataset.previewConfirmed;return;}
             event.preventDefault(); event.stopImmediatePropagation();
-            const title=document.getElementById('commandAnnouncementTitle')?.value.trim()||'Untitled announcement', body=document.getElementById('commandAnnouncementBody')?.value.trim()||'', audience=document.getElementById('commandAnnouncementAudience')?.value||'all', status=document.getElementById('commandAnnouncementStatus');
+            const title=document.getElementById('commandAnnouncementTitle')?.value.trim()||'Untitled announcement', body=document.getElementById('commandAnnouncementBody')?.value.trim()||'', audience=document.getElementById('commandAnnouncementAudience')?.value||'all', sector=document.getElementById('commandAnnouncementSector')?.value||'all', status=document.getElementById('commandAnnouncementStatus');
             let preview=document.getElementById('commandAnnouncementPreview'); if(!preview){preview=document.createElement('div');preview.id='commandAnnouncementPreview';preview.className='command-preview-card';form.insertBefore(preview,form.querySelector('button[type="submit"]'));}
-            preview.innerHTML=`<strong>Preview for ${escHtml(audience==='all'?'all users':audience+'s')}</strong><h4 style="margin:7px 0;color:#4B2E9E;">${escHtml(title)}</h4><p style="margin:0;white-space:pre-wrap;">${escHtml(body)}</p><div class="command-toolbar" style="margin:10px 0 0;"><button id="confirmCommandAnnouncementBtn" class="command-primary-btn" type="button">Confirm and send</button><button id="editCommandAnnouncementBtn" class="command-secondary-btn" type="button">Edit</button></div>`;
+            preview.innerHTML=`<strong>Preview for ${escHtml(audience==='all'?'all users':audience+'s')} · ${escHtml(sector==='all'?'all sectors':sector)}</strong><h4 style="margin:7px 0;color:#4B2E9E;">${escHtml(title)}</h4><p style="margin:0;white-space:pre-wrap;">${escHtml(body)}</p><div class="command-toolbar" style="margin:10px 0 0;"><button id="confirmCommandAnnouncementBtn" class="command-primary-btn" type="button">Confirm and send</button><button id="editCommandAnnouncementBtn" class="command-secondary-btn" type="button">Edit</button></div>`;
             if(status)status.textContent='Review the preview before sending.';
             document.getElementById('confirmCommandAnnouncementBtn')?.addEventListener('click',()=>{form.dataset.previewConfirmed='yes';form.requestSubmit();});
             document.getElementById('editCommandAnnouncementBtn')?.addEventListener('click',()=>{preview.remove();if(status)status.textContent='';});
@@ -13624,7 +13637,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const rows=await commandLoad('liveAccess'); target.innerHTML=commandModuleCard('Access Tokens',rows.map(item=>`<div class="command-list-card"><div><h4>🔑 ${escHtml(item.userName||item.userEmail||'Student')}</h4><p>${escHtml(item.lessonTitle||item.lessonId||'')} · ${item.used?'Device locked':'Not used'}${item.revoked?' · Revoked':''}</p></div><div class="command-list-actions">${item.revoked?'':'<button data-token-revoke="'+item.id+'">Revoke</button>'}</div></div>`).join('')||'<div class="command-activity-item">No access tokens found.</div>'); target.querySelectorAll('[data-token-revoke]').forEach(button=>button.onclick=async()=>{await window.revokeToken?.(button.dataset.tokenRevoke);loadCommandModule('live','tokens');});
     }
     function renderCommandCommunicationTab(tab,target) {
-        if(tab==='send') { target.innerHTML=commandModuleCard('Send Announcement',`<form id="commandAnnouncementForm" class="command-form"><label>Title<input id="commandAnnouncementTitle" required maxlength="120"></label><label>Message<textarea id="commandAnnouncementBody" rows="5" required></textarea></label><label>Audience<select id="commandAnnouncementAudience"><option value="all">All users</option><option value="student">Students</option><option value="teacher">Teachers</option><option value="school">School admins</option></select></label><div id="commandAnnouncementStatus"></div><button class="command-primary-btn" type="submit">📢 Send announcement</button></form>`,'<button class="command-secondary-btn" id="commandOpenLegacyAnnounceBtn">Open scheduling controls</button>'); document.getElementById('commandOpenLegacyAnnounceBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.querySelector('#announcementTitle')?.scrollIntoView({behavior:'smooth'}),300);}); document.getElementById('commandAnnouncementForm')?.addEventListener('submit',async event=>{event.preventDefault();if(!commandRequiresOnline())return;const title=document.getElementById('commandAnnouncementTitle').value.trim(),body=document.getElementById('commandAnnouncementBody').value.trim(),audience=document.getElementById('commandAnnouncementAudience').value,status=document.getElementById('commandAnnouncementStatus');status.textContent='Sending…';try{await addDoc(collection(db,'notifications'),{title,body,targetRole:audience==='all'?null:audience,type:'announcement',author:currentUser.name||'APSHULE Admin',createdAt:new Date().toISOString(),timestamp:new Date().toISOString(),read:false});status.textContent='✅ Announcement sent';showNotification('Announcement sent','success');document.getElementById('commandAnnouncementForm').reset();}catch(error){status.textContent=error.message||'Unable to send announcement';}}); return; }
+        if(tab==='send') { target.innerHTML=commandModuleCard('Send Announcement',`<form id="commandAnnouncementForm" class="command-form"><label>Title<input id="commandAnnouncementTitle" required maxlength="120"></label><label>Message<textarea id="commandAnnouncementBody" rows="5" required></textarea></label><label>Audience<select id="commandAnnouncementAudience"><option value="all">All users</option><option value="student">Students</option><option value="teacher">Teachers</option><option value="school">School admins</option></select></label><label>Sector<select id="commandAnnouncementSector"><option value="all">All sectors</option><option value="education">Education</option><option value="mfi">Microfinance</option><option value="clinic">Clinic / Pharmacy</option><option value="farm">Farm</option></select></label><div id="commandAnnouncementStatus"></div><button class="command-primary-btn" type="submit">📢 Send announcement</button></form>`,'<button class="command-secondary-btn" id="commandOpenLegacyAnnounceBtn">Open scheduling controls</button>'); document.getElementById('commandOpenLegacyAnnounceBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.querySelector('#announcementTitle')?.scrollIntoView({behavior:'smooth'}),300);}); document.getElementById('commandAnnouncementForm')?.addEventListener('submit',async event=>{event.preventDefault();if(!commandRequiresOnline())return;const title=document.getElementById('commandAnnouncementTitle').value.trim(),body=document.getElementById('commandAnnouncementBody').value.trim(),audience=document.getElementById('commandAnnouncementAudience').value,sector=document.getElementById('commandAnnouncementSector').value,status=document.getElementById('commandAnnouncementStatus');status.textContent='Sending…';try{const payload={title,body,targetRole:audience==='all'?null:audience,type:'announcement',author:currentUser.name||'APSHULE Admin',createdAt:new Date().toISOString(),timestamp:new Date().toISOString(),read:false};if(sector!=='all')payload.sector=sector;await addDoc(collection(db,'notifications'),payload);status.textContent='✅ Announcement sent';showNotification('Announcement sent','success');document.getElementById('commandAnnouncementForm').reset();}catch(error){status.textContent=error.message||'Unable to send announcement';}}); return; }
         if(tab==='history') { commandLoad('notifications').then(rows=>{target.innerHTML=commandModuleCard('Message History',commandTable(['Title','Audience','Created'],rows.filter(item=>item.type==='announcement'||item.author).sort((a,b)=>String(b.createdAt||b.timestamp||'').localeCompare(String(a.createdAt||a.timestamp||'')).slice(0,50)).map(item=>commandRow([escHtml(item.title||'—'),escHtml(item.targetRole||'All users'),escHtml(item.createdAt||item.timestamp?new Date(item.createdAt||item.timestamp).toLocaleString():'—')])),'No messages found.'));}); return; }
         if(tab==='scheduled') { const rows=(typeof scheduledNotifications!=='undefined'&&scheduledNotifications)||[]; target.innerHTML=commandModuleCard('Scheduled Messages',rows.length?rows.map(item=>`<div class="command-list-card"><div><h4>🕐 ${escHtml(item.title||'Scheduled message')}</h4><p>${escHtml(item.scheduledAt||item.nextSendAt||'')}</p></div></div>`).join(''):'<div class="command-activity-item">Use the legacy scheduler to review and edit scheduled messages.</div>','<button class="command-secondary-btn" id="commandOpenSchedulerBtn">Open scheduler</button>'); document.getElementById('commandOpenSchedulerBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.getElementById('scheduledNotifsList')?.scrollIntoView({behavior:'smooth'}),300);}); return; }
         if(tab==='templates') { const templates=[['Exam reminder','Remember to review your UNEB revision plan.'],['Live lesson','A live lesson is starting soon. Open the Live tab to join.'],['New resource','A new learning resource is available in APSHULE.']]; target.innerHTML=commandModuleCard('Announcement Templates',templates.map(([title,body])=>`<div class="command-list-card"><div><h4>${title}</h4><p>${body}</p></div><div class="command-list-actions"><button data-template="${escHtml(body)}">Use template</button></div></div>`).join('')); target.querySelectorAll('[data-template]').forEach(button=>button.onclick=()=>{commandModuleTab='send';loadCommandModule('announce','send');setTimeout(()=>{document.getElementById('commandAnnouncementBody').value=button.dataset.template;},50);}); return; }
@@ -14678,7 +14691,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     function mfiLoanPreviewHtml(product,amount,term){if(!product||!amount)return 'Select a product and enter the amount to see the repayment preview.';const preview=mfiLoanPreview(amount,product.defaultInterestRate,term,product.interestType,product.processingFeePercentage,product.insuranceFeePercentage);return `<strong>Loan summary</strong><br>Principal: ${mfiMoney(amount)} · ${escHtml(product.defaultInterestRate)}%/month (${escHtml(product.interestType)})<br>Estimated installment: <strong>${mfiMoney(preview.installment)}</strong><br>Total interest: ${mfiMoney(preview.totalInterest)} · Fees: ${mfiMoney(preview.totalFees)}<br>Total repayment: <strong>${mfiMoney(preview.totalRepayment)}</strong><br>Net disbursed after processing fee: ${mfiMoney(Math.max(0,Number(amount)-preview.processingFee))}`;}
     async function mfiLoanAudit(loan,event,extra={}){if(!navigator.onLine||!loan)return;const now=new Date().toISOString();await addDoc(collection(db,'mfi_loan_audit'),{institutionId:loan.institutionId||mfiInstitutionId(),loanId:loan.id||'',event,actorId:currentUser?.uid||'',actorName:currentUser?.name||currentUser?.email||'',createdAt:now,...extra}).catch(()=>{});}
-    async function mfiLoanNotify(loan,event,title,body){if(!navigator.onLine||!loan)return;const targets=[{targetRole:'loan_manager'},{targetRole:'loan_officer'},{targetUserId:loan.customerId}];await Promise.all(targets.map(target=>addDoc(collection(db,'notifications'),{...target,institutionId:loan.institutionId||mfiInstitutionId(),type:`mfi_loan_${event}`,title,body,loanId:loan.id||'',createdAt:new Date().toISOString(),read:false}).catch(()=>{})));}
+    async function mfiLoanNotify(loan,event,title,body){if(!navigator.onLine||!loan)return;const timestamp=new Date().toISOString(),targets=[{targetRole:'loan_manager'},{targetRole:'loan_officer'},{targetUserId:loan.customerId}];await Promise.all(targets.map(target=>addDoc(collection(db,'notifications'),{...target,institutionId:loan.institutionId||mfiInstitutionId(),sector:'mfi',type:`mfi_loan_${event}`,title,body,loanId:loan.id||'',timestamp,createdAt:timestamp,read:false}).catch(()=>{})));}
     async function mfiSyncOfflineLoan(item){const payload={...item};delete payload.localId;delete payload.syncStatus;delete payload.queuedAt;const ref=await addDoc(collection(db,'microfinance_loans'),{...payload,syncedFromOffline:true,updatedAt:new Date().toISOString()});const loanNumber=`LN-${new Date().getFullYear()}-${String(ref.id).slice(-6).toUpperCase()}`;await updateDoc(ref,{loanNumber});const loan={...payload,id:ref.id,loanNumber};if(item.status==='submitted'){await addDoc(collection(db,'mfi_loan_approvals'),{institutionId:item.institutionId,loanId:ref.id,level:2,decision:'pending',createdAt:new Date().toISOString()});await mfiLoanAudit(loan,'submitted_offline');await mfiLoanNotify(loan,'submitted','Loan submitted for review',`${loan.customerName||'A borrower'} submitted ${loanNumber} for review.`);}return ref.id;}
     async function mfiSyncOfflineLoanPayment(item){const payload={...item};delete payload.localId;delete payload.syncStatus;delete payload.queuedAt;await addDoc(collection(db,'mfi_loan_payments'),{...payload,syncedFromOffline:true,createdAt:payload.createdAt||new Date().toISOString()});const loanRef=doc(db,'microfinance_loans',item.loanId),loanSnap=await getDoc(loanRef);if(loanSnap.exists()){const loan=loanSnap.data(),amount=Number(item.amount||0),balance=Math.max(0,Number(loan.balanceRemaining||0)-amount);await updateDoc(loanRef,{totalPaidSoFar:Number(loan.totalPaidSoFar||0)+amount,balanceRemaining:balance,status:balance<=0?'fully_repaid':'repaying',actualPaybackDate:balance<=0?new Date().toISOString():null,updatedAt:new Date().toISOString()});}}
     async function mfiLoadLoanProducts(){
@@ -14810,7 +14823,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!amount||!navigator.onLine||!db)throw new Error('Credit note operations require an internet connection.');
         const now=new Date(),expiry=new Date(now);expiry.setFullYear(expiry.getFullYear()+1);
         const ref=await addDoc(collection(db,'mfi_credit_notes'),{customerId:loan.customerId,customerName:loan.customerName||mfiLoanCustomer(loan.customerId)?.name||'',loanId:loan.id,institutionId:loan.institutionId||mfiInstitutionId(),reason,creditAmount:Number(amount),usedAmount:0,balanceRemaining:Number(amount),status:'active',expiryDate:expiry.toISOString(),createdBy:currentUser?.uid||'',createdAt:now.toISOString(),updatedAt:now.toISOString()});
-        await addDoc(collection(db,'notifications'),{targetUserId:loan.customerId,institutionId:loan.institutionId||mfiInstitutionId(),type:'mfi_credit_note',title:'Credit note created',body:`You overpaid ${mfiStep2Money(amount)}. Your credit note can be applied to a future loan or refunded.`,createdAt:now.toISOString(),read:false}).catch(()=>{});
+        await addDoc(collection(db,'notifications'),{targetUserId:loan.customerId,institutionId:loan.institutionId||mfiInstitutionId(),sector:'mfi',type:'mfi_credit_note',title:'Credit note created',body:`You overpaid ${mfiStep2Money(amount)}. Your credit note can be applied to a future loan or refunded.`,timestamp:now.toISOString(),createdAt:now.toISOString(),read:false}).catch(()=>{});
         return ref.id;
     }
     async function mfiStep2RecordPayment(event){
@@ -14862,9 +14875,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 const level=mfiStep2EscalationLevel(days),action=level>=4?'legal':level===3?'field_visit':level===2?'call':'sms';
                 const log={institutionId:loan.institutionId||mfiInstitutionId(),loanId:loan.id,installmentId:row.id,customerId:loan.customerId,customerName:loan.customerName||'',customerPhone:loan.customerPhone||'',daysOverdue:days,amountOverdue:overdueAmount,lateFeeApplied:fee,escalationLevel:level,actionsTaken:[{type:action,sentAt:new Date().toISOString(),message:`Overdue account escalation level ${level}`}],currentStatus:level>=4?'legal':'open',notes:'Automated overdue scan',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
                 await addDoc(collection(db,'mfi_loan_overdue_log'),log);
-                await addDoc(collection(db,'notifications'),{targetUserId:loan.customerId,targetRole:null,institutionId:loan.institutionId||mfiInstitutionId(),type:'mfi_overdue',title:'Loan payment overdue',body:`Your installment is ${days} day${days===1?'':'s'} overdue. Amount due: ${mfiStep2Money(overdueAmount+fee)}.`,loanId:loan.id,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
-                await addDoc(collection(db,'notifications'),{targetRole:'loan_officer',institutionId:loan.institutionId||mfiInstitutionId(),type:'mfi_overdue',title:'Overdue loan requires action',body:`${loan.loanNumber||loan.id} is ${days} days overdue.`,loanId:loan.id,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
-                if(days>30)await addDoc(collection(db,'notifications'),{targetRole:'loan_manager',institutionId:loan.institutionId||mfiInstitutionId(),type:'mfi_overdue',title:'Overdue loan escalated',body:`${loan.loanNumber||loan.id} is ${days} days overdue and needs manager attention.`,loanId:loan.id,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
+                const timestamp=new Date().toISOString();
+                await addDoc(collection(db,'notifications'),{targetUserId:loan.customerId,targetRole:null,institutionId:loan.institutionId||mfiInstitutionId(),sector:'mfi',type:'mfi_overdue',title:'Loan payment overdue',body:`Your installment is ${days} day${days===1?'':'s'} overdue. Amount due: ${mfiStep2Money(overdueAmount+fee)}.`,loanId:loan.id,timestamp,createdAt:timestamp,read:false}).catch(()=>{});
+                await addDoc(collection(db,'notifications'),{targetRole:'loan_officer',institutionId:loan.institutionId||mfiInstitutionId(),sector:'mfi',type:'mfi_overdue',title:'Overdue loan requires action',body:`${loan.loanNumber||loan.id} is ${days} days overdue.`,loanId:loan.id,timestamp,createdAt:timestamp,read:false}).catch(()=>{});
+                if(days>30)await addDoc(collection(db,'notifications'),{targetRole:'loan_manager',institutionId:loan.institutionId||mfiInstitutionId(),sector:'mfi',type:'mfi_overdue',title:'Overdue loan escalated',body:`${loan.loanNumber||loan.id} is ${days} days overdue and needs manager attention.`,loanId:loan.id,timestamp,createdAt:timestamp,read:false}).catch(()=>{});
             }
             if(rows.some(row=>row.status==='overdue'))await updateDoc(doc(db,'microfinance_loans',loan.id),{status:'overdue',updatedAt:new Date().toISOString()}).catch(()=>{});
         }
@@ -14920,7 +14934,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     async function mfiStep2RequestCreditRefund(id){
         if(!navigator.onLine||!db){showNotification('Credit note operations require internet.','error');return;}
         await addDoc(collection(db,'mfi_credit_note_refund_requests'),{creditNoteId:id,customerId:currentUser.uid,institutionId:mfiInstitutionId(),status:'pending',requestedAt:new Date().toISOString()});
-        await addDoc(collection(db,'notifications'),{targetRole:'mfi_admin',institutionId:mfiInstitutionId(),type:'mfi_credit_refund_request',title:'Credit refund requested',body:`Borrower ${currentUser.name||currentUser.uid} requested a credit note refund.`,creditNoteId:id,createdAt:new Date().toISOString(),read:false}).catch(()=>{});
+        const timestamp=new Date().toISOString();
+        await addDoc(collection(db,'notifications'),{targetRole:'mfi_admin',institutionId:mfiInstitutionId(),sector:'mfi',type:'mfi_credit_refund_request',title:'Credit refund requested',body:`Borrower ${currentUser.name||currentUser.uid} requested a credit note refund.`,creditNoteId:id,timestamp,createdAt:timestamp,read:false}).catch(()=>{});
         showNotification('✅ Refund request sent to the MFI Admin','success');
     }
     function mfiStep2OpenWorkflowModal(title,html){
@@ -15016,7 +15031,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
      }
      function clinicNotify(targetUserId,title,body,type='clinic'){
          if(!db) return Promise.resolve();
-         return addDoc(collection(db,'notifications'),{targetUserId:targetUserId||null,targetInstitutionId:clinicInstitutionId(),targetRole:null,title,body,type,createdAt:new Date().toISOString(),timestamp:new Date().toISOString(),read:false}).catch(()=>{});
+         return addDoc(collection(db,'notifications'),{targetUserId:targetUserId||null,targetInstitutionId:clinicInstitutionId(),targetRole:null,sector:'clinic',title,body,type,createdAt:new Date().toISOString(),timestamp:new Date().toISOString(),read:false}).catch(()=>{});
      }
      async function clinicLoadUsers(roles){
          if(!db||!clinicInstitutionId()) return [];
@@ -15855,14 +15870,27 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         } catch(_) {}
     }
 
-    async function writeNotification(targetUserId, title, body, type) {
+    function notificationWriteSector(type, options={}) {
+        const inferred=notificationSector({type, targetRole:options.targetRole, sector:options.sector, institutionType:options.institutionType});
+        if(inferred!=='all') return inferred;
+        const senderSector=appRoleSector();
+        return senderSector!=='platform' && senderSector!=='unknown' ? senderSector : '';
+    }
+
+    async function writeNotification(targetUserId, title, body, type, options={}) {
         try {
-            await addDoc(collection(db,"notifications"), {
+            const sector=options.sector || notificationWriteSector(type, options);
+            const payload={
                 type: type || 'general', title, body,
                 targetUserId: targetUserId || null,
                 timestamp: new Date().toISOString(),
                 author: currentUser?.name || 'Admin'
-            });
+            };
+            if(sector) payload.sector=sector;
+            if(options.institutionId) payload.institutionId=options.institutionId;
+            if(options.targetInstitutionId) payload.targetInstitutionId=options.targetInstitutionId;
+            if(options.targetRole) payload.targetRole=options.targetRole;
+            await addDoc(collection(db,"notifications"), payload);
             if(targetUserId) sendFcmPush(targetUserId, title, body);
         } catch(e) {}
     }
@@ -16801,7 +16829,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     if(fireAt <= now && !window._firingNotifIds.has(d.id)) {
                         window._firingNotifIds.add(d.id);
                         try {
-                            await writeNotification(null, s.title, s.body || '');
+                            await writeNotification(null, s.title, s.body || '', 'announcement', s.sector && s.sector!=='all' ? {sector:s.sector} : {});
                             await updateDoc(doc(db,'scheduledNotifications',d.id), { sent: true, sentAt: now.toISOString() });
                         } catch(e) { console.warn('[sched] fire error', e); }
                         finally { window._firingNotifIds.delete(d.id); }
@@ -16838,7 +16866,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         const s = d.data();
                         if(s.nextSendAt && new Date(s.nextSendAt) <= now) {
                             try {
-                                await writeNotification(null, s.title, s.body || '');
+                                await writeNotification(null, s.title, s.body || '', 'announcement', s.sector && s.sector!=='all' ? {sector:s.sector} : {});
                                 await updateDoc(doc(db,'scheduledNotifications',d.id), { sent: true, sentAt: now.toISOString() });
                             } catch(e) { console.warn('[sched poll] fire error', e); }
                         }
@@ -16930,6 +16958,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     document.getElementById('sendAnnouncementBtn')?.addEventListener('click', async () => {
         const title = document.getElementById('announcementTitle').value.trim();
         const body = document.getElementById('announcementBody').value.trim();
+        const sector = document.getElementById('announcementSector')?.value || 'all';
         const freq = document.getElementById('notifFrequency')?.value || 'once';
         const timesPerDay = parseInt(document.getElementById('notifTimesPerDay')?.value||1);
         const statusEl = document.getElementById('announcementStatus');
@@ -16952,6 +16981,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 // Save to Firestore as a pending scheduled notification
                 await addDoc(collection(db,'scheduledNotifications'), {
                     title, body, frequency: 'once', timesPerDay: 1,
+                    sector,
                     nextSendAt: sendAt.toISOString(),
                     createdAt: now.toISOString(), createdBy: currentUser.uid,
                     sent: false
@@ -16961,20 +16991,20 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 showNotification('Announcement scheduled for '+timeLabel);
             } else {
                 // Send immediately
-                await writeNotification(null, title, body);
-                statusEl.textContent = '✅ Announcement sent to all students!';
+                await writeNotification(null, title, body, 'announcement', sector==='all'?{}:{sector});
+                statusEl.textContent = `✅ Announcement sent to ${sector==='all'?'all sectors':sector}`;
                 showNotification("Announcement broadcast!");
             }
         } else {
             // Recurring — send once now and store schedule
             btn.disabled = true; statusEl.textContent = 'Sending + Scheduling…';
-            await writeNotification(null, title, body);
+            await writeNotification(null, title, body, 'announcement', sector==='all'?{}:{sector});
             let nextSendAt;
             if(freq === 'daily') { nextSendAt = new Date(now.getTime() + 24*60*60*1000/timesPerDay); }
             else if(freq === 'weekly') { nextSendAt = new Date(now.getTime() + 7*24*60*60*1000); }
             else if(freq === 'monthly') { nextSendAt = new Date(now.getTime() + 30*24*60*60*1000); }
             await addDoc(collection(db,'scheduledNotifications'), {
-                title, body, frequency: freq, timesPerDay,
+                title, body, frequency: freq, timesPerDay, sector,
                 nextSendAt: nextSendAt.toISOString(),
                 createdAt: now.toISOString(), createdBy: currentUser.uid
             });
@@ -16984,6 +17014,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
         document.getElementById('announcementTitle').value = '';
         document.getElementById('announcementBody').value = '';
+        if(document.getElementById('announcementSector')) document.getElementById('announcementSector').value = 'all';
         // Reset schedule picker to "Now"
         var schedAt = document.getElementById('notifScheduleAt');
         if(schedAt) {

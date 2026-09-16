@@ -41,4 +41,18 @@ describe("sector isolation contracts", () => {
     expect(indexSource).toContain(".filter(notificationMatchesCurrentUser)");
     expect(indexSource).toContain("const sector=notificationSector(notification);");
   });
+
+  it("writes sector metadata for announcements and operational notifications", () => {
+    for (const value of [
+      "id=\"commandAnnouncementSector\"",
+      "id=\"announcementSector\"",
+      "sector:'mfi'",
+      "sector:'clinic'",
+      "sector:'education'",
+      "function notificationWriteSector(type, options={})",
+      "s.sector && s.sector!=='all'",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+  });
 });
