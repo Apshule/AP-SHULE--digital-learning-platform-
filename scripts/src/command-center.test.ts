@@ -112,6 +112,14 @@ describe("Task 9 Step 1 command center contracts", () => {
     expect(indexSource).toContain("docChanges:function(){ return changes; }");
   });
 
+  it("keeps teacher earnings listeners safe when dashboard cards are unavailable", () => {
+    expect(indexSource).toContain("const totalEarningsEl = document.getElementById('teacherTotalEarnings');");
+    expect(indexSource).toContain("if(totalEarningsEl) totalEarningsEl.textContent");
+    expect(indexSource).toContain("const totalViewsEl = document.getElementById('teacherTotalViews');");
+    expect(indexSource).toContain("if(totalViewsEl) totalViewsEl.textContent");
+    expect(indexSource).toContain("if(!breakdown) return;");
+  });
+
   it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
     for (const value of [
       "commandAnalyticsRange",

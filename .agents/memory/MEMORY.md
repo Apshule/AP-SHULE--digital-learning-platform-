@@ -13,3 +13,5 @@
 - [Yo payment boundaries](yo-payment-boundaries.md) — Keep Yo credentials, signed callbacks, and balance mutations server-side; clients handle references and status only.
 - [Farm Step 2 offline safety](farm-step2-offline-safety.md) — Cache farm inventory locally and make feed sync idempotent so retries cannot deduct stock twice.
 - [Command Center overlay guards](command-center-overlay-guards.md) — Clear unrelated fullscreen layers and bind every Super Admin quick action during its own bootstrap.
+- [Single-file script bootstrap order](single-file-script-bootstrap-order.md) — Auth routing can run before later classic script blocks; defer or expose late helpers before calling them.
+- [Role dashboard realtime guards](role-dashboard-realtime-guards.md) — Firestore listeners must tolerate missing role-specific widgets without breaking an otherwise successful dashboard login.
