@@ -13033,6 +13033,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
     // ===== SECTOR AI ASSISTANT =====
     let aiDrawerSessionKey = '';
+    const AI_ASSISTANT_ENDPOINT='https://appshule.com/api/ai/assistant';
     function aiAssistantSector() {
         const sector=typeof appRoleSector==='function' ? appRoleSector() : 'unknown';
         return ['education','mfi','clinic','farm','platform'].includes(sector) ? sector : 'platform';
@@ -13100,8 +13101,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!navigator.onLine) return 'The secure AI assistant needs an internet connection. Your offline sector tools are still available.';
         try {
             const token=await auth.currentUser.getIdToken();
-            const configuredBase=String(window.APSHULE_API_BASE||'').replace(/\/+$/,'');
-            const response=await fetch((configuredBase||'')+'/api/ai/assistant',{
+            const endpoint=String(window.APSHULE_API_BASE||AI_ASSISTANT_ENDPOINT).replace(/\/+$/,'');
+            const response=await fetch(endpoint,{
                 method:'POST',
                 headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
                 body:JSON.stringify({question:q,sector:aiAssistantSector(),context:aiAssistantContext()}),

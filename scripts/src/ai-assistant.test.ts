@@ -11,7 +11,8 @@ const routeSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/
 
 describe("sector AI assistant contracts", () => {
   it("uses the authenticated server assistant without exposing provider credentials", () => {
-    expect(askAiSource).toContain("fetch((configuredBase||'')+'/api/ai/assistant'");
+    expect(indexSource).toContain("const AI_ASSISTANT_ENDPOINT='https://appshule.com/api/ai/assistant'");
+    expect(askAiSource).toContain("fetch(endpoint");
     expect(askAiSource).toContain("auth.currentUser.getIdToken()");
     expect(askAiSource).not.toContain("pollinations");
     expect(routeSource).toContain("GOOGLE_API_KEY");
