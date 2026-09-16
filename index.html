@@ -15634,36 +15634,37 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(isSuper) {
             setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});
         }
-        document.getElementById('adminMenuItem').style.display = (isSuper||isSchool) ? "flex" : "none";
-        document.getElementById('liveLessonMenuItem').style.display = (isMfi||isClinic) ? "none" : "flex";
-        document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
-        document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
-        document.getElementById('offlineViewsOverviewSection').style.display = isSuper ? "block" : "none";
+         const setRoleDisplay = (id, display) => { const element = document.getElementById(id); if(element) element.style.display = display; };
+         setRoleDisplay('adminMenuItem', (isSuper||isSchool) ? "flex" : "none");
+         setRoleDisplay('liveLessonMenuItem', (isMfi||isClinic) ? "none" : "flex");
+         setRoleDisplay('superAdminSection', isSuper ? "block" : "none");
+         setRoleDisplay('livePlanEditSection', isSuper ? "block" : "none");
+         setRoleDisplay('offlineViewsOverviewSection', isSuper ? "block" : "none");
         if (isSuper) {
             setTimeout(function(){
                 window.loadPushHistory?.();
                 window.initPushHistoryControls?.();
             }, 0);
         }
-        document.getElementById('schoolStudentsSection').style.display = isSchool ? "block" : "none";
-        document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
-        document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
-        document.getElementById('addSubjectSection').style.display = isSuper ? "block" : "none";
-        document.getElementById('pdfManagementSection').style.display = isSuper ? "block" : "none";
-        document.getElementById('admissionFormsAdminSection').style.display = isSuper ? "block" : "none";
+         setRoleDisplay('schoolStudentsSection', isSchool ? "block" : "none");
+         setRoleDisplay('schoolEventsSection', isSchool ? "block" : "none");
+         setRoleDisplay('globalEventsSection', isSuper ? "block" : "none");
+         setRoleDisplay('addSubjectSection', isSuper ? "block" : "none");
+         setRoleDisplay('pdfManagementSection', isSuper ? "block" : "none");
+         setRoleDisplay('admissionFormsAdminSection', isSuper ? "block" : "none");
         // Admission shortcut — show for students only
         const admShortcut = document.getElementById('admissionShortcut');
         if(admShortcut) admShortcut.style.display = (!isSuper&&!isSchool&&!isTeacher) ? "block" : "none";
         if(!isSuper&&!isSchool&&!isTeacher) loadMyAdmissionStatus();
-        document.getElementById('attendanceMenuItem').style.display = isSchool ? "flex" : "none";
+         setRoleDisplay('attendanceMenuItem', isSchool ? "flex" : "none");
         // Live nav item — visible for students (individual), school, and superadmin
         const showLiveNav = !isTeacher&&!isMfi&&!isClinic;
-        document.getElementById('liveNavItem').style.display = showLiveNav ? "flex" : "none";
+         setRoleDisplay('liveNavItem', showLiveNav ? "flex" : "none");
          const showTimetableNav = isSchool || isTeacher || currentUser.role === 'individual' || currentUser.role === 'student' || isSuper;
          const timetableNav = document.getElementById('timetableNavItem');
          if(timetableNav) timetableNav.style.display = showTimetableNav ? "flex" : "none";
         // Teacher dashboard nav item
-        document.getElementById('teacherNavItem').style.display = isTeacher ? "flex" : "none";
+         setRoleDisplay('teacherNavItem', isTeacher ? "flex" : "none");
         // Profile pic — hidden for superadmin and school
         const profilePicSection = document.getElementById('profilePicUploadSection');
         if(profilePicSection) profilePicSection.style.display = (isSchool||isSuper||isMfi||isClinic) ? "none" : "block";
@@ -16941,7 +16942,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-8", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-9", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {
