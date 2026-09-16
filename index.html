@@ -2690,9 +2690,9 @@
     <!-- AI DRAWER -->
     <div class="overlay" id="drawerOverlay"></div>
     <div class="ai-drawer" id="aiDrawer">
-        <div class="ai-drawer-header"><h3><i class="fas fa-robot"></i> AI Tutor</h3><button id="closeDrawerBtn" style="background:none;border:none;color:white;font-size:24px;">&times;</button></div>
-        <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">Hello! I'm your APSHULE AI Tutor. Ask me anything! 📚</div></div></div>
-        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask anything…" autocomplete="off" autocorrect="on" spellcheck="true"><button class="ai-send-btn" id="sendBtn" title="Send"><i class="fas fa-arrow-up"></i></button></div>
+        <div class="ai-drawer-header"><div><h3><i class="fas fa-robot"></i> <span id="aiDrawerTitle">AI Assistant</span></h3><div id="aiDrawerScope" style="font-size:11px;opacity:.82;margin-top:3px;">Secure, sector-aware help</div></div><button id="closeDrawerBtn" style="background:none;border:none;color:white;font-size:24px;">&times;</button></div>
+        <div class="ai-chat-messages" id="chatMessages"><div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble" id="aiWelcomeMessage">Hello! I'm your APSHULE AI Assistant. How can I help?</div></div></div>
+        <div class="ai-chat-input"><input type="text" id="chatInput" placeholder="Ask your sector assistant…" autocomplete="off" autocorrect="on" spellcheck="true"><button class="ai-send-btn" id="sendBtn" title="Send"><i class="fas fa-arrow-up"></i></button></div>
     </div>
 
     <div class="main-content">
@@ -13031,27 +13031,88 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         } catch(e) { status.style.color = 'red'; status.textContent = 'Error saving. Try again.'; }
     });
 
-    // ===== AI CHAT =====
-    async function askAI(q) {
-        const systemPrompt = 'You are APSHULE AI Tutor — a helpful, friendly, and knowledgeable educational assistant for Ugandan students from Primary 1 to Senior 6. '
-            + 'You follow the Uganda National Curriculum (UNEB syllabus). '
-            + 'Always give a clear, complete, and accurate answer. Never say you cannot answer — do your best every time. '
-            + 'For maths: show the working step by step. For science: explain the concept simply with local examples. '
-            + 'For English: correct grammar and give examples. For History/SST: give factual, curriculum-relevant answers. '
-            + 'Keep answers concise but complete. Use bullet points or numbered steps where helpful. ';
-        // Try primary endpoint, then fallback
-        const endpoints = [
-            () => fetch('https://text.pollinations.ai/' + encodeURIComponent(systemPrompt + '\n\nStudent asks: ' + q), { signal: AbortSignal.timeout(20000) }).then(r=>{ if(!r.ok) throw new Error('bad'); return r.text(); }),
-            () => fetch('https://api.pollinations.ai/v1/chat/completions', {
-                method:'POST', signal: AbortSignal.timeout(20000),
-                headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ model:'openai', messages:[{role:'system',content:systemPrompt},{role:'user',content:q}], max_tokens:600 })
-            }).then(r=>{ if(!r.ok) throw new Error('bad'); return r.json(); }).then(j=>j?.choices?.[0]?.message?.content||'')
-        ];
-        for(const fn of endpoints) {
-            try { const txt = await fn(); if(txt && txt.trim().length>5) return txt.trim(); } catch(_){}
+    // ===== SECTOR AI ASSISTANT =====
+    let aiDrawerSessionKey = '';
+    function aiAssistantSector() {
+        const sector=typeof appRoleSector==='function' ? appRoleSector() : 'unknown';
+        return ['education','mfi','clinic','farm','platform'].includes(sector) ? sector : 'platform';
+    }
+    function aiAssistantContext() {
+        const sector=aiAssistantSector();
+        const context={
+            sector,
+            role:currentUser?.role||'unknown',
+            page:document.querySelector('.active-page')?.id||'unknown',
+            online:navigator.onLine,
+            language:document.documentElement.lang||'en',
+        };
+        if(sector==='education') {
+            context.education={
+                selectedLevel:typeof currentLevel!=='undefined'?currentLevel:null,
+                classesLoaded:typeof classes!=='undefined'&&Array.isArray(classes)?classes.length:null,
+                resourcesLoaded:typeof pdfMaterials!=='undefined'&&Array.isArray(pdfMaterials)?pdfMaterials.length:null,
+            };
         }
-        return "📚 The AI tutor is having trouble connecting right now. Please check your internet and try again — or ask your teacher!";
+        if(sector==='mfi') {
+            context.mfi={
+                customersLoaded:typeof mfiCustomers!=='undefined'&&Array.isArray(mfiCustomers)?mfiCustomers.length:null,
+                loansLoaded:typeof mfiLoans!=='undefined'&&Array.isArray(mfiLoans)?mfiLoans.length:null,
+                collateralLoaded:typeof mfiCollateral!=='undefined'&&Array.isArray(mfiCollateral)?mfiCollateral.length:null,
+            };
+        }
+        if(sector==='clinic') {
+            context.clinic={
+                currentFacilityType:currentUser?.facilityType||null,
+                role:currentUser?.role||null,
+            };
+        }
+        if(sector==='farm') {
+            context.farm={
+                animalsLoaded:typeof farmState!=='undefined'&&Array.isArray(farmState.animals)?farmState.animals.length:null,
+                workersLoaded:typeof farmState!=='undefined'&&Array.isArray(farmState.workers)?farmState.workers.length:null,
+                produceLoaded:typeof farmState!=='undefined'&&Array.isArray(farmState.produce)?farmState.produce.length:null,
+            };
+        }
+        return context;
+    }
+    function prepareAIDrawer() {
+        const sector=aiAssistantSector(), key=`${currentUser?.uid||'guest'}:${sector}`;
+        const labels={education:'Education assistant',mfi:'Microfinance assistant',clinic:'Clinic & Pharmacy assistant',farm:'Farm assistant',platform:'Platform assistant'};
+        const welcomes={
+            education:'Hello! I can explain lessons, help with homework, plan lessons, and support Uganda-curriculum learning.',
+            mfi:'Hello! I can help with microfinance operations, repayment planning, KYC checklists, and financial literacy.',
+            clinic:'Hello! I can help with clinic workflows, appointments, stock, billing, and safe health education.',
+            farm:'Hello! I can help with farm routines, animal care records, feeding, workers, and stock planning.',
+            platform:'Hello! I can help with safe APSHULE platform operations across the selected sector.',
+        };
+        const title=document.getElementById('aiDrawerTitle'), scope=document.getElementById('aiDrawerScope'), input=document.getElementById('chatInput');
+        if(title) title.textContent=labels[sector];
+        if(scope) scope.textContent='Secure, sector-aware help · Do not share passwords or secrets';
+        if(input) input.placeholder=sector==='education'?'Ask about a lesson or subject…':'Ask about your sector workflow…';
+        if(key!==aiDrawerSessionKey) {
+            aiDrawerSessionKey=key;
+            const messages=document.getElementById('chatMessages');
+            if(messages) messages.innerHTML=`<div class="message ai"><div class="message-avatar"><i class="fas fa-robot"></i></div><div class="message-bubble">${escHtml(welcomes[sector])}</div></div>`;
+        }
+    }
+    async function askAI(q) {
+        if(!auth?.currentUser) return 'Please sign in before using the APSHULE AI assistant.';
+        if(!navigator.onLine) return 'The AI assistant needs an internet connection. Your offline sector tools are still available.';
+        try {
+            const token=await auth.currentUser.getIdToken();
+            const response=await fetch('/api/ai/assistant',{
+                method:'POST',
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({question:q,sector:aiAssistantSector(),context:aiAssistantContext()}),
+                signal:AbortSignal.timeout(30000),
+            });
+            const data=await response.json().catch(()=>({}));
+            if(!response.ok) throw new Error(data.error||'AI assistant is unavailable');
+            return String(data.answer||'I could not produce an answer from the available context.');
+        } catch(error) {
+            console.warn('Sector AI request failed:',error);
+            return 'The APSHULE AI assistant is temporarily unavailable. Please try again shortly.';
+        }
     }
     function parseMd(t) {
         return t
@@ -13070,6 +13131,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         c.scrollTop=c.scrollHeight;
     }
     async function sendChat() {
+        prepareAIDrawer();
         let inp=document.getElementById('chatInput');
         let q=inp.value.trim();
         if(!q) return;
@@ -15688,6 +15750,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
         currentUser = { uid:user.uid, ...profile, rawRole, role:profileRole(profile) };
+        aiDrawerSessionKey='';
+        prepareAIDrawer();
         clearInstitutionBranding();
         // Do not expose the default student page while the role dashboard is booting.
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
@@ -16297,7 +16361,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     // ===== EVENT LISTENERS =====
     document.getElementById('sendBtn')?.addEventListener('click', sendChat);
     document.getElementById('chatInput')?.addEventListener('keypress', e=>{ if(e.key==='Enter') sendChat(); });
-    document.getElementById('openAIDrawerBtn')?.addEventListener('click', ()=>{ document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
+    document.getElementById('openAIDrawerBtn')?.addEventListener('click', ()=>{ prepareAIDrawer(); document.getElementById('aiDrawer').classList.add('open'); document.getElementById('drawerOverlay').classList.add('show'); });
     document.getElementById('closeDrawerBtn')?.addEventListener('click', ()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
     document.getElementById('drawerOverlay')?.addEventListener('click', ()=>{ document.getElementById('aiDrawer').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('show'); });
     document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', ()=>navigateTo(i.getAttribute('data-page'))));
