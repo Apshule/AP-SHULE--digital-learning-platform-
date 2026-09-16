@@ -1,0 +1,272 @@
+CRITICAL — SECTOR ISOLATION AND ROLE LABEL BUGS
+
+I have tested on appshule.com and found serious cross-sector leakage.
+
+EVIDENCE FROM LIVE TEST:
+
+Screenshot 1 (Farm Admin logged in):
+- Bottom nav shows: Home, Animals, Workers, Reports, Account 
+  (correct — Farm nav)
+- BUT top header shows "Teacher" as the label
+- The Farm Admin is incorrectly labeled as "Teacher"
+
+Screenshot 2 (Farm Admin - Notifications tab):
+- Shows Education-only notifications:
+  * "New Study Material" - Teacher Makumbi uploaded PDFs
+  * "Live Lesson Available" - Mathematics by Makumbi edrine
+- These are Education notifications appearing in a Farm account
+
+Screenshot 3 (Farm Admin - Account tab):
+- Shows "My Questions & Answers" card
+- Subtitle: "Questions you asked during lessons. You'll get a 
+  notification when your teacher replies."
+- This is an Education-only feature appearing in a Farm account
+
+Screenshot 4 (Farm Admin - Account tab continued):
+- Shows "Official Admission Form" card
+- Subtitle: "Fill in the APSHULE admission form online"
+- "Start Admission Form" button
+- This is an Education-only feature appearing in a Farm account
+
+Screenshot 5 (Super Admin Command Center):
+- Works correctly now (shows Command Center header, Quick Stats, 
+  bottom nav: Dashboard, Users, Institutions, Analytics, Settings)
+
+ROOT CAUSE:
+The sector isolation logic is not being applied. Every account 
+is showing features from the Education sector regardless of the 
+user's actual sector.
+
+REQUIRED FIXES:
+
+FIX 1 — ROLE LABEL CORRECTION
+The header label must reflect the actual role of the logged-in user.
+
+In the Farm Admin case:
+- Header should say: "Farm Admin" or the user's actual role name
+- Bottom nav correctly shows Farm nav
+- But the header is pulling the wrong role string
+
+Fix:
+- Read the user's role from the users collection (field: role)
+- Map role string to display label:
+  * "farm_admin" → "Farm Admin"
+  * "farm_manager" → "Farm Manager"
+  * "farm_worker" → "Farm Worker"
+  * "mfi_admin" → "MFI Admin"
+  * "loan_officer" → "Loan Officer"
+  * "loan_manager" → "Loan Manager"
+  * "loan_director" → "Loan Director"
+  * "clinic_admin" → "Clinic Admin"
+  * "doctor" → "Doctor"
+  * "nurse" → "Nurse"
+  * "receptionist" → "Receptionist"
+  * "pharmacist" → "Pharmacist"
+  * "school_admin" or "school" → "School Admin"
+  * "teacher" → "Teacher"
+  * "student" or "individual" → "Student"
+  * "superadmin" → "Super Admin"
+- Never show "Teacher" as a fallback for other roles
+
+FIX 2 — STRICT SECTOR ISOLATION (MUST BE ENFORCED)
+
+Every UI element must be tagged with its permitted sector(s).
+When a user logs in, only show features matching their sector.
+
+Remove these Education-only features from Farm, MFI, and Clinic:
+
+From ALL non-Education sectors:
+- Official Admission Form
+- My Questions and Answers (Q&A)
+- Report Cards
+- NCDC Courses
+- Curriculum Linker
+- Project Integrity
+- Video Studio
+- Live Lessons
+- Student Weak Areas
+- Student Competency Passport
+- Teacher CBC Teaching Tools
+- NCDC/UNEB Control
+- Learner Portfolio
+- CBC Teaching Tools
+
+From ALL non-MFI sectors:
+- Loan products
+- Loan applications
+- Collateral scoring
+- MFI customers
+- UMRA reports
+- Loan repayments
+
+From ALL non-Clinic sectors:
+- Patient records
+- Appointments
+- Prescriptions
+- Pharmacy inventory
+- Product scanner
+- Insurance claims
+- Clinic billing
+
+From ALL non-Farm sectors:
+- Animal tracking
+- Egg counting
+- Farm cameras
+- Farm inventory
+- Farm sales
+- Farm produce
+- Animal types
+
+FIX 3 — SECTOR-SPECIFIC NOTIFICATIONS
+
+Notifications must be filtered by sector.
+
+Farm Admin should only see:
+- Farm animal alerts
+- Missing animal warnings
+- Egg collection reminders
+- Worker attendance alerts
+- Feed consumption reminders
+- Farm sales confirmations
+
+Farm Admin should NOT see:
+- Study material uploads
+- Live lesson announcements
+- Student Q&A notifications
+- Report card notices
+- Teacher lesson requests
+
+Fix the notifications query to filter by the user's sector.
+
+FIX 4 — SECTOR-SPECIFIC AI
+
+Each sector needs its own AI feature, NOT the Education AI.
+
+Education AI (existing):
+- Lesson plan generation
+- CBC activity generation
+- UNEB scenario items
+
+Farm AI (to build):
+- Animal health insights
+- Feed optimization suggestions
+- Egg production forecasts
+- Farm productivity reports
+- Missing animal pattern analysis
+
+MFI AI (to build):
+- Loan risk assessment
+- Collateral valuation insights
+- Repayment pattern predictions
+- Overdue communication drafts
+
+Clinic AI (to build):
+- Symptom analysis suggestions
+- Drug interaction warnings
+- Patient follow-up recommendations
+- Inventory reorder predictions
+
+FIX 5 — SECTOR-SPECIFIC COMMUNICATION SYSTEM
+
+Each sector needs its own communication module (not the Education Q&A).
+
+For Farm:
+- Worker to Farm Admin messaging
+- Customer to Farm Admin messaging
+- Multi-channel support: In-app, SMS, Email, WhatsApp
+- Templates: Daily report, Missing animal alert, Sales confirmation
+
+For MFI:
+- Customer to MFI Admin messaging
+- Multi-channel support: In-app, SMS, Email, WhatsApp
+- Templates: Payment reminder, Loan approval, Overdue notice
+
+For Clinic:
+- Patient to Clinic Admin messaging
+- Multi-channel support: In-app, SMS, Email, WhatsApp
+- Templates: Appointment reminder, Results ready, Follow-up
+
+FIX 6 — ADMIN DEVICE CONNECTION
+
+Add a setup screen for each admin to connect their channels:
+
+"Connect Your Communication Channels":
+- Phone number for SMS
+- Email address for Email
+- WhatsApp Business number for WhatsApp
+- Preferred channel selection
+- Test button to verify each channel
+
+Store in Firestore: admin_channel_settings collection
+When a customer/worker/patient sends a message:
+1. AppShule receives it in-app
+2. AppShule forwards it to admin's preferred channel
+3. Admin replies from any channel
+4. Reply is logged in AppShule
+
+FIX 7 — REMOVE EDUCATION-ONLY CARDS FROM FARM ACCOUNT
+
+Specifically remove from Farm Admin account view:
+- "Official Admission Form" card
+- "My Questions & Answers" card
+
+Add sector-appropriate cards instead:
+- "Farm Reports Summary" card
+- "Worker Attendance" card
+- "Recent Animal Movements" card
+- "Egg Production Today" card
+- "Farm Inventory Alerts" card
+
+IMPLEMENTATION PRIORITY:
+
+Phase 1 — Fix role label bug (quick fix)
+Phase 2 — Enforce sector isolation for all features
+Phase 3 — Filter notifications by sector
+Phase 4 — Remove Education-only cards from non-Education sectors
+Phase 5 — Build sector-specific AI
+Phase 6 — Build sector-specific communication with multi-channel
+Phase 7 — Add admin device connection
+
+TESTING:
+
+For each of the 4 sectors, log in as the sector's admin:
+
+Farm Admin:
+- Header shows "Farm Admin"
+- No Admission Form visible
+- No Questions & Answers visible
+- No study materials in notifications
+- Bottom nav: Home, Animals, Workers, Reports, Account
+- Farm-specific cards on home
+
+MFI Admin:
+- Header shows "MFI Admin"
+- No Admission Form
+- No Q&A
+- No Education notifications
+- Bottom nav: Home, Customers, Collateral, Reports, Account
+
+Clinic Admin:
+- Header shows "Clinic Admin"
+- No Admission Form
+- No Q&A
+- No Education notifications
+- Bottom nav: Home, Patients, Appointments, Billing, Account
+
+School Admin:
+- Header shows "School Admin"
+- Admission Form IS visible
+- Q&A IS visible (students see it, school admin sees responses)
+- Bottom nav: Home, Resources, Live, Alerts, Account
+
+IMPORTANT:
+- Do NOT rebuild the app
+- Do NOT delete data
+- Fix in the priority order above
+- Test each sector independently
+- Report back with confirmation for each fix
+
+Confirm when done with:
+"Sector isolation complete — Role labels corrected, no cross-sector 
+leakage, sector-specific notifications, AI, and communication 
+systems built. Farm Admin shows Farm Admin, not Teacher."
