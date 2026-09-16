@@ -54,6 +54,8 @@ describe("sector isolation contracts", () => {
       "legacyEducationText",
       "data-mfi-section=\"notifications\"",
       "data-farm-page=\"${page}\"",
+      "function clearInstitutionBranding()",
+      "clearInstitutionBranding();",
     ]) {
       expect(indexSource).toContain(value);
     }
