@@ -14986,17 +14986,18 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
      function clinicDateTime(date,time){ return `${date||''}T${time||'00:00'}`; }
      function clinicEsc(value){ return escHtml(value??''); }
      function clinicPage(pageId){
+         const targetPage=pageId==='clinic'?'clinicHome':pageId;
          document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
-         document.getElementById(`${pageId}Page`)?.classList.add('active-page');
-         document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.page===pageId));
-         if(pageId==='clinic') loadClinicDashboard();
-         if(pageId==='clinicPatients') loadClinicPatients();
-         if(pageId==='clinicAppointments') loadClinicAppointments();
-          if(pageId==='clinicWork') loadClinicWorkQueue();
-          if(pageId==='clinicPharmacy') loadPharmacyDashboard();
-          if(pageId==='clinicBilling') loadClinicBillingPage();
-         if(pageId==='clinicPatientPortal') loadClinicPatientPortal();
-          if(pageId==='clinicPatientBilling') loadPatientBilling();
+         document.getElementById(`${targetPage}Page`)?.classList.add('active-page');
+         document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.page===targetPage||item.dataset.page===pageId));
+         if(targetPage==='clinicHome') loadClinicDashboard();
+         if(targetPage==='clinicPatients') loadClinicPatients();
+         if(targetPage==='clinicAppointments') loadClinicAppointments();
+          if(targetPage==='clinicWork') loadClinicWorkQueue();
+          if(targetPage==='clinicPharmacy') loadPharmacyDashboard();
+          if(targetPage==='clinicBilling') loadClinicBillingPage();
+         if(targetPage==='clinicPatientPortal') loadClinicPatientPortal();
+          if(targetPage==='clinicPatientBilling') loadPatientBilling();
          window.scrollTo({top:0,behavior:'smooth'});
      }
      function setupClinicNavigation(){
@@ -15579,12 +15580,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(isClinicRole()) {
             setupClinicNavigation();
             initClinicInteractions();
-            clinicPage(role==='patient'?'clinicPatientPortal':'clinic');
+            clinicPage(role==='patient'?'clinicPatientPortal':'clinicHome');
             return;
         }
         if(isFarmRole()) {
-            setupFarmNavigation();
-            farmNavigate('home');
+            window.setupFarmNavigation?.();
+            window.farmNavigate?.('home');
             return;
         }
         restoreStandardNavigation();
@@ -18386,6 +18387,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('clientPaymentForm')?.addEventListener('submit', submitClientPayment);
         document.getElementById('commandFarmAnalyticsRefreshBtn')?.addEventListener('click', () => farmLoadSuperAdminAnalytics());
     });
+    window.setupFarmNavigation = setupFarmNavigation;
+    window.farmNavigate = farmNavigate;
     window.openClientPayment = openClientPayment;
     window.task12LoadPaymentCenter = task12LoadPaymentCenter;
     window.task12LoadYoConfigPanel = loadYoConfigPanel;
