@@ -4,13 +4,18 @@ import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
 const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
+const askAiStart = indexSource.indexOf("async function askAI(q)");
+const askAiEnd = indexSource.indexOf("function parseMd", askAiStart);
+const askAiSource = indexSource.slice(askAiStart, askAiEnd);
 
 describe("sector AI assistant contracts", () => {
   it("uses the existing client-side Pollinations endpoints without a server deployment", () => {
     expect(indexSource).toContain("https://text.pollinations.ai/");
     expect(indexSource).toContain("https://api.pollinations.ai/v1/chat/completions");
-    expect(indexSource).not.toContain("fetch('/api/ai/assistant'");
-    expect(indexSource).not.toContain("auth.currentUser.getIdToken()");
+    expect(askAiSource).not.toContain("fetch('/api/ai/assistant'");
+    expect(askAiSource).not.toContain("getIdToken()");
+    expect(askAiSource).toContain("isPollinationsFailure");
+    expect(askAiSource).toContain("api key.*budget");
   });
 
   it("builds one role-aware client prompt for every APSHULE sector", () => {

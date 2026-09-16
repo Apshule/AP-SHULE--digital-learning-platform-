@@ -13110,14 +13110,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             + ` The signed-in user's normalized role is ${role||'unknown'} and the active sector is ${sector}.`
             + ' Treat the screen summary as limited, non-authoritative context. Do not ask for or repeat passwords, tokens, or private credentials. Keep answers concise, practical, and honest about uncertainty.';
         const fullPrompt=systemPrompt+'\n\nLimited screen summary:\n'+context+'\n\nUser asks: '+q;
+        const isPollinationsFailure=text=>!text||text.trim().length<=5||/api key.*budget|enter\.pollinations|service unavailable|rate limit/i.test(text);
         const endpoints=[
-            ()=>fetch('https://text.pollinations.ai/'+encodeURIComponent(fullPrompt),{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok) throw new Error('text endpoint failed');return r.text();}),
+            ()=>fetch('https://text.pollinations.ai/'+encodeURIComponent(fullPrompt),{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok) throw new Error('text endpoint failed');return r.text();}).then(text=>{if(isPollinationsFailure(text)) throw new Error('text provider unavailable');return text;}),
             ()=>fetch('https://api.pollinations.ai/v1/chat/completions',{
                 method:'POST',
                 signal:AbortSignal.timeout(20000),
                 headers:{'Content-Type':'application/json'},
                 body:JSON.stringify({model:'openai',messages:[{role:'system',content:systemPrompt},{role:'user',content:'Screen summary:\n'+context+'\n\n'+q}],max_tokens:800}),
-            }).then(r=>{if(!r.ok) throw new Error('chat endpoint failed');return r.json();}).then(j=>j?.choices?.[0]?.message?.content||''),
+            }).then(r=>{if(!r.ok) throw new Error('chat endpoint failed');return r.json();}).then(j=>{const text=j?.choices?.[0]?.message?.content||'';if(isPollinationsFailure(text)) throw new Error('chat provider unavailable');return text;}),
         ];
         for(const fn of endpoints) {
             try {
@@ -13127,7 +13128,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 console.warn('Pollinations AI endpoint failed:',error);
             }
         }
-        return 'The APSHULE AI assistant is having trouble connecting right now. Please check your internet connection and try again.';
+        return 'The APSHULE AI provider is temporarily unavailable. Please try again later.';
     }
     function parseMd(t) {
         return t
