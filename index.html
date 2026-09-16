@@ -15476,6 +15476,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             navigateSuperAdmin('dashboard');
             return;
         }
+        if(currentUser && !isEducationRole() && ['home','resources','timetable','teacher','live','admission'].includes(pageId)) {
+            return;
+        }
          if(!window._appHistoryRestoring) window.appHistory?.pushPage(pageId);
         closeVideoModal();
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active-page'));
@@ -15490,7 +15493,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
              if(['clinicPatients','clinicAppointments','clinicWork','clinicPharmacy','clinicBilling','clinicPatientPortal','clinicPatientBilling'].includes(pageId)) return clinicPage(pageId);
          }
         if(pageId==='teacher') loadTeacherDashboard();
-        if(pageId==='account') { loadMyVideoQuestions(); window.task12LoadPaymentCenter?.(); }
+        if(pageId==='account') { if(isEducationRole()) loadMyVideoQuestions(); window.task12LoadPaymentCenter?.(); }
         if(pageId==='about') loadAboutFromFirestore();
         if(pageId==='live') renderLivePage();
          if(pageId==='timetable') timetablePageLoad();
@@ -15537,6 +15540,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         'farm-worker':'farm_worker',
         'farm director':'farm_director',
         'farm-director':'farm_director',
+        'farmer':'farm_worker',
         'legacy clinic staff':'clinic_admin',
         'clinic staff':'clinic_admin',
         'legacy farmer':'farm_worker'
@@ -15548,6 +15552,58 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     function profileRole(profile) {
         return normalizeAppRole(profile?.role??profile?.userRole??profile?.accountType??'individual');
+    }
+    const APP_ROLE_LABELS = Object.freeze({
+        superadmin:'Super Admin',
+        school:'School Admin',
+        teacher:'Teacher',
+        individual:'Student',
+        mfi_admin:'MFI Admin',
+        loan_officer:'Loan Officer',
+        loan_manager:'Loan Manager',
+        loan_director:'Loan Director',
+        borrower:'Borrower',
+        clinic_admin:'Clinic Admin',
+        doctor:'Doctor',
+        nurse:'Nurse',
+        receptionist:'Receptionist',
+        pharmacist:'Pharmacist',
+        patient:'Patient',
+        farm_admin:'Farm Admin',
+        farm_manager:'Farm Manager',
+        farm_worker:'Farm Worker',
+        farm_director:'Farm Director'
+    });
+    const APP_ROLE_SECTORS = Object.freeze({
+        superadmin:'platform',
+        school:'education',
+        teacher:'education',
+        individual:'education',
+        mfi_admin:'mfi',
+        loan_officer:'mfi',
+        loan_manager:'mfi',
+        loan_director:'mfi',
+        borrower:'mfi',
+        clinic_admin:'clinic',
+        doctor:'clinic',
+        nurse:'clinic',
+        receptionist:'clinic',
+        pharmacist:'clinic',
+        patient:'clinic',
+        farm_admin:'farm',
+        farm_manager:'farm',
+        farm_worker:'farm',
+        farm_director:'farm'
+    });
+    function appRoleLabel(role) {
+        const normalized=normalizeAppRole(role);
+        return APP_ROLE_LABELS[normalized] || normalized.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase()) || 'User';
+    }
+    function appRoleSector(role=currentUser?.role) {
+        return APP_ROLE_SECTORS[normalizeAppRole(role)] || 'unknown';
+    }
+    function isEducationRole(role=currentUser?.role) {
+        return appRoleSector(role)==='education';
     }
     function isSchoolRole(role=currentUser?.role) {
         return ['school','school_admin','headteacher'].includes(normalizeAppRole(role));
@@ -15620,7 +15676,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             <div class="account-field"><label>Name</label><div>${escHtml(currentUser.name)}</div></div>
             <div class="account-field"><label>Email</label><div>${escHtml(currentUser.email)}</div></div>
             <div class="account-field"><label>Phone</label><div>${escHtml(currentUser.phone||'N/A')}</div></div>
-            <div class="account-field"><label>Role</label><div>${currentUser.role==='superadmin'?'Super Admin':currentUser.role==='school'?'School Admin':currentUser.role==='teacher'?'Teacher':currentUser.role==='mfi_admin'?'MFI Admin':currentUser.role==='loan_officer'?'Loan Officer':currentUser.role==='loan_manager'?'Loan Manager':currentUser.role==='loan_director'?'Loan Director':CLINIC_ROLES.includes(currentUser.role)?clinicRoleLabel(currentUser.role):currentUser.role==='borrower'?'Borrower':'Individual'}</div></div>
+            <div class="account-field"><label>Role</label><div>${escHtml(appRoleLabel(currentUser.role))}</div></div>
             <div class="account-field"><label>Address</label><div id="userAddressDisplay">${escHtml(address)}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
             <div class="account-field"><label>Total Logins</label><div>${currentUser.loginCount||0}</div></div>`;
         document.getElementById('editAddressBtn')?.addEventListener('click', () => {
@@ -15636,12 +15692,16 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          const isMfi = isMfiRole();
          const isClinic = isClinicRole();
          const isFarm = isFarmRole();
+         const isEducation = isEducationRole();
+         const showEducationUi = isEducation || isSuper;
          routeAuthenticatedUser();
         // Store superadmin UID so students/teachers can send targeted notifications
         if(isSuper) {
             setDoc(doc(db,'appConfig','superadmin'), { uid: currentUser.uid }, { merge: true }).catch(()=>{});
         }
          const setRoleDisplay = (id, display) => { const element = document.getElementById(id); if(element) element.style.display = display; };
+         const setSelectorDisplay = (selector, display) => document.querySelectorAll(selector).forEach(element => { element.style.display = display; });
+         setSelectorDisplay('.education-level,#classSelectionSection,#subjectsSection,#liveLessonsBanner,#forYouSection,.welcome-card,.announcements-section,.materials-folder,#studentVideoTutorialsSection,#studentCbcSection,.payment-plans-section,#liveEnrollmentStatusCard,#teacherVideoLibrarySection,#ncdcProgressCard,#ncdcCertificateCard,#teacherProjectVerificationCard,#teacherTwinAccountSection,#videoDownloadsSection', showEducationUi ? '' : 'none');
          setRoleDisplay('adminMenuItem', (isSuper||isSchool) ? "flex" : "none");
          setRoleDisplay('liveLessonMenuItem', (isMfi||isClinic) ? "none" : "flex");
          setRoleDisplay('superAdminSection', isSuper ? "block" : "none");
@@ -15659,10 +15719,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          setRoleDisplay('addSubjectSection', isSuper ? "block" : "none");
          setRoleDisplay('pdfManagementSection', isSuper ? "block" : "none");
          setRoleDisplay('admissionFormsAdminSection', isSuper ? "block" : "none");
-        // Admission shortcut — show for students only
+        // Admission shortcut — show for Education students only
         const admShortcut = document.getElementById('admissionShortcut');
-        if(admShortcut) admShortcut.style.display = (!isSuper&&!isSchool&&!isTeacher) ? "block" : "none";
-        if(!isSuper&&!isSchool&&!isTeacher) loadMyAdmissionStatus();
+        const isStudent = currentUser.role === 'individual';
+        if(admShortcut) admShortcut.style.display = isStudent ? "block" : "none";
+        if(isStudent) loadMyAdmissionStatus();
+        if(questionsCard) questionsCard.style.display = showEducationUi ? '' : 'none';
          setRoleDisplay('attendanceMenuItem', isSchool ? "flex" : "none");
         // Live nav item — visible for students (individual), school, and superadmin
         const showLiveNav = !isTeacher&&!isMfi&&!isClinic;
@@ -15681,8 +15743,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(isSuper) renderAccPdfList();
         // Referral / invite card (all roles except superadmin)
         if(!isSuper&&!isMfi) loadReferralCard();
-         listenToCurriculumLinks();
-        setupComplianceTools();
+         if(showEducationUi) {
+             listenToCurriculumLinks();
+             setupComplianceTools();
+         }
         loadConnectionSettings().catch(console.error);
         // School logo / dual branding
         if(isSchool) {
@@ -15705,12 +15769,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             loadSuperAdminWeakAreasOverview();
             loadOfflineViewsOverview();
         }
-        renderClasses();
-        renderEnrolledList();
-        renderEventsTicker();
+        if(showEducationUi) {
+            renderClasses();
+            renderEnrolledList();
+            renderEventsTicker();
+        }
         if(isTeacher) loadTeacherDashboard();
-         if(!isMfi&&!isClinic&&!isFarm) { loadStudentVideoLibrary().catch(() => {}); loadTeacherVideoLibrary().catch(() => {}); loadTeacherTwinAccount().catch(() => {}); }
-        videoStudioRenderDownloads().catch(() => {});
+         if(isEducation) { loadStudentVideoLibrary().catch(() => {}); loadTeacherVideoLibrary().catch(() => {}); loadTeacherTwinAccount().catch(() => {}); videoStudioRenderDownloads().catch(() => {}); }
         // Request browser notification permission (non-blocking)
         if(Notification && Notification.permission === 'default') {
             Notification.requestPermission().catch(()=>{});
@@ -15720,18 +15785,20 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             setupFcmMessaging(user.uid).catch(()=>{});
             // Start network-backed listeners for this user
             listenToNotifications();
-            listenLiveLessons();
+            if(isEducation) listenLiveLessons();
             loadAboutFromFirestore();
             checkExpiryWarnings();
             runOfflineSync(false).catch(console.error);
         } else {
             showNotification('Logged in offline - will sync when connected','info');
-            renderLivePage();
+            if(isEducation) renderLivePage();
         }
         // Personalised experience
-        renderForYouSection();
-        renderMyWeakAreasTags();
-        checkAndPromptWeakAreas();
+        if(isEducation) {
+            renderForYouSection();
+            renderMyWeakAreasTags();
+            checkAndPromptWeakAreas();
+        }
          if(isMfi) mfiLoadTypes();
     }
 
@@ -15800,6 +15867,55 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         } catch(e) {}
     }
 
+    function notificationTimestamp(notification) {
+        return notification?.timestamp || notification?.createdAt || '';
+    }
+
+    function notificationRoleSector(role) {
+        const normalized=normalizeAppRole(role);
+        if(normalized==='pharmacy') return 'clinic';
+        if(['education','mfi','clinic','farm'].includes(normalized)) return normalized;
+        return APP_ROLE_SECTORS[normalized] || 'unknown';
+    }
+
+    function notificationSector(notification) {
+        const explicit=notification?.sector || notification?.audienceSector || notification?.targetSector || notification?.institutionType;
+        if(explicit) {
+            const sector=notificationRoleSector(explicit);
+            if(sector!=='unknown') return sector;
+        }
+        const targetRole=notification?.targetRole || notification?.audienceRole;
+        if(targetRole && !['all','global'].includes(String(targetRole).toLowerCase())) {
+            const sector=notificationRoleSector(targetRole);
+            if(sector!=='unknown') return sector;
+        }
+        const type=String(notification?.type||'').toLowerCase();
+        if(/^mfi([_:]|$)/.test(type)) return 'mfi';
+        if(/^clinic([_:]|$)|^pharmacy([_:]|$)/.test(type)) return 'clinic';
+        if(/^farm([_:]|$)/.test(type)) return 'farm';
+        if(/admission|video|lesson|teacher|student|school|curriculum|ncdc|uneb|live_lesson|pdf/.test(type)) return 'education';
+        return 'all';
+    }
+
+    function notificationMatchesCurrentUser(notification) {
+        if(!currentUser || currentUser.role==='superadmin') return true;
+        const targetUserId=notification?.targetUserId;
+        if(targetUserId && targetUserId!==currentUser.uid) return false;
+        const targetRole=notification?.targetRole || notification?.audienceRole;
+        if(targetRole && !['all','global'].includes(String(targetRole).toLowerCase())) {
+            const normalizedTarget=normalizeAppRole(targetRole);
+            const roleMatches=normalizedTarget===normalizeAppRole(currentUser.role);
+            const broadTarget=['education','mfi','clinic','farm'].includes(String(targetRole).toLowerCase());
+            const sectorMatches=broadTarget && notificationRoleSector(targetRole)===appRoleSector();
+            if(!roleMatches && !sectorMatches) return false;
+        }
+        const targetInstitutionId=notification?.targetInstitutionId || notification?.institutionId;
+        const currentInstitutionId=currentUser.institutionId || currentUser.farmId || currentUser.schoolId;
+        if(targetInstitutionId && String(targetInstitutionId)!==String(currentInstitutionId||'')) return false;
+        const sector=notificationSector(notification);
+        return sector==='all' || sector===appRoleSector();
+    }
+
     function listenToNotifications() {
         if(_notifUnsub) _notifUnsub();
         if(_notifUnsub2) _notifUnsub2();
@@ -15809,7 +15925,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         let globalDocs = [], personalDocs = [];
         const merge = () => {
             const combined = [...personalDocs, ...globalDocs]
-                .sort((a,b) => (b.timestamp||'').localeCompare(a.timestamp||''))
+                .filter(notificationMatchesCurrentUser)
+                .sort((a,b) => notificationTimestamp(b).localeCompare(notificationTimestamp(a)))
                 .slice(0,50);
             _allNotifs = combined;
             updateNotifBadge();
@@ -15824,7 +15941,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 if(change.type==='added') {
                     const n = change.doc.data();
                     const lastRead = currentUser?.lastNotifReadAt || '0';
-                    if(n.timestamp > lastRead && Notification.permission==='granted') {
+                    if(notificationTimestamp(n) > lastRead && Notification.permission==='granted') {
                         new Notification('APSHULE – '+n.title, { body: n.body, icon:'/favicon.ico', tag: change.doc.id });
                     }
                 }
@@ -15834,7 +15951,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
     function updateNotifBadge() {
         const lastRead = currentUser?.lastNotifReadAt || '0';
-        const unread = _allNotifs.filter(n => n.timestamp > lastRead).length;
+        const unread = _allNotifs.filter(n => notificationTimestamp(n) > lastRead).length;
         const badge = document.getElementById('notifBadge');
         if(!badge) return;
         if(unread > 0) { badge.textContent = unread > 99 ? '99+' : unread; badge.style.display = 'inline-block'; }
@@ -15858,12 +15975,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
 
         c.innerHTML = _allNotifs.map(n => `
-            <div class="notif-item ${n.timestamp > lastRead ? 'unread' : ''}">
+            <div class="notif-item ${notificationTimestamp(n) > lastRead ? 'unread' : ''}">
                 <div class="notif-item-icon ${typeClass[n.type]||'general'}">${iconMap[n.type]||iconMap.general}</div>
                 <div class="notif-item-body">
                     <div class="notif-item-title">${escHtml(n.title)}</div>
                     <div class="notif-item-desc">${escHtml(n.body||'')}</div>
-                    <div class="notif-item-time">${timeAgo(n.timestamp)}${n.author ? ' · '+escHtml(n.author) : ''}</div>
+                    <div class="notif-item-time">${timeAgo(notificationTimestamp(n))}${n.author ? ' · '+escHtml(n.author) : ''}</div>
                 </div>
             </div>
         `).join('');
