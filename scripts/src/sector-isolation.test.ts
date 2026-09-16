@@ -51,6 +51,9 @@ describe("sector isolation contracts", () => {
       "sector:'education'",
       "function notificationWriteSector(type, options={})",
       "s.sector && s.sector!=='all'",
+      "legacyEducationText",
+      "data-mfi-section=\"notifications\"",
+      "data-farm-page=\"${page}\"",
     ]) {
       expect(indexSource).toContain(value);
     }

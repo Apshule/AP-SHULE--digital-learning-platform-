@@ -14127,6 +14127,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function mfiNavigate(section){
         if(!mfiRequireAccess()) return;
         if(section==='account'){navigateTo('account');return;}
+        if(section==='notifications'){navigateTo('notifications');return;}
         const map={home:'mfiDashboardPage',customers:'mfiCustomersPage',collateral:'mfiCollateralPage',loans:'mfiLoansPage',reports:'mfiReportsPage',settings:'mfiSettingsPage'};
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
         document.getElementById(map[section]||map.home)?.classList.add('active-page');
@@ -14142,6 +14143,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function mfiManagerNavigate(section){
         if(!mfiManagerRequire())return;
         if(section==='account'){navigateTo('account');return;}
+        if(section==='notifications'){navigateTo('notifications');return;}
         if(section==='reviews'){mfiOpenManagerReviews();return;}
         if(section==='schedule'){if(mfiCollateral[0])mfiOpenScheduleVerification(mfiCollateral[0].id);else showNotification('There is no collateral available to schedule','info');return;}
         const map={home:'mfiManagerHomePage',approvals:'mfiManagerApprovalsPage',loans:'mfiLoansPage',reports:'mfiReportsPage',settings:'mfiSettingsPage'};
@@ -14152,7 +14154,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     function setupMfiManagerNavigation(){
         const bottom=document.querySelector('.bottom-nav');if(!bottom)return;bottom.classList.add('superadmin-bottom-nav');
-        bottom.innerHTML='<div class="nav-item active" data-mfi-manager-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-manager-section="loans"><i class="fas fa-money-check-alt"></i><span>Loans</span></div><div class="nav-item" data-mfi-manager-section="reviews"><i class="fas fa-clipboard-check"></i><span>Reviews</span></div><div class="nav-item" data-mfi-manager-section="approvals"><i class="fas fa-check-circle"></i><span>Approvals</span></div><div class="nav-item" data-mfi-manager-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div><div class="nav-item" data-mfi-manager-section="account"><i class="fas fa-user"></i><span>Account</span></div>';
+        bottom.innerHTML='<div class="nav-item active" data-mfi-manager-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-manager-section="loans"><i class="fas fa-money-check-alt"></i><span>Loans</span></div><div class="nav-item" data-mfi-manager-section="reviews"><i class="fas fa-clipboard-check"></i><span>Reviews</span></div><div class="nav-item" data-mfi-manager-section="approvals"><i class="fas fa-check-circle"></i><span>Approvals</span></div><div class="nav-item" data-mfi-manager-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div><div class="nav-item" data-mfi-manager-section="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div><div class="nav-item" data-mfi-manager-section="account"><i class="fas fa-user"></i><span>Account</span></div>';
         bottom.querySelectorAll('[data-mfi-manager-section]').forEach(item=>item.addEventListener('click',()=>mfiManagerNavigate(item.dataset.mfiManagerSection)));
     }
     function mfiShowAssignedVerifications(){
@@ -14182,7 +14184,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function setupMfiNavigation(){
         const bottom=document.querySelector('.bottom-nav'); if(!bottom) return;
         bottom.classList.add('superadmin-bottom-nav');
-        bottom.innerHTML=`<div class="nav-item active" data-mfi-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-section="customers"><i class="fas fa-users"></i><span>Customers</span></div><div class="nav-item" data-mfi-section="loans"><i class="fas fa-money-check-alt"></i><span>Loans</span></div><div class="nav-item" data-mfi-section="collateral"><i class="fas fa-clipboard-list"></i><span>Collateral</span></div><div class="nav-item" data-mfi-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div>${currentUser?.role==='mfi_admin'?'<div class="nav-item" data-mfi-section="settings"><i class="fas fa-cog"></i><span>Settings</span></div>':''}<div class="nav-item" data-mfi-section="account"><i class="fas fa-user"></i><span>Account</span></div>`;
+        bottom.innerHTML=`<div class="nav-item active" data-mfi-section="home"><i class="fas fa-home"></i><span>Home</span></div><div class="nav-item" data-mfi-section="customers"><i class="fas fa-users"></i><span>Customers</span></div><div class="nav-item" data-mfi-section="loans"><i class="fas fa-money-check-alt"></i><span>Loans</span></div><div class="nav-item" data-mfi-section="collateral"><i class="fas fa-clipboard-list"></i><span>Collateral</span></div><div class="nav-item" data-mfi-section="reports"><i class="fas fa-chart-bar"></i><span>Reports</span></div>${currentUser?.role==='mfi_admin'?'<div class="nav-item" data-mfi-section="settings"><i class="fas fa-cog"></i><span>Settings</span></div>':''}<div class="nav-item" data-mfi-section="notifications"><i class="fas fa-bell"></i><span>Alerts</span></div><div class="nav-item" data-mfi-section="account"><i class="fas fa-user"></i><span>Account</span></div>`;
         bottom.querySelectorAll('[data-mfi-section]').forEach(item=>item.addEventListener('click',()=>mfiNavigate(item.dataset.mfiSection)));
     }
     function restoreStandardNavigation(){
@@ -15923,6 +15925,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(/^clinic([_:]|$)|^pharmacy([_:]|$)/.test(type)) return 'clinic';
         if(/^farm([_:]|$)/.test(type)) return 'farm';
         if(/admission|video|lesson|teacher|student|school|curriculum|ncdc|uneb|live_lesson|pdf/.test(type)) return 'education';
+        const legacyEducationText=String(`${notification?.title||''} ${notification?.body||notification?.message||''}`).toLowerCase();
+        if(/trial questions|new study material|online lessons?|live lesson|facial recognition attendance|attendance made easy|admission form|termly enrollment/.test(legacyEducationText)) return 'education';
         return 'all';
     }
 
@@ -18525,8 +18529,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(action==='download-report'){await farmDownloadReport();return;}
     }
     function setupFarmNavigation(){
-        farmEnsureUi();const bottom=document.querySelector('.bottom-nav');if(!bottom)return;const role=currentUser?.role;const items=role==='farm_worker'?[['home','🏠','Home'],['workers','👤','Tasks'],['account','👤','Account']]:[['home','🏠','Home'],['animals','🐄','Animals'],['workers','👥','Workers'],['reports','📊','Reports'],['account','👤','Account']];
-        bottom.classList.remove('superadmin-bottom-nav');bottom.innerHTML=items.map(([page,icon,label])=>`<div class="nav-item" data-farm-page="${page}"><span style="font-size:19px">${icon}</span><span>${label}</span></div>`).join('');bottom.querySelectorAll('[data-farm-page]').forEach(item=>item.onclick=()=>{if(item.dataset.farmPage==='account')navigateTo('account');else farmNavigate(item.dataset.farmPage);});
+        farmEnsureUi();const bottom=document.querySelector('.bottom-nav');if(!bottom)return;const role=currentUser?.role;const items=role==='farm_worker'?[['home','🏠','Home'],['workers','👤','Tasks'],['notifications','🔔','Alerts'],['account','👤','Account']]:[['home','🏠','Home'],['animals','🐄','Animals'],['workers','👥','Workers'],['reports','📊','Reports'],['notifications','🔔','Alerts'],['account','👤','Account']];
+        bottom.classList.remove('superadmin-bottom-nav');bottom.innerHTML=items.map(([page,icon,label])=>`<div class="nav-item" data-farm-page="${page}"><span style="font-size:19px">${icon}</span><span>${label}</span></div>`).join('');bottom.querySelectorAll('[data-farm-page]').forEach(item=>item.onclick=()=>{if(item.dataset.farmPage==='account')navigateTo('account');else if(item.dataset.farmPage==='notifications')navigateTo('notifications');else farmNavigate(item.dataset.farmPage);});
         window.addEventListener('online',()=>{farmLoadData();if(window.runOfflineSync)runOfflineSync(false).catch(()=>{});});window.addEventListener('offline',farmRender);
     }
     async function farmNavigate(section='home'){if(!isFarmRole())return;farmEnsureUi();farmState.section=section;document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));document.getElementById('farmHomePage')?.classList.add('active-page');document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.farmPage===section));await farmLoadData();}
