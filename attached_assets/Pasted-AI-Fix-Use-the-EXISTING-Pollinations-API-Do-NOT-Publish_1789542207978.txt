@@ -1,0 +1,111 @@
+AI Fix: Use the EXISTING Pollinations API, Do NOT Publish a New Server
+
+SITUATION:
+Replit built a new server-side AI endpoint (/api/ai/assistant) that 
+requires publishing a Replit deployment. This will not work with our 
+GitHub Pages hosting at appshule.com.
+
+The app ALREADY HAS a working AI implementation in the code from 
+Task 1. It uses the free Pollinations API and works client-side 
+without any server.
+
+REQUIRED FIX — USE THE EXISTING API:
+
+Step 1: Find the existing function called askAI in the app code
+- It is located in the AI Tutor section (around Task 1 feature)
+- It already calls these endpoints:
+  * https://text.pollinations.ai/{prompt}
+  * https://api.pollinations.ai/v1/chat/completions
+- These endpoints require NO API key and work directly from the browser
+
+Step 2: Modify askAI to be sector-aware
+- Before building the prompt, read the current user's role from 
+  currentUser object
+- Determine sector based on role:
+  * student, teacher, school, individual → Education
+  * loan_officer, loan_manager, loan_director, mfi_admin, borrower → MFI
+  * clinic_admin, doctor, nurse, receptionist, pharmacist, patient → Clinic
+  * farm_admin, farm_manager, farm_worker → Farm
+  * superadmin → Super Admin
+
+Step 3: Build a sector-specific system prompt
+
+For Education:
+"You are APSHULE Education AI Tutor. Help with Ugandan NCDC curriculum, 
+lesson plans, CBC activities, UNEB scenarios, and student learning. 
+Answers must be curriculum-aligned."
+
+For MFI:
+"You are APSHULE MFI AI Assistant. Help with loan applications, 
+collateral scoring, borrower risk analysis, repayment planning, 
+UMRA reporting, and financial compliance. Never make final credit 
+decisions — only provide insights."
+
+For Clinic:
+"You are APSHULE Clinic AI Assistant. Help with patient symptom 
+analysis suggestions, drug interaction warnings, prescription 
+dosage reminders, follow-up recommendations, and inventory 
+predictions. Never diagnose — only assist medical staff."
+
+For Farm:
+"You are APSHULE Farm AI Assistant. Help with animal health insights, 
+feed optimization, egg production forecasts, missing animal pattern 
+analysis, and farm productivity. Provide practical Ugandan farm advice."
+
+For Super Admin:
+"You are APSHULE Platform AI Assistant. Help with cross-sector 
+analysis, platform statistics interpretation, and administrative 
+insights."
+
+Step 4: Use the same endpoint structure that already exists
+- Keep the fetch call to text.pollinations.ai
+- Keep the fallback to api.pollinations.ai/v1/chat/completions
+- Only change the system prompt based on sector
+- Keep the existing rate limiting and error handling
+
+Step 5: Remove the new server endpoint
+- Delete the /api/ai/assistant route Replit created
+- Delete any server-side AI implementation files
+- The AI should run entirely client-side using the existing API
+
+Step 6: Update the AI drawer to be sector-aware
+- The AI drawer already exists in the app
+- Show a title per sector:
+  * Education: "Education AI Tutor"
+  * MFI: "MFI AI Assistant"
+  * Clinic: "Clinic AI Assistant"
+  * Farm: "Farm AI Assistant"
+  * Super Admin: "Platform AI Assistant"
+- The AI icon in the header should open this drawer with the 
+  correct prompt for the current user
+
+Step 7: Keep it free and working on GitHub Pages
+- Do NOT require publishing a Replit deployment
+- Do NOT require any API key
+- The Pollinations API is free and works from any browser
+- It works on appshule.com directly
+
+TESTING:
+1. Login as a Student → open AI drawer → ask "Explain fractions"
+   → should get Education-style answer
+2. Login as MFI Loan Officer → open AI drawer → ask "How to score 
+   collateral?" → should get MFI-style answer with credit safety 
+   boundaries
+3. Login as Clinic Doctor → open AI drawer → ask "Drug interaction 
+   for Amoxicillin" → should get Clinic-style answer
+4. Login as Farm Admin → open AI drawer → ask "Why are eggs low 
+   this week?" → should get Farm-style answer
+5. Confirm the AI works on appshule.com without any server 
+   deployment
+
+IMPORTANT:
+- Do NOT publish a new Replit deployment
+- Do NOT expose any API key in the browser
+- Use the FREE Pollinations API that already exists in the app
+- Only ONE shared askAI function with sector-aware prompts
+- Keep the existing fallback logic
+
+Confirm when done with:
+"AI updated to use existing Pollinations API. Sector-aware prompts 
+for Education, MFI, Clinic, Farm, and Super Admin. Works on 
+appshule.com without server deployment."

@@ -6,7 +6,6 @@ import notificationsRouter from "./notifications";
 import schoolRouter from "./school";
 import complianceRouter from "./compliance";
 import yoPaymentsRouter from "./yo-payments";
-import aiAssistantRouter from "./ai-assistant";
 
 const router: IRouter = Router();
 
@@ -17,6 +16,5 @@ router.use(notificationsRouter);
 router.use(schoolRouter);
 router.use(complianceRouter);
 router.use(yoPaymentsRouter);
-router.use(aiAssistantRouter);
 
 export default router;
