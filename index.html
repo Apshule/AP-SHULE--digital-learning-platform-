@@ -14642,7 +14642,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         window._mfiCommandControlsInitialized=true;
          document.getElementById('seedMfiCollateralTypesBtn')?.addEventListener('click',mfiSeedCollateralTypes);
          document.getElementById('seedMfiLoanProductsBtn')?.addEventListener('click',mfiSeedLoanProducts);
-         document.getElementById('seedFarmAnimalTypesBtn')?.addEventListener('click',farmSeedAnimalTypes);
+         document.getElementById('seedFarmAnimalTypesBtn')?.addEventListener('click',()=>window.farmSeedAnimalTypes?.());
           document.getElementById('commandInstitutionType')?.addEventListener('change',event=>{document.getElementById('commandMfiInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='mfi');document.getElementById('commandClinicInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='clinic');document.getElementById('commandFarmInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='farm');});
         document.getElementById('commandUserRole')?.addEventListener('change',updateCommandInstitutionOptions);
         document.getElementById('commandAddInstitutionBtn')?.addEventListener('click',()=>{document.getElementById('commandMfiInstitutionFields')?.classList.add('mfi-hidden');});
@@ -16936,7 +16936,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-6", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-7", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {

@@ -91,8 +91,8 @@ describe("Task 9 Step 1 command center contracts", () => {
   });
 
   it("forces installed phones to refresh the released app shell", () => {
-    expect(serviceWorkerSource).toContain("appshule-offline-v6");
-    expect(indexSource).toContain('register("/sw.js?v=20260915-6"');
+    expect(serviceWorkerSource).toContain("appshule-offline-v7");
+    expect(indexSource).toContain('register("/sw.js?v=20260915-7"');
     expect(indexSource).toContain("scope: \"/\"");
   });
 
@@ -105,6 +105,7 @@ describe("Task 9 Step 1 command center contracts", () => {
     }
     expect(indexSource).toContain("role==='teacher'?'teacher':'home'");
     expect(indexSource.indexOf("function isFarmRole")).toBeLessThan(indexSource.indexOf("function routeAuthenticatedUser"));
+    expect(indexSource).toContain("()=>window.farmSeedAnimalTypes?.()");
   });
 
   it("adds Step 3 analytics, settings, security, and hidden support tools", () => {
