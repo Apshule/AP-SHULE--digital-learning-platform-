@@ -15854,6 +15854,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
 
     // ===== NOTIFICATION ENGINE =====
+    // New writes carry sector metadata; the reader still supports legacy records.
     let _notifUnsub = null; let _notifUnsub2 = null;
     let _allNotifs = [];
 
