@@ -27,6 +27,6 @@ if (process.env.APSHULE_RENDER_BUILD === "1") {
 }
 
 console.log(`Installing the APSHULE workspace with pnpm ${PNPM_VERSION} for the Render build...`);
-runPnpm(["install", "--lockfile=false"]);
+runPnpm(["install", "--lockfile=false", "--prod=false"]);
 console.log("Building the API server bundle for npm start...");
 runPnpm(["--filter", "@workspace/api-server", "run", "build"]);
