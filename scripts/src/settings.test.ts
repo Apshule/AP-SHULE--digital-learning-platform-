@@ -74,4 +74,9 @@ describe("Task 8 settings and preferences contracts", () => {
     expect(indexSource).toContain("https://wa.me/256705732540");
     expect(indexSource).toContain("https://apshule.com/legal");
   });
+
+  it("I: keeps live Firestore error callbacks from throwing secondary ReferenceErrors", () => {
+    expect(indexSource).toContain("Student Q&A listener unavailable:");
+    expect(indexSource).not.toContain("c.innerHTML=`<div style=\"color:#c62828;font-size:13px;\">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`");
+  });
 });
