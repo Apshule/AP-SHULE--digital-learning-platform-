@@ -15639,7 +15639,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('superAdminSection').style.display = isSuper ? "block" : "none";
         document.getElementById('livePlanEditSection').style.display = isSuper ? "block" : "none";
         document.getElementById('offlineViewsOverviewSection').style.display = isSuper ? "block" : "none";
-        if (isSuper) { loadPushHistory(); initPushHistoryControls(); }
+        if (isSuper) {
+            setTimeout(function(){
+                window.loadPushHistory?.();
+                window.initPushHistoryControls?.();
+            }, 0);
+        }
         document.getElementById('schoolStudentsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('schoolEventsSection').style.display = isSchool ? "block" : "none";
         document.getElementById('globalEventsSection').style.display = isSuper ? "block" : "none";
@@ -16936,7 +16941,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-7", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260915-8", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {
