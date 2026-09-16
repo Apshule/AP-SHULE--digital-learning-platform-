@@ -13096,39 +13096,24 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
     }
     async function askAI(q) {
-        const role=String(currentUser?.role||'').toLowerCase();
-        const sector=aiAssistantSector();
-        const prompts={
-            education:'You are APSHULE Education AI Tutor. Help with the Ugandan NCDC curriculum, lesson plans, CBC activities, UNEB scenarios, and student learning. Answers must be curriculum-aligned. Explain clearly and show working where useful.',
-            mfi:'You are APSHULE MFI AI Assistant. Help with loan applications, collateral scoring, borrower risk analysis, repayment planning, UMRA reporting, and financial compliance. Never make final credit decisions — only provide insights and recommend human review.',
-            clinic:'You are APSHULE Clinic AI Assistant. Help with patient symptom analysis suggestions, drug interaction warnings, prescription dosage reminders, follow-up recommendations, and inventory predictions. Never diagnose or replace a qualified clinician — only assist medical staff and recommend professional review for urgent concerns.',
-            farm:'You are APSHULE Farm AI Assistant. Help with animal health insights, feed optimization, egg production forecasts, missing-animal pattern analysis, and farm productivity. Provide practical Ugandan farm advice and recommend veterinary review for disease, poisoning, medication, or urgent welfare concerns.',
-            platform:'You are APSHULE Platform AI Assistant. Help with cross-sector analysis, platform statistics interpretation, and administrative insights. Keep Education, MFI, Clinic/Pharmacy, and Farm information separated. Do not expose private records or make irreversible decisions.',
-        };
-        const context=JSON.stringify(aiAssistantContext());
-        const systemPrompt=(prompts[sector]||prompts.platform)
-            + ` The signed-in user's normalized role is ${role||'unknown'} and the active sector is ${sector}.`
-            + ' Treat the screen summary as limited, non-authoritative context. Do not ask for or repeat passwords, tokens, or private credentials. Keep answers concise, practical, and honest about uncertainty.';
-        const fullPrompt=systemPrompt+'\n\nLimited screen summary:\n'+context+'\n\nUser asks: '+q;
-        const isPollinationsFailure=text=>!text||text.trim().length<=5||/api key.*budget|enter\.pollinations|service unavailable|rate limit/i.test(text);
-        const endpoints=[
-            ()=>fetch('https://text.pollinations.ai/'+encodeURIComponent(fullPrompt),{signal:AbortSignal.timeout(20000)}).then(r=>{if(!r.ok) throw new Error('text endpoint failed');return r.text();}).then(text=>{if(isPollinationsFailure(text)) throw new Error('text provider unavailable');return text;}),
-            ()=>fetch('https://api.pollinations.ai/v1/chat/completions',{
+        if(!auth?.currentUser) return 'Please sign in before using the APSHULE AI assistant.';
+        if(!navigator.onLine) return 'The secure AI assistant needs an internet connection. Your offline sector tools are still available.';
+        try {
+            const token=await auth.currentUser.getIdToken();
+            const configuredBase=String(window.APSHULE_API_BASE||'').replace(/\/+$/,'');
+            const response=await fetch((configuredBase||'')+'/api/ai/assistant',{
                 method:'POST',
-                signal:AbortSignal.timeout(20000),
-                headers:{'Content-Type':'application/json'},
-                body:JSON.stringify({model:'openai',messages:[{role:'system',content:systemPrompt},{role:'user',content:'Screen summary:\n'+context+'\n\n'+q}],max_tokens:800}),
-            }).then(r=>{if(!r.ok) throw new Error('chat endpoint failed');return r.json();}).then(j=>{const text=j?.choices?.[0]?.message?.content||'';if(isPollinationsFailure(text)) throw new Error('chat provider unavailable');return text;}),
-        ];
-        for(const fn of endpoints) {
-            try {
-                const text=await fn();
-                if(text&&text.trim().length>5) return text.trim();
-            } catch(error) {
-                console.warn('Pollinations AI endpoint failed:',error);
-            }
+                headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+                body:JSON.stringify({question:q,sector:aiAssistantSector(),context:aiAssistantContext()}),
+                signal:AbortSignal.timeout(30000),
+            });
+            const data=await response.json().catch(()=>({}));
+            if(!response.ok) throw new Error(data.error||'AI assistant is unavailable');
+            return String(data.answer||'I could not produce an answer from the available context.');
+        } catch(error) {
+            console.warn('Secure sector AI request failed:',error);
+            return 'The secure APSHULE AI assistant is temporarily unavailable. Please try again shortly.';
         }
-        return 'The APSHULE AI provider is temporarily unavailable. Please try again later.';
     }
     function parseMd(t) {
         return t

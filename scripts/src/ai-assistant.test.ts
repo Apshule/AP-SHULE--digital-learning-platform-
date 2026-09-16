@@ -7,29 +7,29 @@ const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
 const askAiStart = indexSource.indexOf("async function askAI(q)");
 const askAiEnd = indexSource.indexOf("function parseMd", askAiStart);
 const askAiSource = indexSource.slice(askAiStart, askAiEnd);
+const routeSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/ai-assistant.ts"), "utf8");
 
 describe("sector AI assistant contracts", () => {
-  it("uses the existing client-side Pollinations endpoints without a server deployment", () => {
-    expect(indexSource).toContain("https://text.pollinations.ai/");
-    expect(indexSource).toContain("https://api.pollinations.ai/v1/chat/completions");
-    expect(askAiSource).not.toContain("fetch('/api/ai/assistant'");
-    expect(askAiSource).not.toContain("getIdToken()");
-    expect(askAiSource).toContain("isPollinationsFailure");
-    expect(askAiSource).toContain("api key.*budget");
+  it("uses the authenticated server assistant without exposing provider credentials", () => {
+    expect(askAiSource).toContain("fetch((configuredBase||'')+'/api/ai/assistant'");
+    expect(askAiSource).toContain("auth.currentUser.getIdToken()");
+    expect(askAiSource).not.toContain("pollinations");
+    expect(routeSource).toContain("GOOGLE_API_KEY");
   });
 
-  it("builds one role-aware client prompt for every APSHULE sector", () => {
+  it("keeps sector selection and role validation on the server", () => {
+    expect(routeSource).toContain("verifyFirebaseCaller");
+    expect(routeSource).toContain("const callerSector = sectorForRole(caller.role);");
+    expect(routeSource).toContain("const sector = requestedSectorForCaller(callerSector, body.sector);");
     for (const sector of ["education", "mfi", "clinic", "farm", "platform"]) {
-      expect(indexSource).toContain(`${sector}:`);
+      expect(routeSource).toContain(`${sector}:`);
     }
-    expect(indexSource).toContain("const role=String(currentUser?.role||'').toLowerCase();");
-    expect(indexSource).toContain("const systemPrompt=(prompts[sector]||prompts.platform)");
   });
 
   it("includes safety guidance for every APSHULE sector", () => {
-    expect(indexSource).toContain("Never make final credit decisions");
-    expect(indexSource).toContain("Never diagnose or replace a qualified clinician");
-    expect(indexSource).toContain("recommend veterinary review");
-    expect(indexSource).toContain("Ugandan NCDC curriculum");
+    expect(routeSource).toContain("Never approve or reject a loan");
+    expect(routeSource).toContain("Do not diagnose, prescribe");
+    expect(routeSource).toContain("qualified veterinary professional");
+    expect(routeSource).toContain("Uganda-curriculum learning coach");
   });
 });
