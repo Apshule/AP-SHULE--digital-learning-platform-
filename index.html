@@ -4224,7 +4224,7 @@
         <div class="apt-paper">
             <!-- HEADER — matches actual APSHULE letterhead -->
             <div class="apt-header">
-                <img class="apt-header-logo" id="aptLogoImg" src="https://appshule.com/apshule-logo.jpg" alt="APSHULE Logo" onerror="this.src='https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg'">
+                <img class="apt-header-logo" id="aptLogoImg" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE Logo">
                 <div class="apt-header-center">
                     <div class="apt-school-name">APSHULE</div>
                     <div class="apt-dlp">Digital Learning Platform</div>
@@ -4244,7 +4244,7 @@
             <div class="apt-title-bar">STUDENT ADMISSION FORM &mdash; <span id="aptFormYear">2026</span></div>
             <div class="apt-body">
                 <!-- Faded watermark -->
-                <div class="apt-watermark" aria-hidden="true"><img src="https://appshule.com/apshule-logo.jpg" alt="" onerror="this.src='https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg'"></div>
+                <div class="apt-watermark" aria-hidden="true"><img src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt=""></div>
                 <!-- Photo + intro row -->
                 <div class="apt-photo-row">
                     <div style="flex:1;">
@@ -9954,7 +9954,6 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const tp = document.getElementById('editTermlyPrice');  if(tp && d.termlyPrice)  tp.value = d.termlyPrice;
         }, (error) => {
             console.warn('Student Q&A listener unavailable:', error.code || 'unknown', error.message || error);
-            c.innerHTML=`<div style="color:#c62828;font-size:13px;">${escHtml(error.message || 'Questions are unavailable right now.')}</div>`;
         });
     }
 
