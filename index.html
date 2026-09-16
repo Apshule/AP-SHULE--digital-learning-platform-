@@ -5907,9 +5907,27 @@
         }
     });
 
-    // ===== PAYMENT =====
-    function initiateFlutterwavePayment() {
-        showContextualMessage(document.activeElement,'Please contact your school admin to subscribe','info');
+    // ===== YO! PAYMENT =====
+    function initiateYoPayment(label, amount, email, phone, name, details={}) {
+        const openPayment=window.openYoPayment;
+        if(typeof openPayment!=='function') {
+            showContextualMessage(document.activeElement,'Payment service is still loading. Please try again.','error');
+            return;
+        }
+        const referenceParts=[details.type||'payment',details.lessonId,details.planType,currentUser?.uid,Date.now()]
+            .filter(Boolean)
+            .join('-')
+            .replace(/[^a-z0-9-]/gi,'-')
+            .toUpperCase();
+        return openPayment({
+            institutionId:'apshule-platform',
+            institutionName:label||'APSHULE',
+            sector:'Education',
+            billReference:`YO-${referenceParts}`,
+            totalAmount:Number(amount)||0,
+            alreadyPaid:0,
+            clientPhone:phone||currentUser?.phone||''
+        });
     }
 
     // ===== FEEDBACK / QUESTIONS =====
@@ -11943,7 +11961,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             return;
         }
         // Paid lesson — open Flutterwave payment widget
-        initiateFlutterwavePayment('Live Lesson Access', fee, currentUser.email, currentUser.phone||'N/A', currentUser.name,
+        initiateYoPayment('Live Lesson Access', fee, currentUser.email, currentUser.phone||'N/A', currentUser.name,
             {type:'live_access', lessonId, lessonTitle, fee});
     };
 
@@ -12275,7 +12293,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const planType = document.getElementById('livePlanPayType').value;
         const price    = parseInt(document.getElementById('livePlanPayPrice').value) || 0;
         document.getElementById('livePlanPayModal').style.display = 'none';
-        initiateFlutterwavePayment(planType + ' Live Plan', price,
+        initiateYoPayment(planType + ' Live Plan', price,
             currentUser.email, currentUser.phone||'N/A', currentUser.name,
             {type:'live_plan', planType, price});
     });
@@ -17114,7 +17132,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try { renderClasses(); } catch(e){ console.warn('renderClasses',e); }
     try { renderPdfList(); } catch(e){ console.warn('renderPdfList',e); }
     try { renderEventsTicker(); } catch(e){ console.warn('renderEventsTicker',e); }
-    // Flutterwave uses inline callbacks — no redirect-back check needed
+    // Yo! payments use the authenticated server flow; no browser payment callback is needed.
 
 </script>
 <script>
