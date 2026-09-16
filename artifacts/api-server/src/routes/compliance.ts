@@ -20,7 +20,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 const router = Router();
 const FIREBASE_PROJECT_ID = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
-const GOOGLE_API_KEY = process.env["GOOGLE_API_KEY"];
+const GEMINI_API_KEY = process.env["GEMINI_API_KEY"];
 const JWKS = createRemoteJWKSet(
   new URL(
     "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",
@@ -232,7 +232,7 @@ function milestoneFields(milestone: string) {
 }
 
 async function generateWithGemini(prompt: string, signal?: AbortSignal): Promise<string> {
-  if (!GOOGLE_API_KEY) throw new Error("GOOGLE_API_KEY is not configured");
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent" +
       `?key=${encodeURIComponent(GOOGLE_API_KEY)}`,

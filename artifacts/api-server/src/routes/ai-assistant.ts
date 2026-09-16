@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { verifyFirebaseCaller } from "../lib/firebase-auth";
 
 const router = Router();
-const GOOGLE_API_KEY = process.env["GOOGLE_API_KEY"];
+const GEMINI_API_KEY = process.env["GEMINI_API_KEY"];
 
 type Sector = "education" | "mfi" | "clinic" | "farm" | "platform";
 
@@ -82,10 +82,10 @@ function withinRateLimit(uid: string): boolean {
 }
 
 async function generateAnswer(prompt: string, sector: Sector): Promise<string> {
-  if (!GOOGLE_API_KEY) throw new Error("AI service is not configured");
+  if (!GEMINI_API_KEY) throw new Error("AI service is not configured");
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent" +
-      `?key=${encodeURIComponent(GOOGLE_API_KEY)}`,
+      `?key=${encodeURIComponent(GEMINI_API_KEY)}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

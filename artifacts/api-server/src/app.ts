@@ -10,6 +10,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app: Express = express();
+const configuredCorsOrigins = (process.env["CORS_ALLOWED_ORIGINS"] ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedCorsOrigins = new Set([
+  "https://appshule.com",
+  "https://www.appshule.com",
+  ...configuredCorsOrigins,
+]);
 
 app.use(
   pinoHttp({
@@ -30,7 +39,15 @@ app.use(
     },
   }),
 );
-app.use(cors());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      callback(null, !origin || allowedCorsOrigins.has(origin));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 app.use(express.json({ limit: "1mb", verify: (req, _res, buf) => {
   if (req.url?.includes("/webhooks/yo/")) (req as typeof req & { rawBody?: string }).rawBody = buf.toString("utf8");
 } }));

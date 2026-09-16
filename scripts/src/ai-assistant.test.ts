@@ -8,6 +8,8 @@ const askAiStart = indexSource.indexOf("async function askAI(q)");
 const askAiEnd = indexSource.indexOf("function parseMd", askAiStart);
 const askAiSource = indexSource.slice(askAiStart, askAiEnd);
 const routeSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/ai-assistant.ts"), "utf8");
+const complianceSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/compliance.ts"), "utf8");
+const appSource = readFileSync(resolve(root, "artifacts/api-server/src/app.ts"), "utf8");
 
 describe("sector AI assistant contracts", () => {
   it("uses the authenticated server assistant without exposing provider credentials", () => {
@@ -15,7 +17,10 @@ describe("sector AI assistant contracts", () => {
     expect(askAiSource).toContain("fetch(endpoint");
     expect(askAiSource).toContain("auth.currentUser.getIdToken()");
     expect(askAiSource).not.toContain("pollinations");
-    expect(routeSource).toContain("GOOGLE_API_KEY");
+    expect(routeSource).toContain("GEMINI_API_KEY");
+    expect(routeSource).not.toContain("GOOGLE_API_KEY");
+    expect(complianceSource).toContain("GEMINI_API_KEY");
+    expect(complianceSource).not.toContain("GOOGLE_API_KEY");
   });
 
   it("keeps sector selection and role validation on the server", () => {
@@ -32,5 +37,11 @@ describe("sector AI assistant contracts", () => {
     expect(routeSource).toContain("Do not diagnose, prescribe");
     expect(routeSource).toContain("qualified veterinary professional");
     expect(routeSource).toContain("Uganda-curriculum learning coach");
+  });
+
+  it("restricts browser CORS to approved APSHULE origins", () => {
+    expect(appSource).toContain('"https://appshule.com"');
+    expect(appSource).toContain('"https://www.appshule.com"');
+    expect(appSource).not.toContain("app.use(cors());");
   });
 });
