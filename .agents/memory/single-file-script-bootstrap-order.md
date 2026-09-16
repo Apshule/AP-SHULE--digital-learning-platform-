@@ -7,4 +7,4 @@ In the single-file app, separate classic script blocks are evaluated independent
 
 **Why:** Live authentication exposed several bootstrap-time ReferenceErrors that left the app shell visible while every sector page remained hidden.
 
-**How to apply:** When adding a role helper, listener initializer, or optional navigation handler, check the script-block order. Prefer an early definition for routing-critical helpers and guarded deferred calls for later optional helpers. Add a source-order regression test for each such dependency.
+**How to apply:** When adding a role helper, listener initializer, or optional navigation handler, check the script-block order. Prefer an early definition for routing-critical helpers; when a later block owns the helper, explicitly expose it on `window` and call it with optional chaining from the router. Add a source-order regression test for each such dependency.
