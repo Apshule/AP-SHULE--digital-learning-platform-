@@ -47,7 +47,9 @@ function profileIsPremium(
       fields?.membershipPlan?.stringValue ??
       "",
   ).toLowerCase();
-  return explicitPremium || /premium|pro|paid/.test(plan);
+  const premiumAccessUntil = fields?.premiumAccessUntil?.stringValue;
+  const timedAccessActive = !premiumAccessUntil || Date.parse(premiumAccessUntil) > Date.now();
+  return timedAccessActive && (explicitPremium || /premium|pro|paid/.test(plan));
 }
 
 function profileEntitlements(

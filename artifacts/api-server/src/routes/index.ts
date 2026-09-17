@@ -9,6 +9,7 @@ import yoPaymentsRouter from "./yo-payments";
 import yoPaySubscriptionsRouter from "./yopay-subscriptions";
 import aiAssistantRouter from "./ai-assistant";
 import youtubeRouter from "./youtube";
+import studentReferralsRouter from "./student-referrals";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(yoPaymentsRouter);
 router.use(yoPaySubscriptionsRouter);
 router.use(aiAssistantRouter);
 router.use(youtubeRouter);
+router.use(studentReferralsRouter);
 
 export default router;

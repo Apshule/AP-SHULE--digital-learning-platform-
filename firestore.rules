@@ -147,6 +147,15 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Student referral rewards are written by the authenticated server and
+    // can only be viewed by the referrer or the referred student.
+    match /studentReferralRewards/{rewardId} {
+      allow read: if signedIn()
+        && (resource.data.referrerId == request.auth.uid
+          || resource.data.referredUserId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     match /paymentHistory/{historyId} {
       allow read: if isSuperAdmin()
         || (signedIn() && resource.data.teacherId == request.auth.uid);
