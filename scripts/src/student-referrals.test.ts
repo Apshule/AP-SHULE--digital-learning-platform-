@@ -19,6 +19,18 @@ describe("student referral rewards", () => {
     expect(route).toContain("premiumAccessUntil");
   });
 
+  it("gates student referral rewards behind the UGX 1,000 payment callback", () => {
+    expect(indexSource).toContain("/api/referrals/registration-payment");
+    expect(indexSource).toContain("signupPaymentMethod");
+    expect(indexSource).toContain("pending_payment");
+    expect(route).toContain('router.post("/referrals/registration-payment"');
+    expect(route).toContain("STUDENT_SIGNUP_FEE_UGX = 1000");
+    expect(route).toContain("settleStudentReferralPayment");
+    expect(route).toContain('status: "completed"');
+    expect(route).toContain('status: "processing"');
+    expect(indexSource).toContain("/api/payments/student/referral-withdraw");
+  });
+
   it("makes redemption server-side and prevents claiming twice", () => {
     expect(route).toContain("referralRewardClaimedAt");
     expect(route).toContain("studentReferralRewards");
@@ -30,5 +42,7 @@ describe("student referral rewards", () => {
     expect(rules).toContain("match /studentReferralRewards/{rewardId}");
     expect(rules).toContain("resource.data.referrerId == request.auth.uid");
     expect(rules).toContain("resource.data.referredUserId == request.auth.uid");
+    expect(rules).toContain("match /studentReferralPayments/{paymentId}");
+    expect(rules).toContain("match /studentReferralWithdrawals/{withdrawalId}");
   });
 });

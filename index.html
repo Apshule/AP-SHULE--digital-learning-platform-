@@ -1861,6 +1861,11 @@
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
             <input type="email" id="signupEmail" placeholder="Email" class="login-input">
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
+            <div id="referralSignupPaymentFields" style="display:none;background:#fff8e8;border:1px solid #ffd38a;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+                <strong style="display:block;color:#8a5a00;font-size:13px;margin-bottom:4px;">💳 Referral registration payment</strong>
+                <span style="display:block;color:#765f35;font-size:11px;line-height:1.4;margin-bottom:8px;">Enter a valid MTN or Airtel number above. Approve the UGX 1,000 payment prompt after pressing Create Account.</span>
+                <select id="signupPaymentMethod" class="login-input" style="margin-bottom:0;"><option value="MTN">MTN Mobile Money</option><option value="Airtel">Airtel Money</option></select>
+            </div>
             <div style="position:relative;"><input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input"><span onclick="togglePassword('signupPassword')" style="position:absolute;right:20px;top:12px;cursor:pointer;">👁️</span></div>
             <select id="signupEducationLevel" class="login-input"><option value="">Select Education Level</option><option value="Primary">Primary School</option><option value="Secondary">Secondary School</option></select>
             <button id="signupBtn" class="login-btn">Create Account</button>
@@ -17192,31 +17197,47 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             let extraFields={};
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
+            const pendingRef = sessionStorage.getItem('pendingReferral');
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",status:pendingRef?'pending_payment':'active',registrationStatus:pendingRef?'pending_payment':'active',subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
             // Redeem the referral server-side so the referrer cannot be
             // impersonated or awarded twice by client-side writes.
-            const pendingRef = sessionStorage.getItem('pendingReferral');
             if(pendingRef) {
                 const pendingReward = sessionStorage.getItem('pendingReferralReward') === 'cash' ? 'cash' : 'day';
                 try {
                     const token = await cred.user.getIdToken();
-                    const referralResponse = await fetch('/api/referrals/redeem', {
+                    const paymentResponse = await fetch('/api/referrals/registration-payment', {
                         method:'POST',
                         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-                        body:JSON.stringify({referralCode:pendingRef,rewardChoice:pendingReward})
+                        body:JSON.stringify({
+                            referralCode:pendingRef,
+                            rewardChoice:pendingReward,
+                            phone,
+                            paymentMethod:document.getElementById('signupPaymentMethod')?.value || 'MTN'
+                        })
                     });
-                    const referralResult = await referralResponse.json().catch(()=>({}));
-                    if(!referralResponse.ok) throw new Error(referralResult.error || 'Referral reward could not be applied');
-                    showNotification(referralResult.message || 'Referral reward applied!');
+                    const paymentResult = await paymentResponse.json().catch(()=>({}));
+                    if(!paymentResponse.ok) throw new Error(paymentResult.error || 'Signup payment could not be started');
+                    if(paymentResult.teacherReferral) {
+                        const teacherReferralResponse = await fetch('/api/referrals/redeem', {
+                            method:'POST',
+                            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+                            body:JSON.stringify({referralCode:pendingRef,rewardChoice:pendingReward})
+                        });
+                        const teacherReferralResult = await teacherReferralResponse.json().catch(()=>({}));
+                        if(!teacherReferralResponse.ok) throw new Error(teacherReferralResult.error || 'Teacher referral could not be applied');
+                        showNotification(teacherReferralResult.message || 'Account created!');
+                    } else {
+                        showNotification(paymentResult.message || 'Approve the UGX 1,000 payment prompt to finish signing up.');
+                    }
                 } catch(e) {
                     console.warn('[APSHULE] Referral redemption failed:', e);
-                    showNotification('Account created, but the referral reward could not be applied yet. Please contact support.', 'error');
+                    showNotification('Account created but still pending the UGX 1,000 referral payment: ' + e.message, 'error');
                 } finally {
                     sessionStorage.removeItem('pendingReferral');
                     sessionStorage.removeItem('pendingReferralReward');
                 }
             }
-            showNotification("Account created!");
+            if(!pendingRef) showNotification("Account created!");
         } catch(err){ document.getElementById('loginError').innerText=err.message; }
     });
 
@@ -17781,13 +17802,28 @@ async function loadReferralCard() {
     const card = document.getElementById('referralCard');
     if(!card || !currentUser) return;
 
-    // Ensure user has a referralCode; generate one if missing
+    // Keep reward-specific codes so a recipient cannot change the reward
+    // query parameter after the inviter has selected it.
     let code = currentUser.referralCode;
+    let cashCode = currentUser.referralCashCode;
+    let dayCode = currentUser.referralDayCode;
+    const referralCodeUpdates = {};
     if(!code) {
         code = currentUser.uid.slice(0, 8) + Math.random().toString(36).slice(2, 5);
+        referralCodeUpdates.referralCode = code;
+    }
+    if(!cashCode) {
+        cashCode = currentUser.uid.slice(0, 8) + 'c' + Math.random().toString(36).slice(2, 7);
+        referralCodeUpdates.referralCashCode = cashCode;
+    }
+    if(!dayCode) {
+        dayCode = currentUser.uid.slice(0, 8) + 'd' + Math.random().toString(36).slice(2, 7);
+        referralCodeUpdates.referralDayCode = dayCode;
+    }
+    if(Object.keys(referralCodeUpdates).length) {
         try {
-            await updateDoc(doc(db,'users', currentUser.uid), { referralCode: code });
-            currentUser.referralCode = code;
+            await updateDoc(doc(db,'users', currentUser.uid), referralCodeUpdates);
+            Object.assign(currentUser, referralCodeUpdates);
         } catch(e) { return; }
     }
 
@@ -17795,7 +17831,7 @@ async function loadReferralCard() {
     const canChooseStudentReward = ['individual','student'].includes(String(currentUser.role || '').toLowerCase());
     const savedReward = sessionStorage.getItem('referralRewardChoice');
     const defaultReward = savedReward === 'cash' || savedReward === 'day' ? savedReward : 'day';
-    const makeUrl = reward => `${location.origin}?ref=${encodeURIComponent(code)}&reward=${reward}`;
+    const makeUrl = reward => `${location.origin}?ref=${encodeURIComponent(reward === 'cash' ? cashCode : dayCode)}&reward=${reward}`;
     const url = makeUrl(defaultReward);
     const waMsg = encodeURIComponent('Join me on APSHULE \u2013 Uganda\u2019s online learning platform! Sign up here: ' + url);
     const badge = count >= 1
@@ -17804,6 +17840,7 @@ async function loadReferralCard() {
     const cashBalance = Number(currentUser.referralCashBalance || 0);
     const premiumUntil = currentUser.premiumAccessUntil && new Date(currentUser.premiumAccessUntil).getTime() > Date.now()
         ? new Date(currentUser.premiumAccessUntil).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}) : '';
+    const referralPendingPayment = String(currentUser.registrationStatus || currentUser.status || '') === 'pending_payment';
 
     card.style.display = 'block';
     card.innerHTML = `
@@ -17820,7 +17857,16 @@ async function loadReferralCard() {
             <button id="copyReferralBtn" style="flex:1;background:#4B2E9E;color:white;border:none;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;">📋 Copy Link</button>
             <a id="referralWhatsAppBtn" href="https://wa.me/?text=${waMsg}" target="_blank" rel="noopener" style="flex:1;background:#25D366;color:white;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">💬 WhatsApp</a>
         </div>
-        ${canChooseStudentReward ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">💵 Cash balance: <strong>UGX ${cashBalance.toLocaleString()}</strong>${premiumUntil ? ` · 🎁 Premium until ${escHtml(premiumUntil)}` : ''}</div>` : ''}
+        ${referralPendingPayment ? `<div style="background:#fff8e8;color:#8a5a00;border:1px solid #ffd38a;border-radius:10px;padding:9px 11px;font-size:12px;margin-bottom:8px;">⏳ Your referral signup is pending the UGX 1,000 mobile-money payment. Approve the prompt to activate the account and complete the referral.</div>` : ''}
+        ${canChooseStudentReward ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">💵 Cash balance: <strong>UGX ${cashBalance.toLocaleString()}</strong>${premiumUntil ? ` · 🎁 Premium until ${escHtml(premiumUntil)}` : ' · 🎁 Premium access: not active'}</div>
+        ${cashBalance >= 500 ? `<div style="background:#f7f4ff;border:1px solid #e2d9ff;border-radius:10px;padding:10px;margin-bottom:10px;">
+            <div style="font-size:12px;color:#4B2E9E;font-weight:700;margin-bottom:6px;">Withdraw referral earnings</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <input id="studentReferralPayoutPhone" type="tel" value="${escHtml(currentUser.phone || '')}" placeholder="MTN/Airtel number" style="flex:1;min-width:145px;padding:9px;border:1px solid #d8d0ee;border-radius:8px;">
+                <select id="studentReferralPayoutMethod" style="padding:9px;border:1px solid #d8d0ee;border-radius:8px;"><option value="MTN">MTN</option><option value="Airtel">Airtel</option></select>
+                <button id="studentReferralWithdrawBtn" style="width:100%;background:#4B2E9E;color:white;border:0;border-radius:8px;padding:9px;font-weight:700;cursor:pointer;">Withdraw UGX ${cashBalance.toLocaleString()}</button>
+            </div>
+        </div>` : ''}` : ''}
         <p style="margin:0;font-size:13px;${count>0?'color:#4B2E9E;font-weight:600;':'color:#aaa;'}">
             ${count>0 ? `\uD83C\uDF89 You\u2019ve invited ${count} friend${count===1?'':'s'}!` : 'No referrals yet \u2014 share your link to get started!'}
         </p>`;
@@ -17842,6 +17888,31 @@ async function loadReferralCard() {
         navigator.clipboard.writeText(updateReferralLinks())
             .then(() => showNotification('Referral link copied!'))
             .catch(() => showNotification('Copy failed', 'error'));
+    });
+    const withdrawBtn = document.getElementById('studentReferralWithdrawBtn');
+    withdrawBtn?.addEventListener('click', async () => {
+        withdrawBtn.disabled = true;
+        withdrawBtn.textContent = 'Processing…';
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const response = await fetch('/api/payments/student/referral-withdraw', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+                body: JSON.stringify({
+                    phone: document.getElementById('studentReferralPayoutPhone')?.value || '',
+                    paymentMethod: document.getElementById('studentReferralPayoutMethod')?.value || 'MTN'
+                })
+            });
+            const result = await response.json().catch(() => ({}));
+            if(!response.ok) throw new Error(result.error || 'Withdrawal could not be started');
+            currentUser.referralCashBalance = 0;
+            showNotification(`UGX ${Number(result.amount || 0).toLocaleString()} withdrawal started. Your mobile-money account will be updated after provider confirmation.`);
+            loadReferralCard();
+        } catch(error) {
+            showNotification(error.message || 'Withdrawal could not be started', 'error');
+            withdrawBtn.disabled = false;
+            withdrawBtn.textContent = `Withdraw UGX ${cashBalance.toLocaleString()}`;
+        }
     });
 }
 
@@ -17877,6 +17948,13 @@ function clearSchoolBranding() {
         sessionStorage.setItem('pendingReferral', refCode);
         sessionStorage.setItem('pendingReferralReward', params.get('reward') === 'cash' ? 'cash' : 'day');
         didReplace = true;
+        const paymentFields = document.getElementById('referralSignupPaymentFields');
+        if(paymentFields) paymentFields.style.display = 'block';
+        const loginErr = document.getElementById('loginError');
+        if(loginErr) {
+            loginErr.style.color = '#8a5a00';
+            loginErr.innerText = 'Referral signup: enter your MTN/Airtel number and complete the UGX 1,000 payment after pressing Create Account.';
+        }
     }
 
     if(didReplace) history.replaceState(null, '', location.pathname);

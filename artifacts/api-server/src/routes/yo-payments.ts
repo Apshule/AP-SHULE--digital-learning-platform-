@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
 import { verifyFirebaseAdmin, verifyFirebaseCaller } from "../lib/firebase-auth";
 import { getFirebaseAdminToken } from "../lib/firebase-admin-token";
+import { settleStudentReferralPayment } from "./student-referrals";
 
 const router = Router();
 const project = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
@@ -26,6 +27,14 @@ function xmlEscape(value: unknown): string {
 
 function xmlField(xml: string, name: string): string {
   return xml.match(new RegExp(`<${name}[^>]*>([^<]*)`, "i"))?.[1] ?? "";
+}
+
+function normalizedPhone(value: unknown): string {
+  const raw = String(value ?? "").replace(/[\s()-]/g, "");
+  if (/^07\d{8}$/.test(raw)) return `+256${raw.slice(1)}`;
+  if (/^2567\d{8}$/.test(raw)) return `+${raw}`;
+  if (/^\+2567\d{8}$/.test(raw)) return raw;
+  return "";
 }
 
 function firestoreValue(value: unknown): FirestoreValue {
@@ -227,6 +236,107 @@ router.post("/payments/config/test", async (req, res) => {
     res.json({ ok: true, status: xmlField(response, "Status") || xmlField(response, "status") || "response received" });
   } catch {
     res.status(502).json({ ok: false, error: "Yo API connection test failed" });
+  }
+});
+
+router.post("/payments/student/referral-withdraw", async (req, res) => {
+  const user = await caller(req, res);
+  if (!user) return;
+  if (!["individual", "student"].includes(user.role)) {
+    res.status(403).json({ ok: false, error: "Only student accounts can withdraw referral earnings" });
+    return;
+  }
+  const profile = await firestoreGet("users", user.uid, user.token);
+  const amount = Math.round(Number(profile?.referralCashBalance ?? 0));
+  const account = normalizedPhone(req.body?.phone ?? profile?.phone);
+  const paymentMethod = String(req.body?.paymentMethod ?? "").trim();
+  if (amount < 500) {
+    res.status(400).json({ ok: false, error: "You need at least UGX 500 in referral earnings to withdraw." });
+    return;
+  }
+  if (!account || !["MTN", "Airtel"].includes(paymentMethod)) {
+    res.status(400).json({ ok: false, error: "Enter a valid MTN/Airtel number and choose the network." });
+    return;
+  }
+  if (!hasYoCredentials()) {
+    res.status(503).json({ ok: false, error: "Automatic referral withdrawals are not available until Yo is configured on the server." });
+    return;
+  }
+
+  const lockPath = `/studentReferralPayoutLocks/${encodeURIComponent(user.uid)}`;
+  try {
+    await firestoreRequest(lockPath, {
+      method: "PATCH",
+      body: JSON.stringify({
+        currentDocument: { exists: false },
+        ...firestoreFields({ studentId: user.uid, createdAt: now() }),
+      }),
+    });
+  } catch {
+    res.status(409).json({ ok: false, error: "Another referral withdrawal is already being prepared." });
+    return;
+  }
+
+  const withdrawalId = `SRW-${new Date().getUTCFullYear()}-${createHash("sha256").update(`${user.uid}:${Date.now()}`).digest("hex").slice(0, 16).toUpperCase()}`;
+  const externalRef = `SRWD-${withdrawalId}`;
+  let debited = false;
+  try {
+    await firestoreRequest(`/users/${encodeURIComponent(user.uid)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        referralCashBalance: 0,
+        referralCashLastWithdrawalId: withdrawalId,
+        referralCashLastWithdrawalAt: now(),
+      })),
+    });
+    debited = true;
+    await firestoreRequest(`/studentReferralWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        withdrawalId, studentId: user.uid, amount, currency: "UGX",
+        beneficiaryAccount: account, paymentMethod, externalRef,
+        status: "processing", automatic: true, approvalRequired: false,
+        createdAt: now(), updatedAt: now(),
+      })),
+    });
+    await firestoreRequest(`/payment_disbursements/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        disbursementId: withdrawalId, externalRef, studentReferralWithdrawalId: withdrawalId,
+        studentId: user.uid, amount, netAmount: amount, fee: 0,
+        beneficiaryType: "mobile_money", beneficiaryAccount: account,
+        beneficiaryAccountName: profile?.name ?? user.uid, status: "processing",
+        attempts: 0, maxAttempts: 3, createdAt: now(), updatedAt: now(),
+      })),
+    });
+    const settings = configuredSettings(await savedPaymentSettings(user.token));
+    const response = await yoCall("acwithdrawfunds", {
+      Amount: amount.toFixed(2), CurrencyCode: "UGX", BeneficiaryAccount: account,
+      BeneficiaryEmail: "", Narrative: `Student referral earnings ${withdrawalId}`,
+      ExternalReference: withdrawalId, InstantNotificationUrl: `${publicBaseUrl()}/api/webhooks/yo/disbursement`,
+    }, settings);
+    const yoTransactionId = xmlField(response, "TransactionReference") || xmlField(response, "reference") || "";
+    await firestoreRequest(`/studentReferralWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH", body: JSON.stringify(firestoreFields({ yoTransactionId, updatedAt: now() })),
+    });
+    await firestoreRequest(`/payment_disbursements/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH", body: JSON.stringify(firestoreFields({ yoTransactionId, requestSentAt: now(), updatedAt: now() })),
+    });
+    res.status(201).json({ ok: true, withdrawalId, status: "processing", amount });
+  } catch (error) {
+    if (debited) {
+      await firestoreRequest(`/users/${encodeURIComponent(user.uid)}`, {
+        method: "PATCH",
+        body: JSON.stringify(firestoreFields({ referralCashBalance: amount })),
+      }).catch(() => undefined);
+    }
+    await firestoreRequest(`/studentReferralWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({ status: "failed", failureReason: error instanceof Error ? error.message : "Payout request failed", updatedAt: now() })),
+    }).catch(() => undefined);
+    res.status(502).json({ ok: false, error: "The payout provider rejected the withdrawal; your referral balance was released." });
+  } finally {
+    await firestoreRequest(lockPath, { method: "DELETE" }).catch(() => undefined);
   }
 });
 
@@ -710,6 +820,16 @@ async function processWebhook(req: Request, res: Response, failed: boolean) {
       res.status(200).json({ ok: true, processed: false });
       return;
     }
+    if (await settleStudentReferralPayment(externalRef, failed, body)) {
+      if (logId) {
+        await firestoreRequest(`/yo_webhook_logs/${encodeURIComponent(logId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(firestoreFields({ processed: true, processedAt: now() })),
+        });
+      }
+      res.status(200).json({ ok: true, processed: true, referralRegistration: true });
+      return;
+    }
     if (networkRef && msisdn && (await firestoreQuery("yo_webhook_logs", "networkRef", networkRef)).some((row) => String(firestoreDocumentData(row.document).msisdn ?? "") === msisdn && firestoreDocumentData(row.document).isVerified === true && firestoreDocumentData(row.document).processed === true)) {
       res.status(200).json({ ok: true, duplicate: true });
       return;
@@ -822,9 +942,38 @@ router.post("/webhooks/yo/disbursement", async (req, res) => {
         })),
       });
     }
+    if (current.studentReferralWithdrawalId && current.studentId) {
+      const withdrawalId = String(current.studentReferralWithdrawalId);
+      const studentId = String(current.studentId);
+      if (!successful && current.cashRestored !== true) {
+        const student = await firestoreGet("users", studentId);
+        await firestoreRequest(`/users/${encodeURIComponent(studentId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(firestoreFields({
+            referralCashBalance: Number(student?.referralCashBalance ?? 0) + Number(current.amount ?? 0),
+          })),
+        });
+        await firestoreRequest(`/${path}`, {
+          method: "PATCH",
+          body: JSON.stringify(firestoreFields({ cashRestored: true })),
+        });
+      }
+      await firestoreRequest(`/studentReferralWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(firestoreFields({
+          status: successful ? "completed" : "failed",
+          disbursedAt: successful ? now() : null,
+          cashRestored: !successful,
+          failureReason: successful ? null : "The payout provider did not confirm this withdrawal.",
+          updatedAt: now(),
+        })),
+      });
+    }
     await firestoreRequest("/payment_audit_log", { method: "POST", body: JSON.stringify(firestoreFields({ action: `disbursement_${update.status}`, actorId: "yo-webhook", disbursementId: path.split("/").pop(), details: update, timestamp: now() })) });
     if (current.teacherWithdrawalId && current.teacherId) {
       await queueNotification({ transactionId: current.teacherWithdrawalId, reference: externalRef }, "Teacher", current.teacherId, successful ? `UGX ${Number(current.netAmount ?? 0).toLocaleString()} withdrawal completed` : "Your withdrawal failed and the earnings were released.");
+    } else if (current.studentReferralWithdrawalId && current.studentId) {
+      await queueNotification({ transactionId: current.studentReferralWithdrawalId, reference: externalRef }, "Student", current.studentId, successful ? `UGX ${Number(current.netAmount ?? 0).toLocaleString()} referral withdrawal completed` : "Your referral withdrawal failed and the balance was returned.");
     } else {
       const institutionId = current.institutionId;
       await queueNotification({ transactionId: current.transactionId, reference: externalRef }, "Institution", institutionId, successful ? `Funds of UGX ${Number(current.netAmount ?? 0).toLocaleString()} disbursed` : `Disbursement failed. Retry ${Number(update.attempts ?? 0)}/3`);
