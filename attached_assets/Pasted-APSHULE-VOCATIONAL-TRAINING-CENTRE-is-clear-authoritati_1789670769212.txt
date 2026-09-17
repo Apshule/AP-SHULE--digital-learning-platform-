@@ -1,0 +1,28 @@
+APSHULE VOCATIONAL TRAINING CENTRE" is clear, authoritative, and exactly what a polytechnic or skills institute would want to be associated with. And the tagline "Where Dreams Come true" gives it the emotional, inspirational touch that resonates perfectly with someone looking to change their life through a trade.
+
+It fits perfectly alongside your other four sectors (Education, MFI, Clinic, Farm) and creates a strong, unified brand: Empowering Africa through practical skills.
+
+Here is the updated prompt with your new branding included. Copy and paste this to Replit:
+
+📝 Copy and paste this to Replit:
+
+"Let's officially brand this new feature as APSHULE VOCATIONAL TRAINING CENTRE. The tagline is 'Where Dreams Come true'.
+
+Please enhance the skills module (Phase 1.5) with this branding, landing pages, and Superadmin controls:
+
+1. Update the Provider Database Schema (providers collection): Add fields: badgeUrl, logoUrl, physicalAddress, contactEmail, contactPhone, referralCode (auto-generated, e.g., 'BAKERY-KAMPALA'), and status (pending, active, suspended).
+2. Create the Landing Page (/skills/index.html):
+   · A beautiful standalone landing page titled APSHULE VOCATIONAL TRAINING CENTRE with the tagline "Where Dreams Come true".
+   · It should list featured courses and top-rated providers.
+   · CRITICAL: The footer must have the APSHULE badge/logo and a link back to the main four-sector platform (https://appshule.com).
+3. Create the Provider Public Profile Page (/skills/provider.html?ref=[referralCode]):
+   · Reads the referralCode from the URL.
+   · Displays the provider's Badge, Logo, Address, Contact Email, Phone, and a list of their courses.
+   · Includes a 'Register for Course' button that passes the referralCode to the enrollment form so we know which provider to credit.
+4. Update the Superadmin Command Center:
+   · Add GET /api/skills/admin/providers to fetch all providers.
+   · Add POST /api/skills/admin/provider-status to approve/suspend a provider.
+   · Create a skills-admin.html page in the Superadmin dashboard to view providers, see their earnings, and manage their status.
+5. Referral Link Logic: Save the referralCode in the enrollments collection when a student registers so the provider gets credited.
+
+Please build this, test it locally, and push to GitHub."

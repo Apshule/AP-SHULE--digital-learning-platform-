@@ -789,9 +789,27 @@ service cloud.firestore {
       allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
     }
 
+    // Vocational training directory. Public visitors may only see approved
+    // providers; all provider writes stay behind the Super Admin API.
+    match /providers/{providerId} {
+      allow read: if resource.data.status == 'active' || isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+    match /skills_enrollments/{enrollmentId} {
+      allow create: if signedIn()
+        && request.resource.data.studentId == request.auth.uid
+        && request.resource.data.providerId is string
+        && request.resource.data.referralCode is string
+        && exists(/databases/$(database)/documents/providers/$(request.resource.data.providerId))
+        && get(/databases/$(database)/documents/providers/$(request.resource.data.providerId)).data.status == 'active'
+        && get(/databases/$(database)/documents/providers/$(request.resource.data.providerId)).data.referralCode == request.resource.data.referralCode;
+      allow read: if isSuperAdmin() || signedIn() && resource.data.studentId == request.auth.uid;
+      allow update, delete: if isSuperAdmin();
+    }
+
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(users|user_usage|invoices|studentReferralRewards|studentReferralPayments|studentReferralWithdrawals|studentReferralPayoutLocks|cartoon_assets|video_studio_projects|video_generation_queue|video_library|pdfs|teacherPdfs|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications|school_timetable_config|school_classes|school_subjects|school_teacher_assignments|timetable_teacher_duty|school_combined_periods|school_timetable_expected_outcomes|school_timetables)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(users|user_usage|invoices|studentReferralRewards|studentReferralPayments|studentReferralWithdrawals|studentReferralPayoutLocks|cartoon_assets|video_studio_projects|video_generation_queue|video_library|pdfs|teacherPdfs|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|providers|skills_enrollments|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications|school_timetable_config|school_classes|school_subjects|school_teacher_assignments|timetable_teacher_duty|school_combined_periods|school_timetable_expected_outcomes|school_timetables)(/.*)?$');
     }
   }
 }
