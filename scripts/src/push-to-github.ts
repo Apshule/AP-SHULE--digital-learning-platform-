@@ -63,6 +63,7 @@ const FILES = [
   "artifacts/api-server/src/routes/index.ts",
   "artifacts/api-server/src/routes/school.ts",
   "artifacts/api-server/src/routes/yopay-subscriptions.ts",
+  "artifacts/api-server/src/routes/yo-payments.ts",
   "artifacts/api-server/src/routes/compliance.ts",
   "artifacts/api-server/src/routes/youtube.ts",
   "artifacts/api-server/src/routes/student-referrals.ts",
