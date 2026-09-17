@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function superAdmin() {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    function pdfUpload() {
+      return request.resource != null
+        && request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
+
+    match /teacherPdfs/{teacherId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if pdfUpload()
+        && (superAdmin() || (signedIn() && request.auth.uid == teacherId));
+      allow delete: if superAdmin() || (signedIn() && request.auth.uid == teacherId);
+    }
+
+    match /adminPdfs/{adminId}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if superAdmin() && pdfUpload();
+      allow delete: if superAdmin();
+    }
+
+    // Preserve compatibility with older Super Admin uploads that omitted the UID folder.
+    match /adminPdfs/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if superAdmin() && pdfUpload();
+      allow delete: if superAdmin();
+    }
+  }
+}

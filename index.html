@@ -3866,7 +3866,7 @@
                 <div style="margin-bottom:8px;">
                 <input type="file" id="teacherPdfFile" accept="application/pdf,.pdf" style="font-size:13px;">
                 </div>
-                <button id="uploadTeacherPdfBtn" class="admin-toggle">📤 Upload Material</button>
+        <button id="uploadTeacherPdfBtn" class="admin-toggle" type="button">📤 Upload Material</button>
                 <div id="teacherPdfUploadStatus" style="font-size:12px;margin-top:8px;color:#4B2E9E;"></div>
                 <h4 style="color:#4B2E9E;margin:16px 0 8px;">My PDFs</h4>
                 <div id="teacherPdfList"></div>
@@ -10809,17 +10809,86 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     <div class="pdf-meta"><strong>${escHtml(p.title)}</strong><br><small>👁️ ${p.views||0} views${kb ? ' &nbsp;·&nbsp; 📁 '+kb : ''}</small></div>
                     <div class="pdf-actions">
                         <button onclick="openPdfInline('${p.url||''}','${escHtml(p.title)}','tpdf_${d.id}')" style="background:#4B2E9E;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;">View</button>
+                        <button data-pdf-edit="${escHtml(d.id)}" style="background:#eef5ff;color:#245a9b;border:1px solid #c9def6;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;">Edit</button>
                         <button onclick="deleteTeacherPdf('${d.id}','${safePath}')" style="background:#dc3545;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer;font-size:12px;">Delete</button>
+                    </div>
+                    <div data-pdf-editor="${escHtml(d.id)}" hidden style="width:100%;margin-top:10px;padding:10px;background:#f7f4ff;border-radius:12px;">
+                        <input data-pdf-title="${escHtml(d.id)}" value="${escHtml(p.title||'')}" maxlength="160" placeholder="Study material title" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ddd;border-radius:10px;margin-bottom:7px;">
+                        <input data-pdf-category="${escHtml(d.id)}" value="${escHtml(p.category||'')}" maxlength="80" placeholder="Subject / category" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ddd;border-radius:10px;margin-bottom:7px;">
+                        <input data-pdf-file="${escHtml(d.id)}" type="file" accept="application/pdf,.pdf" style="font-size:12px;margin-bottom:7px;">
+                        <div data-pdf-status="${escHtml(d.id)}" style="font-size:12px;margin-bottom:7px;color:#4B2E9E;" aria-live="polite"></div>
+                        <button data-pdf-save="${escHtml(d.id)}" style="background:#4B2E9E;color:white;border:none;padding:7px 13px;border-radius:20px;cursor:pointer;font-size:12px;">Save changes</button>
+                        <button data-pdf-cancel="${escHtml(d.id)}" style="background:#fff;color:#555;border:1px solid #ccc;padding:7px 13px;border-radius:20px;cursor:pointer;font-size:12px;margin-left:5px;">Cancel</button>
                     </div>
                 </div>`;
             }).join('');
+            c.querySelectorAll('[data-pdf-edit]').forEach(button => button.addEventListener('click', () => {
+                const editor = c.querySelector(`[data-pdf-editor="${CSS.escape(button.dataset.pdfEdit)}"]`);
+                if(editor) editor.hidden = !editor.hidden;
+            }));
+            c.querySelectorAll('[data-pdf-cancel]').forEach(button => button.addEventListener('click', () => {
+                const editor = c.querySelector(`[data-pdf-editor="${CSS.escape(button.dataset.pdfCancel)}"]`);
+                if(editor) editor.hidden = true;
+            }));
+            c.querySelectorAll('[data-pdf-save]').forEach(button => button.addEventListener('click', () => {
+                saveTeacherPdf(button.dataset.pdfSave);
+            }));
         }, error => {
             c.innerHTML = `<div style="color:#b3261e;font-size:12px;">Could not load your PDFs: ${escHtml(error?.message || 'Please try again online.')}</div>`;
         });
     }
 
+    window.saveTeacherPdf = async function(id) {
+        if(!currentUser || currentUser.role !== 'teacher') {
+            showNotification("Only the owning teacher can update this material","error");
+            return;
+        }
+        const titleInput=document.querySelector(`[data-pdf-title="${CSS.escape(id)}"]`);
+        const categoryInput=document.querySelector(`[data-pdf-category="${CSS.escape(id)}"]`);
+        const fileInput=document.querySelector(`[data-pdf-file="${CSS.escape(id)}"]`);
+        const status=document.querySelector(`[data-pdf-status="${CSS.escape(id)}"]`);
+        const button=document.querySelector(`[data-pdf-save="${CSS.escape(id)}"]`);
+        const title=titleInput?.value.trim()||'';
+        const category=categoryInput?.value.trim()||'General';
+        const file=fileInput?.files?.[0]||null;
+        if(!title) { if(status) status.textContent='Enter a title.'; return; }
+        if(file && !isPdfFile(file)) { if(status) status.textContent='Please select a PDF file.'; return; }
+        if(!db || !storage) { if(status) status.textContent='Firebase is not ready. Please reload and try again.'; return; }
+        if(button) button.disabled=true;
+        let replacementPath='';
+        try {
+            const snapshot=await getDoc(doc(db,'teacherPdfs',id));
+            if(!snapshot.exists() || snapshot.data().teacherId !== currentUser.uid) throw new Error('This material no longer belongs to your account.');
+            const existing=snapshot.data();
+            const changes={title,category,updatedAt:new Date().toISOString()};
+            if(file) {
+                replacementPath=`teacherPdfs/${currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+                changes.url=await uploadPdfFileToStorage(file,replacementPath,pct=>{
+                    if(status) status.textContent=`Replacing PDF… ${pct}%`;
+                });
+                changes.storagePath=replacementPath;
+                changes.fileName=file.name;
+                changes.fileSize=file.size;
+                changes.resourceFormat='application/pdf';
+            }
+            await updateDoc(doc(db,'teacherPdfs',id),changes);
+            if(file && existing.storagePath && existing.storagePath !== replacementPath) {
+                try { await deleteObject(storageRef(storage,existing.storagePath)); } catch(_) {}
+            }
+            if(status) status.textContent='✅ Changes saved.';
+            showNotification('Study material updated','success');
+        } catch(error) {
+            if(replacementPath) { try { await deleteObject(storageRef(storage,replacementPath)); } catch(_) {} }
+            if(status) status.textContent=`❌ ${error?.message||'Could not update this material.'}`;
+            showNotification('Could not update the study material','error');
+        } finally {
+            if(button) button.disabled=false;
+        }
+    };
+
     window.deleteTeacherPdf = async function(id, storagePath) {
         if(!confirm("Delete this PDF? This cannot be undone.")) return;
+        if(!currentUser || currentUser.role !== 'teacher') { showNotification("Only the owning teacher can delete this material","error"); return; }
         // Delete the Firestore doc
         await deleteDoc(doc(db,"teacherPdfs",id));
         // Also delete from Firebase Storage if a path is stored
@@ -11003,6 +11072,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         }
 
         uploadBtn.disabled = true;
+        if(!db || !storage) {
+            statusEl.textContent = '❌ Firebase Storage is not ready. Reload the page and try again.';
+            uploadBtn.disabled = false;
+            return;
+        }
         statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
             <div style="flex:1;height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;">
                 <div id="pdfUploadProgressBar" style="height:100%;background:#4B2E9E;width:0%;transition:width 0.3s;"></div>

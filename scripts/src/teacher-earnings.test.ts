@@ -95,4 +95,19 @@ describe("teacher earnings and payout contracts", () => {
     expect(indexSource).toContain("uploadPdfFileToStorage");
     expect(indexSource).toContain("logSuperAdminAction('delete_pdf'");
   });
+
+  it("gives teachers an owner-scoped PDF edit and replacement flow", () => {
+    for (const value of [
+      "data-pdf-edit",
+      "data-pdf-editor",
+      "data-pdf-save",
+      "saveTeacherPdf",
+      "Replacing PDF",
+      "Only the owning teacher can update this material",
+      "teacherPdfs/${currentUser.uid}"
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(rules).toContain("resource.data.teacherId == request.auth.uid");
+  });
 });
