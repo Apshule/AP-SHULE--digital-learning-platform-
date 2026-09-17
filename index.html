@@ -16536,7 +16536,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(schools.find(s=>s.loginEmail===email)){showNotification("Email exists","error");return;}
         const inviteCode=Math.random().toString(36).slice(2,10);
         const schoolDocRef=await addDoc(collection(db,"schools"),{name,contact,location:loc,logo:logo||"",loginEmail:email,loginPassword:pwd,createdAt:new Date().toISOString(),loginCount:0,inviteCode,assignedPlanId});
-        try { let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolDocRef.id,createdAt:new Date().toISOString()}); } catch(e){ console.error(e); }
+        try { let cred=await createUserWithEmailAndPassword(auth,email,pwd); await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"school",schoolId:schoolDocRef.id,subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString()}); } catch(e){ console.error(e); }
         showNotification("School added ✓");
         ['schoolName','schoolContact','schoolLocation','schoolLogoUrl','schoolLoginEmail','schoolLoginPassword'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; });
         const planSel=document.getElementById('schoolAssignedPlan'); if(planSel) planSel.value='';
