@@ -6072,6 +6072,32 @@
 
     // ===== PDF INLINE VIEWER (NEW) =====
     let _settingsPdfObjectUrl = null;
+    function isPdfFile(file) {
+        return !!file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || ''));
+    }
+    function uploadPdfFileToStorage(file, path, onProgress) {
+        return new Promise((resolve, reject) => {
+            let uploadTask;
+            try {
+                uploadTask = uploadBytesResumable(storageRef(storage, path), file);
+                uploadTask.on(
+                    'state_changed',
+                    snapshot => {
+                        if(typeof onProgress === 'function') {
+                            onProgress(Math.round((snapshot.bytesTransferred / Math.max(snapshot.totalBytes, 1)) * 100));
+                        }
+                    },
+                    reject,
+                    async () => {
+                        try { resolve(await getDownloadURL(uploadTask.snapshot.ref)); }
+                        catch(error) { reject(error); }
+                    }
+                );
+            } catch(error) {
+                reject(error);
+            }
+        });
+    }
     function teacherPdfRate(teacher) {
         const rate = Number(teacher?.pdfRevenuePerView ?? teacher?.revenuePerView ?? 100);
         return Number.isFinite(rate) && rate >= 0 ? rate : 100;
@@ -10787,6 +10813,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     </div>
                 </div>`;
             }).join('');
+        }, error => {
+            c.innerHTML = `<div style="color:#b3261e;font-size:12px;">Could not load your PDFs: ${escHtml(error?.message || 'Please try again online.')}</div>`;
         });
     }
 
@@ -10957,15 +10985,19 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(preview && currentUser?.profilePic) preview.src = currentUser.profilePic;
     }
 
-    // ===== TEACHER PDF UPLOAD (Firebase Storage — no size limit) =====
+    // ===== TEACHER PDF UPLOAD =====
     document.getElementById('uploadTeacherPdfBtn')?.addEventListener('click', async () => {
+        if(!currentUser || currentUser.role !== 'teacher') {
+            showNotification("Only teachers can upload study materials","error");
+            return;
+        }
         const title = document.getElementById('teacherPdfTitle').value.trim();
         const category = document.getElementById('teacherPdfCategory').value.trim() || 'General';
         const file = document.getElementById('teacherPdfFile').files[0];
         const statusEl = document.getElementById('teacherPdfUploadStatus');
         const uploadBtn = document.getElementById('uploadTeacherPdfBtn');
         if(!title || !file) { showNotification("Enter a title and select a file","error"); return; }
-        if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+        if(!isPdfFile(file)) {
             showNotification("Please select a PDF file","error");
             return;
         }
@@ -10982,48 +11014,34 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const timestamp = Date.now();
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = `teacherPdfs/${currentUser.uid}/${timestamp}_${safeName}`;
-        const fileRef = storageRef(storage, path);
-        const uploadTask = uploadBytesResumable(fileRef, file);
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        try {
+            const downloadURL = await uploadPdfFileToStorage(file, path, pct => {
                 const bar = document.getElementById('pdfUploadProgressBar');
                 const pctEl = document.getElementById('pdfUploadPct');
                 if(bar) bar.style.width = pct + '%';
                 if(pctEl) pctEl.textContent = pct + '%';
-            },
-            (error) => {
-                statusEl.textContent = '❌ Upload failed: ' + error.message;
-                uploadBtn.disabled = false;
-                showNotification("Upload failed: " + error.message, "error");
-            },
-            async () => {
-                try {
-                    // Upload complete — get the public download URL.
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    await addDoc(collection(db,"teacherPdfs"), {
-                        teacherId: currentUser.uid, teacherName: currentUser.name,
-                        title, category, url: downloadURL, storagePath: path,
-                        sourceCollection:'teacherPdfs', resourceFormat:'application/pdf',
-                        fileName:file.name, views: 0, uploadedAt: new Date().toISOString(),
-                        pdfRevenuePerView:teacherPdfRate(currentUser),
-                        fileSize: file.size
-                    });
-                    statusEl.textContent = '✅ Uploaded successfully!';
-                    document.getElementById('teacherPdfTitle').value = '';
-                    document.getElementById('teacherPdfCategory').value = '';
-                    document.getElementById('teacherPdfFile').value = '';
-                    showNotification("Study material uploaded to Firebase Storage! 📄");
-                    writeNotification(null, 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`, 'pdf');
-                } catch(error) {
-                    statusEl.textContent = '❌ Could not save the material: ' + (error.message || 'Unknown error');
-                    showNotification("Could not save the study material", "error");
-                } finally {
-                    uploadBtn.disabled = false;
-                }
-            }
-        );
+            });
+            await addDoc(collection(db,"teacherPdfs"), {
+                teacherId: currentUser.uid, teacherName: currentUser.name,
+                title, category, url: downloadURL, storagePath: path,
+                sourceCollection:'teacherPdfs', resourceFormat:'application/pdf',
+                fileName:file.name, views: 0, uploadedAt: new Date().toISOString(),
+                pdfRevenuePerView:teacherPdfRate(currentUser),
+                fileSize: file.size
+            });
+            statusEl.textContent = '✅ Uploaded successfully!';
+            document.getElementById('teacherPdfTitle').value = '';
+            document.getElementById('teacherPdfCategory').value = '';
+            document.getElementById('teacherPdfFile').value = '';
+            showNotification("Study material uploaded to Firebase Storage! 📄");
+            writeNotification(null, 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`, 'pdf');
+        } catch(error) {
+            statusEl.textContent = '❌ Upload failed: ' + (error.message || 'Unknown error');
+            showNotification("Upload failed: " + (error.message || 'Please try again'), "error");
+            try { await deleteObject(storageRef(storage, path)); } catch(_) {}
+        } finally {
+            uploadBtn.disabled = false;
+        }
     });
 
     // ===== VIDEO Q&A SYSTEM =====
