@@ -16129,10 +16129,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             profile=docSnap.data();
         }
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
-        const subscriptionTier=String(profile?.subscriptionTier||'free').toLowerCase()==='premium'?'premium':'free';
+        const timedPremiumActive = !profile?.premiumAccessUntil || Date.parse(String(profile.premiumAccessUntil)) > Date.now();
+        const subscriptionTier=String(profile?.subscriptionTier||'free').toLowerCase()==='premium' && timedPremiumActive ? 'premium' : 'free';
         const aiRequestsLimit=subscriptionTier==='premium'?500:10;
         const roles=profileRoles(profile), primaryRole=profileRole(profile);
-        currentUser = { uid:user.uid, ...profile, roles, subscriptionTier, aiRequestsLimit:profile?.aiRequestsLimit||aiRequestsLimit, rawRole, role:primaryRole, activeRole:primaryRole };
+        currentUser = { uid:user.uid, ...profile, roles, subscriptionTier, premiumAccessActive:timedPremiumActive && subscriptionTier==='premium', aiRequestsLimit, rawRole, role:primaryRole, activeRole:primaryRole };
         const profileDefaults={};
         if(!profile?.subscriptionTier) profileDefaults.subscriptionTier='free';
         if(!Number.isInteger(Number(profile?.aiRequestsLimit))) profileDefaults.aiRequestsLimit=10;
@@ -17192,32 +17193,28 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
             await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
-            // Attach referral if user arrived via a referral link
+            // Redeem the referral server-side so the referrer cannot be
+            // impersonated or awarded twice by client-side writes.
             const pendingRef = sessionStorage.getItem('pendingReferral');
             if(pendingRef) {
+                const pendingReward = sessionStorage.getItem('pendingReferralReward') === 'cash' ? 'cash' : 'day';
                 try {
-                    const refSnap = await getDocs(query(collection(db,'users'), where('referralCode','==',pendingRef)));
-                    if(refSnap.docs.length > 0) {
-                        const referrerId = refSnap.docs[0].id;
-                        const referrer = refSnap.docs[0].data() || {};
-                        if(referrerId !== cred.user.uid) {
-                            await updateDoc(doc(db,'users',cred.user.uid), { referredBy: referrerId });
-                            await updateDoc(doc(db,'users',referrerId), { referralCount: increment(1) });
-                            if(referrer.role === 'teacher' && Number(referrer.referralRewardPerSignup || 0) > 0) {
-                                await setDoc(doc(db,'teacherEarnings',`referral_${referrerId}_${cred.user.uid}`), {
-                                    source:'teacher_referral',
-                                    teacherId:referrerId,
-                                    referredUserId:cred.user.uid,
-                                    referredUserName:name,
-                                    amount:Number(referrer.referralRewardPerSignup),
-                                    paid:false,
-                                    earnedAt:new Date().toISOString()
-                                }, {merge:true});
-                            }
-                        }
-                    }
+                    const token = await cred.user.getIdToken();
+                    const referralResponse = await fetch('/api/referrals/redeem', {
+                        method:'POST',
+                        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+                        body:JSON.stringify({referralCode:pendingRef,rewardChoice:pendingReward})
+                    });
+                    const referralResult = await referralResponse.json().catch(()=>({}));
+                    if(!referralResponse.ok) throw new Error(referralResult.error || 'Referral reward could not be applied');
+                    showNotification(referralResult.message || 'Referral reward applied!');
+                } catch(e) {
+                    console.warn('[APSHULE] Referral redemption failed:', e);
+                    showNotification('Account created, but the referral reward could not be applied yet. Please contact support.', 'error');
+                } finally {
                     sessionStorage.removeItem('pendingReferral');
-                } catch(e) {}
+                    sessionStorage.removeItem('pendingReferralReward');
+                }
             }
             showNotification("Account created!");
         } catch(err){ document.getElementById('loginError').innerText=err.message; }
@@ -17795,29 +17792,54 @@ async function loadReferralCard() {
     }
 
     const count = currentUser.referralCount || 0;
-    const url = location.origin + '?ref=' + code;
+    const canChooseStudentReward = ['individual','student'].includes(String(currentUser.role || '').toLowerCase());
+    const savedReward = sessionStorage.getItem('referralRewardChoice');
+    const defaultReward = savedReward === 'cash' || savedReward === 'day' ? savedReward : 'day';
+    const makeUrl = reward => `${location.origin}?ref=${encodeURIComponent(code)}&reward=${reward}`;
+    const url = makeUrl(defaultReward);
     const waMsg = encodeURIComponent('Join me on APSHULE \u2013 Uganda\u2019s online learning platform! Sign up here: ' + url);
     const badge = count >= 1
         ? `<div style="display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FFD166,#FF8C42);color:white;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;margin-bottom:10px;">\u2b50 Referrer Badge</div>`
         : '';
+    const cashBalance = Number(currentUser.referralCashBalance || 0);
+    const premiumUntil = currentUser.premiumAccessUntil && new Date(currentUser.premiumAccessUntil).getTime() > Date.now()
+        ? new Date(currentUser.premiumAccessUntil).toLocaleString([], {dateStyle:'medium', timeStyle:'short'}) : '';
 
     card.style.display = 'block';
     card.innerHTML = `
         <h4 style="color:#4B2E9E;margin:0 0 4px;">\uD83D\uDD17 Invite Friends</h4>
-        <p style="font-size:12px;color:#888;margin:0 0 10px;">Share your personal link \u2014 earn a \u2b50 Referrer badge when a friend signs up!</p>
+        <p style="font-size:12px;color:#888;margin:0 0 10px;">${canChooseStudentReward ? 'Choose your reward, then share the matching link. Each new student can reward you once.' : 'Share your personal link and earn your configured teacher referral reward when a student signs up.'}</p>
         ${badge}
-        <div style="background:#f5f5ff;border-radius:12px;padding:10px 14px;font-size:12px;color:#444;word-break:break-all;margin-bottom:10px;border:1px solid #e0e0ff;">${escHtml(url)}</div>
+        ${canChooseStudentReward ? `<label style="display:block;font-size:12px;color:#555;font-weight:700;margin-bottom:5px;">Reward for each new student</label>
+        <select id="referralRewardChoice" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;">
+            <option value="day" ${defaultReward==='day'?'selected':''}>🎁 Add 24 hours of premium access</option>
+            <option value="cash" ${defaultReward==='cash'?'selected':''}>💵 Add UGX 500 cash reward</option>
+        </select>` : ''}
+        <div id="referralUrl" style="background:#f5f5ff;border-radius:12px;padding:10px 14px;font-size:12px;color:#444;word-break:break-all;margin-bottom:10px;border:1px solid #e0e0ff;">${escHtml(url)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
             <button id="copyReferralBtn" style="flex:1;background:#4B2E9E;color:white;border:none;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;">📋 Copy Link</button>
-            <a href="https://wa.me/?text=${waMsg}" target="_blank" rel="noopener" style="flex:1;background:#25D366;color:white;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">💬 WhatsApp</a>
+            <a id="referralWhatsAppBtn" href="https://wa.me/?text=${waMsg}" target="_blank" rel="noopener" style="flex:1;background:#25D366;color:white;border-radius:20px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">💬 WhatsApp</a>
         </div>
+        ${canChooseStudentReward ? `<div style="font-size:12px;color:#666;margin-bottom:8px;">💵 Cash balance: <strong>UGX ${cashBalance.toLocaleString()}</strong>${premiumUntil ? ` · 🎁 Premium until ${escHtml(premiumUntil)}` : ''}</div>` : ''}
         <p style="margin:0;font-size:13px;${count>0?'color:#4B2E9E;font-weight:600;':'color:#aaa;'}">
             ${count>0 ? `\uD83C\uDF89 You\u2019ve invited ${count} friend${count===1?'':'s'}!` : 'No referrals yet \u2014 share your link to get started!'}
         </p>`;
 
+    const choice = document.getElementById('referralRewardChoice');
+    const urlEl = document.getElementById('referralUrl');
+    const whatsAppBtn = document.getElementById('referralWhatsAppBtn');
+    const updateReferralLinks = () => {
+        const selected = choice?.value === 'cash' ? 'cash' : 'day';
+        const selectedUrl = makeUrl(selected);
+        sessionStorage.setItem('referralRewardChoice', selected);
+        if(urlEl) urlEl.textContent = selectedUrl;
+        if(whatsAppBtn) whatsAppBtn.href = 'https://wa.me/?text=' + encodeURIComponent('Join me on APSHULE \u2013 Uganda\u2019s online learning platform! Sign up here: ' + selectedUrl);
+        return selectedUrl;
+    };
+    choice?.addEventListener('change', updateReferralLinks);
     const copyBtn = document.getElementById('copyReferralBtn');
     if(copyBtn) copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(url)
+        navigator.clipboard.writeText(updateReferralLinks())
             .then(() => showNotification('Referral link copied!'))
             .catch(() => showNotification('Copy failed', 'error'));
     });
@@ -17849,10 +17871,11 @@ function clearSchoolBranding() {
         if(loginErr) { loginErr.style.color='#2E7D32'; loginErr.innerText='You were invited to a school — create an account to join!'; }
     }
 
-    // Capture individual referral code (?ref=<code>)
+    // Capture individual referral code (?ref=<code>&reward=cash|day)
     const refCode = params.get('ref');
     if(refCode) {
         sessionStorage.setItem('pendingReferral', refCode);
+        sessionStorage.setItem('pendingReferralReward', params.get('reward') === 'cash' ? 'cash' : 'day');
         didReplace = true;
     }
 

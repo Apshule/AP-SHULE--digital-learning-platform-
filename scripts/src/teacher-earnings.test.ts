@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = resolve(import.meta.dirname, "../..");
 const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
 const route = readFileSync(resolve(root, "artifacts/api-server/src/routes/yo-payments.ts"), "utf8");
+const referralRoute = readFileSync(resolve(root, "artifacts/api-server/src/routes/student-referrals.ts"), "utf8");
 const rules = readFileSync(resolve(root, "firestore.rules"), "utf8");
 const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"), "utf8")) as {
   indexes: Array<{ collectionGroup: string }>;
@@ -22,9 +23,11 @@ describe("teacher earnings and payout contracts", () => {
     ]) {
       expect(indexSource).toContain(field);
     }
-    for (const source of ["recorded_lesson", "teacher_pdf", "live_lesson", "teacher_referral"]) {
-      expect(indexSource).toContain(`source:'${source}'`);
+    for (const source of ["recorded_lesson", "teacher_pdf", "live_lesson"]) {
+      expect(indexSource).toMatch(new RegExp(`source:\\s*['"]${source}['"]`));
     }
+    expect(indexSource).toContain("teacher_referral:'Teacher referrals'");
+    expect(referralRoute).toContain('source: "teacher_referral"');
   });
 
   it("keeps teacher payouts behind the authenticated server and settles only after Yo confirmation", () => {
