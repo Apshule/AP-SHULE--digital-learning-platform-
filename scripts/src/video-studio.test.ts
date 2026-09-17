@@ -46,6 +46,9 @@ describe("Video Studio data foundation", () => {
     expect(indexHtml).toContain("video_library");
     expect(indexHtml).toContain("Only Super Admins can generate cartoon lessons");
     expect(indexHtml).toContain("Only Super Admins can publish lessons");
+    expect(indexHtml).toContain('id="videoStudioClassCoverage"');
+    expect(indexHtml).toContain("Select P1–S6");
+    expect(indexHtml).toContain("folderPath");
   });
 
   it("seeds exactly four characters with five poses each", () => {
@@ -101,10 +104,27 @@ describe("Video Studio data foundation", () => {
       durationSeconds: 45,
       script: "x".repeat(2001),
     })).toEqual(expect.arrayContaining(["Choose a lesson duration", "Keep the script within 2,000 characters"]));
+    expect(helpers.validate({
+      topic: "Plants",
+      type: "lesson",
+      subject: "Science",
+      language: "English",
+      character: "teacher",
+      durationSeconds: 60,
+      script: "Explain roots.",
+    })).toEqual(expect.arrayContaining(["Choose at least one class folder"]));
   });
 });
 
 describe("Video Studio UI and offline contracts", () => {
+  it("shows class-specific synced mappings even when the static subject list is empty", () => {
+    expect(indexHtml).toContain("function videoSubjectsForClass(level, id)");
+    expect(indexHtml).toContain("const prefix = `${level}_${id}_`");
+    expect(indexHtml).toContain("videoSubjectsForClass(currentLevel,c.id).length");
+    expect(indexHtml).toContain("const availableSubjects = videoSubjectsForClass(currentLevel,id)");
+    expect(indexHtml).toContain("renderClasses();");
+  });
+
   it("includes the four tabs, preview controls, publishing, and library pagination", () => {
     expect(indexHtml).toContain('data-video-studio-tab="cartoon"');
     expect(indexHtml).toContain('data-video-studio-tab="auto"');
@@ -178,5 +198,8 @@ describe("Video Studio UI and offline contracts", () => {
       "teacher_twins",
       "videoViews",
     ]));
+    expect(indexHtml).toContain("publishedLibraryIds");
+    expect(indexHtml).toContain("classFolders:classLevels");
+    expect(indexHtml).toContain("coverageMode:classLevels.length>1?'shared':'single'");
   });
 });

@@ -31,6 +31,14 @@ describe("Task 9 Step 1 command center contracts", () => {
     expect(indexSource).toContain("institutionId");
   });
 
+  it("stores explicit checked roles while keeping a default role for legacy routing", () => {
+    for (const value of ["commandUserRoleOptions", "Allowed roles", "roles:selectedRoles", "profileRoles", "userHasRole", "setActiveAppRole"]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("Default dashboard role");
+    expect(indexSource).toContain("Allowed: ${escHtml(allowed.map(appRoleLabel).join(', '))}");
+  });
+
   it("provides institution branding editing, header integration, and offline cache", () => {
     expect(indexSource).toContain('id="institutionBrandingModal"');
     expect(indexSource).toContain("institution_branding");
@@ -91,8 +99,8 @@ describe("Task 9 Step 1 command center contracts", () => {
   });
 
   it("forces installed phones to refresh the released app shell", () => {
-    expect(serviceWorkerSource).toContain("appshule-offline-v10");
-    expect(indexSource).toContain('register("/sw.js?v=20260915-10"');
+    expect(serviceWorkerSource).toContain("appshule-offline-v11");
+    expect(indexSource).toContain('register("/sw.js?v=20260917-11"');
     expect(indexSource).toContain("scope: \"/\"");
   });
 
