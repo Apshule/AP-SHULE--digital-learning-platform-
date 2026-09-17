@@ -43,6 +43,8 @@ const FILES = [
   "skills/index.html",
   "skills/provider.html",
   "skills/enroll.html",
+  "skills/provider-register.html",
+  "skills/skills-enroll.html",
   "skills-admin.html",
   "youtube-sync.html",
   "offline-manager.js",

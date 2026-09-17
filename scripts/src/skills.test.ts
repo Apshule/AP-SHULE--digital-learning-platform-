@@ -10,11 +10,11 @@ describe("vocational skills MVP contracts", () => {
     const directory = read("skills/index.html");
     const provider = read("skills/provider.html");
     const enroll = read("skills/enroll.html");
-    expect(directory).toContain("APSHULE VOCATIONAL TRAINING CENTRE");
-    expect(directory).toContain("Where Dreams Come true");
-    expect(directory).toContain('where("status","==","active")');
-    expect(provider).toContain("Course directory");
-    expect(provider).toContain("Register for Course");
+    expect(directory).toContain("APSHULE Skills");
+    expect(directory).toContain("Choose work");
+    expect(directory).toContain("/api/skills/providers");
+    expect(provider).toContain("Powered by APSHULE");
+    expect(provider).toContain("Apply for this course");
     expect(enroll).toContain("referralCode");
     expect(enroll).toContain("/api/skills/enrollments");
   });
@@ -29,6 +29,22 @@ describe("vocational skills MVP contracts", () => {
     expect(admin).toContain("Recorded course value");
   });
 
+  it("supports provider verification top-ups and the separate vocational admission flow", () => {
+    const api = read("artifacts/api-server/src/routes/skills.ts");
+    const providerRegister = read("skills/provider-register.html");
+    const admission = read("skills/skills-enroll.html");
+    expect(api).toContain('router.post("/skills/providers/register"');
+    expect(api).toContain('router.post("/skills/provider/topup"');
+    expect(api).toContain('router.post("/skills/admissions/payment"');
+    expect(api).toContain('router.post("/skills/admissions"');
+    expect(api).toContain("verificationStatus");
+    expect(providerRegister).toContain("/api/skills/providers/register");
+    expect(providerRegister).toContain("/api/skills/provider/topup");
+    expect(admission).toContain("Highest education level");
+    expect(admission).toContain("UGX 20,000");
+    expect(admission).toContain("/api/skills/admissions");
+  });
+
   it("protects provider and enrollment collections with dedicated rules", () => {
     const rules = read("firestore.rules");
     const indexes = JSON.parse(read("firestore.indexes.json")) as {
@@ -36,6 +52,7 @@ describe("vocational skills MVP contracts", () => {
     };
     expect(rules).toContain("match /providers/{providerId}");
     expect(rules).toContain("match /skills_enrollments/{enrollmentId}");
+    expect(rules).toContain("match /skills_admission_payments/{paymentId}");
     expect(rules).toContain("get(/databases/$(database)/documents/providers/");
     expect(indexes.indexes.map((index) => index.collectionGroup)).toEqual(
       expect.arrayContaining(["providers", "skills_enrollments"]),

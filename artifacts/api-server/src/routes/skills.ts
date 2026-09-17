@@ -21,6 +21,7 @@ type SkillCourse = {
   duration: string;
   feeUgx: number;
   featured: boolean;
+  category: string;
 };
 
 type Provider = {
@@ -34,6 +35,8 @@ type Provider = {
   contactPhone: string;
   referralCode: string;
   status: "pending" | "active" | "suspended";
+  verificationStatus: "unverified" | "pending_topup" | "verified";
+  ownerId: string;
   courses: SkillCourse[];
   rating: number;
   reviewCount: number;
@@ -133,6 +136,7 @@ function cleanCourses(value: unknown): SkillCourse[] {
         duration: cleanText(row.duration, 80),
         feeUgx: Math.max(0, Math.min(100_000_000, Math.floor(Number(row.feeUgx) || 0))),
         featured: row.featured === true,
+        category: cleanText(row.category, 80) || "General skills",
       };
     })
     .filter((course) => course.title);
@@ -151,12 +155,24 @@ function providerView(id: string, data: Record<string, unknown>): Provider {
     contactPhone: cleanText(data.contactPhone, 80),
     referralCode: cleanText(data.referralCode, 120),
     status: status === "active" || status === "suspended" ? status : "pending",
+    verificationStatus:
+      data.verificationStatus === "verified" || data.verificationStatus === "pending_topup"
+        ? data.verificationStatus
+        : status === "active"
+          ? "verified"
+          : "unverified",
+    ownerId: cleanText(data.ownerId, 120),
     courses: cleanCourses(data.courses),
     rating: Math.max(0, Math.min(5, Number(data.rating) || 0)),
     reviewCount: Math.max(0, Math.floor(Number(data.reviewCount) || 0)),
     createdAt: cleanText(data.createdAt, 80),
     updatedAt: cleanText(data.updatedAt, 80),
   };
+}
+
+function publicProvider(provider: Provider): Omit<Provider, "ownerId"> {
+  const { ownerId: _ownerId, ...safeProvider } = provider;
+  return safeProvider;
 }
 
 async function requireSuperAdmin(req: Request, res: Response): Promise<FirebaseCaller | null> {
@@ -167,6 +183,15 @@ async function requireSuperAdmin(req: Request, res: Response): Promise<FirebaseC
   }
   if (caller.role !== "superadmin") {
     res.status(403).json({ ok: false, error: "Only Super Admins can manage vocational providers" });
+    return null;
+  }
+  return caller;
+}
+
+async function requireSignedIn(req: Request, res: Response): Promise<FirebaseCaller | null> {
+  const caller = await verifyFirebaseCaller(req.headers.authorization);
+  if (!("uid" in caller)) {
+    res.status(caller.status).json({ ok: false, error: caller.reason });
     return null;
   }
   return caller;
@@ -184,6 +209,64 @@ function providerCode(name: string, address: string): string {
   return first || `PROVIDER-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
+function firestoreUpdateMask(fields: string[]): string {
+  return fields
+    .map((field) => `updateMask.fieldPaths=${encodeURIComponent(field)}`)
+    .join("&");
+}
+
+async function readProvider(
+  providerId: string,
+  callerToken: string,
+): Promise<Record<string, unknown>> {
+  const document = await firestoreRequest(
+    `/providers/${encodeURIComponent(providerId)}`,
+    {},
+    callerToken,
+  ) as FirestoreDocument;
+  return documentData(document);
+}
+
+async function writeEnrollment(
+  caller: FirebaseCaller,
+  providerId: string,
+  referralCode: string,
+  courseId: string,
+  extra: Record<string, unknown> = {},
+): Promise<Record<string, unknown>> {
+  const provider = providerView(providerId, await readProvider(providerId, caller.token));
+  const course = provider.courses.find((item) => item.id === courseId);
+  if (
+    provider.status !== "active" ||
+    provider.referralCode !== referralCode ||
+    !course
+  ) {
+    throw new Error("That provider course link is no longer active");
+  }
+
+  const id = `enrollment_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
+  const createdAt = new Date().toISOString();
+  const enrollment = {
+    studentId: caller.uid,
+    providerId,
+    providerName: provider.name,
+    referralCode: provider.referralCode,
+    courseId: course.id,
+    courseTitle: course.title,
+    courseCategory: course.category,
+    amountUgx: course.feeUgx,
+    status: "pending",
+    createdAt,
+    ...extra,
+  };
+  await firestoreRequest(
+    `/skills_enrollments/${encodeURIComponent(id)}`,
+    { method: "PATCH", body: firestoreFields(enrollment) },
+    caller.token,
+  );
+  return { id, ...enrollment };
+}
+
 async function readProviders(callerToken: string): Promise<Provider[]> {
   const response = await firestoreRequest("/providers?pageSize=500", {}, callerToken) as {
     documents?: FirestoreDocument[];
@@ -192,6 +275,156 @@ async function readProviders(callerToken: string): Promise<Provider[]> {
     .map((document) => providerView(documentId(document), documentData(document)))
     .filter((provider) => provider.id);
 }
+
+router.get("/skills/providers", async (_req, res) => {
+  try {
+    const providers = await readProviders("");
+    res.json({
+      ok: true,
+      providers: providers
+        .filter((provider) => provider.status === "active")
+        .map(publicProvider),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to load public providers",
+    });
+  }
+});
+
+router.get("/skills/providers/:providerId", async (req, res) => {
+  const providerId = cleanText(req.params.providerId, 120);
+  if (!providerId) {
+    res.status(400).json({ ok: false, error: "Provider ID is required" });
+    return;
+  }
+  try {
+    const provider = providerView(providerId, await readProvider(providerId, ""));
+    if (provider.status !== "active") {
+      res.status(404).json({ ok: false, error: "Provider profile is not available" });
+      return;
+    }
+    res.json({ ok: true, provider: publicProvider(provider) });
+  } catch (error) {
+    res.status(404).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Provider profile is not available",
+    });
+  }
+});
+
+router.post("/skills/providers/register", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  const name = cleanText(req.body?.name, 160);
+  if (!name) {
+    res.status(400).json({ ok: false, error: "Provider name is required" });
+    return;
+  }
+
+  try {
+    const existing = await readProviders(caller.token);
+    const baseCode = providerCode(name, cleanText(req.body?.physicalAddress, 120));
+    const referralCode = existing.some((provider) => provider.referralCode === baseCode)
+      ? `${baseCode}-${randomUUID().slice(0, 4).toUpperCase()}`
+      : baseCode;
+    const id = `provider_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const now = new Date().toISOString();
+    const provider = {
+      name,
+      description: cleanText(req.body?.description, 800),
+      badgeUrl: cleanText(req.body?.badgeUrl, 1000),
+      logoUrl: cleanText(req.body?.logoUrl, 1000),
+      physicalAddress: cleanText(req.body?.physicalAddress, 240),
+      contactEmail: cleanText(req.body?.contactEmail, 160),
+      contactPhone: cleanText(req.body?.contactPhone, 80),
+      referralCode,
+      status: "pending",
+      verificationStatus: "unverified",
+      ownerId: caller.uid,
+      topupStatus: "not_paid",
+      topupAmountUgx: 20_000,
+      courses: cleanCourses(req.body?.courses),
+      rating: 0,
+      reviewCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: caller.uid,
+    };
+    await firestoreRequest(
+      `/providers/${encodeURIComponent(id)}`,
+      { method: "PATCH", body: firestoreFields(provider) },
+      caller.token,
+    );
+    res.status(201).json({
+      ok: true,
+      provider: providerView(id, provider),
+      topupAmountUgx: 20_000,
+      verificationStatus: "unverified",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to register provider",
+    });
+  }
+});
+
+router.post("/skills/provider/topup", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  const providerId = cleanText(req.body?.providerId, 120);
+  if (!providerId) {
+    res.status(400).json({ ok: false, error: "Provider ID is required" });
+    return;
+  }
+
+  try {
+    const provider = await readProvider(providerId, caller.token);
+    if (provider.ownerId !== caller.uid) {
+      res.status(403).json({ ok: false, error: "You can only top up your own provider profile" });
+      return;
+    }
+    const now = new Date().toISOString();
+    const topupReference = `SKILL-TOPUP-${randomUUID().replace(/-/g, "").slice(0, 14).toUpperCase()}`;
+    await firestoreRequest(
+      `/providers/${encodeURIComponent(providerId)}?${firestoreUpdateMask([
+        "verificationStatus",
+        "topupStatus",
+        "topupAmountUgx",
+        "topupReference",
+        "topupConfirmedAt",
+        "updatedAt",
+      ])}`,
+      {
+        method: "PATCH",
+        body: firestoreFields({
+          verificationStatus: "pending_topup",
+          topupStatus: "simulated_confirmed",
+          topupAmountUgx: 20_000,
+          topupReference,
+          topupConfirmedAt: now,
+          updatedAt: now,
+        }),
+      },
+      caller.token,
+    );
+    res.json({
+      ok: true,
+      providerId,
+      verificationStatus: "pending_topup",
+      topupStatus: "simulated_confirmed",
+      amountUgx: 20_000,
+      topupReference,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to confirm provider top-up",
+    });
+  }
+});
 
 router.get("/skills/admin/providers", async (req, res) => {
   const caller = await requireSuperAdmin(req, res);
@@ -258,19 +491,37 @@ router.post("/skills/admin/provider-status", async (req, res) => {
   }
 
   try {
+    const provider = await readProvider(providerId, caller.token);
+    if (
+      status === "active" &&
+      provider.verificationStatus !== undefined &&
+      provider.verificationStatus !== "verified"
+    ) {
+      res.status(409).json({
+        ok: false,
+        error: "Provider top-up verification must be confirmed before approval",
+      });
+      return;
+    }
     const updatedAt = new Date().toISOString();
-    const updateMask = ["status", "updatedAt", "reviewedAt", "reviewedBy"]
-      .map((field) => `updateMask.fieldPaths=${encodeURIComponent(field)}`)
-      .join("&");
-    await firestoreRequest(`/providers/${encodeURIComponent(providerId)}?${updateMask}`, {
-      method: "PATCH",
-      body: firestoreFields({
-        status,
-        updatedAt,
-        reviewedAt: updatedAt,
-        reviewedBy: caller.uid,
-      }),
-    }, caller.token);
+    await firestoreRequest(
+      `/providers/${encodeURIComponent(providerId)}?${firestoreUpdateMask([
+        "status",
+        "updatedAt",
+        "reviewedAt",
+        "reviewedBy",
+      ])}`,
+      {
+        method: "PATCH",
+        body: firestoreFields({
+          status,
+          updatedAt,
+          reviewedAt: updatedAt,
+          reviewedBy: caller.uid,
+        }),
+      },
+      caller.token,
+    );
     res.json({ ok: true, providerId, status, updatedAt });
   } catch (error) {
     res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to update provider status" });
@@ -295,11 +546,8 @@ router.get("/skills/admin/enrollments", async (req, res) => {
 });
 
 router.post("/skills/enrollments", async (req, res) => {
-  const caller = await verifyFirebaseCaller(req.headers.authorization);
-  if (!("uid" in caller)) {
-    res.status(caller.status).json({ ok: false, error: caller.reason });
-    return;
-  }
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
   const providerId = cleanText(req.body?.providerId, 120);
   const referralCode = cleanText(req.body?.referralCode, 120);
   const courseId = cleanText(req.body?.courseId, 80);
@@ -309,33 +557,118 @@ router.post("/skills/enrollments", async (req, res) => {
   }
 
   try {
-    const providerResponse = await firestoreRequest(`/providers/${encodeURIComponent(providerId)}`, {}, caller.token) as FirestoreDocument;
-    const provider = providerView(providerId, documentData(providerResponse));
-    const course = provider.courses.find((item) => item.id === courseId);
-    if (provider.status !== "active" || provider.referralCode !== referralCode || !course) {
-      res.status(400).json({ ok: false, error: "That provider course link is no longer active" });
-      return;
-    }
-    const id = `enrollment_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
-    const createdAt = new Date().toISOString();
-    const enrollment = {
-      studentId: caller.uid,
-      providerId,
-      providerName: provider.name,
-      referralCode: provider.referralCode,
-      courseId: course.id,
-      courseTitle: course.title,
-      amountUgx: course.feeUgx,
-      status: "pending",
-      createdAt,
-    };
-    await firestoreRequest(`/skills_enrollments/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: firestoreFields(enrollment),
-    }, caller.token);
-    res.status(201).json({ ok: true, enrollment: { id, ...enrollment } });
+    const enrollment = await writeEnrollment(caller, providerId, referralCode, courseId);
+    res.status(201).json({ ok: true, enrollment });
   } catch (error) {
     res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to save enrollment" });
+  }
+});
+
+router.post("/skills/admissions/payment", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  const amountUgx = Math.floor(Number(req.body?.amountUgx));
+  if (amountUgx !== 20_000) {
+    res.status(400).json({ ok: false, error: "The vocational admission fee is UGX 20,000" });
+    return;
+  }
+
+  try {
+    const paymentId = `admission_payment_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const createdAt = new Date().toISOString();
+    const paymentReference = `SKILL-ADMISSION-${randomUUID().replace(/-/g, "").slice(0, 14).toUpperCase()}`;
+    await firestoreRequest(
+      `/skills_admission_payments/${encodeURIComponent(paymentId)}`,
+      {
+        method: "PATCH",
+        body: firestoreFields({
+          studentId: caller.uid,
+          amountUgx,
+          status: "confirmed",
+          paymentReference,
+          createdAt,
+        }),
+      },
+      caller.token,
+    );
+    res.status(201).json({ ok: true, paymentReference, amountUgx, status: "confirmed" });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to confirm admission payment",
+    });
+  }
+});
+
+router.post("/skills/admissions", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  const providerId = cleanText(req.body?.providerId, 120);
+  const referralCode = cleanText(req.body?.referralCode, 120);
+  const courseId = cleanText(req.body?.courseId, 80);
+  const fullName = cleanText(req.body?.fullName, 160);
+  const phone = cleanText(req.body?.phone, 80);
+  const email = cleanText(req.body?.email, 160);
+  const educationLevel = cleanText(req.body?.educationLevel, 80);
+  const previousExperience = cleanText(req.body?.previousExperience, 1200);
+  const paymentReference = cleanText(req.body?.paymentReference, 120);
+  if (
+    !providerId ||
+    !referralCode ||
+    !courseId ||
+    !fullName ||
+    !phone ||
+    !email ||
+    !educationLevel ||
+    !paymentReference
+  ) {
+    res.status(400).json({
+      ok: false,
+      error: "Complete the admission form and confirm the UGX 20,000 fee",
+    });
+    return;
+  }
+
+  try {
+    const paymentQuery = await firestoreRequest(
+      "/skills_admission_payments?pageSize=1000",
+      {},
+      caller.token,
+    ) as { documents?: FirestoreDocument[] };
+    const payment = (paymentQuery.documents ?? [])
+      .map((document) => documentData(document))
+      .find((item) => item.paymentReference === paymentReference);
+    if (!payment || payment.studentId !== caller.uid || payment.status !== "confirmed") {
+      res.status(400).json({
+        ok: false,
+        error: "Confirm the admission fee before submitting your application",
+      });
+      return;
+    }
+
+    const enrollment = await writeEnrollment(
+      caller,
+      providerId,
+      referralCode,
+      courseId,
+      {
+        fullName,
+        phone,
+        email,
+        educationLevel,
+        previousExperience,
+        admissionFeeUgx: 20_000,
+        admissionPaymentReference: paymentReference,
+        admissionPaymentStatus: "confirmed",
+        applicationType: "vocational_admission",
+      },
+    );
+    res.status(201).json({ ok: true, enrollment });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to submit vocational admission",
+    });
   }
 });
 
