@@ -3143,7 +3143,7 @@
                         <input type="text" id="pdfTitle" placeholder="PDF Title">
                         <input type="text" id="pdfCategory" placeholder="Subject / Category (e.g. Mathematics, Physics)" style="margin-top:4px;">
                         <div style="font-size:12px;color:#888;margin:4px 0 2px;">Upload a file <em>or</em> paste a URL:</div>
-                        <input type="file" id="pdfFileInput" accept="*/*" style="font-size:13px;">
+                        <input type="file" id="pdfFileInput" accept="application/pdf,.pdf" style="font-size:13px;">
                         <input type="text" id="pdfUrl" placeholder="— or paste study material URL here —" style="margin-top:4px;">
                         <div id="pdfUploadStatus" style="font-size:12px;color:#555;margin-top:4px;"></div>
                         <button id="addPdfBtn" class="admin-toggle" style="margin-top:6px;">➕ Add PDF</button>
@@ -3862,8 +3862,9 @@
             <div class="teacher-card">
         <h4 style="color:#4B2E9E;margin-bottom:12px;">📄 Upload Study Material</h4>
         <input type="text" id="teacherPdfTitle" placeholder="Study material title" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
+        <input type="text" id="teacherPdfCategory" placeholder="Subject / category (e.g. Mathematics)" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:20px;margin-bottom:8px;">
                 <div style="margin-bottom:8px;">
-                <input type="file" id="teacherPdfFile" accept="*/*" style="font-size:13px;">
+                <input type="file" id="teacherPdfFile" accept="application/pdf,.pdf" style="font-size:13px;">
                 </div>
                 <button id="uploadTeacherPdfBtn" class="admin-toggle">📤 Upload Material</button>
                 <div id="teacherPdfUploadStatus" style="font-size:12px;margin-top:8px;color:#4B2E9E;"></div>
@@ -4063,7 +4064,7 @@
                 <input type="text" id="accPdfTitle" placeholder="Study material title *" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
                 <input type="text" id="accPdfCategory" placeholder="Subject / Category (e.g. Mathematics)" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
                 <div style="font-size:12px;color:#888;margin-bottom:4px;">Upload a file <em>or</em> paste a URL:</div>
-                <input type="file" id="accPdfFile" accept="*/*" style="font-size:13px;margin-bottom:6px;">
+                <input type="file" id="accPdfFile" accept="application/pdf,.pdf" style="font-size:13px;margin-bottom:6px;">
                 <input type="text" id="accPdfUrl" placeholder="— or paste study material URL here —" style="width:100%;padding:11px 16px;border:1.5px solid #ddd;border-radius:25px;font-size:14px;margin-bottom:8px;box-sizing:border-box;outline:none;">
                 <div id="accPdfStatus" style="font-size:12px;color:#555;min-height:18px;margin-bottom:6px;"></div>
                 <button id="accAddPdfBtn" style="background:linear-gradient(135deg,#4B2E9E,#7B5FCF);color:white;border:none;padding:13px;border-radius:25px;font-weight:700;font-size:15px;cursor:pointer;width:100%;">➕ Upload Material</button>
@@ -4705,6 +4706,8 @@
     let pdfMaterials = [];
     let _sharedPdfMaterials = [];
     let _teacherPdfMaterials = [];
+    let _sharedPdfMaterialsUnsubscribe = null;
+    let _teacherPdfMaterialsUnsubscribe = null;
     let videoMappings = {};
     let mfiTypes = [];
     let mfiCustomers = [];
@@ -4778,6 +4781,7 @@
     // ===== SESSION ISOLATION — wipe ALL user data on logout / auth-null =====
     function clearSessionData() {
         // Reset in-memory state so next login gets a clean slate
+        stopPdfListeners();
         currentUser = null;
         schools = []; globalEventsList = []; pdfMaterials = []; _sharedPdfMaterials = []; _teacherPdfMaterials = [];
         videoMappings = {}; primarySubjects = []; secondarySubjects = [];
@@ -4816,6 +4820,17 @@
             n.classList.remove('active');
             if(n.dataset && n.dataset.page === 'home') n.classList.add('active');
         });
+    }
+
+    function stopPdfListeners() {
+        if(typeof _sharedPdfMaterialsUnsubscribe === 'function') {
+            _sharedPdfMaterialsUnsubscribe();
+            _sharedPdfMaterialsUnsubscribe = null;
+        }
+        if(typeof _teacherPdfMaterialsUnsubscribe === 'function') {
+            _teacherPdfMaterialsUnsubscribe();
+            _teacherPdfMaterialsUnsubscribe = null;
+        }
     }
 
     const classData = {
@@ -10945,10 +10960,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     // ===== TEACHER PDF UPLOAD (Firebase Storage — no size limit) =====
     document.getElementById('uploadTeacherPdfBtn')?.addEventListener('click', async () => {
         const title = document.getElementById('teacherPdfTitle').value.trim();
+        const category = document.getElementById('teacherPdfCategory').value.trim() || 'General';
         const file = document.getElementById('teacherPdfFile').files[0];
         const statusEl = document.getElementById('teacherPdfUploadStatus');
         const uploadBtn = document.getElementById('uploadTeacherPdfBtn');
         if(!title || !file) { showNotification("Enter a title and select a file","error"); return; }
+        if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+            showNotification("Please select a PDF file","error");
+            return;
+        }
 
         uploadBtn.disabled = true;
         statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
@@ -10979,22 +10999,29 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 showNotification("Upload failed: " + error.message, "error");
             },
             async () => {
-                // Upload complete — get the public download URL
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                await addDoc(collection(db,"teacherPdfs"), {
-                    teacherId: currentUser.uid, teacherName: currentUser.name,
-                    title, url: downloadURL, storagePath: path,
-                    sourceCollection:'teacherPdfs', resourceFormat:file.type || 'application/octet-stream',
-                    fileName:file.name, views: 0, uploadedAt: new Date().toISOString(),
-                    pdfRevenuePerView:teacherPdfRate(currentUser),
-                    fileSize: file.size
-                });
-                statusEl.textContent = '✅ Uploaded successfully!';
-                document.getElementById('teacherPdfTitle').value = '';
-                document.getElementById('teacherPdfFile').value = '';
-                uploadBtn.disabled = false;
-                showNotification("Study material uploaded to Firebase Storage! 📄");
-                writeNotification(null, 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`, 'pdf');
+                try {
+                    // Upload complete — get the public download URL.
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    await addDoc(collection(db,"teacherPdfs"), {
+                        teacherId: currentUser.uid, teacherName: currentUser.name,
+                        title, category, url: downloadURL, storagePath: path,
+                        sourceCollection:'teacherPdfs', resourceFormat:'application/pdf',
+                        fileName:file.name, views: 0, uploadedAt: new Date().toISOString(),
+                        pdfRevenuePerView:teacherPdfRate(currentUser),
+                        fileSize: file.size
+                    });
+                    statusEl.textContent = '✅ Uploaded successfully!';
+                    document.getElementById('teacherPdfTitle').value = '';
+                    document.getElementById('teacherPdfCategory').value = '';
+                    document.getElementById('teacherPdfFile').value = '';
+                    showNotification("Study material uploaded to Firebase Storage! 📄");
+                    writeNotification(null, 'New Study Material', `Teacher ${currentUser?.name||''} uploaded "${title}"`, 'pdf');
+                } catch(error) {
+                    statusEl.textContent = '❌ Could not save the material: ' + (error.message || 'Unknown error');
+                    showNotification("Could not save the study material", "error");
+                } finally {
+                    uploadBtn.disabled = false;
+                }
             }
         );
     });
@@ -16422,6 +16449,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const aiRequestsLimit=subscriptionTier==='premium'?500:10;
         const roles=profileRoles(profile), primaryRole=profileRole(profile);
         currentUser = { uid:user.uid, ...profile, roles, subscriptionTier, premiumAccessActive:timedPremiumActive && subscriptionTier==='premium', aiRequestsLimit, rawRole, role:primaryRole, activeRole:primaryRole };
+        // Firestore rules require authentication. Rebind the shared material
+        // listeners after the profile has loaded instead of relying on the
+        // anonymous startup attempt.
+        listenToPDFs();
         const profileDefaults={};
         if(!profile?.subscriptionTier) profileDefaults.subscriptionTier='free';
         if(!Number.isInteger(Number(profile?.aiRequestsLimit))) profileDefaults.aiRequestsLimit=10;
@@ -16608,11 +16639,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(currentUser?.role==='superadmin') renderAccPdfList();
     }
     function listenToPDFs() {
-        onSnapshot(collection(db,"pdfs"), (snap) => {
+        stopPdfListeners();
+        if(!currentUser) return;
+        _sharedPdfMaterialsUnsubscribe = onSnapshot(collection(db,"pdfs"), (snap) => {
             _sharedPdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data(), sourceCollection:'pdfs' }));
             refreshPdfMaterials();
         }, error => console.warn('Shared study materials unavailable:', error));
-        onSnapshot(collection(db,"teacherPdfs"), (snap) => {
+        _teacherPdfMaterialsUnsubscribe = onSnapshot(collection(db,"teacherPdfs"), (snap) => {
             _teacherPdfMaterials = snap.docs.map(d => ({ id: d.id, ...d.data(), sourceCollection:'teacherPdfs' }));
             refreshPdfMaterials();
         }, error => console.warn('Teacher study materials unavailable:', error));
@@ -17263,7 +17296,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
         // --- Option A: File upload to Firebase Storage ---
         if(file) {
-            if(file.type !== 'application/pdf') { showNotification("Please select a PDF file","error"); return; }
+            if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { showNotification("Please select a PDF file","error"); return; }
             addBtn.disabled = true;
             statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
                 <div style="flex:1;height:5px;background:#e0e0e0;border-radius:3px;overflow:hidden;">
@@ -17360,6 +17393,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const category = (document.getElementById('accPdfCategory')?.value.trim())||'General';
 
         if(file) {
+            if(file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { showNotification('Please select a PDF file','error'); return; }
             btn.disabled=true;
             statusEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:5px;background:#e0e0e0;border-radius:3px;overflow:hidden;"><div id="accPdfBar" style="height:100%;background:#4B2E9E;width:0%;transition:width 0.2s;"></div></div><span id="accPdfPct">0%</span></div>`;
             const path=`adminPdfs/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
@@ -17621,7 +17655,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     // ===== START LISTENERS =====
     try { listenToSchools(); } catch(e){ console.warn('listenToSchools',e); }
     try { listenToEvents(); } catch(e){ console.warn('listenToEvents',e); }
-    try { listenToPDFs(); } catch(e){ console.warn('listenToPDFs',e); }
+    // PDF listeners are bound after authentication in loadUserAndShowApp().
     try { listenToVideoMappings(); } catch(e){ console.warn('listenToVideoMappings',e); }
     try { listenToSubjects(); } catch(e){ console.warn('listenToSubjects',e); }
     try { listenToSubscriptionPlans(); } catch(e){ console.warn('listenToSubscriptionPlans',e); }

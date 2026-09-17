@@ -49,4 +49,31 @@ describe("teacher earnings and payout contracts", () => {
     expect(rules).toContain("match /teacherPayoutLocks/{lockId}");
     expect(indexes.indexes.some((index) => index.collectionGroup === "teacherWithdrawals")).toBe(true);
   });
+
+  it("rebinds authenticated PDF listeners and merges both material collections", () => {
+    expect(indexSource).toContain("let _sharedPdfMaterialsUnsubscribe = null;");
+    expect(indexSource).toContain("let _teacherPdfMaterialsUnsubscribe = null;");
+    expect(indexSource).toContain("stopPdfListeners();");
+    expect(indexSource).toContain("if(!currentUser) return;");
+    expect(indexSource).toContain("listenToPDFs();");
+    expect(indexSource).toContain("pdfMaterials = [..._sharedPdfMaterials, ..._teacherPdfMaterials]");
+    expect(indexSource).toContain('collection(db,"teacherPdfs")');
+    expect(indexSource).toContain('accept="application/pdf,.pdf"');
+    expect(indexSource).toContain("Please select a PDF file");
+    expect(indexes.indexes.some((index) => index.collectionGroup === "teacherPdfs")).toBe(true);
+  });
+
+  it("keeps both upload paths and shared reads within the intended roles", () => {
+    expect(rules).toContain("match /pdfs/{pdfId}");
+    expect(rules).toContain("allow create, update, delete: if isSuperAdmin();");
+    expect(rules).toContain("match /teacherPdfs/{pdfId}");
+    expect(rules).toContain("role() == 'teacher'");
+    expect(rules).toContain("request.resource.data.teacherId == request.auth.uid");
+    expect(rules).toContain("allow read: if signedIn();");
+    expect(indexSource).toContain('id="pdfFileInput"');
+    expect(indexSource).toContain('id="accPdfFile"');
+    expect(indexSource).toContain('id="teacherPdfFile"');
+    expect(indexSource).toContain('id="teacherPdfCategory"');
+    expect(indexSource).toContain("category, url: downloadURL");
+  });
 });

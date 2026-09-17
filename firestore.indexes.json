@@ -57,6 +57,14 @@
       ]
     },
     {
+      "collectionGroup": "teacherPdfs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "topic_requests",
       "queryScope": "COLLECTION",
       "fields": [

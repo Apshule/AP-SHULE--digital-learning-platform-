@@ -18,3 +18,4 @@
 - [Role dashboard realtime guards](role-dashboard-realtime-guards.md) — Firestore listeners must tolerate missing role-specific widgets without breaking an otherwise successful dashboard login.
 - [Gemini quota boundary](gemini-quota-boundary.md) — Sector authentication can pass while the shared provider quota blocks every AI generation request.
 - [Teacher material visibility and earnings](teacher-material-visibility-and-earnings.md) — Merge teacher uploads into shared Resources and use stored agreement rates for eligible student-view payouts.
+- [Authenticated Firestore listeners](authenticated-firestore-listeners.md) — Bind listeners after auth and unsubscribe on logout; anonymous permission failures do not reliably recover after login.
