@@ -59,7 +59,9 @@ app.use("/api", router);
 
 // Serve the standalone index.html at root for preview
 const indexPath = resolve(__dirname, "../../../index.html");
+const upgradePath = resolve(__dirname, "../../../upgrade.html");
 app.get("/", (req, res) => res.sendFile(indexPath));
+app.get("/upgrade.html", (req, res) => res.sendFile(upgradePath));
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
 app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));

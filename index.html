@@ -14182,7 +14182,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const guarantors=await mfiUploadCustomerGuarantors(customerId,family.guarantors,[]);
             const customer={...values,...family,guarantors,customerId,authEmail:syntheticEmail,photoPath,nationalIdFrontPath:idFrontPath,nationalIdBackPath:idBackPath,institutionId:mfiInstitutionId(),createdBy:currentUser.uid,createdAt:new Date().toISOString(),status:'active',collateralCount:0};
             await setDoc(doc(db,'mfi_customers',customerId),customer);
-            await setDoc(doc(db,'users',customerId),{uid:customerId,name:`${values.firstName} ${values.lastName}`,email:syntheticEmail,phone:values.phone,role:'borrower',institutionId:mfiInstitutionId(),status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid,readOnly:true},{merge:true});
+            await setDoc(doc(db,'users',customerId),{uid:customerId,name:`${values.firstName} ${values.lastName}`,email:syntheticEmail,phone:values.phone,role:'borrower',institutionId:mfiInstitutionId(),status:'active',subscriptionTier:'free',aiRequestsLimit:10,createdAt:new Date().toISOString(),createdBy:currentUser.uid,readOnly:true},{merge:true});
             await logMfiAction('register_customer',{customerId});
             if(status) status.textContent='✅ Customer registered';
             showNotification('✅ Customer registered','success');
@@ -15293,7 +15293,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          try {
              const password=`Aps${Math.random().toString(36).slice(2,10)}!`,credential=await createManagedAuthUser(email,password),uid=credential.uid;
              const patient={institutionId:clinicInstitutionId(),patientNumber:`CL-${new Date().getFullYear()}-${uid.slice(0,6).toUpperCase()}`,firstName,lastName,dateOfBirth:document.getElementById('clinicPatientDob').value,sex:document.getElementById('clinicPatientSex').value,phone,email,nationalId:document.getElementById('clinicPatientNationalId').value.trim(),emergencyContact:document.getElementById('clinicPatientEmergency').value.trim(),address:document.getElementById('clinicPatientAddress').value.trim(),status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid};
-             await setDoc(doc(db,'clinic_patients',uid),patient); await setDoc(doc(db,'users',uid),{uid,name:`${firstName} ${lastName}`,email,phone,role:'patient',institutionId:clinicInstitutionId(),patientId:uid,status:'active',createdAt:new Date().toISOString()},{merge:true}); await clinicNotify(uid,'Welcome to your clinic portal',`Your patient account is ready. Sign in with ${email} and the password provided by the clinic.`,'clinic_welcome');
+             await setDoc(doc(db,'clinic_patients',uid),patient); await setDoc(doc(db,'users',uid),{uid,name:`${firstName} ${lastName}`,email,phone,role:'patient',institutionId:clinicInstitutionId(),patientId:uid,status:'active',subscriptionTier:'free',aiRequestsLimit:10,createdAt:new Date().toISOString()},{merge:true}); await clinicNotify(uid,'Welcome to your clinic portal',`Your patient account is ready. Sign in with ${email} and the password provided by the clinic.`,'clinic_welcome');
              status.textContent='✅ Patient registered. Share the temporary password securely with the patient.'; showNotification('Patient registered','success'); closeCommandModal('clinicPatientModal'); document.getElementById('clinicPatientForm').reset(); loadClinicPatients();
          } catch(error){ console.error('Patient registration failed:',error); status.textContent=error.message||'Unable to register patient.'; }
      }
@@ -15780,7 +15780,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             profile=docSnap.data();
         }
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
-        currentUser = { uid:user.uid, ...profile, rawRole, role:profileRole(profile) };
+        const subscriptionTier=String(profile?.subscriptionTier||'free').toLowerCase()==='premium'?'premium':'free';
+        const aiRequestsLimit=subscriptionTier==='premium'?500:10;
+        currentUser = { uid:user.uid, ...profile, subscriptionTier, aiRequestsLimit:profile?.aiRequestsLimit||aiRequestsLimit, rawRole, role:profileRole(profile) };
+        const profileDefaults={};
+        if(!profile?.subscriptionTier) profileDefaults.subscriptionTier='free';
+        if(!Number.isInteger(Number(profile?.aiRequestsLimit))) profileDefaults.aiRequestsLimit=10;
+        if(Object.keys(profileDefaults).length) updateDoc(doc(db,'users',user.uid),profileDefaults).catch(()=>{});
         aiDrawerSessionKey='';
         prepareAIDrawer();
         clearInstitutionBranding();
@@ -16549,7 +16555,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(pwd.length<4){showNotification("Password min 4 chars","error");return;}
         try {
             let cred=await createUserWithEmailAndPassword(auth,email,pwd);
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"teacher",subjectsTaught:subjects,revenuePerView:revenue,pendingEarnings:0,createdAt:new Date().toISOString(),loginCount:0});
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"teacher",subjectsTaught:subjects,revenuePerView:revenue,pendingEarnings:0,subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:0});
             showNotification(`Teacher "${name}" created!`);
             ['teacherName','teacherEmail','teacherPassword','teacherSubject'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; });
             document.getElementById('teacherRevenuePerView').value='100';
@@ -16814,7 +16820,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             let extraFields={};
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
             // Attach referral if user arrived via a referral link
             const pendingRef = sessionStorage.getItem('pendingReferral');
             if(pendingRef) {

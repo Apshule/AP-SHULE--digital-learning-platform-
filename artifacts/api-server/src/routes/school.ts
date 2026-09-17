@@ -146,6 +146,8 @@ router.post("/school/create-student", async (req, res) => {
           role: { stringValue: "individual" },
           schoolId: { stringValue: caller.schoolId },
           mustChangePassword: { booleanValue: true },
+          subscriptionTier: { stringValue: "free" },
+          aiRequestsLimit: { integerValue: "10" },
           createdAt: { stringValue: new Date().toISOString() },
           loginCount: { integerValue: "0" },
         },

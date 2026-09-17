@@ -146,9 +146,14 @@ function aiUsageMiddleware(req: Request, res: Response, next: NextFunction): voi
       return;
     }
 
-    let usage: { allowed: boolean; count: number };
+    let usage: { allowed: boolean; count: number; limit: number };
     try {
-      usage = await checkAndRecordAiUsage(caller.uid, caller.token, caller.isPremium);
+      usage = await checkAndRecordAiUsage(
+        caller.uid,
+        caller.token,
+        caller.isPremium,
+        caller.aiRequestsLimit,
+      );
     } catch {
       res.status(503).json({
         ok: false,
@@ -162,7 +167,9 @@ function aiUsageMiddleware(req: Request, res: Response, next: NextFunction): voi
     if (!usage.allowed) {
       res.status(429).json({
         ok: false,
-        error: "Free daily AI limit reached. Please upgrade to APSHULE Premium.",
+        error: caller.isPremium
+          ? "Daily AI limit reached. Please try again tomorrow."
+          : "Free daily AI limit reached. Please upgrade to APSHULE Premium.",
       });
       return;
     }

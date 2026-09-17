@@ -5,6 +5,7 @@ const FIREBASE_PROJECT_ID = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
 const USAGE_COLLECTION = "user_usage";
 export const FREE_DAILY_AI_LIMIT = 10;
+export const PREMIUM_DAILY_AI_LIMIT = 500;
 
 type FirestoreDocument = {
   name?: string;
@@ -115,10 +116,16 @@ export async function checkAndRecordAiUsage(
   uid: string,
   callerToken: string,
   isPremium: boolean,
-): Promise<{ allowed: boolean; count: number }> {
+  configuredLimit?: number,
+): Promise<{ allowed: boolean; count: number; limit: number }> {
   const current = await recentUsage(uid, callerToken);
   const count = current.length + 1;
-  const allowed = isPremium || count <= FREE_DAILY_AI_LIMIT;
+  const maximum = isPremium ? PREMIUM_DAILY_AI_LIMIT : FREE_DAILY_AI_LIMIT;
+  const limit =
+    Number.isInteger(configuredLimit) && Number(configuredLimit) > 0
+      ? Math.min(Number(configuredLimit), maximum)
+      : maximum;
+  const allowed = count <= limit;
   await recordUsage(uid, callerToken, count, !allowed);
-  return { allowed, count };
+  return { allowed, count, limit };
 }

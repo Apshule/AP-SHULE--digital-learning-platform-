@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upgrade to APSHULE Premium</title>
+  <meta name="description" content="Upgrade APSHULE access using the Yo! Payments mock sandbox.">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background:#f5f7fb; color:#172033; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at top right,#e9e2ff 0,#f5f7fb 42%,#f5f7fb 100%); }
+    .card { width:min(100%,480px); background:#fff; border:1px solid #e5e7ef; border-radius:24px; padding:30px; box-shadow:0 20px 60px rgba(46,36,91,.12); }
+    .brand { color:#4b2e9e; font-size:13px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:10px 0 8px; font-size:30px; line-height:1.08; }
+    .intro { color:#657084; line-height:1.55; margin:0 0 22px; }
+    label { display:block; font-size:13px; font-weight:800; margin:16px 0 7px; }
+    input { width:100%; border:1px solid #d6dae5; border-radius:12px; padding:13px 14px; font:inherit; outline:none; }
+    input:focus { border-color:#6d4bc1; box-shadow:0 0 0 3px rgba(109,75,193,.12); }
+    button, .link-button { width:100%; border:0; border-radius:12px; padding:13px 16px; margin-top:18px; font:inherit; font-weight:900; cursor:pointer; text-align:center; text-decoration:none; display:block; }
+    button.primary { background:#4b2e9e; color:#fff; }
+    button.secondary { background:#eeeafd; color:#4b2e9e; }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .status { min-height:22px; margin-top:15px; color:#657084; font-size:13px; line-height:1.45; }
+    .status.error { color:#b42318; }
+    .status.success { color:#16794c; }
+    .invoice { display:none; margin-top:22px; padding-top:20px; border-top:1px solid #eceef4; }
+    .invoice.show { display:block; }
+    .invoice h2 { margin:0 0 8px; font-size:19px; }
+    .reference { padding:12px; border-radius:10px; background:#f7f5ff; color:#4b2e9e; font:700 12px ui-monospace, monospace; overflow-wrap:anywhere; }
+    .note { margin:14px 0 0; color:#657084; font-size:12px; line-height:1.5; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">APSHULE</div>
+    <h1>Upgrade to Premium</h1>
+    <p class="intro">Start a Yo! Payments mobile-money checkout in the mock sandbox. No real money will move.</p>
+
+    <div id="authMessage" class="status">Checking your sign-in…</div>
+    <form id="paymentForm" class="hidden">
+      <label for="phoneNumber">Mobile Money phone number</label>
+      <input id="phoneNumber" name="phoneNumber" inputmode="tel" autocomplete="tel" placeholder="07XXXXXXXX" required>
+      <button class="primary" id="initiateButton" type="submit">Start mock Yo! payment</button>
+    </form>
+
+    <div id="invoicePanel" class="invoice">
+      <h2>Payment request created</h2>
+      <div id="invoiceStatus" class="status">Waiting for the mock Yo! callback.</div>
+      <div id="invoiceReference" class="reference"></div>
+      <button class="secondary" id="simulateButton" type="button">Simulate successful Yo! callback</button>
+      <p class="note">This button calls the sandbox webhook with SUCCESS. In the live integration, Yo! Payments would send this callback instead.</p>
+    </div>
+
+    <div id="successPanel" class="invoice">
+      <h2>Premium access activated</h2>
+      <div class="status success">Your Firebase profile is now marked as premium with the premium AI allowance.</div>
+      <a class="link-button primary" href="/">Return to APSHULE</a>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = 'https://ap-shule-digital-learning-platform-3.onrender.com';
+    const firebaseConfig = {
+      apiKey: 'AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihY_c9kg',
+      authDomain: 'apshule-app.firebaseapp.com',
+      projectId: 'apshule-app',
+      storageBucket: 'apshule-app.firebasestorage.app',
+      messagingSenderId: '610368652834',
+      appId: '1:610368652834:web:1a30274d95c282a5a3ac7b'
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    let signedInUser = null;
+    let invoice = null;
+    const authMessage = document.getElementById('authMessage');
+    const paymentForm = document.getElementById('paymentForm');
+    const invoicePanel = document.getElementById('invoicePanel');
+    const successPanel = document.getElementById('successPanel');
+    const invoiceStatus = document.getElementById('invoiceStatus');
+    const initiateButton = document.getElementById('initiateButton');
+    const simulateButton = document.getElementById('simulateButton');
+
+    function setStatus(message, kind) {
+      authMessage.textContent = message;
+      authMessage.className = `status ${kind || ''}`;
+    }
+
+    async function authorizedFetch(path, options) {
+      if (!signedInUser) throw new Error('Please sign in to continue.');
+      const token = await signedInUser.getIdToken();
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options?.headers || {}) }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+
+    auth.onAuthStateChanged(user => {
+      signedInUser = user;
+      if (user) {
+        setStatus(`Signed in as ${user.email || 'your APSHULE account'}.`, 'success');
+        paymentForm.classList.remove('hidden');
+      } else {
+        setStatus('Please sign in to APSHULE first, then open this page again.', 'error');
+      }
+    });
+
+    paymentForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      initiateButton.disabled = true;
+      setStatus('Creating a pending invoice…');
+      try {
+        invoice = await authorizedFetch('/api/payment/initiate-yopay', {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: document.getElementById('phoneNumber').value })
+        });
+        invoicePanel.classList.add('show');
+        document.getElementById('invoiceReference').textContent = invoice.yopayReference;
+        invoiceStatus.textContent = `Pending · ${invoice.currency} ${Number(invoice.amount).toLocaleString()}`;
+        setStatus('Mock mobile-money push created.', 'success');
+      } catch (error) {
+        setStatus(error.message || 'Unable to start the mock payment.', 'error');
+      } finally {
+        initiateButton.disabled = false;
+      }
+    });
+
+    simulateButton.addEventListener('click', async () => {
+      if (!invoice?.yopayReference) return;
+      simulateButton.disabled = true;
+      invoiceStatus.textContent = 'Sending mock SUCCESS callback…';
+      try {
+        const response = await fetch(`${API_BASE}/api/payment/webhook/yopay`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: invoice.yopayReference, status: 'SUCCESS' })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.error || 'Mock callback failed');
+        invoicePanel.classList.remove('show');
+        successPanel.classList.add('show');
+        setStatus('Mock Yo! payment completed.', 'success');
+      } catch (error) {
+        invoiceStatus.textContent = error.message || 'Mock callback failed.';
+        invoiceStatus.className = 'status error';
+        simulateButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

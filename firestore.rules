@@ -160,12 +160,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSuperAdmin() || userId == request.auth.uid
         || sameClinicInstitution(resource.data.institutionId);
+      allow create: if isSuperAdmin()
+        || userId == request.auth.uid
+        || sameClinicAdminInstitution(request.resource.data.institutionId)
+        || (isMfiUser()
+          && role() in ['mfi_admin', 'loan_officer']
+          && request.resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId);
       allow update: if isSuperAdmin()
         || sameClinicAdminInstitution(resource.data.institutionId)
           && request.resource.data.institutionId == resource.data.institutionId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
             'status', 'role', 'updatedAt', 'updatedBy'
-          ]);
+          ])
+        || (signedIn() && userId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name', 'phone', 'address', 'offlineSettings', 'preferences.language',
+            'preferences.videoLanguage', 'profilePic', 'weakAreas', 'lastNotifReadAt',
+            'loginCount', 'lastLogin', 'referralCode', 'referredBy', 'paymentPreferences'
+          ]));
     }
 
     // Server-side AI usage records are append-only and scoped to their owner.
@@ -174,6 +186,21 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.keys().hasOnly([
           'userId', 'timestamp', 'count', 'blocked', 'source'
+        ]);
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if false;
+    }
+
+    // Mock Yo! subscription invoices are created by the authenticated API and
+    // completed only by the server-side webhook handler.
+    match /invoices/{invoiceId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.currency == 'UGX'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly([
+          'userId', 'amount', 'currency', 'status', 'yopayReference', 'createdAt'
         ]);
       allow read: if isSuperAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
@@ -678,7 +705,7 @@ service cloud.firestore {
 
     // Preserve access for the existing authenticated application collections.
     match /{document=**} {
-      allow read, write: if signedIn() && !document.matches('^(cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|mfi_credit_note_refund_requests|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications|school_timetable_config|school_classes|school_subjects|school_teacher_assignments|timetable_teacher_duty|school_combined_periods|school_timetable_expected_outcomes|school_timetables)(/.*)?$');
+      allow read, write: if signedIn() && !document.matches('^(users|user_usage|invoices|cartoon_assets|video_studio_projects|video_generation_queue|video_library|video_generation_stats|twin_api_config|teacher_twins|twin_generation_jobs|video_assignments|videoViews|audit_logs|failed_logins|active_sessions|data_subject_requests|settings/(platform|security|pdpo|backup_status)|mfi_collateral_types|mfi_customers|mfi_collateral|mfi_collateral_scoring|mfi_collateral_documents|mfi_branches|mfi_collateral_verification|mfi_collateral_decisions|mfi_valuers|mfi_legal_officers|mfi_receipts|mfi_loan_products|microfinance_loans|mfi_loan_repayment_schedule|mfi_loan_payments|mfi_loan_approvals|mfi_loan_documents|mfi_loan_audit|mfi_loan_installment_applications|mfi_loan_overdue_log|mfi_credit_notes|mfi_loan_restructures|mfi_loan_writeoffs|mfi_late_fee_config|mfi_credit_note_refund_requests|clinic_patients|clinic_appointments|clinic_visits|clinic_prescriptions|clinic_services|clinic_branches|clinic_pharmacy_inventory|clinic_product_scans|clinic_billing|clinic_payments|clinic_insurance_claims|clinic_report_templates|clinic_access_audit|clinic_communications|school_timetable_config|school_classes|school_subjects|school_teacher_assignments|timetable_teacher_duty|school_combined_periods|school_timetable_expected_outcomes|school_timetables)(/.*)?$');
     }
   }
 }
