@@ -45,4 +45,16 @@ describe("student referral rewards", () => {
     expect(rules).toContain("match /studentReferralPayments/{paymentId}");
     expect(rules).toContain("match /studentReferralWithdrawals/{withdrawalId}");
   });
+
+  it("gives Super Admin control over teacher and student referral links", () => {
+    expect(indexSource).toContain("superAdminReferralsPage");
+    expect(indexSource).toContain("data-command-action=\"referrals\"");
+    expect(indexSource).toContain("/api/admin/referrals");
+    expect(indexSource).toContain("Regenerate");
+    expect(route).toContain('router.get("/admin/referrals"');
+    expect(route).toContain('router.patch("/admin/referrals/:userId"');
+    expect(route).toContain("Only Super Admins can manage referral links");
+    expect(route).toContain("referralLinksEnabled");
+    expect(route).toContain("referralRewardPerSignup");
+  });
 });

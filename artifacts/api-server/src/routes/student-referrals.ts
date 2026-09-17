@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from "express";
+import { randomUUID } from "node:crypto";
 import { verifyFirebaseCaller } from "../lib/firebase-auth";
 import { getFirebaseAdminToken } from "../lib/firebase-admin-token";
 
@@ -150,7 +151,9 @@ async function findReferrer(referralCode: string): Promise<{
     const document = rows.find((row) => row.document?.name)?.document;
     if (!document?.name) continue;
     const id = document.name.split("/documents/users/")[1] ?? "";
-    if (id) return { id, data: documentData(document), rewardChoice: field.rewardChoice };
+    const data = documentData(document);
+    if (data.referralLinksEnabled === false) continue;
+    if (id) return { id, data, rewardChoice: field.rewardChoice };
   }
   return null;
 }
@@ -216,7 +219,7 @@ async function grantStudentReward(
     method: "PATCH",
     body: JSON.stringify(firestoreFields({
       referrerId: referrer.id, referredUserId, referredUserName: newUser.name ?? referredUserId,
-      rewardType: rewardChoice, amount: reward.amount, currency: "UGX", status: reward.status, createdAt: claimedAt,
+      rewardType: selectedReward, amount: reward.amount, currency: "UGX", status: reward.status, createdAt: claimedAt,
     })),
   });
   await firestoreRequest(`/users/${encodeURIComponent(referredUserId)}`, {
@@ -239,6 +242,131 @@ async function grantStudentReward(
       : "24 hours of premium access added to the referrer's account.",
   };
 }
+
+function referralCode(prefix: string, userId: string): string {
+  return `${prefix}_${userId.slice(0, 8)}_${randomUUID().replace(/-/g, "").slice(0, 12)}`;
+}
+
+async function requireReferralAdmin(req: Request, res: Response) {
+  const caller = await verifyFirebaseCaller(req.headers.authorization);
+  if (!("uid" in caller)) {
+    res.status(caller.status).json({ ok: false, error: caller.reason });
+    return null;
+  }
+  if (caller.role !== "superadmin") {
+    res.status(403).json({ ok: false, error: "Only Super Admins can manage referral links" });
+    return null;
+  }
+  return caller;
+}
+
+function referralAdminView(id: string, data: Record<string, unknown>) {
+  return {
+    id,
+    name: data.name ?? "",
+    email: data.email ?? "",
+    phone: data.phone ?? "",
+    role: data.role ?? "",
+    status: data.status ?? "active",
+    referralCode: data.referralCode ?? "",
+    referralCashCode: data.referralCashCode ?? "",
+    referralDayCode: data.referralDayCode ?? "",
+    referralLinksEnabled: data.referralLinksEnabled !== false,
+    referralCount: Number(data.referralCount ?? 0),
+    referralRewardPerSignup: Number(data.referralRewardPerSignup ?? 0),
+    referralCashBalance: Number(data.referralCashBalance ?? 0),
+    premiumAccessUntil: data.premiumAccessUntil ?? "",
+    createdAt: data.createdAt ?? "",
+  };
+}
+
+router.get("/admin/referrals", async (req: Request, res: Response) => {
+  const caller = await requireReferralAdmin(req, res);
+  if (!caller) return;
+  try {
+    const response = await firestoreRequest("/users?pageSize=1500", {}, caller.token) as {
+      documents?: FirestoreDocument[];
+    };
+    const referrals = (response.documents ?? [])
+      .map((document) => {
+        const id = document.name?.split("/documents/users/")[1] ?? "";
+        return id ? referralAdminView(id, documentData(document)) : null;
+      })
+      .filter((item): item is ReturnType<typeof referralAdminView> =>
+        Boolean(item && ["teacher", "individual", "student"].includes(String(item.role))),
+      );
+    res.json({ ok: true, referrals });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to load referral links",
+    });
+  }
+});
+
+router.patch("/admin/referrals/:userId", async (req: Request, res: Response) => {
+  const caller = await requireReferralAdmin(req, res);
+  if (!caller) return;
+  const userId = String(req.params.userId ?? "").trim().slice(0, 160);
+  if (!userId) {
+    res.status(400).json({ ok: false, error: "A referral owner is required" });
+    return;
+  }
+  try {
+    const target = await getUser(userId, caller.token);
+    const role = String(target?.role ?? "");
+    if (!target || !["teacher", "individual", "student"].includes(role)) {
+      res.status(404).json({ ok: false, error: "Referral owner not found" });
+      return;
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (typeof req.body?.enabled === "boolean") {
+      patch.referralLinksEnabled = req.body.enabled;
+    }
+    if (role === "teacher" && req.body?.rewardPerSignup !== undefined) {
+      const amount = Number(req.body.rewardPerSignup);
+      if (!Number.isFinite(amount) || amount < 0 || amount > 1000000) {
+        res.status(400).json({ ok: false, error: "Teacher reward must be between UGX 0 and UGX 1,000,000" });
+        return;
+      }
+      patch.referralRewardPerSignup = Math.floor(amount);
+    }
+    if (req.body?.regenerate === true) {
+      patch.referralCode = referralCode(role === "teacher" ? "teacher" : "student", userId);
+      if (role !== "teacher") {
+        patch.referralCashCode = referralCode("cash", userId);
+        patch.referralDayCode = referralCode("day", userId);
+      }
+    }
+    if (!Object.keys(patch).length) {
+      res.status(400).json({ ok: false, error: "No referral settings were supplied" });
+      return;
+    }
+
+    await firestoreRequest(`/users/${encodeURIComponent(userId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({ ...patch, updatedAt: now(), updatedBy: caller.uid })),
+    });
+    await firestoreRequest(`/audit_logs/${encodeURIComponent(`referral_${userId}_${Date.now()}`)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        userId: caller.uid,
+        userName: "Super Admin",
+        action: "manage_referral_link",
+        details: { targetUserId: userId, changes: patch },
+        result: "success",
+        createdAt: now(),
+      })),
+    }).catch(() => undefined);
+    res.json({ ok: true, referral: referralAdminView(userId, { ...target, ...patch }) });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to update referral link",
+    });
+  }
+});
 
 export async function settleStudentReferralPayment(
   externalRef: string,
