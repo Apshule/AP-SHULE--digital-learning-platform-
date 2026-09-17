@@ -211,7 +211,7 @@ router.post("/ai/assistant", aiUsageMiddleware, async (req: Request, res: Respon
     res.json({ ok: true, answer: answer || "I could not produce an answer from the available context.", sector });
   } catch (error) {
     const message = error instanceof Error ? error.message : "AI service unavailable";
-    if (/quota|rate limit|too many requests/i.test(message)) {
+    if (/quota|rate limit|too many requests|high demand|temporarily unavailable/i.test(message)) {
       res.setHeader("Retry-After", "60");
       res.status(429).json({ ok: false, error: "AI provider quota is temporarily unavailable. Please try again shortly." });
       return;
