@@ -14339,7 +14339,50 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             return;
         }
         if(tab==='pdfs') {
-            const rows=pdfMaterials||await commandLoad('pdfs'); target.innerHTML=commandModuleCard('PDF Library',`<div class="command-toolbar"><input id="commandPdfFilter" placeholder="Filter title or category…"><button class="command-secondary-btn" id="commandOpenPdfAdminBtn">Open PDF uploader</button></div><div id="commandPdfRows">${rows.map(item=>`<div class="command-list-card"><div><h4>📄 ${escHtml(item.title||'Untitled PDF')}</h4><p>${escHtml(item.category||'Uncategorised')} · ${Number(item.views||0).toLocaleString()} views · ${item.uploadedAt?new Date(item.uploadedAt).toLocaleDateString():''}</p></div><div class="command-list-actions"><button data-pdf-delete="${item.id}">Delete</button></div></div>`).join('')||'<div class="command-activity-item">No PDFs in the library.</div>'}</div>`); document.getElementById('commandOpenPdfAdminBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.getElementById('pdfManagementSection')?.scrollIntoView({behavior:'smooth'}),300);}); target.querySelectorAll('[data-pdf-delete]').forEach(button=>button.onclick=async()=>{if(!confirm('Delete this PDF?'))return;await deleteDoc(doc(db,'pdfs',button.dataset.pdfDelete));showNotification('PDF deleted','success');loadCommandModule('content','pdfs');}); return;
+            const rows=await commandLoadPdfMaterials();
+            commandModuleRows=rows;
+            const renderRows=items=>items.map(item=>`<div class="command-list-card">
+                <div>
+                    <h4>📄 ${escHtml(item.title||'Untitled PDF')}</h4>
+                    <p>${escHtml(item.category||'Uncategorised')} · ${Number(item.views||0).toLocaleString()} views · ${escHtml(item.sourceCollection==='teacherPdfs' ? `Teacher: ${item.teacherName||'Unknown'}` : 'Super Admin')} · ${item.uploadedAt?new Date(item.uploadedAt).toLocaleDateString():''}</p>
+                </div>
+                <div class="command-list-actions"><button data-pdf-delete="${escHtml(item.id)}" data-pdf-source="${escHtml(item.sourceCollection||'pdfs')}" data-pdf-path="${escHtml(item.storagePath||'')}">Delete</button></div>
+            </div>`).join('')||'<div class="command-activity-item">No PDFs in the library.</div>';
+            target.innerHTML=commandModuleCard('PDF Library',`
+                <form id="commandPdfUploadForm" class="command-form" style="margin-bottom:14px;">
+                    <strong style="color:#4B2E9E;">Upload shared study material</strong>
+                    <label>Title<input id="commandPdfTitle" required maxlength="160" placeholder="e.g. P7 Mathematics — Fractions"></label>
+                    <label>Subject / category<input id="commandPdfCategory" maxlength="80" placeholder="e.g. Mathematics"></label>
+                    <label>PDF file<input id="commandPdfFile" type="file" accept="application/pdf,.pdf"></label>
+                    <div style="text-align:center;color:#777;font-size:11px;">or paste a public PDF URL</div>
+                    <label>PDF URL<input id="commandPdfUrl" type="url" placeholder="https://example.com/study-material.pdf"></label>
+                    <button id="commandPdfUploadBtn" class="command-primary-btn" type="submit">📤 Upload PDF</button>
+                    <div id="commandPdfUploadStatus" class="command-tabs-note" aria-live="polite"></div>
+                </form>
+                <div class="command-toolbar">
+                    <input id="commandPdfFilter" placeholder="Filter title, category, or uploader…" aria-label="Filter PDF library">
+                </div>
+                <div id="commandPdfRows">${renderRows(rows)}</div>
+            `);
+            document.getElementById('commandPdfUploadForm')?.addEventListener('submit',submitCommandPdfUpload);
+            document.getElementById('commandPdfFilter')?.addEventListener('input',()=>{
+                const value=document.getElementById('commandPdfFilter').value.toLowerCase();
+                document.querySelectorAll('#commandPdfRows .command-list-card').forEach(row=>row.style.display=row.textContent.toLowerCase().includes(value)?'':'none');
+            });
+            target.querySelectorAll('[data-pdf-delete]').forEach(button=>button.onclick=async()=>{
+                if(!confirm('Delete this PDF?')) return;
+                const source=button.dataset.pdfSource==='teacherPdfs'?'teacherPdfs':'pdfs';
+                try {
+                    await deleteDoc(doc(db,source,button.dataset.pdfDelete));
+                    if(button.dataset.pdfPath) { try { await deleteObject(storageRef(storage,button.dataset.pdfPath)); } catch(_) {} }
+                    await logSuperAdminAction('delete_pdf',{sourceCollection:source,pdfId:button.dataset.pdfDelete});
+                    showNotification('PDF deleted','success');
+                    loadCommandModule('content','pdfs');
+                } catch(error) {
+                    showNotification(`Could not delete PDF: ${error?.message||'Please try again'}`,'error');
+                }
+            });
+            return;
         }
         if(tab==='uneb') {
             const rows=await commandLoad('uneb_items'); target.innerHTML=commandModuleCard('UNEB Items',`<div class="command-toolbar"><button class="command-primary-btn" id="commandSeedUnebBtn">Seed starter items</button><button class="command-secondary-btn" id="commandOpenComplianceBtn">Open compliance workspace</button></div><div id="commandUnebRows">${rows.map(item=>`<div class="command-list-card"><div><h4>📝 ${escHtml(item.title||item.question||'UNEB item')}</h4><p>${escHtml(item.subject||'')} · ${escHtml(item.classLevel||item.level||'')} · ${escHtml(item.status||'draft')}</p></div><div class="command-list-actions"><button data-uneb-edit="${item.id}">Edit</button><button data-uneb-delete="${item.id}">Delete</button></div></div>`).join('')||'<div class="command-activity-item">No UNEB items yet.</div>'}</div>`); document.getElementById('commandOpenComplianceBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.getElementById('schoolComplianceSection')?.scrollIntoView({behavior:'smooth'}),300);}); document.getElementById('commandSeedUnebBtn')?.addEventListener('click',async()=>{await addDoc(collection(db,'uneb_items'),{title:'Starter UNEB competency item',subject:'General',classLevel:'P7',status:'draft',createdBy:currentUser.uid,createdAt:new Date().toISOString()});showNotification('Starter UNEB item added','success');loadCommandModule('content','uneb');}); target.querySelectorAll('[data-uneb-delete]').forEach(button=>button.onclick=async()=>{if(confirm('Delete this UNEB item?')){await deleteDoc(doc(db,'uneb_items',button.dataset.unebDelete));loadCommandModule('content','uneb');}}); target.querySelectorAll('[data-uneb-edit]').forEach(button=>button.onclick=async()=>{const row=rows.find(item=>item.id===button.dataset.unebEdit);const title=prompt('Item title',row?.title||row?.question||'');if(title)await updateDoc(doc(db,'uneb_items',button.dataset.unebEdit),{title,updatedAt:new Date().toISOString()});loadCommandModule('content','uneb');}); return;
@@ -14348,6 +14391,55 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const levels=[['primary',primarySubjects||[]],['secondary',secondarySubjects||[]]]; target.innerHTML=commandModuleCard('Subjects & Classes',`${levels.map(([level,list])=>`<div style="margin-bottom:12px;"><strong style="color:#4B2E9E;">${level==='primary'?'Primary':'Secondary'}</strong><div class="command-list-card" style="margin-top:6px;"><p>${list.map(item=>`<span style="display:inline-block;background:#eee9ff;color:#4B2E9E;border-radius:14px;padding:5px 9px;margin:2px;">${escHtml(item)}</span>`).join('')||'No subjects configured.'}</p></div></div>`).join('')}<button class="command-secondary-btn" id="commandOpenSubjectsBtn">Open subject editor</button>`); document.getElementById('commandOpenSubjectsBtn')?.addEventListener('click',()=>{closeCommandModal('commandSubModal');document.getElementById('adminMenuItem')?.click();setTimeout(()=>document.getElementById('addSubjectSection')?.scrollIntoView({behavior:'smooth'}),300);});
     }
     function commandFilteredVideoRows(){const value=(document.getElementById('commandVideoFilter')?.value||'').toLowerCase();return commandModuleRows.filter(item=>`${item.topic||''} ${item.title||''} ${item.subject||''} ${item.language||''}`.toLowerCase().includes(value));}
+    async function commandLoadPdfMaterials() {
+        const [shared, teacher] = await Promise.all([commandLoad('pdfs'), commandLoad('teacherPdfs')]);
+        return [
+            ...shared.map(item => ({...item, sourceCollection:'pdfs'})),
+            ...teacher.map(item => ({...item, sourceCollection:'teacherPdfs'}))
+        ].sort((left,right) => String(right.uploadedAt||'').localeCompare(String(left.uploadedAt||'')));
+    }
+    async function submitCommandPdfUpload(event) {
+        event.preventDefault();
+        if(!commandRequiresOnline()) return;
+        const title=document.getElementById('commandPdfTitle')?.value.trim()||'';
+        const category=document.getElementById('commandPdfCategory')?.value.trim()||'General';
+        const file=document.getElementById('commandPdfFile')?.files?.[0]||null;
+        const urlInput=document.getElementById('commandPdfUrl')?.value.trim()||'';
+        const status=document.getElementById('commandPdfUploadStatus');
+        const button=document.getElementById('commandPdfUploadBtn');
+        if(!title){ if(status) status.textContent='Enter a study material title.'; return; }
+        if(!file && !urlInput){ if(status) status.textContent='Choose a PDF file or paste a URL.'; return; }
+        if(file && !isPdfFile(file)){ if(status) status.textContent='Please select a PDF file.'; return; }
+        if(!file && !/^https?:\/\//i.test(urlInput)){ if(status) status.textContent='Use a full http:// or https:// URL.'; return; }
+        if(button) button.disabled=true;
+        let storagePath='';
+        try {
+            let url=urlInput;
+            if(file) {
+                storagePath=`adminPdfs/${currentUser.uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+                url=await uploadPdfFileToStorage(file,storagePath,pct=>{
+                    if(status) status.textContent=`Uploading PDF… ${pct}%`;
+                });
+            }
+            await addDoc(collection(db,'pdfs'),{
+                title, category, url, storagePath, views:0, fileSize:file?.size||0,
+                fileName:file?.name||'', resourceFormat:file ? 'application/pdf' : 'text/uri-list',
+                sourceCollection:'pdfs', uploadedBy:currentUser.uid, uploadedAt:new Date().toISOString()
+            });
+            if(status) status.textContent='✅ PDF is now available in Resources.';
+            showNotification('PDF uploaded to the shared Resources library','success');
+            writeNotification(null,'New PDF Available',`"${title}" has been added to Resources`,'pdf');
+            await logSuperAdminAction('upload_pdf',{title,category});
+            document.getElementById('commandPdfUploadForm')?.reset();
+            await loadCommandModule('content','pdfs');
+        } catch(error) {
+            if(storagePath) { try { await deleteObject(storageRef(storage,storagePath)); } catch(_) {} }
+            if(status) status.textContent=`❌ ${error?.message||'The PDF could not be uploaded.'}`;
+            showNotification('The PDF could not be uploaded','error');
+        } finally {
+            if(button) button.disabled=false;
+        }
+    }
     async function renderCommandPaymentsTab(tab,target) {
         if(tab==='overview') {
             const [payments,subs,requests]=await Promise.all([commandLoad('payments'),commandLoad('subscriptions'),commandLoad('livePaymentRequests')]);

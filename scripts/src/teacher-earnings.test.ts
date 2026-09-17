@@ -76,4 +76,23 @@ describe("teacher earnings and payout contracts", () => {
     expect(indexSource).toContain('id="teacherPdfCategory"');
     expect(indexSource).toContain("category, url: downloadURL");
   });
+
+  it("gives the Command Center a direct, source-aware PDF uploader", () => {
+    for (const value of [
+      "commandPdfUploadForm",
+      "commandPdfTitle",
+      "commandPdfCategory",
+      "commandPdfFile",
+      "commandPdfUrl",
+      "submitCommandPdfUpload",
+      "commandLoadPdfMaterials",
+      "data-pdf-source",
+      "teacherPdfs"
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("button.dataset.pdfSource==='teacherPdfs'?'teacherPdfs':'pdfs'");
+    expect(indexSource).toContain("uploadPdfFileToStorage");
+    expect(indexSource).toContain("logSuperAdminAction('delete_pdf'");
+  });
 });
