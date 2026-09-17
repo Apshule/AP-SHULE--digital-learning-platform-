@@ -8,6 +8,7 @@ import complianceRouter from "./compliance";
 import yoPaymentsRouter from "./yo-payments";
 import yoPaySubscriptionsRouter from "./yopay-subscriptions";
 import aiAssistantRouter from "./ai-assistant";
+import youtubeRouter from "./youtube";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(complianceRouter);
 router.use(yoPaymentsRouter);
 router.use(yoPaySubscriptionsRouter);
 router.use(aiAssistantRouter);
+router.use(youtubeRouter);
 
 export default router;

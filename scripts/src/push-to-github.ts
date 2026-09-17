@@ -61,6 +61,8 @@ const FILES = [
   "artifacts/api-server/src/routes/school.ts",
   "artifacts/api-server/src/routes/yopay-subscriptions.ts",
   "artifacts/api-server/src/routes/compliance.ts",
+  "artifacts/api-server/src/routes/youtube.ts",
+  "scripts/src/youtube-integration.test.ts",
   "firestore.rules",
   "firestore.indexes.json",
   "upgrade.html",
