@@ -71,6 +71,8 @@ const FILES = [
   "scripts/src/youtube-sync-ui.test.ts",
   "firestore.rules",
   "firestore.indexes.json",
+  "firebase.json",
+  "storage.rules",
   "upgrade.html",
   ".agents/memory/MEMORY.md",
   ".agents/memory/github-pages-push-allowlist.md",
