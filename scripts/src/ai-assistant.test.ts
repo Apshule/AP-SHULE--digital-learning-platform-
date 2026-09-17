@@ -8,8 +8,10 @@ const askAiStart = indexSource.indexOf("async function askAI(q)");
 const askAiEnd = indexSource.indexOf("function parseMd", askAiStart);
 const askAiSource = indexSource.slice(askAiStart, askAiEnd);
 const routeSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/ai-assistant.ts"), "utf8");
+const usageSource = readFileSync(resolve(root, "artifacts/api-server/src/lib/ai-usage.ts"), "utf8");
 const complianceSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/compliance.ts"), "utf8");
 const appSource = readFileSync(resolve(root, "artifacts/api-server/src/app.ts"), "utf8");
+const rulesSource = readFileSync(resolve(root, "firestore.rules"), "utf8");
 
 describe("sector AI assistant contracts", () => {
   it("uses the authenticated server assistant without exposing provider credentials", () => {
@@ -39,6 +41,16 @@ describe("sector AI assistant contracts", () => {
     expect(routeSource).toContain("Do not diagnose, prescribe");
     expect(routeSource).toContain("qualified veterinary professional");
     expect(routeSource).toContain("Uganda-curriculum learning coach");
+  });
+
+  it("enforces the free daily limit and protects the shared provider quota", () => {
+    expect(usageSource).toContain('const USAGE_COLLECTION = "user_usage"');
+    expect(usageSource).toContain("FREE_DAILY_AI_LIMIT = 10");
+    expect(routeSource).toContain("aiUsageMiddleware");
+    expect(routeSource).toContain("AI_GLOBAL_REQUESTS_PER_MINUTE");
+    expect(routeSource).toContain("Free daily AI limit reached. Please upgrade to APSHULE Premium.");
+    expect(rulesSource).toContain("match /user_usage/{usageId}");
+    expect(rulesSource).toContain("request.resource.data.userId == request.auth.uid");
   });
 
   it("restricts browser CORS to approved APSHULE origins", () => {

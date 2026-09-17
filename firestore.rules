@@ -168,6 +168,18 @@ service cloud.firestore {
           ]);
     }
 
+    // Server-side AI usage records are append-only and scoped to their owner.
+    match /user_usage/{usageId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'userId', 'timestamp', 'count', 'blocked', 'source'
+        ]);
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if false;
+    }
+
     match /institution_branding/{brandingId} {
       allow read: if signedIn() && (isSuperAdmin()
         || resource.data.institutionId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.institutionId

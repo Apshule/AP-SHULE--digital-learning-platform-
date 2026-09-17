@@ -1,5 +1,6 @@
-import { Router, type Request, type Response } from "express";
-import { verifyFirebaseCaller } from "../lib/firebase-auth";
+import { Router, type NextFunction, type Request, type Response } from "express";
+import { verifyFirebaseCaller, type FirebaseCaller } from "../lib/firebase-auth";
+import { checkAndRecordAiUsage } from "../lib/ai-usage";
 
 const router = Router();
 const GEMINI_API_KEY = process.env["GEMINI_API_KEY"];
@@ -49,6 +50,11 @@ const sectorGuidance: Record<Sector, string> = {
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60_000;
+const globalRequestTimestamps: number[] = [];
+const GLOBAL_REQUEST_LIMIT = Math.max(
+  1,
+  Number(process.env["AI_GLOBAL_REQUESTS_PER_MINUTE"] ?? 15),
+);
 
 function normalizeRole(role: string): string {
   return role.trim().toLowerCase().replace(/[\s-]+/g, "_");
@@ -90,6 +96,7 @@ async function generateAnswer(prompt: string, sector: Sector): Promise<string> {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(30_000),
       body: JSON.stringify({
         systemInstruction: {
           parts: [
@@ -114,27 +121,76 @@ async function generateAnswer(prompt: string, sector: Sector): Promise<string> {
   return data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim() ?? "";
 }
 
-router.post("/ai/assistant", async (req: Request, res: Response) => {
-  const caller = await verifyFirebaseCaller(req.headers.authorization);
-  if (!("uid" in caller)) {
-    res.status(caller.status).json({ ok: false, error: caller.reason });
-    return;
+function reserveGlobalProviderSlot(): boolean {
+  const cutoff = Date.now() - RATE_WINDOW_MS;
+  while (globalRequestTimestamps[0] !== undefined && globalRequestTimestamps[0] <= cutoff) {
+    globalRequestTimestamps.shift();
   }
+  if (globalRequestTimestamps.length >= GLOBAL_REQUEST_LIMIT) return false;
+  globalRequestTimestamps.push(Date.now());
+  return true;
+}
+
+function aiUsageMiddleware(req: Request, res: Response, next: NextFunction): void {
+  void (async () => {
+    const caller = await verifyFirebaseCaller(req.headers.authorization);
+    if (!("uid" in caller)) {
+      res.status(caller.status).json({ ok: false, error: caller.reason });
+      return;
+    }
+
+    const body = (req.body ?? {}) as { question?: unknown };
+    const question = limitedString(body.question, 2000);
+    if (!question) {
+      res.status(400).json({ ok: false, error: "A question is required" });
+      return;
+    }
+
+    let usage: { allowed: boolean; count: number };
+    try {
+      usage = await checkAndRecordAiUsage(caller.uid, caller.token, caller.isPremium);
+    } catch {
+      res.status(503).json({
+        ok: false,
+        error: "AI usage tracking is temporarily unavailable. Please try again shortly.",
+      });
+      return;
+    }
+
+    res.locals.aiCaller = caller;
+    res.locals.aiUsage = usage;
+    if (!usage.allowed) {
+      res.status(429).json({
+        ok: false,
+        error: "Free daily AI limit reached. Please upgrade to APSHULE Premium.",
+      });
+      return;
+    }
+    next();
+  })().catch(() => {
+    res.status(503).json({
+      ok: false,
+      error: "AI usage tracking is temporarily unavailable. Please try again shortly.",
+    });
+  });
+}
+
+router.post("/ai/assistant", aiUsageMiddleware, async (req: Request, res: Response) => {
+  const caller = res.locals.aiCaller as FirebaseCaller;
   if (!withinRateLimit(caller.uid)) {
     res.status(429).json({ ok: false, error: "AI request limit reached. Please wait a minute and try again." });
     return;
   }
+  if (!reserveGlobalProviderSlot()) {
+    res.status(429).json({ ok: false, error: "AI service is busy. Please try again shortly." });
+    return;
+  }
 
   const body = (req.body ?? {}) as {
-    question?: unknown;
     sector?: unknown;
     context?: unknown;
   };
-  const question = limitedString(body.question, 2000);
-  if (!question) {
-    res.status(400).json({ ok: false, error: "A question is required" });
-    return;
-  }
+  const question = limitedString((req.body ?? {}).question, 2000);
 
   const callerSector = sectorForRole(caller.role);
   const sector = requestedSectorForCaller(callerSector, body.sector);
@@ -154,7 +210,13 @@ router.post("/ai/assistant", async (req: Request, res: Response) => {
     const answer = await generateAnswer(prompt, sector);
     res.json({ ok: true, answer: answer || "I could not produce an answer from the available context.", sector });
   } catch (error) {
-    res.status(502).json({ ok: false, error: error instanceof Error ? error.message : "AI service unavailable" });
+    const message = error instanceof Error ? error.message : "AI service unavailable";
+    if (/quota|rate limit|too many requests/i.test(message)) {
+      res.setHeader("Retry-After", "60");
+      res.status(429).json({ ok: false, error: "AI provider quota is temporarily unavailable. Please try again shortly." });
+      return;
+    }
+    res.status(502).json({ ok: false, error: message });
   }
 });
 

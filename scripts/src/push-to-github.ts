@@ -53,6 +53,7 @@ const FILES = [
   "scripts/src/push-to-github.ts",
   "scripts/src/ai-assistant.test.ts",
   "artifacts/api-server/src/app.ts",
+  "artifacts/api-server/src/lib/ai-usage.ts",
   "artifacts/api-server/src/routes/ai-assistant.ts",
   "artifacts/api-server/src/routes/compliance.ts",
   "firestore.rules",
