@@ -344,6 +344,183 @@ router.post("/payments/initiate", async (req, res) => {
   }
 });
 
+function isActiveTeacherWithdrawal(status: unknown): boolean {
+  return ["processing", "pending_provider_configuration", "pending", "submitted"].includes(String(status ?? ""));
+}
+
+async function releaseTeacherEarnings(earningIds: string[], extra: Record<string, unknown> = {}) {
+  await Promise.all(earningIds.map((id) => firestoreRequest(`/teacherEarnings/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(firestoreFields({ payoutStatus: null, withdrawalId: null, ...extra })),
+  })));
+}
+
+async function completeTeacherEarnings(earningIds: string[], withdrawalId: string, successful: boolean) {
+  if (successful) {
+    await Promise.all(earningIds.map((id) => firestoreRequest(`/teacherEarnings/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({ paid: true, payoutStatus: "paid", paidAt: now(), withdrawalId })),
+    })));
+  } else {
+    await releaseTeacherEarnings(earningIds, { payoutError: "The payout provider did not confirm this withdrawal." });
+  }
+}
+
+router.post("/payments/teacher/withdraw", async (req, res) => {
+  const user = await caller(req, res);
+  if (!user) return;
+  const teacher = await firestoreGet("users", user.uid, user.token);
+  if (!teacher || teacher.role !== "teacher") {
+    res.status(403).json({ ok: false, error: "Only teacher accounts can withdraw teacher earnings" });
+    return;
+  }
+  const amount = Math.round(Number(req.body?.amount ?? 0));
+  const beneficiaryType = String(req.body?.beneficiaryType ?? "").toLowerCase();
+  const accountName = String(req.body?.accountName ?? "").trim();
+  const account = String(req.body?.account ?? "").trim();
+  const bankIdentifier = String(req.body?.bankIdentifier ?? "").trim();
+  const mobile = beneficiaryType === "mobile_money";
+  const accountValid = mobile ? /^\+?[0-9]{8,15}$/.test(account) : /^[A-Za-z0-9 .\/-]{4,34}$/.test(account);
+  if (!Number.isSafeInteger(amount) || amount < 1000 || !["mobile_money", "bank"].includes(beneficiaryType) || !accountName || !accountValid || (beneficiaryType === "bank" && !bankIdentifier)) {
+    res.status(400).json({ ok: false, error: "Enter a valid withdrawal amount and payout account details" });
+    return;
+  }
+  const savedProfile = (teacher.teacherPayoutProfile && typeof teacher.teacherPayoutProfile === "object"
+    ? teacher.teacherPayoutProfile : {}) as Record<string, unknown>;
+  const profileMatches = savedProfile.status === "verified"
+    && String(savedProfile.beneficiaryType ?? "") === beneficiaryType
+    && String(savedProfile.accountName ?? "") === accountName
+    && String(savedProfile.account ?? "") === account
+    && String(savedProfile.bankIdentifier ?? "") === bankIdentifier;
+  if (!profileMatches) {
+    await firestoreRequest(`/users/${encodeURIComponent(user.uid)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        teacherPayoutProfile: {
+          beneficiaryType, accountName, account, bankIdentifier,
+          status: "pending_validation", submittedAt: now(), updatedAt: now(),
+        },
+        payoutProfileUpdatedAt: now(),
+      })),
+    });
+    res.status(202).json({
+      ok: true, status: "pending_validation", approvalRequired: true,
+      message: "Payout details submitted. An admin must validate them once before automatic withdrawals can start.",
+    });
+    return;
+  }
+  const lockPath = `/teacherPayoutLocks/${encodeURIComponent(user.uid)}`;
+  try {
+    await firestoreRequest(lockPath, {
+      method: "PATCH",
+      body: JSON.stringify({
+        currentDocument: { exists: false },
+        ...firestoreFields({ teacherId: user.uid, createdAt: now() }),
+      }),
+    });
+  } catch {
+    res.status(409).json({ ok: false, error: "Another withdrawal is already being prepared. Please wait." });
+    return;
+  }
+
+  let reservedIds: string[] = [];
+  try {
+    const existingWithdrawals = documentRows(await firestoreQuery("teacherWithdrawals", "teacherId", user.uid));
+    if (existingWithdrawals.some((item) => isActiveTeacherWithdrawal(item.status))) {
+      res.status(409).json({ ok: false, error: "A previous withdrawal is still being processed." });
+      return;
+    }
+    const earningRows = documentRows(await firestoreQuery("teacherEarnings", "teacherId", user.uid));
+    const available = earningRows.filter((item) => item.paid !== true && item.payoutStatus !== "reserved" && item.payoutStatus !== "paid");
+    const availableAmount = available.reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+    if (amount > availableAmount || amount <= 0) {
+      res.status(400).json({ ok: false, error: `The requested amount exceeds your available balance of UGX ${availableAmount.toLocaleString()}` });
+      return;
+    }
+    if (!hasYoCredentials()) {
+      res.status(503).json({ ok: false, error: "Automatic withdrawals are not available until the Yo provider is configured on the server. Your earnings were not changed." });
+      return;
+    }
+    // Earnings are immutable units. Full-balance withdrawals always work; a
+    // partial withdrawal must match whole earning records to avoid splitting
+    // one view or referral across two payouts.
+    const selected: Array<Record<string, unknown> & { id: string }> = [];
+    let selectedAmount = 0;
+    for (const earning of available) {
+      if (selectedAmount + Number(earning.amount ?? 0) > amount) continue;
+      selected.push(earning);
+      selectedAmount += Number(earning.amount ?? 0);
+      if (selectedAmount === amount) break;
+    }
+    if (selectedAmount !== amount) {
+      res.status(400).json({ ok: false, error: "Choose the full available balance or an amount matching complete earning records." });
+      return;
+    }
+    reservedIds = selected.map((item) => item.id);
+    const withdrawalId = `TWD-${new Date().getUTCFullYear()}-${createHash("sha256").update(`${user.uid}:${Date.now()}`).digest("hex").slice(0, 16).toUpperCase()}`;
+    const profile = { ...savedProfile, beneficiaryType, accountName, account, bankIdentifier, status: "verified", updatedAt: now() };
+    await Promise.all(selected.map((item) => firestoreRequest(`/teacherEarnings/${encodeURIComponent(item.id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({ payoutStatus: "reserved", withdrawalId, reservedAt: now() })),
+    })));
+    const settings = configuredSettings(await savedPaymentSettings());
+    const configured = true;
+    const status = "processing";
+    const withdrawal = {
+      withdrawalId, teacherId: user.uid, teacherName: teacher.name ?? user.uid,
+      amount, currency: "UGX", beneficiaryType, accountName, account, bankIdentifier,
+      earningIds: reservedIds, status, createdAt: now(), updatedAt: now(),
+      automatic: true, approvalRequired: false,
+      blockedReason: configured ? null : "Yo API credentials are not configured on the server",
+    };
+    await firestoreRequest(`/teacherWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+      method: "PATCH", body: JSON.stringify(firestoreFields(withdrawal)),
+    });
+    await firestoreRequest(`/users/${encodeURIComponent(user.uid)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({ teacherPayoutProfile: profile, pendingEarnings: Math.max(0, availableAmount - amount), payoutProfileUpdatedAt: now() })),
+    });
+    const disbursementId = `TDISC-${withdrawalId}`;
+    await firestoreRequest(`/payment_disbursements/${encodeURIComponent(disbursementId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        disbursementId, teacherWithdrawalId: withdrawalId, teacherId: user.uid,
+        externalRef: disbursementId, reference: withdrawalId, amount, netAmount: amount,
+        fee: 0, beneficiaryType, beneficiaryAccount: account, beneficiaryAccountName: accountName,
+        bankIdentifier, status, attempts: 0, maxAttempts: 3, createdAt: now(), updatedAt: now(),
+        blockedReason: configured ? null : "Yo API credentials are not configured on the server",
+      })),
+    });
+    if (configured) {
+      const method = beneficiaryType === "bank" ? "acwithdrawfundstobank" : "acwithdrawfunds";
+      try {
+        const response = await yoCall(method, {
+          Amount: amount.toFixed(2), CurrencyCode: "UGX", BeneficiaryAccount: account,
+          BeneficiaryEmail: "", Narrative: `Teacher earnings withdrawal ${withdrawalId}`,
+          ExternalReference: disbursementId, InstantNotificationUrl: `${publicBaseUrl()}/api/webhooks/yo/disbursement`,
+          BankAccountName: accountName, BankAccountNumber: beneficiaryType === "bank" ? account : "",
+          BankAccountIdentifier: bankIdentifier, TransferTransactionType: "EFT",
+        }, settings);
+        const yoTransactionId = xmlField(response, "TransactionReference") || xmlField(response, "reference") || "";
+        await firestoreRequest(`/teacherWithdrawals/${encodeURIComponent(withdrawalId)}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "processing", yoTransactionId, updatedAt: now() })) });
+        await firestoreRequest(`/payment_disbursements/${encodeURIComponent(disbursementId)}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "processing", yoTransactionId, requestSentAt: now(), updatedAt: now() })) });
+      } catch (error) {
+        await completeTeacherEarnings(reservedIds, withdrawalId, false);
+        await firestoreRequest(`/teacherWithdrawals/${encodeURIComponent(withdrawalId)}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "failed", failureReason: error instanceof Error ? error.message : "Payout request failed", updatedAt: now() })) });
+        await firestoreRequest(`/payment_disbursements/${encodeURIComponent(disbursementId)}`, { method: "PATCH", body: JSON.stringify(firestoreFields({ status: "failed", failureReason: error instanceof Error ? error.message : "Payout request failed", updatedAt: now() })) });
+        res.status(502).json({ ok: false, error: "The payout provider rejected the withdrawal; your earnings were released." });
+        return;
+      }
+    }
+    res.status(201).json({ ok: true, withdrawalId, status });
+  } catch (error) {
+    if (reservedIds.length) await releaseTeacherEarnings(reservedIds).catch(() => undefined);
+    res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Withdrawal could not be created" });
+  } finally {
+    await firestoreRequest(lockPath, { method: "DELETE" }).catch(() => undefined);
+  }
+});
+
 function webhookSignature(req: Request, raw: string): string {
   const header = req.headers["x-yo-signature"] ?? req.headers["yo-signature"];
   if (header) return String(header);
@@ -631,10 +808,28 @@ router.post("/webhooks/yo/disbursement", async (req, res) => {
       update.retryExhausted = attempts >= 3;
     }
     await firestoreRequest(`/${path}`, { method: "PATCH", body: JSON.stringify(firestoreFields(update)) });
+    if (current.teacherWithdrawalId && current.teacherId) {
+      const withdrawalId = String(current.teacherWithdrawalId);
+      const earningIds = Array.isArray(current.earningIds) ? current.earningIds.map(String) : [];
+      await completeTeacherEarnings(earningIds, withdrawalId, successful);
+      await firestoreRequest(`/teacherWithdrawals/${encodeURIComponent(withdrawalId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(firestoreFields({
+          status: successful ? "completed" : "failed",
+          disbursedAt: successful ? now() : null,
+          failureReason: successful ? null : "The payout provider did not confirm this withdrawal.",
+          updatedAt: now(),
+        })),
+      });
+    }
     await firestoreRequest("/payment_audit_log", { method: "POST", body: JSON.stringify(firestoreFields({ action: `disbursement_${update.status}`, actorId: "yo-webhook", disbursementId: path.split("/").pop(), details: update, timestamp: now() })) });
-    const institutionId = current.institutionId;
-    await queueNotification({ transactionId: current.transactionId, reference: externalRef }, "Institution", institutionId, successful ? `Funds of UGX ${Number(current.netAmount ?? 0).toLocaleString()} disbursed` : `Disbursement failed. Retry ${Number(update.attempts ?? 0)}/3`);
-    await queueNotification({ transactionId: current.transactionId, reference: externalRef }, "SuperAdmin", "superadmin", successful ? "Disbursement completed" : `Disbursement failed. Retry ${Number(update.attempts ?? 0)}/3`);
+    if (current.teacherWithdrawalId && current.teacherId) {
+      await queueNotification({ transactionId: current.teacherWithdrawalId, reference: externalRef }, "Teacher", current.teacherId, successful ? `UGX ${Number(current.netAmount ?? 0).toLocaleString()} withdrawal completed` : "Your withdrawal failed and the earnings were released.");
+    } else {
+      const institutionId = current.institutionId;
+      await queueNotification({ transactionId: current.transactionId, reference: externalRef }, "Institution", institutionId, successful ? `Funds of UGX ${Number(current.netAmount ?? 0).toLocaleString()} disbursed` : `Disbursement failed. Retry ${Number(update.attempts ?? 0)}/3`);
+      await queueNotification({ transactionId: current.transactionId, reference: externalRef }, "SuperAdmin", "superadmin", successful ? "Disbursement completed" : `Disbursement failed. Retry ${Number(update.attempts ?? 0)}/3`);
+    }
     res.json({ ok: true, status: update.status });
   } catch (error) {
     res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Disbursement webhook failed" });

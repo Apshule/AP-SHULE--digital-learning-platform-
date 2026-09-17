@@ -49,6 +49,14 @@
       ]
     },
     {
+      "collectionGroup": "teacherWithdrawals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teacherId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "topic_requests",
       "queryScope": "COLLECTION",
       "fields": [

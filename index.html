@@ -3307,7 +3307,10 @@
                             <input type="email" id="teacherEmail" placeholder="Email">
                             <input type="password" id="teacherPassword" placeholder="Password (min 4 chars)">
                             <input type="text" id="teacherSubject" placeholder="Subject(s) Taught">
-                            <input type="number" id="teacherRevenuePerView" placeholder="Revenue per view (UGX, default 100)" value="100">
+                            <input type="number" id="teacherRevenuePerView" placeholder="Recorded lesson / tutorial (UGX)" value="100" min="0">
+                            <input type="number" id="teacherPdfRevenuePerView" placeholder="PDF view payout (UGX)" value="100" min="0">
+                            <input type="number" id="teacherLiveRevenuePercent" placeholder="Live lesson share (%)" value="70" min="0" max="100">
+                            <input type="number" id="teacherReferralReward" placeholder="Referral reward per teacher signup (UGX)" value="0" min="0">
                             <button id="addTeacherBtn" class="admin-toggle">➕ Create Teacher Account</button>
                         </div>
                         <div id="teachersAdminList" style="margin-top:12px;"></div>
@@ -3743,8 +3746,37 @@
             <!-- Earnings stats -->
             <div class="teacher-stat" id="teacherStatBoxes">
                 <div class="stat-box"><div class="stat-value" id="teacherTotalEarnings">0</div><div class="stat-label">Total Earnings (UGX)</div></div>
-                <div class="stat-box"><div class="stat-value" id="teacherTotalViews">0</div><div class="stat-label">Video Completions</div></div>
+                <div class="stat-box"><div class="stat-value" id="teacherTotalViews">0</div><div class="stat-label">Recorded Views</div></div>
+                <div class="stat-box"><div class="stat-value" id="teacherAvailableToWithdraw">0</div><div class="stat-label">Available to Withdraw</div></div>
             </div>
+
+            <section id="teacherPayoutCenter" class="teacher-card" style="border:2px solid #2E7D32;background:linear-gradient(145deg,#f3fff5,#fff);">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div>
+                        <h4 style="color:#2E7D32;margin:0 0 4px;">💸 Teacher Agreement &amp; Withdrawals</h4>
+                        <p style="font-size:12px;color:#55705a;margin:0;">Your approved agreement controls every earning source. Withdrawals are sent automatically after your payout details pass validation—no Super Admin approval step.</p>
+                    </div>
+                    <span id="teacherPayoutAgreementStatus" style="font-size:11px;color:#2E7D32;font-weight:700;">Loading agreement…</span>
+                </div>
+                <div id="teacherAgreementSummary" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;"></div>
+                <form id="teacherWithdrawalForm" style="margin-top:14px;display:grid;gap:8px;">
+                    <div style="font-weight:800;color:#2E7D32;font-size:13px;">Submit payout credentials</div>
+                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
+                        <select id="teacherPayoutType" required style="padding:10px;border:1px solid #c9e3cd;border-radius:10px;font:inherit;">
+                            <option value="mobile_money">Mobile Money</option>
+                            <option value="bank">Bank account</option>
+                        </select>
+                        <input id="teacherWithdrawalAmount" type="number" min="1000" step="1" placeholder="Amount (UGX)" required style="padding:10px;border:1px solid #c9e3cd;border-radius:10px;font:inherit;">
+                    </div>
+                    <input id="teacherPayoutAccountName" placeholder="Account name as registered" required style="padding:10px;border:1px solid #c9e3cd;border-radius:10px;font:inherit;">
+                    <input id="teacherPayoutAccount" placeholder="Mobile number or bank account number" required style="padding:10px;border:1px solid #c9e3cd;border-radius:10px;font:inherit;">
+                    <input id="teacherPayoutBankIdentifier" placeholder="Bank code / branch (bank payouts only)" style="display:none;padding:10px;border:1px solid #c9e3cd;border-radius:10px;font:inherit;">
+                    <label style="display:flex;gap:7px;align-items:flex-start;font-size:11px;color:#55705a;"><input id="teacherPayoutConfirm" type="checkbox" required style="margin-top:2px;"> I confirm these payout details belong to me and authorize APSHULE to send my available earnings to this account.</label>
+                    <button id="teacherWithdrawalSubmit" type="submit" style="background:#2E7D32;color:#fff;border:0;border-radius:22px;padding:12px;font-weight:800;cursor:pointer;">Withdraw my earnings automatically</button>
+                    <div id="teacherWithdrawalStatus" style="min-height:16px;font-size:12px;color:#55705a;"></div>
+                </form>
+                <div id="teacherWithdrawalHistory" style="margin-top:14px;"></div>
+            </section>
 
             <!-- Offline earnings summary -->
             <div class="teacher-card" id="teacherOfflineEarningsCard" style="border:2px solid #4B2E9E;background:linear-gradient(145deg,#f7f2ff,#fff);">
@@ -5176,6 +5208,7 @@
                         syncedFrom:'offline'
                     });
                     tx.set(earningRef,{
+                        source:'recorded_lesson',
                         viewId:view.viewId,
                         teacherId:view.teacherId,
                         studentId:view.studentId,
@@ -5697,6 +5730,7 @@
         const mapping = window._videoMappingData?.[currentVideoKey] || {};
         const revenue = mapping.mode === 'teacher_twin' ? 250 : (teacher?.revenuePerView || 100);
         await setDoc(earningRef, {
+            source: 'recorded_lesson',
             teacherId: currentTeacherId,
             studentId: currentUser.uid, studentName: currentUser.name,
             videoKey: currentVideoKey, amount: revenue, lessonMode: mapping.mode || 'standard',
@@ -10425,17 +10459,26 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function renderTeachersAdmin() {
         const c = document.getElementById('teachersAdminList'); if(!c) return;
         if(!allTeachers.length) { c.innerHTML = '<div style="color:#999;font-size:13px;">No teachers yet.</div>'; return; }
-        c.innerHTML = allTeachers.map(t => `
+        c.innerHTML = allTeachers.map(t => {
+            const payout = t.teacherPayoutProfile || {};
+            const payoutLabel = payout.account ? `${payout.beneficiaryType==='bank'?'Bank':'Mobile Money'} · ${payout.accountName||'Unnamed'} · ${payout.account}` : 'Not submitted';
+            const payoutAction = payout.status === 'pending_validation'
+                ? `<button class="btn-edit" onclick="verifyTeacherPayout('${t.uid}')">✅ Verify payout details</button>`
+                : payout.status === 'verified' ? '<span style="color:#2E7D32;font-weight:700;">✅ Verified</span>' : '';
+            return `
             <div class="teacher-item">
                 <div class="teacher-name">👨‍🏫 ${escHtml(t.name)}</div>
                 <div class="teacher-meta">📧 ${escHtml(t.email)} | 📚 ${escHtml(t.subjectsTaught||'N/A')}</div>
-                <div class="teacher-meta">💰 Revenue/view: <strong>UGX ${Number(t.revenuePerView||100).toLocaleString()}</strong> | <span class="earnings-badge">Pending: UGX ${Number(t.pendingEarnings||0).toLocaleString()}</span></div>
+                <div class="teacher-meta">💰 Recorded: <strong>UGX ${Number(t.revenuePerView||100).toLocaleString()}</strong> · PDFs: <strong>UGX ${Number(t.pdfRevenuePerView ?? t.revenuePerView ?? 100).toLocaleString()}</strong> · Live: <strong>${Number(t.liveLessonRevenuePercent ?? 70)}%</strong></div>
+                <div class="teacher-meta">🔗 Referral: <strong>UGX ${Number(t.referralRewardPerSignup||0).toLocaleString()}</strong> · <span class="earnings-badge">Pending: UGX ${Number(t.pendingEarnings||0).toLocaleString()}</span></div>
+                <div class="teacher-meta">📲 Payout: <strong>${escHtml(payoutLabel)}</strong> ${payoutAction}</div>
                 <div class="teacher-actions">
-                    <button class="btn-edit" onclick="editTeacherRevenue('${t.uid}',${t.revenuePerView||100})">✏️ Edit Revenue</button>
+                    <button class="btn-edit" onclick="editTeacherAgreement('${t.uid}')">✏️ Edit Agreement</button>
                     <button class="btn-paid" onclick="markTeacherPaid('${t.uid}','${escHtml(t.name)}',${t.pendingEarnings||0})">✅ Mark as Paid</button>
                     <button class="btn-delete" onclick="deleteTeacher('${t.uid}')">🗑️ Delete</button>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     window.editTeacherRevenue = function(uid, currentRevenue) {
@@ -10444,6 +10487,47 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         let val = parseInt(newRev);
         if(isNaN(val)||val<0) { showNotification("Enter valid amount","error"); return; }
         updateDoc(doc(db,"users",uid), { revenuePerView: val }).then(() => showNotification("Revenue updated"));
+    };
+
+    window.editTeacherAgreement = async function(uid) {
+        const teacher = allTeachers.find(item => item.uid === uid) || {};
+        const recorded = prompt('Recorded lesson/tutorial payout per completion (UGX):', teacher.revenuePerView ?? 100);
+        if(recorded === null) return;
+        const pdf = prompt('PDF payout per student view (UGX):', teacher.pdfRevenuePerView ?? recorded);
+        if(pdf === null) return;
+        const live = prompt('Live lesson share of paid access fees (%):', teacher.liveLessonRevenuePercent ?? 70);
+        if(live === null) return;
+        const referral = prompt('Referral reward per teacher signup (UGX):', teacher.referralRewardPerSignup ?? 0);
+        if(referral === null) return;
+        const values = [recorded,pdf,live,referral].map(value => Number(value));
+        if(values.some(value => !Number.isFinite(value) || value < 0) || values[2] > 100) {
+            showNotification('Enter valid agreement values (live share must be 0–100%)','error');
+            return;
+        }
+        await updateDoc(doc(db,'users',uid), {
+            revenuePerView:values[0],
+            pdfRevenuePerView:values[1],
+            liveLessonRevenuePercent:values[2],
+            referralRewardPerSignup:values[3],
+            agreementVersion:Number(teacher.agreementVersion||0)+1,
+            agreementUpdatedAt:new Date().toISOString(),
+            agreementUpdatedBy:currentUser.uid
+        });
+        showNotification('Teacher agreement updated');
+    };
+
+    window.verifyTeacherPayout = async function(uid) {
+        const teacher = allTeachers.find(item => item.uid === uid);
+        const profile = teacher?.teacherPayoutProfile;
+        if(!profile?.account || profile.status !== 'pending_validation') {
+            showNotification('No payout details are waiting for validation','error');
+            return;
+        }
+        if(!confirm(`Verify the ${profile.beneficiaryType==='bank'?'bank':'mobile money'} payout account ending ${String(profile.account).slice(-4)} for ${teacher.name}?`)) return;
+        await updateDoc(doc(db,'users',uid), {
+            teacherPayoutProfile:{...profile,status:'verified',verifiedAt:new Date().toISOString(),verifiedBy:currentUser.uid}
+        });
+        showNotification(`Payout details verified for ${teacher.name}`);
     };
 
     window.markTeacherPaid = async function(uid, name, amount) {
@@ -10455,7 +10539,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         // Mark all unpaid earnings for this teacher as paid
         const q = query(collection(db,"teacherEarnings"), where("teacherId","==",uid), where("paid","==",false));
         const snap = await getDocs(q);
-        const updates = snap.docs.map(d => updateDoc(doc(db,"teacherEarnings",d.id), { paid: true, paidAt: new Date().toISOString() }));
+        const updates = snap.docs
+            .filter(d => d.data().payoutStatus !== 'reserved')
+            .map(d => updateDoc(doc(db,"teacherEarnings",d.id), { paid: true, payoutStatus:'paid', paidAt: new Date().toISOString() }));
         await Promise.all(updates);
         showNotification(`✅ Payment of UGX ${Number(amount).toLocaleString()} recorded for ${name}`);
     };
@@ -10475,6 +10561,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function loadTeacherDashboard() {
         if(!currentUser || currentUser.role !== 'teacher') return;
         loadTeacherEarnings();
+        loadTeacherPayoutCenter();
         loadOfflineEarningsSummary();
         loadTeacherPdfs();
         loadTeacherQuestions();
@@ -10488,32 +10575,123 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function loadTeacherEarnings() {
         const q = query(collection(db,"teacherEarnings"), where("teacherId","==",currentUser.uid));
         onSnapshot(q, (snap) => {
-            let totalUnpaid = 0, totalViews = 0;
-            const byVideo = {};
+            let totalGenerated = 0, available = 0, totalViews = 0;
+            const bySource = {};
+            const sourceLabels = {
+                recorded_lesson:'Recorded lessons & tutorials',
+                teacher_pdf:'PDF resources',
+                live_lesson:'Online live lessons',
+                teacher_referral:'Teacher referrals',
+                ncdc_module_completion:'Training bonuses',
+                other:'Other'
+            };
             snap.forEach(d => {
                 const data = d.data();
-                totalViews++;
-                if(!data.paid) totalUnpaid += (data.amount||0);
-                if(!byVideo[data.videoKey]) byVideo[data.videoKey] = { count:0, amount:0, paid:0 };
-                byVideo[data.videoKey].count++;
-                byVideo[data.videoKey].amount += (data.amount||0);
-                if(data.paid) byVideo[data.videoKey].paid += (data.amount||0);
+                const source = data.source || (data.videoKey ? 'recorded_lesson' : data.type === 'ncdc_module_completion' ? 'ncdc_module_completion' : 'other');
+                const amount = Number(data.amount || 0);
+                const paid = data.paid === true || data.payoutStatus === 'paid';
+                const reserved = data.payoutStatus === 'reserved';
+                if(source === 'recorded_lesson') totalViews++;
+                totalGenerated += amount;
+                if(!paid && !reserved) available += amount;
+                if(!bySource[source]) bySource[source] = {count:0, amount:0, available:0, paid:0};
+                bySource[source].count++;
+                bySource[source].amount += amount;
+                if(!paid && !reserved) bySource[source].available += amount;
+                if(paid) bySource[source].paid += amount;
             });
             const totalEarningsEl = document.getElementById('teacherTotalEarnings');
             const totalViewsEl = document.getElementById('teacherTotalViews');
-            if(totalEarningsEl) totalEarningsEl.textContent = Number(totalUnpaid).toLocaleString();
+            const availableEl = document.getElementById('teacherAvailableToWithdraw');
+            if(totalEarningsEl) totalEarningsEl.textContent = Number(totalGenerated).toLocaleString();
             if(totalViewsEl) totalViewsEl.textContent = totalViews;
-            // Update pendingEarnings in user doc for superadmin to see
-            updateDoc(doc(db,"users",currentUser.uid), { pendingEarnings: totalUnpaid }).catch(()=>{});
+            if(availableEl) availableEl.textContent = Number(available).toLocaleString();
+            window._teacherAvailableBalance = available;
+            updateDoc(doc(db,"users",currentUser.uid), { pendingEarnings: available }).catch(()=>{});
             const breakdown = document.getElementById('teacherEarningsBreakdown');
             if(!breakdown) return;
-            if(!Object.keys(byVideo).length) { breakdown.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">No completions yet</div>'; return; }
-            breakdown.innerHTML = Object.entries(byVideo).map(([key, data]) => {
-                const parts = key.split('_');
-                const label = parts.length >= 3 ? `${parts.slice(2).join(' ')} (${parts[0]==='primary'?'P':'S'}${parts[1]})` : key;
-                return `<div class="earnings-item"><div><strong>${escHtml(label)}</strong><br><small>${data.count} completions | Paid: UGX ${Number(data.paid).toLocaleString()}</small></div><div style="color:#2E7D32;font-weight:bold;">+UGX ${Number(data.amount).toLocaleString()}</div></div>`;
+            if(!Object.keys(bySource).length) { breakdown.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">No earnings yet</div>'; return; }
+            breakdown.innerHTML = Object.entries(bySource).map(([source, data]) => {
+                const label = sourceLabels[source] || source.replace(/_/g,' ');
+                return `<div class="earnings-item"><div><strong>${escHtml(label)}</strong><br><small>${data.count} earning record${data.count===1?'':'s'} · Available: UGX ${Number(data.available).toLocaleString()} · Paid: UGX ${Number(data.paid).toLocaleString()}</small></div><div style="color:#2E7D32;font-weight:bold;">UGX ${Number(data.amount).toLocaleString()}</div></div>`;
             }).join('');
+            const amountInput = document.getElementById('teacherWithdrawalAmount');
+            if(amountInput && !amountInput.matches(':focus')) amountInput.value = available || '';
         });
+    }
+
+    function loadTeacherPayoutCenter() {
+        if(!currentUser?.uid) return;
+        const teacher = allTeachers.find(item => item.uid === currentUser.uid) || currentUser;
+        const agreement = document.getElementById('teacherAgreementSummary');
+        if(agreement) agreement.innerHTML = [
+            ['Recorded lessons',`UGX ${Number(teacher.revenuePerView ?? 100).toLocaleString()} / completion`],
+            ['PDF resources',`UGX ${Number(teacher.pdfRevenuePerView ?? teacher.revenuePerView ?? 100).toLocaleString()} / view`],
+            ['Live lessons',`${Number(teacher.liveLessonRevenuePercent ?? 70)}% of paid access`],
+            ['Referrals',`UGX ${Number(teacher.referralRewardPerSignup || 0).toLocaleString()} / signup`]
+        ].map(([label,value]) => `<div style="padding:9px;border-radius:10px;background:#fff;border:1px solid #d9efd9;"><small style="display:block;color:#55705a;">${escHtml(label)}</small><strong style="color:#2E7D32;">${escHtml(value)}</strong></div>`).join('');
+        const agreementStatus = document.getElementById('teacherPayoutAgreementStatus');
+        const payoutStatus = teacher.teacherPayoutProfile?.status;
+        if(agreementStatus) agreementStatus.textContent = `${teacher.agreementVersion ? `Agreement v${teacher.agreementVersion}` : 'Legacy rates active'} · ${payoutStatus === 'verified' ? 'Payout details verified' : payoutStatus === 'pending_validation' ? 'Payout details awaiting admin verification' : 'Payout details not verified'}`;
+
+        const form = document.getElementById('teacherWithdrawalForm');
+        if(form && !form.dataset.bound) {
+            form.dataset.bound = 'true';
+            document.getElementById('teacherPayoutType')?.addEventListener('change', event => {
+                const bank = event.target.value === 'bank';
+                const field = document.getElementById('teacherPayoutBankIdentifier');
+                if(field) { field.style.display = bank ? 'block' : 'none'; field.required = bank; }
+            });
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                const status = document.getElementById('teacherWithdrawalStatus');
+                const button = document.getElementById('teacherWithdrawalSubmit');
+                const amount = Number(document.getElementById('teacherWithdrawalAmount')?.value || 0);
+                const available = Number(window._teacherAvailableBalance || 0);
+                if(amount < 1000 || amount > available) {
+                    if(status) status.textContent = `Enter an amount between UGX 1,000 and your available UGX ${available.toLocaleString()}.`;
+                    return;
+                }
+                button.disabled = true;
+                if(status) status.textContent = 'Validating payout details and reserving your earnings…';
+                try {
+                    const api = window.task12Api;
+                    if(typeof api !== 'function') throw new Error('Payment service is still loading. Please try again.');
+                    const result = await api('/api/payments/teacher/withdraw', {
+                        method:'POST',
+                        body:JSON.stringify({
+                            amount,
+                            beneficiaryType:document.getElementById('teacherPayoutType').value,
+                            accountName:document.getElementById('teacherPayoutAccountName').value.trim(),
+                            account:document.getElementById('teacherPayoutAccount').value.trim(),
+                            bankIdentifier:document.getElementById('teacherPayoutBankIdentifier')?.value.trim() || ''
+                        })
+                    });
+                    if(status) status.textContent = result.status === 'pending_validation'
+                        ? 'Payout details submitted. An admin must verify them once before automatic withdrawals are enabled.'
+                        : result.status === 'completed'
+                        ? 'Withdrawal completed successfully.'
+                        : `Withdrawal ${String(result.status || 'submitted').replace(/_/g,' ')}. Your earnings are reserved and the provider will update this status.`;
+                    form.reset();
+                    const bankField = document.getElementById('teacherPayoutBankIdentifier');
+                    if(bankField) { bankField.style.display='none'; bankField.required=false; }
+                } catch(error) {
+                    if(status) status.textContent = error.message || 'Withdrawal could not be submitted.';
+                } finally {
+                    button.disabled = false;
+                }
+            });
+        }
+        const history = document.getElementById('teacherWithdrawalHistory');
+        if(!history) return;
+        const withdrawalQuery = query(collection(db,'teacherWithdrawals'), where('teacherId','==',currentUser.uid), orderBy('createdAt','desc'), limit(20));
+        onSnapshot(withdrawalQuery, snap => {
+            if(snap.empty) { history.innerHTML = '<div style="font-size:12px;color:#777;">No withdrawals yet.</div>'; return; }
+            history.innerHTML = `<div style="font-weight:800;color:#2E7D32;font-size:13px;margin-bottom:5px;">Withdrawal history</div>` + snap.docs.map(item => {
+                const row=item.data()||{}, status=String(row.status||'submitted').replace(/_/g,' ');
+                return `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #e7f2e7;font-size:12px;"><span><strong>UGX ${Number(row.amount||0).toLocaleString()}</strong><br><small>${escHtml(new Date(row.createdAt||Date.now()).toLocaleString())} · ${escHtml(row.beneficiaryType||'payout')}</small></span><span style="color:${row.status==='completed'?'#2E7D32':row.status==='failed'?'#b3261e':'#8a6500'};font-weight:800;text-transform:capitalize;">${escHtml(status)}</span></div>`;
+            }).join('');
+        }, error => { history.innerHTML = `<div style="font-size:12px;color:#9b2c2c;">Withdrawal history unavailable: ${escHtml(error.message||'permission denied')}</div>`; });
     }
 
     function loadTeacherPdfs() {
@@ -11961,6 +12139,27 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             createdBy:'payment_approved', createdByName:currentUser.name,
             createdAt:new Date().toISOString()
         });
+        if(lesson.teacherId && Number(r.fee || 0) > 0) {
+            const teacher = allTeachers.find(item => item.uid === lesson.teacherId);
+            const share = Math.min(100, Math.max(0, Number(teacher?.liveLessonRevenuePercent ?? 70)));
+            const teacherAmount = Math.round(Number(r.fee) * share / 100);
+            if(teacherAmount > 0) {
+                await setDoc(doc(db,'teacherEarnings',`live_${requestDocId}`), {
+                    source:'live_lesson',
+                    teacherId:lesson.teacherId,
+                    lessonId:r.lessonId,
+                    paymentRequestId:requestDocId,
+                    lessonTitle:lesson.title || '',
+                    studentId:r.userId,
+                    studentName:r.userName || '',
+                    grossAmount:Number(r.fee),
+                    revenueSharePercent:share,
+                    amount:teacherAmount,
+                    paid:false,
+                    earnedAt:new Date().toISOString()
+                }, {merge:true});
+            }
+        }
         await updateDoc(doc(db,'livePaymentRequests',requestDocId), { approved:true, approvedAt:new Date().toISOString() });
         await addDoc(collection(db,'notifications'), {
             type:'token', title:'🔑 Your Live Lesson Access is Ready!',
@@ -16716,15 +16915,22 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
     // Add teacher (NEW)
     document.getElementById('addTeacherBtn')?.addEventListener('click', async ()=>{
-        let name=document.getElementById('teacherName').value.trim(),email=document.getElementById('teacherEmail').value.trim(),pwd=document.getElementById('teacherPassword').value,subjects=document.getElementById('teacherSubject').value.trim(),revenue=parseInt(document.getElementById('teacherRevenuePerView').value)||100;
+        let name=document.getElementById('teacherName').value.trim(),email=document.getElementById('teacherEmail').value.trim(),pwd=document.getElementById('teacherPassword').value,subjects=document.getElementById('teacherSubject').value.trim();
+        const revenue=Math.max(0,Number(document.getElementById('teacherRevenuePerView').value)||100);
+        const pdfRevenue=Math.max(0,Number(document.getElementById('teacherPdfRevenuePerView')?.value)||revenue);
+        const liveRevenuePercent=Math.min(100,Math.max(0,Number(document.getElementById('teacherLiveRevenuePercent')?.value)||70));
+        const referralReward=Math.max(0,Number(document.getElementById('teacherReferralReward')?.value)||0);
         if(!name||!email||!pwd){showNotification("Fill name, email and password","error");return;}
         if(pwd.length<4){showNotification("Password min 4 chars","error");return;}
         try {
             let cred=await createUserWithEmailAndPassword(auth,email,pwd);
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"teacher",subjectsTaught:subjects,revenuePerView:revenue,pendingEarnings:0,subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:0});
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,role:"teacher",subjectsTaught:subjects,revenuePerView:revenue,pdfRevenuePerView:pdfRevenue,liveLessonRevenuePercent:liveRevenuePercent,referralRewardPerSignup:referralReward,pendingEarnings:0,agreementVersion:1,agreementUpdatedAt:new Date().toISOString(),agreementUpdatedBy:currentUser.uid,subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:0});
             showNotification(`Teacher "${name}" created!`);
-            ['teacherName','teacherEmail','teacherPassword','teacherSubject'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; });
+            ['teacherName','teacherEmail','teacherPassword','teacherSubject','teacherRevenuePerView','teacherPdfRevenuePerView','teacherLiveRevenuePercent','teacherReferralReward'].forEach(id=>{ let el=document.getElementById(id); if(el) el.value=''; });
             document.getElementById('teacherRevenuePerView').value='100';
+            document.getElementById('teacherPdfRevenuePerView').value='100';
+            document.getElementById('teacherLiveRevenuePercent').value='70';
+            document.getElementById('teacherReferralReward').value='0';
         } catch(err){ showNotification("Error: "+err.message,"error"); }
     });
 
@@ -16993,9 +17199,21 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                     const refSnap = await getDocs(query(collection(db,'users'), where('referralCode','==',pendingRef)));
                     if(refSnap.docs.length > 0) {
                         const referrerId = refSnap.docs[0].id;
+                        const referrer = refSnap.docs[0].data() || {};
                         if(referrerId !== cred.user.uid) {
                             await updateDoc(doc(db,'users',cred.user.uid), { referredBy: referrerId });
                             await updateDoc(doc(db,'users',referrerId), { referralCount: increment(1) });
+                            if(referrer.role === 'teacher' && Number(referrer.referralRewardPerSignup || 0) > 0) {
+                                await setDoc(doc(db,'teacherEarnings',`referral_${referrerId}_${cred.user.uid}`), {
+                                    source:'teacher_referral',
+                                    teacherId:referrerId,
+                                    referredUserId:cred.user.uid,
+                                    referredUserName:name,
+                                    amount:Number(referrer.referralRewardPerSignup),
+                                    paid:false,
+                                    earnedAt:new Date().toISOString()
+                                }, {merge:true});
+                            }
                         }
                     }
                     sessionStorage.removeItem('pendingReferral');

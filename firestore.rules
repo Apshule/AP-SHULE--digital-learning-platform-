@@ -124,6 +124,35 @@ service cloud.firestore {
         || (signedIn() && resource.data.teacherId == request.auth.uid);
     }
 
+    match /teacherEarnings/{earningId} {
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.teacherId == request.auth.uid);
+      allow create: if isSuperAdmin() || (signedIn()
+        && request.resource.data.teacherId != null
+        && (request.resource.data.studentId == request.auth.uid
+          || request.resource.data.viewerId == request.auth.uid
+          || request.resource.data.teacherId == request.auth.uid));
+      // Earnings are reserved and settled only by trusted server code or the
+      // Super Admin legacy payment flow.
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /teacherWithdrawals/{withdrawalId} {
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.teacherId == request.auth.uid);
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /teacherPayoutLocks/{lockId} {
+      allow read, write: if false;
+    }
+
+    match /paymentHistory/{historyId} {
+      allow read: if isSuperAdmin()
+        || (signedIn() && resource.data.teacherId == request.auth.uid);
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /video_generation_stats/{monthId} {
       allow read, write: if isSuperAdmin();
     }

@@ -49,6 +49,7 @@ const FILES = [
   "scripts/src/settings.test.ts",
   "scripts/src/command-center.test.ts",
   "scripts/src/task12-payments.test.ts",
+  "scripts/src/teacher-earnings.test.ts",
   "scripts/src/mfi.test.ts",
   "scripts/src/timetable.test.ts",
   "scripts/src/push-to-github.ts",
