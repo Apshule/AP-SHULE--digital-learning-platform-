@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="APSHULE Superadmin YouTube lesson sync">
+  <title>APSHULE · YouTube lesson sync</title>
+  <style>
+    :root { --purple:#4B2E9E; --purple-dark:#34206f; --purple-soft:#f2efff; --ink:#20212b; --muted:#6e6b7b; --line:#e8e4f4; --green:#197a4b; --amber:#9a5a00; --red:#a82929; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f8f7fc; color:var(--ink); font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color:var(--purple); }
+    .shell { max-width:1280px; margin:0 auto; padding:22px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+    .brand { display:flex; align-items:center; gap:11px; color:var(--purple); font-weight:900; letter-spacing:.03em; }
+    .brand-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:13px; background:var(--purple); color:#fff; font-size:20px; }
+    .top-actions { display:flex; align-items:center; gap:10px; }
+    .button { border:0; border-radius:10px; padding:10px 14px; font:inherit; font-weight:800; cursor:pointer; }
+    .button:disabled { cursor:not-allowed; opacity:.55; }
+    .button-primary { background:var(--purple); color:#fff; }
+    .button-primary:hover:not(:disabled) { background:var(--purple-dark); }
+    .button-secondary { background:#fff; border:1px solid var(--line); color:var(--purple); }
+    .hero { background:linear-gradient(135deg,#4B2E9E,#7356c1); border-radius:22px; padding:24px; color:#fff; box-shadow:0 12px 30px rgba(75,46,158,.18); }
+    .hero h1 { margin:0 0 6px; font-size:26px; }
+    .hero p { margin:0; max-width:760px; opacity:.9; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:16px; box-shadow:0 5px 18px rgba(47,37,89,.05); }
+    .panel h2 { color:var(--purple); font-size:16px; margin:0 0 12px; }
+    .sync-form { display:grid; grid-template-columns:minmax(0,1fr) 130px auto; gap:10px; align-items:end; }
+    label { display:grid; gap:6px; color:#4c4860; font-size:12px; font-weight:800; }
+    input, select { width:100%; border:1px solid #d8d3e7; border-radius:10px; background:#fff; color:var(--ink); padding:11px 12px; font:inherit; }
+    input:focus, select:focus, button:focus-visible { outline:3px solid rgba(75,46,158,.2); outline-offset:1px; }
+    .hint { margin:10px 0 0; color:var(--muted); font-size:12px; }
+    .status { min-height:22px; margin-top:12px; color:var(--muted); }
+    .status.success { color:var(--green); }
+    .status.error { color:var(--red); }
+    .status.warning { color:var(--amber); }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }
+    .stat { border:1px solid var(--line); border-radius:13px; padding:13px; background:#fcfbff; }
+    .stat strong { display:block; color:var(--purple); font-size:22px; }
+    .stat span { color:var(--muted); font-size:12px; }
+    .table-wrap { overflow:auto; border:1px solid var(--line); border-radius:13px; }
+    table { width:100%; min-width:880px; border-collapse:collapse; }
+    th, td { padding:12px 11px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+    th { background:#faf9fe; color:#5d5673; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    tr:last-child td { border-bottom:0; }
+    .video-title { min-width:240px; font-weight:800; }
+    .video-title a { display:block; margin-top:4px; font-size:11px; font-weight:600; text-decoration:none; }
+    .mapping-cell { min-width:155px; }
+    .mapping-cell strong { display:block; }
+    .mapping-cell span { color:var(--muted); font-size:12px; }
+    .badge { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:11px; font-weight:900; white-space:nowrap; }
+    .badge-mapped { background:#e7f7ee; color:var(--green); }
+    .badge-unmapped { background:#fff2d9; color:var(--amber); }
+    .badge-conflict { background:#fde7e7; color:var(--red); }
+    .empty { padding:28px; text-align:center; color:var(--muted); }
+    dialog { border:0; border-radius:18px; padding:0; width:min(520px,calc(100% - 28px)); box-shadow:0 24px 80px rgba(28,20,61,.25); }
+    dialog::backdrop { background:rgba(26,18,55,.48); }
+    .dialog-head { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:17px 18px; background:var(--purple); color:#fff; }
+    .dialog-head h2 { margin:0; font-size:17px; }
+    .dialog-body { display:grid; gap:13px; padding:18px; }
+    .dialog-actions { display:flex; justify-content:flex-end; gap:9px; }
+    .auth-locked { text-align:center; padding:36px 15px; }
+    .auth-locked strong { display:block; color:var(--purple); font-size:18px; margin-bottom:7px; }
+    @media (max-width:720px) {
+      .shell { padding:13px; }
+      .topbar { align-items:flex-start; }
+      .hero h1 { font-size:22px; }
+      .sync-form { grid-template-columns:1fr; }
+      .stats { grid-template-columns:repeat(2,1fr); }
+      .top-actions .button-secondary { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">▶</span><span>APSHULE Superadmin</span></div>
+      <div class="top-actions">
+        <span id="userLabel" class="hint"></span>
+        <a class="button button-secondary" href="/">Back to dashboard</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h1>YouTube lesson sync</h1>
+      <p>Import public channel videos into APSHULE, review class placement, and publish compatible lesson mappings for students, teachers, and school accounts.</p>
+    </section>
+
+    <section id="authLocked" class="panel auth-locked" hidden>
+      <strong id="authTitle">Superadmin sign-in required</strong>
+      <span id="authMessage">Open the APSHULE dashboard and sign in as a Super Admin, then return to this page.</span>
+      <p><a href="/">Open APSHULE dashboard</a></p>
+    </section>
+
+    <div id="appContent" hidden>
+      <section class="panel">
+        <h2>Sync a channel</h2>
+        <form id="syncForm" class="sync-form">
+          <label>Channel URL, handle, or ID
+            <input id="channelInput" required placeholder="https://youtube.com/@apshule or UC..." autocomplete="url">
+          </label>
+          <label>Maximum videos
+            <input id="maxVideosInput" type="number" min="1" max="500" value="250" inputmode="numeric">
+          </label>
+          <button id="syncButton" class="button button-primary" type="submit">Sync Channel</button>
+        </form>
+        <p class="hint">For automatic placement, include this metadata in the video title or description: <strong>Class: P5</strong>, <strong>Subject: Mathematics</strong>, <strong>Topic: Fractions</strong>.</p>
+        <div id="syncStatus" class="status" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="stats" aria-label="Sync summary">
+        <div class="stat"><strong id="totalCount">0</strong><span>Imported videos</span></div>
+        <div class="stat"><strong id="mappedCount">0</strong><span>Mapped</span></div>
+        <div class="stat"><strong id="unmappedCount">0</strong><span>Needs review</span></div>
+        <div class="stat"><strong id="conflictCount">0</strong><span>Conflicts</span></div>
+      </section>
+
+      <section class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;">
+          <h2 style="margin:0;">Imported videos and placements</h2>
+          <button id="refreshButton" class="button button-secondary" type="button">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Video</th><th>Class</th><th>Subject</th><th>Topic</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="videoRows"><tr><td colspan="6" class="empty">Loading imported videos…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="mappingDialog">
+    <div class="dialog-head"><h2>Review lesson placement</h2><button id="closeDialogButton" class="button button-secondary" type="button">Close</button></div>
+    <form id="mappingForm" class="dialog-body">
+      <div id="mappingVideoTitle" class="hint"></div>
+      <input id="mappingVideoId" type="hidden">
+      <label>Class
+        <select id="mappingClass" required>
+          <option value="">Choose class</option>
+          <optgroup label="Primary"><option value="P1">P1</option><option value="P2">P2</option><option value="P3">P3</option><option value="P4">P4</option><option value="P5">P5</option><option value="P6">P6</option><option value="P7">P7</option></optgroup>
+          <optgroup label="Secondary"><option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option><option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option></optgroup>
+        </select>
+      </label>
+      <label>Subject<input id="mappingSubject" required maxlength="100" placeholder="Mathematics"></label>
+      <label>Topic<input id="mappingTopic" maxlength="200" placeholder="Fractions"></label>
+      <div id="mappingStatus" class="status" role="status" aria-live="polite"></div>
+      <div class="dialog-actions"><button class="button button-secondary" id="cancelMappingButton" type="button">Cancel</button><button class="button button-primary" type="submit">Save mapping</button></div>
+    </form>
+  </dialog>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script>
+    (() => {
+      const firebaseConfig = {
+        apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
+        authDomain: "apshule-app.firebaseapp.com",
+        projectId: "apshule-app",
+        storageBucket: "apshule-app.firebasestorage.app",
+        messagingSenderId: "610368652834",
+        appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
+      };
+      const apiBase = window.APSHULE_API_BASE ||
+        (/localhost|127\.0\.0\.1|onrender\.com/.test(location.hostname)
+          ? location.origin
+          : "https://ap-shule-digital-learning-platform-3.onrender.com");
+      const state = { videos: [], mappings: new Map(), user: null };
+      let auth, db;
+      const $ = id => document.getElementById(id);
+      const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[char]));
+      const setStatus = (message, kind = "") => { const el = $("syncStatus"); el.className = `status ${kind}`; el.textContent = message; };
+      const setMappingStatus = (message, kind = "") => { const el = $("mappingStatus"); el.className = `status ${kind}`; el.textContent = message; };
+      const formatDate = value => value ? new Date(value).toLocaleDateString() : "—";
+
+      async function api(path, options = {}) {
+        if (!auth.currentUser) throw new Error("Your Firebase session has expired. Sign in again.");
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch(`${apiBase}${path}`, {
+          ...options,
+          headers: { "Content-Type": "application/json", ...(options.headers || {}), Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+        return data;
+      }
+
+      async function loadCatalog() {
+        const [videoData, mappingSnapshot] = await Promise.all([
+          api("/api/youtube/videos?limit=500"),
+          db.collection("videoMappings").get()
+        ]);
+        state.videos = Array.isArray(videoData.videos) ? videoData.videos : [];
+        state.mappings = new Map();
+        mappingSnapshot.forEach(doc => {
+          const value = doc.data() || {};
+          const id = value.youtubeId || value.youtubeVideoId;
+          if (id) state.mappings.set(String(id), { ...value, id: doc.id });
+        });
+        renderCatalog();
+      }
+
+      function mergedMapping(video) {
+        const mapping = state.mappings.get(String(video.videoId || video.youtubeId)) || {};
+        return {
+          classKey: mapping.classKey || video.classKey || video.suggestedClassKey || "",
+          subject: mapping.subject || video.subject || video.suggestedSubject || "",
+          topic: mapping.topic || video.topic || video.suggestedTopic || "",
+          status: mapping.youtubeId || video.mappingStatus === "mapped" ? "mapped" : (video.mappingStatus || "unmapped"),
+          mapping
+        };
+      }
+
+      function renderCatalog() {
+        const rows = $("videoRows");
+        let mapped = 0, unmapped = 0, conflicts = 0;
+        if (!state.videos.length) {
+          rows.innerHTML = '<tr><td colspan="6" class="empty">No imported videos yet. Sync a public YouTube channel to begin.</td></tr>';
+        } else {
+          rows.innerHTML = state.videos.map(video => {
+            const placement = mergedMapping(video);
+            if (placement.status === "mapped") mapped++;
+            else if (placement.status === "conflict") conflicts++;
+            else unmapped++;
+            const action = placement.status === "mapped" ? "Edit mapping" : "Review & map";
+            return `<tr>
+              <td class="video-title">${escapeHtml(video.title || video.videoId)}<span style="display:block;color:#777;font-size:11px;font-weight:500;">${escapeHtml(formatDate(video.publishedAt))}</span><a href="https://www.youtube.com/watch?v=${encodeURIComponent(video.videoId)}" target="_blank" rel="noreferrer">Open on YouTube ↗</a></td>
+              <td class="mapping-cell"><strong>${escapeHtml(placement.classKey || "—")}</strong><span>${escapeHtml(video.suggestedClassLevel || "")}</span></td>
+              <td class="mapping-cell">${escapeHtml(placement.subject || "—")}</td>
+              <td class="mapping-cell">${escapeHtml(placement.topic || "—")}</td>
+              <td><span class="badge badge-${placement.status}">${escapeHtml(placement.status)}</span></td>
+              <td><button class="button button-secondary" type="button" data-map-video="${escapeHtml(video.videoId)}">${action}</button></td>
+            </tr>`;
+          }).join("");
+        }
+        $("totalCount").textContent = state.videos.length;
+        $("mappedCount").textContent = mapped;
+        $("unmappedCount").textContent = unmapped;
+        $("conflictCount").textContent = conflicts;
+        rows.querySelectorAll("[data-map-video]").forEach(button => button.addEventListener("click", () => openMapping(button.dataset.mapVideo)));
+      }
+
+      function openMapping(videoId) {
+        const video = state.videos.find(item => item.videoId === videoId);
+        if (!video) return;
+        const placement = mergedMapping(video);
+        $("mappingVideoId").value = videoId;
+        $("mappingVideoTitle").textContent = video.title || videoId;
+        $("mappingClass").value = placement.classKey ? placement.classKey.replace(/^primary_/i, "P").replace(/^secondary_/i, "S") : "";
+        $("mappingSubject").value = placement.subject;
+        $("mappingTopic").value = placement.topic;
+        setMappingStatus("");
+        $("mappingDialog").showModal();
+      }
+
+      async function syncChannel(event) {
+        event.preventDefault();
+        const channelUrl = $("channelInput").value.trim();
+        const maxVideos = Math.max(1, Math.min(500, Number($("maxVideosInput").value) || 250));
+        if (!channelUrl) return;
+        $("syncButton").disabled = true;
+        setStatus("Syncing the channel uploads playlist…");
+        try {
+          const result = await api("/api/youtube/sync", { method: "POST", body: JSON.stringify({ channelUrl, maxVideos }) });
+          setStatus(`Imported ${result.importedCount} videos · ${result.mapped} mapped · ${result.unmapped} need review · ${result.conflicts} conflicts.`, result.conflicts ? "warning" : "success");
+          await loadCatalog();
+        } catch (error) {
+          setStatus(error.message || "Channel sync failed.", "error");
+        } finally {
+          $("syncButton").disabled = false;
+        }
+      }
+
+      async function saveMapping(event) {
+        event.preventDefault();
+        const button = $("mappingForm").querySelector('button[type="submit"]');
+        button.disabled = true;
+        setMappingStatus("Saving mapping…");
+        try {
+          await api("/api/youtube/mappings", {
+            method: "POST",
+            body: JSON.stringify({
+              videoId: $("mappingVideoId").value,
+              classLevel: $("mappingClass").value,
+              subject: $("mappingSubject").value.trim(),
+              topic: $("mappingTopic").value.trim()
+            })
+          });
+          $("mappingDialog").close();
+          setStatus("✅ Lesson placement saved.", "success");
+          await loadCatalog();
+        } catch (error) {
+          setMappingStatus(error.message || "Unable to save mapping.", "error");
+        } finally {
+          button.disabled = false;
+        }
+      }
+
+      async function startApp(user) {
+        state.user = user;
+        const profile = (await db.collection("users").doc(user.uid).get()).data() || {};
+        if (profile.role !== "superadmin") {
+          $("authTitle").textContent = "Superadmin access required";
+          $("authMessage").textContent = "This page is restricted to APSHULE Super Admin accounts.";
+          $("authLocked").hidden = false;
+          return;
+        }
+        $("userLabel").textContent = profile.name || user.email || "Super Admin";
+        $("appContent").hidden = false;
+        $("authLocked").hidden = true;
+        $("syncForm").addEventListener("submit", syncChannel);
+        $("refreshButton").addEventListener("click", () => loadCatalog().catch(error => setStatus(error.message, "error")));
+        $("mappingForm").addEventListener("submit", saveMapping);
+        $("closeDialogButton").addEventListener("click", () => $("mappingDialog").close());
+        $("cancelMappingButton").addEventListener("click", () => $("mappingDialog").close());
+        try { await loadCatalog(); } catch (error) { setStatus(error.message || "Unable to load imported videos.", "error"); }
+      }
+
+      try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        auth.onAuthStateChanged(user => {
+          $("appContent").hidden = true;
+          if (user) startApp(user).catch(error => { $("authTitle").textContent = "Unable to load Superadmin session"; $("authMessage").textContent = error.message; $("authLocked").hidden = false; });
+          else $("authLocked").hidden = false;
+        });
+      } catch (error) {
+        $("authLocked").hidden = false;
+        $("authTitle").textContent = "Firebase could not start";
+        $("authMessage").textContent = error.message || "Reload the page and try again.";
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -2717,6 +2717,7 @@
                 <button class="command-action-btn" data-command-action="users"><span>👥</span>Users</button>
                 <button class="command-action-btn" data-command-action="institutions"><span>🏛️</span>Institutions</button>
                 <button class="command-action-btn" data-command-action="content"><span>📚</span>Content</button>
+                <button class="command-action-btn" data-command-action="youtube"><span>▶️</span>YouTube Sync</button>
                 <button class="command-action-btn" data-command-action="payments"><span>💰</span>Payments</button>
                 <button class="command-action-btn" data-command-action="ncdc"><span>🎓</span>NCDC/UNEB</button>
                 <button class="command-action-btn" data-command-action="live"><span>📡</span>Live</button>
@@ -13831,6 +13832,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 if(event.type==='keydown'&&!['Enter',' '].includes(event.key)) return;
                 event.preventDefault();
                 const action=button.dataset.commandAction;
+                if(action==='youtube') { window.location.href='/youtube-sync.html'; return; }
                 if(['dashboard','users','institutions','analytics','reports','settings'].includes(action)) navigateSuperAdmin(action==='reports'?'analytics':action);
                 else openCommandSubModal(action);
             };

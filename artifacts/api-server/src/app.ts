@@ -60,8 +60,10 @@ app.use("/api", router);
 // Serve the standalone index.html at root for preview
 const indexPath = resolve(__dirname, "../../../index.html");
 const upgradePath = resolve(__dirname, "../../../upgrade.html");
+const youtubeSyncPath = resolve(__dirname, "../../../youtube-sync.html");
 app.get("/", (req, res) => res.sendFile(indexPath));
 app.get("/upgrade.html", (req, res) => res.sendFile(upgradePath));
+app.get("/youtube-sync.html", (req, res) => res.sendFile(youtubeSyncPath));
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
 app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));
