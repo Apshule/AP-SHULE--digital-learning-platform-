@@ -163,6 +163,13 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /teacherRegistrationPayments/{paymentId} {
+      allow read: if signedIn()
+        && (resource.data.teacherId == request.auth.uid
+          || resource.data.referrerId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     match /studentReferralWithdrawals/{withdrawalId} {
       allow read: if signedIn() && resource.data.studentId == request.auth.uid;
       allow create, update, delete: if false;

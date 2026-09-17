@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
 import { verifyFirebaseAdmin, verifyFirebaseCaller } from "../lib/firebase-auth";
 import { getFirebaseAdminToken } from "../lib/firebase-admin-token";
-import { settleStudentReferralPayment } from "./student-referrals";
+import { settleStudentReferralPayment, settleTeacherRegistrationPayment } from "./student-referrals";
 
 const router = Router();
 const project = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
@@ -820,7 +820,9 @@ async function processWebhook(req: Request, res: Response, failed: boolean) {
       res.status(200).json({ ok: true, processed: false });
       return;
     }
-    if (await settleStudentReferralPayment(externalRef, failed, body)) {
+    const referralRegistration = await settleStudentReferralPayment(externalRef, failed, body)
+      || await settleTeacherRegistrationPayment(externalRef, failed, body);
+    if (referralRegistration) {
       if (logId) {
         await firestoreRequest(`/yo_webhook_logs/${encodeURIComponent(logId)}`, {
           method: "PATCH",

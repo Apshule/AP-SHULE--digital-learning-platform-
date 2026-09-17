@@ -1861,9 +1861,14 @@
             <input type="text" id="signupName" placeholder="Full Name" class="login-input">
             <input type="email" id="signupEmail" placeholder="Email" class="login-input">
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
+            <select id="signupRole" class="login-input">
+                <option value="student">Join as Student</option>
+                <option value="teacher">Join as Teacher — UGX 240,000 registration</option>
+            </select>
+            <input type="text" id="signupTeacherSubject" placeholder="Subject(s) you teach (optional)" class="login-input" style="display:none;">
             <div id="referralSignupPaymentFields" style="display:none;background:#fff8e8;border:1px solid #ffd38a;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
                 <strong style="display:block;color:#8a5a00;font-size:13px;margin-bottom:4px;">💳 Referral registration payment</strong>
-                <span style="display:block;color:#765f35;font-size:11px;line-height:1.4;margin-bottom:8px;">Enter a valid MTN or Airtel number above. Approve the UGX 1,000 payment prompt after pressing Create Account.</span>
+                <span id="signupPaymentHint" style="display:block;color:#765f35;font-size:11px;line-height:1.4;margin-bottom:8px;">Enter a valid MTN or Airtel number above. Approve the UGX 1,000 payment prompt after pressing Create Account.</span>
                 <select id="signupPaymentMethod" class="login-input" style="margin-bottom:0;"><option value="MTN">MTN Mobile Money</option><option value="Airtel">Airtel Money</option></select>
             </div>
             <div style="position:relative;"><input type="password" id="signupPassword" placeholder="Password (min 4 characters)" class="login-input"><span onclick="togglePassword('signupPassword')" style="position:absolute;right:20px;top:12px;cursor:pointer;">👁️</span></div>
@@ -3325,7 +3330,7 @@
                             <input type="number" id="teacherRevenuePerView" placeholder="Recorded lesson / tutorial (UGX)" value="100" min="0">
                             <input type="number" id="teacherPdfRevenuePerView" placeholder="PDF view payout (UGX)" value="100" min="0">
                             <input type="number" id="teacherLiveRevenuePercent" placeholder="Live lesson share (%)" value="70" min="0" max="100">
-                            <input type="number" id="teacherReferralReward" placeholder="Referral reward per teacher signup (UGX)" value="0" min="0">
+                            <input type="number" id="teacherReferralReward" placeholder="Student signup reward (UGX)" value="600" min="600">
                             <button id="addTeacherBtn" class="admin-toggle">➕ Create Teacher Account</button>
                         </div>
                         <div id="teachersAdminList" style="margin-top:12px;"></div>
@@ -13638,7 +13643,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const role=commandReferralRole(user), enabled=user.referralLinksEnabled!==false;
             const teacherLink=commandReferralLink(user), cashLink=commandReferralLink(user,'cash'), dayLink=commandReferralLink(user,'day');
             const linkRow=(label,url,action='copy')=>url?`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><span style="min-width:54px;font-size:11px;color:#666;">${label}</span><code style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#f7f4ff;border-radius:7px;padding:6px;font-size:10px;color:#4B2E9E;">${escHtml(url)}</code><button class="command-secondary-btn" style="padding:6px 9px;font-size:10px;" data-referral-action="${action}" data-referral-url="${escHtml(url)}" type="button">Copy</button></div>`:'';
-            return `<div class="command-list-card"><div style="flex:1;min-width:0;"><h4>${role==='teacher'?'👩‍🏫':'🎓'} ${escHtml(user.name||'Unnamed user')} <span class="mfi-badge" style="${enabled?'background:#effcf3;color:#216b39;':'background:#fff0f0;color:#8a1f1f;'}">${enabled?'Enabled':'Disabled'}</span></h4><p>${escHtml(user.email||'No email')} · ${role==='teacher'?'Teacher':'Student'} · ${escHtml(user.status||'active')}<br>Completed referrals: <strong>${Number(user.referralCount||0)}</strong>${role==='student'?` · Cash balance: <strong>${commandFormatMoney(user.referralCashBalance)}</strong>`:''}</p>${role==='teacher'?`<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:#555;">Reward per signup <input data-referral-reward="${escHtml(user.id)}" type="number" min="0" max="1000000" step="1" value="${Number(user.referralRewardPerSignup||0)}" style="width:110px;padding:6px;border:1px solid #ddd;border-radius:8px;"><span>UGX</span><button class="command-secondary-btn" style="padding:6px 9px;font-size:10px;" data-referral-action="save-reward" data-referral-id="${escHtml(user.id)}" type="button">Save</button></label>`:''}<div style="margin-top:8px;font-size:11px;font-weight:700;color:#4B2E9E;">Shareable links</div>${role==='teacher'?linkRow('Teacher',teacherLink):`${linkRow('Cash',cashLink)}${linkRow('Premium',dayLink)}`}</div><div class="command-list-actions"><button class="${enabled?'command-danger-btn':'command-primary-btn'}" style="padding:7px 9px;font-size:10px;" data-referral-action="${enabled?'disable':'enable'}" data-referral-id="${escHtml(user.id)}" type="button">${enabled?'Disable':'Enable'}</button><button class="command-secondary-btn" style="padding:7px 9px;font-size:10px;" data-referral-action="regenerate" data-referral-id="${escHtml(user.id)}" type="button">Regenerate</button></div></div>`;
+             return `<div class="command-list-card"><div style="flex:1;min-width:0;"><h4>${role==='teacher'?'👩‍🏫':'🎓'} ${escHtml(user.name||'Unnamed user')} <span class="mfi-badge" style="${enabled?'background:#effcf3;color:#216b39;':'background:#fff0f0;color:#8a1f1f;'}">${enabled?'Enabled':'Disabled'}</span></h4><p>${escHtml(user.email||'No email')} · ${role==='teacher'?'Teacher':'Student'} · ${escHtml(user.status||'active')}<br>Completed referrals: <strong>${Number(user.referralCount||0)}</strong>${role==='student'?` · Cash balance: <strong>${commandFormatMoney(user.referralCashBalance)}</strong>`:''}</p>${role==='teacher'?`<label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:#555;">Student signup reward <input data-referral-reward="${escHtml(user.id)}" type="number" min="600" max="1000000" step="1" value="${Math.max(600,Number(user.referralRewardPerSignup||0))}" style="width:110px;padding:6px;border:1px solid #ddd;border-radius:8px;"><span>UGX</span><button class="command-secondary-btn" style="padding:6px 9px;font-size:10px;" data-referral-action="save-reward" data-referral-id="${escHtml(user.id)}" type="button">Save</button></label><small style="display:block;margin-top:5px;color:#777;">Teacher-to-teacher referral: UGX 80,000 · Teacher registration: UGX 240,000</small>`:''}<div style="margin-top:8px;font-size:11px;font-weight:700;color:#4B2E9E;">Shareable links</div>${role==='teacher'?linkRow('Teacher',teacherLink):`${linkRow('Cash',cashLink)}${linkRow('Premium',dayLink)}`}</div><div class="command-list-actions"><button class="${enabled?'command-danger-btn':'command-primary-btn'}" style="padding:7px 9px;font-size:10px;" data-referral-action="${enabled?'disable':'enable'}" data-referral-id="${escHtml(user.id)}" type="button">${enabled?'Disable':'Enable'}</button><button class="command-secondary-btn" style="padding:7px 9px;font-size:10px;" data-referral-action="regenerate" data-referral-id="${escHtml(user.id)}" type="button">Regenerate</button></div></div>`;
         }).join('')||'<div class="command-activity-item">No referral owners match these filters.</div>';
     }
     async function commandUpdateReferral(userId, changes) {
@@ -16218,6 +16223,21 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(!docSnap.exists()) return;
             profile=docSnap.data();
         }
+        if(String(profile?.registrationStatus||profile?.status||'').toLowerCase()==='pending_payment') {
+            currentUser=null;
+            document.getElementById('appScreen')?.classList.add('hidden');
+            document.getElementById('landingScreen')?.classList.add('hidden');
+            document.getElementById('loginScreen')?.classList.remove('hidden');
+            const pendingLoginError=document.getElementById('loginError');
+            if(pendingLoginError) {
+                pendingLoginError.style.color='#8a5a00';
+                pendingLoginError.innerText=String(profile?.role||'')==='teacher'
+                    ? 'Your teacher account is waiting for the UGX 240,000 registration payment to be confirmed.'
+                    : 'Your referral signup is waiting for the UGX 1,000 payment to be confirmed.';
+            }
+            await signOut(auth).catch(()=>{});
+            return;
+        }
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
         const timedPremiumActive = !profile?.premiumAccessUntil || Date.parse(String(profile.premiumAccessUntil)) > Date.now();
         const subscriptionTier=String(profile?.subscriptionTier||'free').toLowerCase()==='premium' && timedPremiumActive ? 'premium' : 'free';
@@ -17010,7 +17030,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const revenue=Math.max(0,Number(document.getElementById('teacherRevenuePerView').value)||100);
         const pdfRevenue=Math.max(0,Number(document.getElementById('teacherPdfRevenuePerView')?.value)||revenue);
         const liveRevenuePercent=Math.min(100,Math.max(0,Number(document.getElementById('teacherLiveRevenuePercent')?.value)||70));
-        const referralReward=Math.max(0,Number(document.getElementById('teacherReferralReward')?.value)||0);
+        const referralReward=Math.max(600,Number(document.getElementById('teacherReferralReward')?.value)||600);
         if(!name||!email||!pwd){showNotification("Fill name, email and password","error");return;}
         if(pwd.length<4){showNotification("Password min 4 chars","error");return;}
         try {
@@ -17021,7 +17041,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             document.getElementById('teacherRevenuePerView').value='100';
             document.getElementById('teacherPdfRevenuePerView').value='100';
             document.getElementById('teacherLiveRevenuePercent').value='70';
-            document.getElementById('teacherReferralReward').value='0';
+             document.getElementById('teacherReferralReward').value='600';
         } catch(err){ showNotification("Error: "+err.message,"error"); }
     });
 
@@ -17270,11 +17290,29 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('loginError').innerText = '';
     }));
 
+    function updateSignupPaymentUi() {
+        const role = document.getElementById('signupRole')?.value || 'student';
+        const teacher = role === 'teacher';
+        const subject = document.getElementById('signupTeacherSubject');
+        const paymentFields = document.getElementById('referralSignupPaymentFields');
+        const paymentHint = document.getElementById('signupPaymentHint');
+        if(subject) subject.style.display = teacher ? 'block' : 'none';
+        if(paymentFields) paymentFields.style.display = teacher || Boolean(sessionStorage.getItem('pendingReferral')) ? 'block' : 'none';
+        if(paymentHint) paymentHint.textContent = teacher
+            ? 'A valid MTN or Airtel number is required. Approve the UGX 240,000 teacher registration prompt after pressing Create Account.'
+            : 'Enter a valid MTN or Airtel number above. Approve the UGX 1,000 payment prompt after pressing Create Account.';
+    }
+    document.getElementById('signupRole')?.addEventListener('change', updateSignupPaymentUi);
+    updateSignupPaymentUi();
+
     // ===== AUTH =====
     document.getElementById('signupBtn')?.addEventListener('click', async (e)=>{
         e.preventDefault();
         let name=document.getElementById('signupName').value.trim(),email=document.getElementById('signupEmail').value.trim(),phone=document.getElementById('signupPhone').value.trim(),pwd=document.getElementById('signupPassword').value,level=document.getElementById('signupEducationLevel').value;
-        if(!name||!email||!phone||!pwd||!level){document.getElementById('loginError').innerText="Fill all fields";return;}
+        const signupRole=document.getElementById('signupRole')?.value || 'student';
+        const isTeacherSignup=signupRole==='teacher';
+        const teacherSubject=document.getElementById('signupTeacherSubject')?.value.trim() || '';
+        if(!name||!email||!phone||!pwd||(!isTeacherSignup&&!level)){document.getElementById('loginError').innerText="Fill all required fields";return;}
         if(pwd.length<4){document.getElementById('loginError').innerText="Password min 4 chars";return;}
         try {
             let cred=await createUserWithEmailAndPassword(auth,email,pwd);
@@ -17283,10 +17321,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
             const pendingRef = sessionStorage.getItem('pendingReferral');
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:level,role:"individual",status:pendingRef?'pending_payment':'active',registrationStatus:pendingRef?'pending_payment':'active',subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
+            const needsPayment=isTeacherSignup||Boolean(pendingRef);
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:isTeacherSignup?'':level,subjectsTaught:isTeacherSignup?teacherSubject:'',role:isTeacherSignup?'teacher':'individual',status:needsPayment?'pending_payment':'active',registrationStatus:needsPayment?'pending_payment':'active',subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
             // Redeem the referral server-side so the referrer cannot be
             // impersonated or awarded twice by client-side writes.
-            if(pendingRef) {
+            if(isTeacherSignup||pendingRef) {
                 const pendingReward = sessionStorage.getItem('pendingReferralReward') === 'cash' ? 'cash' : 'day';
                 try {
                     const token = await cred.user.getIdToken();
@@ -17294,8 +17333,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         method:'POST',
                         headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
                         body:JSON.stringify({
-                            referralCode:pendingRef,
+                            referralCode:pendingRef||'',
                             rewardChoice:pendingReward,
+                            signupRole:isTeacherSignup?'teacher':'student',
                             phone,
                             paymentMethod:document.getElementById('signupPaymentMethod')?.value || 'MTN'
                         })
@@ -17312,17 +17352,17 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         if(!teacherReferralResponse.ok) throw new Error(teacherReferralResult.error || 'Teacher referral could not be applied');
                         showNotification(teacherReferralResult.message || 'Account created!');
                     } else {
-                        showNotification(paymentResult.message || 'Approve the UGX 1,000 payment prompt to finish signing up.');
+                        showNotification(paymentResult.message || (isTeacherSignup ? 'Approve the UGX 240,000 teacher registration payment to activate your account.' : 'Approve the UGX 1,000 payment prompt to finish signing up.'));
                     }
                 } catch(e) {
                     console.warn('[APSHULE] Referral redemption failed:', e);
-                    showNotification('Account created but still pending the UGX 1,000 referral payment: ' + e.message, 'error');
+                    showNotification(`Account created but still pending the ${isTeacherSignup?'UGX 240,000 teacher registration':'UGX 1,000 referral'} payment: ` + e.message, 'error');
                 } finally {
                     sessionStorage.removeItem('pendingReferral');
                     sessionStorage.removeItem('pendingReferralReward');
                 }
             }
-            if(!pendingRef) showNotification("Account created!");
+            if(!isTeacherSignup&&!pendingRef) showNotification("Account created!");
         } catch(err){ document.getElementById('loginError').innerText=err.message; }
     });
 
@@ -17933,7 +17973,7 @@ async function loadReferralCard() {
     card.style.display = 'block';
     card.innerHTML = `
         <h4 style="color:#4B2E9E;margin:0 0 4px;">\uD83D\uDD17 Invite Friends</h4>
-        <p style="font-size:12px;color:#888;margin:0 0 10px;">${canChooseStudentReward ? 'Choose your reward, then share the matching link. Each new student can reward you once.' : 'Share your personal link and earn your configured teacher referral reward when a student signs up.'}</p>
+        <p style="font-size:12px;color:#888;margin:0 0 10px;">${canChooseStudentReward ? 'Choose your reward, then share the matching link. Each new student can reward you once.' : 'Share your teacher link: earn UGX 600 when a student joins, or UGX 80,000 when another teacher joins after paying the UGX 240,000 registration fee.'}</p>
         ${badge}
         ${canChooseStudentReward ? `<label style="display:block;font-size:12px;color:#555;font-weight:700;margin-bottom:5px;">Reward for each new student</label>
         <select id="referralRewardChoice" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;">
@@ -18038,10 +18078,11 @@ function clearSchoolBranding() {
         didReplace = true;
         const paymentFields = document.getElementById('referralSignupPaymentFields');
         if(paymentFields) paymentFields.style.display = 'block';
+        if(typeof updateSignupPaymentUi === 'function') updateSignupPaymentUi();
         const loginErr = document.getElementById('loginError');
         if(loginErr) {
             loginErr.style.color = '#8a5a00';
-            loginErr.innerText = 'Referral signup: enter your MTN/Airtel number and complete the UGX 1,000 payment after pressing Create Account.';
+            loginErr.innerText = 'Referral signup: choose Student or Teacher, enter your MTN/Airtel number, and approve the payment after pressing Create Account.';
         }
     }
 

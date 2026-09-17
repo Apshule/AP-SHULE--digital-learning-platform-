@@ -9,6 +9,9 @@ const firestoreBase =
   `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents`;
 const STUDENT_CASH_REWARD_UGX = 500;
 const STUDENT_SIGNUP_FEE_UGX = 1000;
+const TEACHER_STUDENT_REFERRAL_REWARD_UGX = 600;
+const TEACHER_REFERRAL_REWARD_UGX = 80000;
+const TEACHER_SIGNUP_FEE_UGX = 240000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const defaultProductionUrl = "https://paymentsapi1.yo.co.ug/ybs/task.php";
 const defaultSandboxUrl = "https://sandbox.yo.co.ug/services/yopaymentsdev/task.php";
@@ -51,9 +54,11 @@ async function yoDeposit(
   phone: string,
   externalRef: string,
   settings: ReturnType<typeof configuredSettings>,
+  amount: number,
+  narrative: string,
 ): Promise<string> {
   if (!hasYoCredentials()) throw new Error("Yo API credentials are not configured");
-  const body = `<AutoCreate><Request><APIUsername>${xmlEscape(process.env["YO_API_USERNAME"])}</APIUsername><APIpassword>${xmlEscape(process.env["YO_API_PASSWORD"])}</APIpassword><Method>acdepositfunds</Method><NonBlocking>TRUE</NonBlocking><Amount>${STUDENT_SIGNUP_FEE_UGX.toFixed(2)}</Amount><Account>${xmlEscape(phone)}</Account><Narrative>APSHULE referral registration</Narrative><ExternalReference>${xmlEscape(externalRef)}</ExternalReference><InstantNotificationUrl>${xmlEscape(`${publicBaseUrl()}/api/webhooks/yo/ipn`)}</InstantNotificationUrl><FailureNotificationUrl>${xmlEscape(`${publicBaseUrl()}/api/webhooks/yo/failure`)}</FailureNotificationUrl></Request></AutoCreate>`;
+  const body = `<AutoCreate><Request><APIUsername>${xmlEscape(process.env["YO_API_USERNAME"])}</APIUsername><APIpassword>${xmlEscape(process.env["YO_API_PASSWORD"])}</APIpassword><Method>acdepositfunds</Method><NonBlocking>TRUE</NonBlocking><Amount>${amount.toFixed(2)}</Amount><Account>${xmlEscape(phone)}</Account><Narrative>${xmlEscape(narrative)}</Narrative><ExternalReference>${xmlEscape(externalRef)}</ExternalReference><InstantNotificationUrl>${xmlEscape(`${publicBaseUrl()}/api/webhooks/yo/ipn`)}</InstantNotificationUrl><FailureNotificationUrl>${xmlEscape(`${publicBaseUrl()}/api/webhooks/yo/failure`)}</FailureNotificationUrl></Request></AutoCreate>`;
   const response = await fetch(settings.url, {
     method: "POST",
     headers: {
@@ -158,12 +163,15 @@ async function findReferrer(referralCode: string): Promise<{
   return null;
 }
 
-async function findPayment(externalRef: string): Promise<{ path: string; data: Record<string, unknown> } | null> {
+async function findPaymentInCollection(
+  collectionId: string,
+  externalRef: string,
+): Promise<{ path: string; data: Record<string, unknown> } | null> {
   const rows = await firestoreRequest(":runQuery", {
     method: "POST",
     body: JSON.stringify({
       structuredQuery: {
-        from: [{ collectionId: "studentReferralPayments" }],
+        from: [{ collectionId }],
         where: { fieldFilter: { field: { fieldPath: "externalRef" }, op: "EQUAL", value: firestoreValue(externalRef) } },
         limit: 1,
       },
@@ -172,6 +180,10 @@ async function findPayment(externalRef: string): Promise<{ path: string; data: R
   const document = rows.find((row) => row.document?.name)?.document;
   if (!document?.name) return null;
   return { path: document.name.split("/documents/")[1] ?? "", data: documentData(document) };
+}
+
+async function findPayment(externalRef: string) {
+  return findPaymentInCollection("studentReferralPayments", externalRef);
 }
 
 function validReward(value: unknown): "cash" | "day" {
@@ -273,7 +285,7 @@ function referralAdminView(id: string, data: Record<string, unknown>) {
     referralDayCode: data.referralDayCode ?? "",
     referralLinksEnabled: data.referralLinksEnabled !== false,
     referralCount: Number(data.referralCount ?? 0),
-    referralRewardPerSignup: Number(data.referralRewardPerSignup ?? 0),
+    referralRewardPerSignup: Math.max(TEACHER_STUDENT_REFERRAL_REWARD_UGX, Number(data.referralRewardPerSignup) || 0),
     referralCashBalance: Number(data.referralCashBalance ?? 0),
     premiumAccessUntil: data.premiumAccessUntil ?? "",
     createdAt: data.createdAt ?? "",
@@ -326,8 +338,8 @@ router.patch("/admin/referrals/:userId", async (req: Request, res: Response) => 
     }
     if (role === "teacher" && req.body?.rewardPerSignup !== undefined) {
       const amount = Number(req.body.rewardPerSignup);
-      if (!Number.isFinite(amount) || amount < 0 || amount > 1000000) {
-        res.status(400).json({ ok: false, error: "Teacher reward must be between UGX 0 and UGX 1,000,000" });
+      if (!Number.isFinite(amount) || amount < TEACHER_STUDENT_REFERRAL_REWARD_UGX || amount > 1000000) {
+        res.status(400).json({ ok: false, error: "Teacher student-signup reward must be between UGX 600 and UGX 1,000,000" });
         return;
       }
       patch.referralRewardPerSignup = Math.floor(amount);
@@ -393,6 +405,85 @@ export async function settleStudentReferralPayment(
   return true;
 }
 
+export async function settleTeacherRegistrationPayment(
+  externalRef: string,
+  failed: boolean,
+  webhookData: Record<string, unknown>,
+): Promise<boolean> {
+  const match = await findPaymentInCollection("teacherRegistrationPayments", externalRef);
+  if (!match) return false;
+  if (!failed && match.data.status === "completed") return true;
+  if (failed) {
+    await firestoreRequest(`/${match.path}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        status: "failed",
+        webhookData,
+        failureReason: "The teacher registration payment was not confirmed.",
+        updatedAt: now(),
+      })),
+    });
+    return true;
+  }
+
+  const teacherId = String(match.data.teacherId ?? match.data.referredUserId ?? "");
+  const teacher = await getUser(teacherId);
+  if (!teacher || String(teacher.role ?? "") !== "teacher") {
+    throw new Error("Teacher registration account was not found");
+  }
+
+  const referrerId = String(match.data.referrerId ?? "");
+  const referrer = referrerId ? await getUser(referrerId) : null;
+  const claimedAt = now();
+  if (referrer && String(referrer.role ?? "") === "teacher") {
+    const earningId = `teacher_referral_${referrerId}_${teacherId}`;
+    await firestoreRequest(`/teacherEarnings/${encodeURIComponent(earningId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        source: "teacher_teacher_referral",
+        teacherId: referrerId,
+        referredUserId: teacherId,
+        referredUserName: teacher.name ?? teacherId,
+        amount: TEACHER_REFERRAL_REWARD_UGX,
+        currency: "UGX",
+        paid: false,
+        earnedAt: claimedAt,
+      })),
+    });
+    await firestoreRequest(`/users/${encodeURIComponent(referrerId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(firestoreFields({
+        referralCount: Number(referrer.referralCount ?? 0) + 1,
+      })),
+    });
+  }
+
+  await firestoreRequest(`/users/${encodeURIComponent(teacherId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(firestoreFields({
+      status: "active",
+      registrationStatus: "active",
+      ...(referrer && String(referrer.role ?? "") === "teacher"
+        ? {
+          referredBy: referrerId,
+          referralRewardClaimedAt: claimedAt,
+          referralRewardType: "teacher_teacher_cash",
+        }
+        : {}),
+    })),
+  });
+  await firestoreRequest(`/${match.path}`, {
+    method: "PATCH",
+    body: JSON.stringify(firestoreFields({
+      status: "completed",
+      webhookData,
+      paidAt: claimedAt,
+      updatedAt: claimedAt,
+    })),
+  });
+  return true;
+}
+
 router.post("/referrals/registration-payment", async (req: Request, res: Response) => {
   const caller = await verifyFirebaseCaller(req.headers.authorization);
   if (!("uid" in caller)) {
@@ -401,44 +492,56 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
   }
   const referralCode = String(req.body?.referralCode ?? "").trim().slice(0, 80);
   const rewardChoice = validReward(req.body?.rewardChoice);
+  const signupRole = String(req.body?.signupRole ?? "student").trim().toLowerCase();
   const phone = normalizePhone(req.body?.phone);
   const paymentMethod = String(req.body?.paymentMethod ?? "").trim();
-  if (!referralCode || !phone || !["MTN", "Airtel"].includes(paymentMethod)) {
-    res.status(400).json({ ok: false, error: "Referral code, valid MTN/Airtel phone number, and payment method are required" });
+  if (!["student", "teacher"].includes(signupRole) || !phone || !["MTN", "Airtel"].includes(paymentMethod)) {
+    res.status(400).json({ ok: false, error: "Signup role, valid MTN/Airtel phone number, and payment method are required" });
     return;
   }
-  const paymentId = `REFPAY-${caller.uid}`;
-  const externalRef = `REFSIGN-${caller.uid}`;
+  const isTeacherSignup = signupRole === "teacher";
+  if (!isTeacherSignup && !referralCode) {
+    res.status(400).json({ ok: false, error: "A referral code is required for student referral registration" });
+    return;
+  }
+  const paymentId = isTeacherSignup ? `TEACHERPAY-${caller.uid}` : `REFPAY-${caller.uid}`;
+  const externalRef = isTeacherSignup ? `TEACHERSIGN-${caller.uid}` : `REFSIGN-${caller.uid}`;
+  const paymentCollection = isTeacherSignup ? "teacherRegistrationPayments" : "studentReferralPayments";
+  const amount = isTeacherSignup ? TEACHER_SIGNUP_FEE_UGX : STUDENT_SIGNUP_FEE_UGX;
   try {
     const newUser = await getUser(caller.uid, caller.token);
-    if (!newUser || !["individual", "student"].includes(String(newUser.role ?? ""))) {
-      res.status(403).json({ ok: false, error: "Only student accounts can use referral registration" });
+    if (!newUser || String(newUser.role ?? "") !== (isTeacherSignup ? "teacher" : "individual")) {
+      res.status(403).json({ ok: false, error: `Only ${isTeacherSignup ? "teacher" : "student"} accounts can use this registration payment` });
       return;
     }
-    const referrer = await findReferrer(referralCode);
-    if (!referrer || referrer.id === caller.uid) {
+    const referrer = referralCode ? await findReferrer(referralCode) : null;
+    if (referralCode && (!referrer || referrer.id === caller.uid)) {
       res.status(404).json({ ok: false, error: "That referral link is invalid" });
       return;
     }
-    if (String(referrer.data.role ?? "") === "teacher") {
+    if (isTeacherSignup && referrer && String(referrer.data.role ?? "") !== "teacher") {
+      res.status(400).json({ ok: false, error: "Only a teacher can refer a teacher registration" });
+      return;
+    }
+    if (!isTeacherSignup && referrer && String(referrer.data.role ?? "") === "teacher") {
       res.json({ ok: true, requiresPayment: false, teacherReferral: true });
       return;
     }
-    if (!["individual", "student"].includes(String(referrer.data.role ?? ""))) {
+    if (!isTeacherSignup && (!referrer || !["individual", "student"].includes(String(referrer.data.role ?? "")))) {
       res.status(400).json({ ok: false, error: "This is not a student referral link" });
       return;
     }
-    const selectedReward = referrer.rewardChoice ?? rewardChoice;
+    const selectedReward = referrer?.rewardChoice ?? rewardChoice;
 
     const existing = await getUser(caller.uid);
-    if (existing?.referralRewardClaimedAt) {
+    if (existing?.referralRewardClaimedAt && !isTeacherSignup) {
       res.json({ ok: true, status: "completed", duplicate: true });
       return;
     }
-    const prior = await firestoreRequest(`/${encodeURIComponent("studentReferralPayments")}/${encodeURIComponent(paymentId)}`).catch(() => null) as FirestoreDocument | null;
+    const prior = await firestoreRequest(`/${encodeURIComponent(paymentCollection)}/${encodeURIComponent(paymentId)}`).catch(() => null) as FirestoreDocument | null;
     const priorData = documentData(prior ?? undefined);
     if (["pending", "processing"].includes(String(priorData.status ?? ""))) {
-      res.status(202).json({ ok: true, status: priorData.status, paymentId, amount: STUDENT_SIGNUP_FEE_UGX });
+      res.status(202).json({ ok: true, status: priorData.status, paymentId, amount });
       return;
     }
     if (priorData.status === "completed") {
@@ -451,26 +554,40 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
     }
 
     const payment = {
-      paymentId, externalRef, referredUserId: caller.uid, referralCode, referrerId: referrer.id,
-      rewardChoice: selectedReward, amount: STUDENT_SIGNUP_FEE_UGX, currency: "UGX", phone, paymentMethod,
+      paymentId,
+      externalRef,
+      ...(isTeacherSignup ? { teacherId: caller.uid } : { referredUserId: caller.uid }),
+      referralCode: referralCode || "",
+      ...(referrer ? { referrerId: referrer.id } : {}),
+      rewardChoice: selectedReward,
+      amount,
+      currency: "UGX",
+      phone,
+      paymentMethod,
       status: "pending", createdAt: now(),
     };
-    await firestoreRequest(`/${encodeURIComponent("studentReferralPayments")}/${encodeURIComponent(paymentId)}`, {
+    await firestoreRequest(`/${encodeURIComponent(paymentCollection)}/${encodeURIComponent(paymentId)}`, {
       method: "PATCH", body: JSON.stringify(firestoreFields(payment)),
     });
     const savedSettingsDocument = await firestoreRequest("/payment_settings/global").catch(() => null) as FirestoreDocument | null;
-    const response = await yoDeposit(phone, externalRef, configuredSettings(documentData(savedSettingsDocument ?? undefined)));
+    const response = await yoDeposit(
+      phone,
+      externalRef,
+      configuredSettings(documentData(savedSettingsDocument ?? undefined)),
+      amount,
+      isTeacherSignup ? "APSHULE teacher registration" : "APSHULE student referral registration",
+    );
     const providerReference = xmlField(response, "TransactionReference") || xmlField(response, "reference");
-    await firestoreRequest(`/${encodeURIComponent("studentReferralPayments")}/${encodeURIComponent(paymentId)}`, {
+    await firestoreRequest(`/${encodeURIComponent(paymentCollection)}/${encodeURIComponent(paymentId)}`, {
       method: "PATCH",
       body: JSON.stringify(firestoreFields({ status: "processing", providerReference, updatedAt: now() })),
     });
     res.status(202).json({
-      ok: true, status: "processing", paymentId, amount: STUDENT_SIGNUP_FEE_UGX,
-      message: `Approve the UGX ${STUDENT_SIGNUP_FEE_UGX.toLocaleString()} payment prompt on ${paymentMethod}.`,
+      ok: true, status: "processing", paymentId, amount,
+      message: `Approve the UGX ${amount.toLocaleString()} payment prompt on ${paymentMethod}.`,
     });
   } catch (error) {
-    await firestoreRequest(`/${encodeURIComponent("studentReferralPayments")}/${encodeURIComponent(paymentId)}`, {
+    await firestoreRequest(`/${encodeURIComponent(paymentCollection)}/${encodeURIComponent(paymentId)}`, {
       method: "PATCH",
       body: JSON.stringify(firestoreFields({
         status: "failed",
@@ -517,7 +634,10 @@ router.post("/referrals/redeem", async (req: Request, res: Response) => {
     const rewardId = `referral_${referrer.id}_${caller.uid}`;
 
     if (referrerRole === "teacher") {
-      const amount = Math.max(0, Number(referrer.data.referralRewardPerSignup ?? 0));
+      const configuredReward = Number(referrer.data.referralRewardPerSignup);
+      const amount = Number.isFinite(configuredReward) && configuredReward > 0
+        ? Math.floor(configuredReward)
+        : TEACHER_STUDENT_REFERRAL_REWARD_UGX;
       await firestoreRequest(`/teacherEarnings/${encodeURIComponent(rewardId)}`, {
         method: "PATCH",
         body: JSON.stringify(firestoreFields({
