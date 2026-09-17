@@ -28,15 +28,6 @@
       "collectionGroup": "curriculum_links",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "subject", "order": "ASCENDING" },
-        { "fieldPath": "classLevel", "order": "ASCENDING" },
-        { "fieldPath": "topic", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "curriculum_links",
-      "queryScope": "COLLECTION",
-      "fields": [
         { "fieldPath": "search_count", "order": "DESCENDING" }
       ]
     },
