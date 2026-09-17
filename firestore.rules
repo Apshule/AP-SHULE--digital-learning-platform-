@@ -223,6 +223,11 @@ service cloud.firestore {
       allow read, update, delete: if isSuperAdmin();
     }
 
+    match /partneredInstitutions/{partnerId} {
+      allow read: if resource.data.published == true || isSuperAdmin();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
     match /institutions/{institutionId} {
       allow read: if signedIn() && (isSuperAdmin()
         || resource.data.adminUid == request.auth.uid

@@ -31,6 +31,25 @@ describe("Task 9 Step 1 command center contracts", () => {
     expect(indexSource).toContain("institutionId");
   });
 
+  it("lets superadmins publish partner institutions with public contact details", () => {
+    for (const value of [
+      "partnerInstitutionForm",
+      "partnerInstitutionLogoFile",
+      "partnerInstitutionPhone",
+      "partnerInstitutionEmail",
+      "partnerInstitutionPublished",
+      "landingPartnersGrid",
+      "loadPublicPartnerInstitutions",
+      "savePartnerInstitution",
+    ]) {
+      expect(indexSource).toContain(value);
+    }
+    expect(indexSource).toContain("partneredInstitutions");
+    expect(indexSource).toContain("uploadBytesResumable");
+    expect(rulesSource).toContain("match /partneredInstitutions/{partnerId}");
+    expect(rulesSource).toContain("resource.data.published == true || isSuperAdmin()");
+  });
+
   it("stores explicit checked roles while keeping a default role for legacy routing", () => {
     for (const value of ["commandUserRoleOptions", "Allowed roles", "roles:selectedRoles", "profileRoles", "userHasRole", "setActiveAppRole"]) {
       expect(indexSource).toContain(value);
