@@ -17,3 +17,4 @@
 - [Single-file script bootstrap order](single-file-script-bootstrap-order.md) — Auth routing can run before later classic script blocks; defer or expose late helpers before calling them.
 - [Role dashboard realtime guards](role-dashboard-realtime-guards.md) — Firestore listeners must tolerate missing role-specific widgets without breaking an otherwise successful dashboard login.
 - [Gemini quota boundary](gemini-quota-boundary.md) — Sector authentication can pass while the shared provider quota blocks every AI generation request.
+- [Teacher material visibility and earnings](teacher-material-visibility-and-earnings.md) — Merge teacher uploads into shared Resources and use stored agreement rates for eligible student-view payouts.

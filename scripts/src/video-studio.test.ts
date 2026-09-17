@@ -125,6 +125,26 @@ describe("Video Studio UI and offline contracts", () => {
     expect(indexHtml).toContain("renderClasses();");
   });
 
+  it("makes teacher study materials visible in the shared resources feed and records agreed view earnings", () => {
+    for (const value of [
+      'onSnapshot(collection(db,"teacherPdfs")',
+      "_teacherPdfMaterials",
+      "sourceCollection:'teacherPdfs'",
+      "recordTeacherPdfView",
+      "pdfRevenuePerView",
+      "teacherPdfRate",
+      "teacherEarnings",
+      "source:'teacher_pdf'",
+      "openPdfInline('${p.url||''}'",
+    ]) {
+      expect(indexHtml).toContain(value);
+    }
+    const rules = readFileSync(new URL("firestore.rules", projectRoot), "utf8");
+    expect(rules).toContain("match /pdfs/{pdfId}");
+    expect(rules).toContain("match /teacherPdfs/{pdfId}");
+    expect(rules).toContain("request.resource.data.teacherId == request.auth.uid");
+  });
+
   it("includes the four tabs, preview controls, publishing, and library pagination", () => {
     expect(indexHtml).toContain('data-video-studio-tab="cartoon"');
     expect(indexHtml).toContain('data-video-studio-tab="auto"');
