@@ -2329,6 +2329,7 @@
                                         </select>
                                     </div>
                                 </div>
+                                <fieldset style="border:1px solid #e6def2;border-radius:12px;padding:10px;margin:10px 0;"><legend style="padding:0 5px;font-size:12px;font-weight:800;color:#4B2E9E;">Class folder coverage</legend><p style="margin:0 0 8px;font-size:11px;color:#756d82;">Choose every class folder that should receive this lesson. Publishing creates one searchable Mathematics record per selected class.</p><div id="videoStudioClassCoverage" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:7px;"></div><div style="display:flex;align-items:center;gap:8px;margin-top:8px;"><button id="videoStudioSelectAllClassesBtn" class="video-studio-mini-btn" type="button">Select P1–S6</button><span id="videoStudioClassCoverageCount" style="font-size:11px;color:#756d82;">No class folders selected</span></div></fieldset>
                                 <div class="video-studio-field">
                                     <label for="videoStudioScript">English script *</label>
                                     <textarea id="videoStudioScript" name="script" required maxlength="2000" placeholder="Write the lesson narration in English. Keep it short enough for six clear scenes."></textarea>
@@ -4362,7 +4363,8 @@
         <div class="command-modal-card"><div class="command-modal-head"><h3 id="commandUserModalTitle">👥 Add User</h3><button class="command-close" data-command-close="commandUserModal" type="button" aria-label="Close user form">&times;</button></div><div class="command-modal-body">
             <form id="commandUserForm" class="command-form">
                 <div class="two-col"><label>Full Name *<input id="commandUserName" required maxlength="100"></label><label>Email *<input id="commandUserEmail" type="email" required></label></div>
-                <div class="two-col"><label>Phone *<input id="commandUserPhone" required></label><label>Role *<select id="commandUserRole" required><option value="individual">Student</option><option value="teacher">Teacher</option><option value="school">School Admin</option><option value="mfi_admin">MFI Admin</option><option value="loan_officer">Loan Officer</option><option value="loan_manager">Loan Manager</option><option value="loan_director">Loan Director</option><option value="clinic_admin">Clinic Admin</option><option value="doctor">Doctor</option><option value="nurse">Nurse</option><option value="receptionist">Receptionist</option><option value="pharmacist">Pharmacist</option><option value="patient">Patient</option><option value="clinic_staff">Legacy Clinic Staff</option><option value="farm_admin">Farm Admin</option><option value="farm_manager">Farm Manager</option><option value="farm_worker">Farm Worker</option><option value="farmer">Legacy Farmer</option><option value="borrower">Borrower</option><option value="superadmin">Super Admin</option></select></label></div>
+                <div class="two-col"><label>Phone *<input id="commandUserPhone" required></label><label>Default dashboard role *<select id="commandUserRole" required><option value="individual">Student</option><option value="teacher">Teacher</option><option value="school">School Admin</option><option value="mfi_admin">MFI Admin</option><option value="loan_officer">Loan Officer</option><option value="loan_manager">Loan Manager</option><option value="loan_director">Loan Director</option><option value="clinic_admin">Clinic Admin</option><option value="doctor">Doctor</option><option value="nurse">Nurse</option><option value="receptionist">Receptionist</option><option value="pharmacist">Pharmacist</option><option value="patient">Patient</option><option value="clinic_staff">Legacy Clinic Staff</option><option value="farm_admin">Farm Admin</option><option value="farm_manager">Farm Manager</option><option value="farm_worker">Farm Worker</option><option value="farmer">Legacy Farmer</option><option value="borrower">Borrower</option><option value="superadmin">Super Admin</option></select></label></div>
+                <fieldset style="border:1px solid #e6def2;border-radius:12px;padding:10px;margin:10px 0;"><legend style="padding:0 5px;font-size:12px;font-weight:800;color:#4B2E9E;">Allowed roles</legend><p style="margin:0 0 8px;font-size:11px;color:#756d82;">Tick every dashboard this account may access. The default role opens first after sign-in.</p><div id="commandUserRoleOptions" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:7px;"></div><div id="commandUserRoleHelp" style="font-size:11px;color:#b3261e;min-height:16px;margin-top:7px;" aria-live="polite"></div></fieldset>
                 <label>Institution (required for non-superadmin)<select id="commandUserInstitution"><option value="">— Select institution —</option></select></label>
                 <label>Initial Password *<input id="commandUserPassword" type="text" required minlength="6"><button id="commandGeneratePasswordBtn" class="command-secondary-btn" type="button">Generate password</button></label>
                 <label style="display:flex;align-items:center;gap:8px;"><input id="commandUserWelcome" type="checkbox" checked style="width:auto;"> Send welcome notification</label>
@@ -6002,14 +6004,23 @@
         return icons[subj] || 'fa-book-open';
     }
 
+    function videoSubjectsForClass(level, id) {
+        const base = level === 'primary' ? primarySubjects : secondarySubjects;
+        const prefix = `${level}_${id}_`;
+        const mapped = Object.keys(videoMappings || {})
+            .filter(key => key.startsWith(prefix))
+            .map(key => key.slice(prefix.length))
+            .filter(Boolean);
+        return [...new Set([...base, ...mapped])];
+    }
     function renderClasses() {
         let grid = document.getElementById('classGrid'); if(!grid) return;
         let classes = classData[currentLevel];
-        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}', this)" style="background:linear-gradient(135deg,${c.color}22,white);border:2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background:linear-gradient(135deg,${c.color},${c.color}cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:52px;"></i><div class="class-name" style="color:${c.color};">${c.name}</div><div class="class-details">${currentLevel==='primary'?primarySubjects.length:secondarySubjects.length} Subjects</div></div>`).join('');
+        grid.innerHTML = classes.map(c => `<div class="class-card" onclick="selectClass(${c.id}, '${c.name}', this)" style="background:linear-gradient(135deg,${c.color}22,white);border:2px solid ${c.color}44;"><i class="fas ${c.icon}" style="background:linear-gradient(135deg,${c.color},${c.color}cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:52px;"></i><div class="class-name" style="color:${c.color};">${c.name}</div><div class="class-details">${videoSubjectsForClass(currentLevel,c.id).length} Subjects</div></div>`).join('');
     }
 
     window.selectClass = function(id, name, trigger) {
-        const availableSubjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        const availableSubjects = videoSubjectsForClass(currentLevel,id);
         if(!availableSubjects.length) {
             showContextualMessage(trigger,`No subjects are available for ${name} yet. Please check back soon.`,'info');
             return;
@@ -6021,7 +6032,7 @@
     };
 
     function renderSubjects() {
-        const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        const subjects = currentSelectedClassId ? videoSubjectsForClass(currentSelectedClassId.level,currentSelectedClassId.id) : (currentLevel === 'primary' ? primarySubjects : secondarySubjects);
         const grid = document.getElementById('subjectsGrid'); if(!grid) return;
         const weakAreas = currentUser?.weakAreas || [];
         const sorted = weakAreas.length
@@ -6057,7 +6068,7 @@
         if(!vid) { showContextualMessage(trigger,`No video for "${subject}" in ${currentSelectedClassId.name}. Ask admin to add.`, "info"); return; }
 
         // Build video list for prev/next (all subjects with videos in current class)
-        const subjects = currentLevel === 'primary' ? primarySubjects : secondarySubjects;
+        const subjects = videoSubjectsForClass(currentSelectedClassId.level,currentSelectedClassId.id);
         _currentVideoList = subjects
             .map((s, i) => { const k=`${currentSelectedClassId.level}_${currentSelectedClassId.id}_${s}`; return videoMappings[k] ? {videoKey:k, title:s, teacherId:(window._videoMappingData&&window._videoMappingData[k]?.teacherId)||''} : null; })
             .filter(Boolean);
@@ -7602,6 +7613,23 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             ...(classData.secondary || []).map(item => ({ value:`S${item.id}`, label:item.name }))
         ];
     }
+    function videoStudioRenderClassCoverage(selected=[]) {
+        const container=document.getElementById('videoStudioClassCoverage');
+        if(!container) return;
+        const selectedSet=new Set((selected||[]).filter(Boolean));
+        container.innerHTML=videoStudioClassOptions().map(item=>`<label style="display:flex;align-items:center;gap:7px;padding:6px 7px;border:1px solid #eee7f5;border-radius:9px;background:#fff;font-size:11px;color:#51476a;"><input type="checkbox" data-video-class="${escHtml(item.value)}" value="${escHtml(item.value)}" ${selectedSet.has(item.value)?'checked':''} style="width:auto;"> ${escHtml(item.label)}</label>`).join('');
+        container.querySelectorAll('input[data-video-class]').forEach(input=>input.addEventListener('change',videoStudioUpdateClassCoverageSummary));
+        videoStudioUpdateClassCoverageSummary();
+    }
+    function videoStudioSelectedClassLevels() {
+        return [...document.querySelectorAll('#videoStudioClassCoverage input[data-video-class]:checked')].map(input=>input.value);
+    }
+    function videoStudioUpdateClassCoverageSummary() {
+        const selected=videoStudioSelectedClassLevels(), count=document.getElementById('videoStudioClassCoverageCount');
+        if(count) count.textContent=selected.length ? `${selected.length} class folder${selected.length===1?'':'s'} selected` : 'No class folders selected';
+        const classSelect=document.getElementById('videoStudioClassLevel');
+        if(classSelect && selected.length && !selected.includes(classSelect.value)) classSelect.value=selected[0];
+    }
     function videoStudioSetStatus(message, type='') {
         const status = document.getElementById('videoStudioGenerationStatus');
         if(status) { status.textContent = message || ''; status.className = `video-studio-status${type ? ` ${type}` : ''}`; }
@@ -7621,8 +7649,10 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const classSelect = document.getElementById('videoStudioClassLevel');
         if(classSelect) {
             const value = classSelect.value;
-            classSelect.innerHTML = '<option value="">Select class</option>' + videoStudioClassOptions().map(item => `<option value="${item.value}">${escHtml(item.label)}</option>`).join('');
+            const options=videoStudioClassOptions();
+            classSelect.innerHTML = '<option value="">Select class</option>' + options.map(item => `<option value="${item.value}">${escHtml(item.label)}</option>`).join('');
             classSelect.value = value;
+            videoStudioRenderClassCoverage(value ? [value] : []);
         }
         const librarySubject = document.getElementById('videoStudioLibrarySubjectFilter');
         if(librarySubject) {
@@ -7717,11 +7747,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const data = Object.fromEntries(new FormData(form).entries());
         data.script = String(data.script || '').trim();
         data.durationSeconds = Number(data.duration || 0);
+        data.classLevels = [...new Set(videoStudioSelectedClassLevels().concat(data.classLevel || []))];
         return data;
     }
     function videoStudioValidate(values) {
-        const required = ['topic','type','subject','classLevel','language','character'];
+        const required = ['topic','type','subject','language','character'];
         const errors = required.filter(key => !String(values[key] || '').trim()).map(key => `${key} is required`);
+        if(!values.classLevel && !values.classLevels?.length) errors.push('Choose at least one class folder');
         const script = String(values.script || '').trim();
         if(!values.durationSeconds || ![30,60,90,120].includes(values.durationSeconds)) errors.push('Choose a lesson duration');
         if(!script) errors.push('Write an English script');
@@ -7743,7 +7775,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!db) throw new Error('Video Studio is still connecting to Firebase');
         const projectRef = await addDoc(collection(db,'video_studio_projects'), {
             mode:'cartoon', status:'generating', generationStep:'translation',
-            topic:values.topic, type:values.type, subject:values.subject, classLevel:values.classLevel,
+             topic:values.topic, type:values.type, subject:values.subject, subjectFolder:String(values.subject).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'), classLevel:values.classLevel || values.classLevels?.[0], classLevels:values.classLevels || [values.classLevel], classFolders:values.classLevels || [values.classLevel], folderPaths:(values.classLevels || [values.classLevel]).map(classLevel=>`${String(values.subject).trim()}/${classLevel}`),
             language:values.language, character:values.character, durationSeconds:values.durationSeconds,
             scriptEnglish:values.script, script:values.script, createdBy:currentUser.uid,
             createdAt:serverTimestamp(), updatedAt:serverTimestamp(), views:0
@@ -7781,7 +7813,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             videoStudioStage('slideshow');
             const project = {
                 id:projectId, mode:'cartoon', status:'ready', generationStep:'complete',
-                topic:values.topic, type:values.type, subject:values.subject, classLevel:values.classLevel,
+                 topic:values.topic, type:values.type, subject:values.subject, subjectFolder:String(values.subject).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-'), classLevel:values.classLevel || values.classLevels?.[0], classLevels:values.classLevels || [values.classLevel], classFolders:values.classLevels || [values.classLevel], folderPaths:(values.classLevels || [values.classLevel]).map(classLevel=>`${String(values.subject).trim()}/${classLevel}`),
                 language:values.language, character:values.character, durationSeconds:values.durationSeconds,
                 scriptEnglish:values.script, script:values.script, translatedScript:translation.text,
                 translationProvider:translation.provider, voiceover, slideshowImages,
@@ -7809,7 +7841,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         if(!actions || !summary) return;
         actions.style.display = project ? 'block' : 'none';
         if(!project) return;
-        summary.innerHTML = `<strong>${escHtml(project.topic)}</strong><br>${escHtml(project.subject)} · ${escHtml(project.classLevel)} · ${escHtml(project.language)} · ${project.durationSeconds}s<br><span style="font-size:11px;">${project.status === 'published' ? 'Published to schools' : 'Ready to preview'}</span>`;
+        const classLevels=[...new Set((project.classLevels?.length ? project.classLevels : [project.classLevel]).filter(Boolean))];
+        summary.innerHTML = `<strong>${escHtml(project.topic)}</strong><br>${escHtml(project.subject)} · ${escHtml(classLevels.join(', ') || project.classLevel || 'No class')} · ${escHtml(project.language)} · ${project.durationSeconds}s<br><span style="font-size:11px;">${classLevels.length} class folder${classLevels.length===1?'':'s'} · ${escHtml(project.subject || 'General')} folders${project.status === 'published' ? ' · Published to schools' : ' · Ready to preview'}</span>`;
         videoStudioRenderSchoolList();
     }
     function videoStudioResetPreviewState() {
@@ -7927,7 +7960,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         await Offline.cacheVideoStudio({
             libraryId:project.libraryId || project.id,
             projectId:project.id,
-            topic:project.topic, subject:project.subject, classLevel:project.classLevel, language:project.language,
+            topic:project.topic, subject:project.subject, subjectFolder:project.subjectFolder, classLevel:project.classLevel, classLevels:project.classLevels || [project.classLevel], classFolders:project.classFolders || project.classLevels || [project.classLevel], folderPath:project.folderPath, folderPaths:project.folderPaths || [], language:project.language,
             durationSeconds:project.durationSeconds, slideshowImages:project.slideshowImages || [],
             captions:project.captions || [], captionsText:project.captionsSrt || '',
             audioMetadata:project.voiceover || {}, publishedAt:project.publishedAt || new Date().toISOString()
@@ -7950,19 +7983,23 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function videoStudioSelectedSchools() {
         return [...document.querySelectorAll('#videoStudioSchoolList input[type="checkbox"]:checked')].map(input => input.value);
     }
-    async function videoStudioPublishProjectToLibrary(project, audience, schoolIds) {
+    async function videoStudioPublishProjectToLibrary(project, audience, schoolIds, classLevelOverride='') {
+        const classLevel=classLevelOverride || project.classLevel || project.classLevels?.[0] || '';
+        const classLevels=classLevelOverride ? [classLevelOverride] : (project.classLevels?.length ? project.classLevels : [classLevel]);
+        const subject=project.subject || 'General';
+        const subjectFolder=project.subjectFolder || String(subject).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-');
         const libraryRef = await addDoc(collection(db,'video_library'), {
             projectId:project.id, mode:project.mode || 'cartoon', isSeries:Boolean(project.isSeries || project.mode === 'series'),
             seriesParentId:project.seriesParentId || null, seriesSegmentNumber:project.seriesSegmentNumber || null,
             seriesChildIds:project.seriesLibraryIds || project.seriesChildIds || [], seriesSegmentCount:project.seriesSegmentCount || null, seriesTotalTime:project.seriesTotalTime || null,
-            topic:project.topic, type:project.type || 'video_lesson', subject:project.subject, classLevel:project.classLevel, language:project.language, character:project.character,
+            topic:project.topic, type:project.type || 'video_lesson', subject, subjectFolder, classLevel, classLevels, classFolders:classLevels, folderPath:`${subject}/${classLevel}`, folderPaths:classLevels.map(level=>`${subject}/${level}`), coverageMode:classLevels.length>1?'shared':'single', language:project.language, character:project.character,
             durationMinutes:project.durationMinutes || null, durationSeconds:project.durationSeconds || null, scriptEnglish:project.scriptEnglish || project.scriptText || '',
             translatedScript:project.translatedScript || project.scriptText || '', voiceover:project.voiceover || { mode:'speechSynthesis' },
             slideshowImages:project.slideshowImages || [], captions:project.captions || [], captionsSrt:project.captionsSrt || '',
             audioPath:null, storagePaths:project.storagePaths || { audio:null, slides:[] },
             estimatedCostUgx:project.estimatedCostUgx || 0, audience, schoolIds, views:0, publishedBy:currentUser.uid, publishedAt:serverTimestamp(), createdAt:project.createdAt || serverTimestamp()
         });
-        await videoStudioUpdateProject(project.id, { status:'published', publishedAt:serverTimestamp(), libraryId:libraryRef.id, audience, schoolIds });
+        await videoStudioUpdateProject(project.id, { status:'published', publishedAt:serverTimestamp(), libraryId:libraryRef.id, audience, schoolIds, publishedLibraryIds:arrayUnion(libraryRef.id) });
         return libraryRef.id;
     }
     async function videoStudioPublishCurrent() {
@@ -7975,7 +8012,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const publishButton = document.getElementById('publishVideoStudioBtn');
         if(publishButton) publishButton.disabled = true;
         try {
-            let libraryId;
+            let libraryId, publishedLibraryIds=[];
             if(project.isSeries || project.mode === 'series') {
                 const childIds = project.seriesChildIds || [];
                 const publishedChildren = [];
@@ -7986,9 +8023,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                 libraryId = await videoStudioPublishProjectToLibrary(Object.assign({}, project, { seriesLibraryIds:publishedChildren }), audience, schoolIds);
                 await updateDoc(doc(db,'video_library',libraryId), { seriesLibraryIds:publishedChildren });
             } else {
-                libraryId = await videoStudioPublishProjectToLibrary(project, audience, schoolIds);
+                const classLevels=[...new Set((project.classLevels?.length ? project.classLevels : [project.classLevel]).filter(Boolean))];
+                for(const classLevel of classLevels) publishedLibraryIds.push(await videoStudioPublishProjectToLibrary(project, audience, schoolIds, classLevel));
+                libraryId=publishedLibraryIds[0];
+                await videoStudioUpdateProject(project.id, { publishedLibraryIds, classLevels, classFolders:classLevels, folderPaths:classLevels.map(classLevel=>`${project.subject}/${classLevel}`) });
             }
-            _videoStudioState.currentProject = Object.assign({}, project, { status:'published', libraryId, audience, schoolIds, publishedAt:new Date().toISOString() });
+            if(!publishedLibraryIds.length && libraryId) publishedLibraryIds=[libraryId];
+            _videoStudioState.currentProject = Object.assign({}, project, { status:'published', libraryId, publishedLibraryIds, audience, schoolIds, publishedAt:new Date().toISOString() });
             await videoStudioCachePublished(_videoStudioState.currentProject).catch(error => console.warn('Video Studio offline cache skipped:', error));
             videoStudioRenderProjectActions(_videoStudioState.currentProject);
             await loadVideoStudioLibrary();
@@ -7999,8 +8040,13 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     async function videoStudioDeleteProject(project) {
         if(!project?.id || currentUser?.role !== 'superadmin') return;
         if(!confirm(`Delete "${project.topic || 'this project'}"? This cannot be undone.`)) return;
+        const libraryIds=new Set([project.libraryId].filter(Boolean));
+        if(db) {
+            const source=await getDoc(doc(db,'video_studio_projects',project.id)).catch(()=>null);
+            (source?.data()?.publishedLibraryIds || project.publishedLibraryIds || []).forEach(id=>libraryIds.add(id));
+        }
         await deleteDoc(doc(db,'video_studio_projects',project.id));
-        if(project.libraryId) await deleteDoc(doc(db,'video_library',project.libraryId)).catch(()=>{});
+        await Promise.all([...libraryIds].map(id=>deleteDoc(doc(db,'video_library',id)).catch(()=>{})));
         if(_videoStudioState.currentProject?.id === project.id) {
             _videoStudioState.currentProject = null;
             videoStudioRenderProjectActions(null);
@@ -8014,7 +8060,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const language = document.getElementById('videoStudioLibraryLanguageFilter')?.value || '';
         const subject = document.getElementById('videoStudioLibrarySubjectFilter')?.value || '';
         const status = document.getElementById('videoStudioLibraryStatusFilter')?.value || '';
-        return (!search || `${item.topic || ''} ${item.scriptEnglish || ''}`.toLowerCase().includes(search))
+        return (!search || `${item.topic || ''} ${item.scriptEnglish || ''} ${item.folderPath || ''}`.toLowerCase().includes(search))
             && (!mode || item.mode === mode || (mode === 'series' && item.isSeries))
             && (!language || item.language === language) && (!subject || item.subject === subject)
             && (!status || item.status === status || (status === 'published' && item.publishedAt));
@@ -8385,7 +8431,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function videoStudioUserMatches(item, role) {
         const user = currentUser || {};
         if(item.audience === 'selected' && user.schoolId && !(item.schoolIds || []).includes(user.schoolId) && role !== 'superadmin') return false;
-        if(role === 'student' && user.classLevel && item.classLevel && item.classLevel !== user.classLevel) return false;
+        if(role === 'student' && user.classLevel && item.classLevel && !(item.classLevels || [item.classLevel]).includes(user.classLevel)) return false;
         return true;
     }
     async function videoStudioLoadPublishedForUser(role) {
@@ -8659,7 +8705,12 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function videoStudioSetup() {
         const script = document.getElementById('videoStudioScript');
         script?.addEventListener('input', () => { const count = document.getElementById('videoStudioScriptCount'); if(count) count.textContent = String(script.value.length); });
-        document.getElementById('videoStudioForm')?.addEventListener('reset', () => setTimeout(() => { document.getElementById('videoStudioScriptCount').textContent = '0'; videoStudioSetStatus(''); videoStudioRenderProjectActions(null); }, 0));
+        document.getElementById('videoStudioClassLevel')?.addEventListener('change', event => {
+            const selected=videoStudioSelectedClassLevels(), value=event.target.value;
+            videoStudioRenderClassCoverage([...new Set(selected.concat(value).filter(Boolean))]);
+        });
+        document.getElementById('videoStudioSelectAllClassesBtn')?.addEventListener('click', () => videoStudioRenderClassCoverage(videoStudioClassOptions().map(item=>item.value)));
+        document.getElementById('videoStudioForm')?.addEventListener('reset', () => setTimeout(() => { document.getElementById('videoStudioScriptCount').textContent = '0'; videoStudioSetStatus(''); videoStudioRenderClassCoverage([]); videoStudioRenderProjectActions(null); }, 0));
         document.getElementById('videoStudioForm')?.addEventListener('submit', async event => {
             event.preventDefault();
             const values = videoStudioFormValues();
@@ -13303,9 +13354,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     function renderCommandUsers() {
         const list=document.getElementById('commandUsersList'), search=(document.getElementById('commandUserSearch')?.value||'').toLowerCase(), role=document.getElementById('commandUserRoleFilter')?.value||'', status=document.getElementById('commandUserStatusFilter')?.value||'';
-        const rows=commandUsers.filter(user=>(!role||user.role===role)&&(!status||(user.status||'active')===status)&&(!search||`${user.name||''} ${user.email||''} ${user.phone||''}`.toLowerCase().includes(search)));
+        const rows=commandUsers.filter(user=>{const allowed=Array.isArray(user.roles)&&user.roles.length?user.roles.map(normalizeAppRole):[normalizeAppRole(user.role||'individual')];return (!role||allowed.includes(normalizeAppRole(role)))&&(!status||(user.status||'active')===status)&&(!search||`${user.name||''} ${user.email||''} ${user.phone||''}`.toLowerCase().includes(search));});
         if(!list) return;
-        list.innerHTML=rows.slice(0,commandUserPage*20).map(user=>`<div class="command-list-card"><div><h4>👤 ${escHtml(user.name||'Unnamed user')}</h4><p>${escHtml(user.email||'No email')} · ${escHtml(user.role||'individual')} · <strong>${escHtml(user.status||'active')}</strong><br>Institution: ${escHtml(user.institutionId||user.schoolId||'Not assigned')} · Last login: ${user.lastLoginAt?new Date(user.lastLoginAt).toLocaleString():'Not recorded'}</p></div><div class="command-list-actions"><button data-user-action="view" data-user-id="${user.id}">👁 View</button><button data-user-action="edit" data-user-id="${user.id}">✏️ Edit</button><button data-user-action="more" data-user-id="${user.id}">⋮ More</button></div></div>`).join('')||'<div class="command-activity-item">No users match these filters.</div>';
+        list.innerHTML=rows.slice(0,commandUserPage*20).map(user=>{const allowed=Array.isArray(user.roles)&&user.roles.length?user.roles.map(normalizeAppRole):[normalizeAppRole(user.role||'individual')];return `<div class="command-list-card"><div><h4>👤 ${escHtml(user.name||'Unnamed user')}</h4><p>${escHtml(user.email||'No email')} · Default: ${escHtml(appRoleLabel(user.role||'individual'))} · <strong>${escHtml(user.status||'active')}</strong><br>Allowed: ${escHtml(allowed.map(appRoleLabel).join(', '))}<br>Institution: ${escHtml(user.institutionId||user.schoolId||'Not assigned')} · Last login: ${user.lastLoginAt?new Date(user.lastLoginAt).toLocaleString():'Not recorded'}</p></div><div class="command-list-actions"><button data-user-action="view" data-user-id="${user.id}">👁 View</button><button data-user-action="edit" data-user-id="${user.id}">✏️ Edit</button><button data-user-action="more" data-user-id="${user.id}">⋮ More</button></div></div>`;}).join('')||'<div class="command-activity-item">No users match these filters.</div>';
         const more=document.getElementById('commandLoadMoreUsersBtn'); if(more) more.style.display=rows.length>commandUserPage*20?'block':'none';
     }
     async function loadCommandUsers() {
@@ -13333,6 +13384,36 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             else if(choice==='impersonate') startSupportPreview(user);
         }
     }
+    const COMMAND_ASSIGNABLE_ROLES = Object.freeze([
+        ['individual','Student'],['teacher','Teacher'],['school','School Admin'],
+        ['mfi_admin','MFI Admin'],['loan_officer','Loan Officer'],['loan_manager','Loan Manager'],['loan_director','Loan Director'],
+        ['clinic_admin','Clinic Admin'],['doctor','Doctor'],['nurse','Nurse'],['receptionist','Receptionist'],['pharmacist','Pharmacist'],['patient','Patient'],['clinic_staff','Legacy Clinic Staff'],
+        ['farm_admin','Farm Admin'],['farm_manager','Farm Manager'],['farm_worker','Farm Worker'],['farm_director','Farm Director'],['farmer','Legacy Farmer'],
+        ['borrower','Borrower'],['superadmin','Super Admin']
+    ]);
+    function commandSelectedRoles() {
+        return [...document.querySelectorAll('#commandUserRoleOptions input[data-command-role]:checked')].map(input => normalizeAppRole(input.value)).filter(Boolean);
+    }
+    function commandRenderRoleOptions(selected=[]) {
+        const container=document.getElementById('commandUserRoleOptions');
+        if(!container) return;
+        const values=new Set((selected||[]).map(normalizeAppRole));
+        container.innerHTML=COMMAND_ASSIGNABLE_ROLES.map(([value,label]) => `<label style="display:flex;align-items:center;gap:7px;padding:6px 7px;border:1px solid #eee7f5;border-radius:9px;background:#fff;font-size:11px;color:#51476a;"><input type="checkbox" data-command-role="${value}" value="${value}" ${values.has(value)?'checked':''} style="width:auto;"> ${label}</label>`).join('');
+        container.querySelectorAll('input[data-command-role]').forEach(input => input.addEventListener('change', () => {
+            const role=normalizeAppRole(input.value), selectedRoles=commandSelectedRoles(), primary=document.getElementById('commandUserRole'), help=document.getElementById('commandUserRoleHelp');
+            if(input.checked && primary && !primary.value) primary.value=role;
+            if(input.checked && primary && primary.value===role) input.checked=true;
+            if(!selectedRoles.length) { if(help) help.textContent='Select at least one allowed role.'; }
+            else if(help) help.textContent='';
+        }));
+    }
+    function commandSyncRoleSelection() {
+        const primary=normalizeAppRole(document.getElementById('commandUserRole')?.value||'individual');
+        const selected=commandSelectedRoles();
+        if(!selected.includes(primary)) commandRenderRoleOptions([primary,...selected]);
+        const help=document.getElementById('commandUserRoleHelp');
+        if(help) help.textContent='';
+    }
     function generateCommandPassword() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#'; let result=''; for(let i=0;i<12;i++) result+=chars[Math.floor(Math.random()*chars.length)]; const input=document.getElementById('commandUserPassword'); if(input) input.value=result; }
     async function createManagedAuthUser(email,password) {
         if(!firebase?.initializeApp||!firebaseConfig) return null;
@@ -13345,14 +13426,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     }
     async function submitCommandUser(event) {
         event.preventDefault(); if(!commandRequiresOnline()) return;
-        const status=document.getElementById('commandUserFormStatus'), name=document.getElementById('commandUserName').value.trim(), email=document.getElementById('commandUserEmail').value.trim(), phone=document.getElementById('commandUserPhone').value.trim(), role=document.getElementById('commandUserRole').value, institutionId=document.getElementById('commandUserInstitution').value, password=document.getElementById('commandUserPassword').value;
+        const status=document.getElementById('commandUserFormStatus'), name=document.getElementById('commandUserName').value.trim(), email=document.getElementById('commandUserEmail').value.trim(), phone=document.getElementById('commandUserPhone').value.trim(), role=normalizeAppRole(document.getElementById('commandUserRole').value), selectedRoles=[...new Set([role,...commandSelectedRoles()])], institutionId=document.getElementById('commandUserInstitution').value, password=document.getElementById('commandUserPassword').value;
+        if(selectedRoles.length < 1) { if(status) status.textContent='Select at least one allowed role.'; return; }
         if(role!=='superadmin'&&!institutionId) { if(status) status.textContent='Select an institution for this role.'; return; }
         if(status) status.textContent='Creating account…';
         try {
             const credential=await createManagedAuthUser(email,password); const uid=credential?.uid||`profile-${Date.now()}`;
-             await setDoc(doc(db,'users',uid),{uid,name,email,phone,role,institutionId:institutionId||null,farmId:['farm_admin','farm_manager','farm_worker'].includes(role)?institutionId||null:null,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid},{merge:true});
+             await setDoc(doc(db,'users',uid),{uid,name,email,phone,role,roles:selectedRoles,institutionId:institutionId||null,farmId:['farm_admin','farm_manager','farm_worker','farm_director'].includes(role)?institutionId||null:null,status:'active',createdAt:new Date().toISOString(),createdBy:currentUser.uid},{merge:true});
             if(document.getElementById('commandUserWelcome').checked) await addDoc(collection(db,'notifications'),{targetUserId:uid,title:'Welcome to APSHULE',body:`Your ${role} account has been created. Please sign in with the password provided by your administrator.`,sector:appRoleSector(role),institutionId:institutionId||null,timestamp:new Date().toISOString(),createdAt:new Date().toISOString(),read:false}).catch(()=>{});
-            if(status) status.textContent='✅ User created'; await logSuperAdminAction('create_user',{userId:uid,role}); showNotification('✅ User created','success'); document.getElementById('commandUserForm').reset(); closeCommandModal('commandUserModal'); await loadCommandUsers(); await loadCommandDashboard();
+             if(status) status.textContent='✅ User created'; await logSuperAdminAction('create_user',{userId:uid,role,roles:selectedRoles}); showNotification(`✅ User created with ${selectedRoles.length} allowed role${selectedRoles.length===1?'':'s'}`,'success'); document.getElementById('commandUserForm').reset(); commandRenderRoleOptions(['individual']); closeCommandModal('commandUserModal'); await loadCommandUsers(); await loadCommandDashboard();
         } catch(error) { console.error('Create user failed:',error); if(status) status.textContent=error?.message||'Unable to create user'; }
     }
     async function importCommandUsers() {
@@ -14770,7 +14852,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
          document.getElementById('seedMfiLoanProductsBtn')?.addEventListener('click',mfiSeedLoanProducts);
          document.getElementById('seedFarmAnimalTypesBtn')?.addEventListener('click',()=>window.farmSeedAnimalTypes?.());
           document.getElementById('commandInstitutionType')?.addEventListener('change',event=>{document.getElementById('commandMfiInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='mfi');document.getElementById('commandClinicInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='clinic');document.getElementById('commandFarmInstitutionFields')?.classList.toggle('mfi-hidden',event.target.value!=='farm');});
-        document.getElementById('commandUserRole')?.addEventListener('change',updateCommandInstitutionOptions);
+         commandRenderRoleOptions(['individual']);
+         document.getElementById('commandUserRole')?.addEventListener('change',()=>{commandSyncRoleSelection();updateCommandInstitutionOptions();});
         document.getElementById('commandAddInstitutionBtn')?.addEventListener('click',()=>{document.getElementById('commandMfiInstitutionFields')?.classList.add('mfi-hidden');});
     }
     // ===== TASK 14 MFI LOAN LIFECYCLE =====
@@ -15735,6 +15818,25 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     function isFarmRole(role=currentUser?.role) {
         return ['farm_admin','farm_manager','farm_worker','farm_director'].includes(normalizeAppRole(role));
     }
+    function profileRoles(profile) {
+        const primary=profileRole(profile);
+        const stored=Array.isArray(profile?.roles)?profile.roles:[];
+        return [...new Set([primary,...stored].map(normalizeAppRole).filter(role=>APP_ROLE_SECTORS[role]))];
+    }
+    function userHasRole(role, user=currentUser) {
+        const normalized=normalizeAppRole(role);
+        const allowed=Array.isArray(user?.roles)&&user.roles.length?user.roles:[normalizeAppRole(user?.role||'individual')];
+        return allowed.includes(normalized);
+    }
+    function setActiveAppRole(role) {
+        const normalized=normalizeAppRole(role);
+        if(!currentUser||!userHasRole(normalized)) return;
+        currentUser.role=normalized;
+        currentUser.activeRole=normalized;
+        updateGreeting();
+        routeAuthenticatedUser();
+        window.loadUserRoleDependentData?.();
+    }
     function routeAuthenticatedUser() {
         const role=currentUser?.role;
         document.querySelectorAll('.page').forEach(page=>page.classList.remove('active-page'));
@@ -15784,7 +15886,8 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const rawRole=profile?.role??profile?.userRole??profile?.accountType;
         const subscriptionTier=String(profile?.subscriptionTier||'free').toLowerCase()==='premium'?'premium':'free';
         const aiRequestsLimit=subscriptionTier==='premium'?500:10;
-        currentUser = { uid:user.uid, ...profile, subscriptionTier, aiRequestsLimit:profile?.aiRequestsLimit||aiRequestsLimit, rawRole, role:profileRole(profile) };
+        const roles=profileRoles(profile), primaryRole=profileRole(profile);
+        currentUser = { uid:user.uid, ...profile, roles, subscriptionTier, aiRequestsLimit:profile?.aiRequestsLimit||aiRequestsLimit, rawRole, role:primaryRole, activeRole:primaryRole };
         const profileDefaults={};
         if(!profile?.subscriptionTier) profileDefaults.subscriptionTier='free';
         if(!Number.isInteger(Number(profile?.aiRequestsLimit))) profileDefaults.aiRequestsLimit=10;
@@ -15809,13 +15912,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             <div class="account-field"><label>Name</label><div>${escHtml(currentUser.name)}</div></div>
             <div class="account-field"><label>Email</label><div>${escHtml(currentUser.email)}</div></div>
             <div class="account-field"><label>Phone</label><div>${escHtml(currentUser.phone||'N/A')}</div></div>
-            <div class="account-field"><label>Role</label><div>${escHtml(appRoleLabel(currentUser.role))}</div></div>
+            <div class="account-field"><label>Active role</label><div>${currentUser.roles.length>1?`<select id="activeAppRoleSelect" style="width:100%;max-width:280px;padding:8px;border:1px solid #ddd5ec;border-radius:9px;">${currentUser.roles.map(role=>`<option value="${escHtml(role)}" ${role===currentUser.role?'selected':''}>${escHtml(appRoleLabel(role))}</option>`).join('')}</select><small style="display:block;color:#756d82;margin-top:4px;">Allowed roles: ${escHtml(currentUser.roles.map(appRoleLabel).join(', '))}</small><span class="sr-only">${escHtml(appRoleLabel(currentUser.role))}</span>`:escHtml(appRoleLabel(currentUser.role))}</div></div>
             <div class="account-field"><label>Address</label><div id="userAddressDisplay">${escHtml(address)}</div><button id="editAddressBtn" class="admin-toggle">✏️ Edit Address</button></div>
             <div class="account-field"><label>Total Logins</label><div>${currentUser.loginCount||0}</div></div>`;
         document.getElementById('editAddressBtn')?.addEventListener('click', () => {
             let newAddr = prompt("Enter your physical address:", address);
             if(newAddr) saveUserAddress(newAddr);
         });
+        document.getElementById('activeAppRoleSelect')?.addEventListener('change', event => setActiveAppRole(event.target.value));
         const settingsCard=document.getElementById('connectionSettingsCard');
         const questionsCard=document.getElementById('myVideoQList')?.closest('.account-card');
         if(settingsCard && questionsCard && questionsCard.parentNode) questionsCard.parentNode.insertBefore(settingsCard,questionsCard);
@@ -16221,12 +16325,15 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             });
             applyVideoStudioLibraryMappings();
             renderExistingMappings();
+            renderClasses();
+            if(document.getElementById('subjectsSection')?.style.display !== 'none') renderSubjects();
         });
         onSnapshot(query(collection(db,'video_library'), orderBy('publishedAt','desc')), (snap) => {
             window._videoStudioLibraryData = {};
             snap.forEach(d => { window._videoStudioLibraryData[d.id] = Object.assign({ id:d.id }, d.data()); });
             applyVideoStudioLibraryMappings();
             renderExistingMappings();
+            renderClasses();
             if(document.getElementById('subjectsGrid')?.innerHTML) renderSubjects();
         }, error => console.warn('Video Studio library unavailable:', error));
     }
@@ -16236,12 +16343,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             if(docSnap.exists()) primarySubjects = docSnap.data().list||[];
             else { primarySubjects = ["Mathematics","English","Science","Social Studies","Literacy","Religious Education","Agriculture"]; setDoc(doc(db,"subjects","primary"),{list:primarySubjects}); }
             populateVideoMappingDropdowns();
+            renderClasses();
             if(document.getElementById('subjectsGrid')?.innerHTML) renderSubjects();
         });
         onSnapshot(doc(db,"subjects","secondary"), (docSnap) => {
             if(docSnap.exists()) secondarySubjects = docSnap.data().list||[];
             else { secondarySubjects = ["Mathematics","English","Biology","Chemistry","Physics","History","Geography","Kiswahili","Commerce","Entrepreneurship","ICT","Literature","Economics","Fine Art","Physical Education","Agriculture"]; setDoc(doc(db,"subjects","secondary"),{list:secondarySubjects}); }
             populateVideoMappingDropdowns();
+            renderClasses();
             if(document.getElementById('subjectsGrid')?.innerHTML) renderSubjects();
         });
     }
