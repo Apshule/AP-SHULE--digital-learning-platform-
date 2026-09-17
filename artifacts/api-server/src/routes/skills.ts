@@ -259,7 +259,10 @@ router.post("/skills/admin/provider-status", async (req, res) => {
 
   try {
     const updatedAt = new Date().toISOString();
-    await firestoreRequest(`/providers/${encodeURIComponent(providerId)}`, {
+    const updateMask = ["status", "updatedAt", "reviewedAt", "reviewedBy"]
+      .map((field) => `updateMask.fieldPaths=${encodeURIComponent(field)}`)
+      .join("&");
+    await firestoreRequest(`/providers/${encodeURIComponent(providerId)}?${updateMask}`, {
       method: "PATCH",
       body: firestoreFields({
         status,
