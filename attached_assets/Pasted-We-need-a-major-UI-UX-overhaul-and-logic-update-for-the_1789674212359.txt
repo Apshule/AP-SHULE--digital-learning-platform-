@@ -1,0 +1,34 @@
+We need a major UI/UX overhaul and logic update for the APSHULE VOCATIONAL TRAINING CENTRE module. Right now, it looks too generic. I want it to look premium, modern, and highly attractive.
+
+Please implement the following:
+
+1. Premium UI/UX Overhaul (Landing Page):
+
+· Redesign /skills/index.html to look like a high-end modern marketplace. Use smooth animations, better typography, and high-quality placeholder images for courses.
+· The hero section must be visually striking.
+· Create a dedicated login and sign-up button specific to the Vocational Centre (separate from the main APSHULE app login).
+
+2. Provider White-Label & Admin Duplication:
+
+· When a provider registers, they must get a unique public URL (e.g., /skills/provider.html?id=[providerId]).
+· On this page, the provider's name, badge, logo, address, email, and phone must be the PRIMARY branding.
+· The APSHULE branding should only be at the very bottom: "Powered by APSHULE" with a link back to the main app.
+
+3. Gated Verification & Top-up Logic (Backend & Frontend):
+
+· Update the providers schema to include verificationStatus (unverified, pending_topup, verified).
+· Add a POST /api/skills/provider/topup route.
+· Create a UI flow where a newly registered provider is prompted: "To get verified and appear on the marketplace, please top up UGX 20,000."
+· Only after this payment (simulated for now) is confirmed, should the Superadmin be able to approve them, and their public profile becomes visible to students.
+
+4. Vocational Admission Form:
+
+· Create a new skills-enroll.html form that is different from the main APSHULE school admission form.
+· It should ask for: Personal Data, Highest Education Level, Desired Course (from a dropdown), and Previous Experience.
+· It should include the UGX 20,000 admission fee payment step for the student.
+
+5. Course Placements:
+
+· Change the layout inside the portal to group courses by category (e.g., Automotive, Tailoring, Baking, IT) using a clean, responsive card grid.
+
+Please build this, test it locally, and push to GitHub."
