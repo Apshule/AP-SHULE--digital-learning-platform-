@@ -20,3 +20,4 @@
 - [Gemini quota boundary](gemini-quota-boundary.md) — Sector authentication can pass while the shared provider quota blocks every AI generation request.
 - [Teacher material visibility and earnings](teacher-material-visibility-and-earnings.md) — Merge teacher uploads into shared Resources and use stored agreement rates for eligible student-view payouts.
 - [Authenticated Firestore listeners](authenticated-firestore-listeners.md) — Bind listeners after auth and unsubscribe on logout; anonymous permission failures do not reliably recover after login.
+- [Vocational public read boundary](vocational-public-read-boundary.md) — Serve public provider and course reads through the API when browser Firestore permissions vary by environment.
