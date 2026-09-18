@@ -1520,6 +1520,7 @@
     var _appHistoryReady = false;
     var _appHistoryIgnoringMutations = false;
     var _appHistorySequence = 0;
+    window._apshuleAuthenticated = false;
     var _appHistoryModalSelector = '#landingDemoModal,#videoModal,.settings-modal,.global-settings-modal,.command-fullscreen-modal,.modal,[role="dialog"]';
 
     function appHistoryState(kind, page, modalId) {
@@ -1630,7 +1631,7 @@
         var splash   = document.getElementById('splashScreen');
         var landing  = document.getElementById('landingScreen');
         if(splash)   splash.style.display = 'none';
-        if(landing)  landing.classList.remove('hidden');
+        if(landing && !window._apshuleAuthenticated) landing.classList.remove('hidden');
         var responsiveNotice = document.getElementById('responsiveDemoNotice');
         var responsiveNoticeKey = 'apshuleResponsiveDemoNoticeSeen';
         if(responsiveNotice) {
@@ -1764,7 +1765,7 @@
         <div class="landing-shell landing-header-inner">
             <a class="landing-brand" href="#landingHero" aria-label="APSHULE home"><img src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE logo"><span>APSHULE</span></a>
             <nav class="landing-nav" aria-label="Marketing navigation">
-                <a href="#landingSectors">Features</a><a href="#landingHow">For Schools</a><a href="#landingSectors">For MFIs</a><a href="#landingSectors">For Clinics</a><a href="#landingSectors">For Farms</a><a href="#landingPartners">Partners</a><a href="#landingPricing">Pricing</a><a href="#landingFooter">Contact</a>
+                <a href="#landingSectors">Features</a><a href="education/">For Schools</a><a href="#landingSectors">For MFIs</a><a href="#landingSectors">For Clinics</a><a href="#landingSectors">For Farms</a><a href="#landingPartners">Partners</a><a href="#landingPricing">Pricing</a><a href="#landingFooter">Contact</a>
             </nav>
             <div class="landing-header-actions"><button class="landing-btn-secondary" id="landingLoginBtn">Login</button><button class="landing-btn-primary" data-landing-auth="signup">Get Started</button></div>
             <button class="landing-mobile-menu" id="landingMobileMenuBtn" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
@@ -1789,7 +1790,7 @@
             <div class="landing-shell">
                 <div class="landing-section-head"><h2>Choose Your Sector</h2><p>Every team gets the tools, visibility, and offline resilience needed to run daily operations confidently.</p></div>
                 <div class="landing-sector-grid">
-                    <article class="landing-sector-card"><div class="landing-sector-icon">🏫</div><h3>For Schools</h3><p>Manage learning, teachers, learners, and compliance from one place.</p><ul class="landing-list"><li>Video tutorials and PDF library</li><li>NCDC aligned teacher courses</li><li>Automated report cards</li><li>Timetable generator and attendance</li></ul><button class="landing-link" data-landing-auth="signup">Learn more →</button></article>
+                    <article class="landing-sector-card"><div class="landing-sector-icon">🏫</div><h3>For Schools</h3><p>Manage learning, teachers, learners, and compliance from one place.</p><ul class="landing-list"><li>Video tutorials and PDF library</li><li>NCDC aligned teacher courses</li><li>Automated report cards</li><li>Timetable generator and attendance</li></ul><a class="landing-link" href="education/">Explore education →</a></article>
                     <article class="landing-sector-card"><div class="landing-sector-icon">🏦</div><h3>For Microfinance Institutions</h3><p>Control the full lending lifecycle with clear risk and compliance reporting.</p><ul class="landing-list"><li>Loan lifecycle management</li><li>Collateral scoring and verification</li><li>UMRA compliant reporting</li><li>Mobile money collections</li></ul><button class="landing-link" data-landing-auth="signup">Learn more →</button></article>
                     <article class="landing-sector-card"><div class="landing-sector-icon">🏥</div><h3>For Clinics and Pharmacies</h3><p>Connect patient care, pharmacy operations, billing, and branches.</p><ul class="landing-list"><li>Patient records and appointments</li><li>Inventory and product scanner</li><li>Billing and insurance claims</li><li>Prescription management</li></ul><button class="landing-link" data-landing-auth="signup">Learn more →</button></article>
                     <article class="landing-sector-card"><div class="landing-sector-icon">🌱</div><h3>For Farms</h3><p>Track animals, workers, feed, produce, sales, and expenses in one dashboard.</p><ul class="landing-list"><li>Animal movement tracking</li><li>Camera based counting</li><li>Worker attendance</li><li>Feed and produce tracking</li></ul><button class="landing-link" data-landing-auth="signup">Learn more →</button></article>
@@ -16611,7 +16612,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         let profile=cachedProfile;
         if(!profile) {
             let docSnap = await getDoc(doc(db,"users",user.uid));
-            if(!docSnap.exists()) return;
+            if(!docSnap.exists()) throw new Error('Your account profile could not be found. Please contact APSHULE support.');
             profile=docSnap.data();
         }
         if(String(profile?.registrationStatus||profile?.status||'').toLowerCase()==='pending_payment') {
@@ -17814,9 +17815,20 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         const splash = document.getElementById('splashScreen');
         if(splash) splash.style.display = 'none';
 
+        window._apshuleAuthenticated = Boolean(user);
         if(user) {
-            await loadUserAndShowApp(user);
-            loadBrandLogo().catch(()=>{}); // load logo in background, don't block
+            try {
+                await loadUserAndShowApp(user);
+                loadBrandLogo().catch(()=>{}); // load logo in background, don't block
+            } catch(error) {
+                console.error('[APSHULE] Dashboard bootstrap failed:', error);
+                document.getElementById('landingScreen')?.classList.add('hidden');
+                document.getElementById('loginScreen')?.classList.remove('hidden');
+                document.getElementById('appScreen')?.classList.add('hidden');
+                window.appHistory?.replacePage('login');
+                const dashboardError = document.getElementById('loginError');
+                if(dashboardError) dashboardError.textContent = `Signed in, but your dashboard could not load: ${error?.message || 'Please try again.'}`;
+            }
         } else {
             clearSessionData();
             window.appHistory?.replacePage('landing');
