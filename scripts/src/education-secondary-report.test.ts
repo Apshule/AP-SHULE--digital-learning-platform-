@@ -30,7 +30,7 @@ describe("Secondary report-card preview contract", () => {
   });
 
   it("keeps secondary navigation separate from primary and finance-only modules", () => {
-    const secondaryNavSection = sectionBetween(appSource, "const secondaryNavItems", "const sampleStudents");
+    const secondaryNavSection = sectionBetween(appSource, "const secondaryNavItems", "const bursarNavItems");
     expect(secondaryNavSection).toContain('"report-cards"');
     expect(secondaryNavSection).toContain('"marks"');
     expect(secondaryNavSection).toContain('"print-settings"');

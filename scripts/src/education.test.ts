@@ -45,11 +45,17 @@ describe("Education workspace integration", () => {
     expect(educationScript).toContain("/api/school/education-workspace");
     expect(educationScript).toContain("Live school workspace");
     expect(schoolRouteSource).toContain('router.get("/school/education-workspace"');
-    expect(schoolRouteSource).toContain('["school", "school_admin", "headteacher"]');
+     expect(schoolRouteSource).toContain('["school", "school_admin", "headteacher", "bursar"]');
     expect(schoolRouteSource).toContain("safeRecord");
     expect(schoolRouteSource).toContain("attendanceEvents");
     expect(schoolRouteSource).toContain("const safeSchool");
     expect(schoolRouteSource).toContain("/password|secret|token|credential|privatekey|apiKey/i");
+     expect(schoolRouteSource).toContain('firestoreList("school_fees"');
+     expect(schoolRouteSource).toContain('firestoreList("school_bills"');
+     expect(schoolRouteSource).toContain('firestoreList("payment_transactions"');
+     expect(educationScript).toContain('const bursarNavItems');
+     expect(educationScript).toContain("Bursar dashboard");
+     expect(educationScript).toContain('state.liveData?.workspace === "bursar"');
   });
 
   it("keeps the route and landing-page education entry connected", () => {

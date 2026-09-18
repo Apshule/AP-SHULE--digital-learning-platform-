@@ -18,6 +18,13 @@
     ["sms", "✉", "Send SMS"],
     ["settings", "⚙", "Settings"],
   ];
+  const bursarNavItems = [
+    ["dashboard", "▦", "Bursar dashboard"],
+    ["fees", "▤", "Fee accounts"],
+    ["payments", "↗", "Payments"],
+    ["statements", "▥", "Statements"],
+    ["settings", "⚙", "Settings"],
+  ];
   const sampleStudents = [
     ["ADM20260001", "Jane Nakato", "P4", "Day Scholar", "Active"],
     ["ADM20260006", "Kakooza Abdul", "P1", "Day Scholar", "Active"],
@@ -86,6 +93,10 @@
     return Boolean(state.liveData?.live);
   }
 
+  function isBursar() {
+    return state.liveData?.workspace === "bursar" || state.liveData?.role === "bursar";
+  }
+
   function liveLearners(account = state.account) {
     const rows = Array.isArray(state.liveData?.learners) ? state.liveData.learners : [];
     if (!liveEnabled()) return [];
@@ -130,6 +141,42 @@
       </div>`;
   }
 
+  function bursarMoney(value) {
+    return `UGX ${Number(value || 0).toLocaleString("en-UG")}`;
+  }
+
+  function bursarDashboardView() {
+    const summary = state.liveData?.bursar?.summary || {};
+    const schoolName = escapeHtml(state.liveData?.school?.name || "Authorized school");
+    return `
+      <div class="workspace-title"><div><h2>Bursar dashboard</h2><p class="muted">Fee collection overview · ${schoolName}</p></div><span class="eyebrow">Live · read-only</span></div>
+      <div class="workspace-grid">
+        <article class="stat-card"><small>Fee accounts</small><strong>${Number(summary.accountCount || 0)}</strong></article>
+        <article class="stat-card green"><small>Total collected</small><strong>${escapeHtml(bursarMoney(summary.totalPaid))}</strong></article>
+        <article class="stat-card orange"><small>Outstanding balance</small><strong>${escapeHtml(bursarMoney(summary.outstandingBalance))}</strong></article>
+        <article class="stat-card violet"><small>Pending payments</small><strong>${Number(summary.pendingPayments || 0)}</strong></article>
+      </div>
+      <div class="dashboard-columns">
+        <article class="panel"><div class="panel-heading"><h3>Collection summary</h3><span>Institution scoped</span></div><div class="status-list"><span><i class="online"></i>Total billed <b>${escapeHtml(bursarMoney(summary.totalDue))}</b></span><span><i class="online"></i>Payments recorded <b>${Number(summary.paymentCount || 0)}</b></span><span><i class="online"></i>Payment total <b>${escapeHtml(bursarMoney(summary.paymentTotal))}</b></span></div></article>
+        <article class="panel"><div class="panel-heading"><h3>Bursar boundary</h3><span>Read-only start</span></div><div class="empty-state">Fee account and payment records are connected. Payment entry, receipts, reminders, and reconciliation will be added after this first read-only slice.</div></article>
+      </div>`;
+  }
+
+  function bursarFeesView() {
+    const accounts = Array.isArray(state.liveData?.bursar?.accounts) ? state.liveData.bursar.accounts : [];
+    return `<div class="workspace-title"><div><h2>Fee accounts</h2><p class="muted">School fee balances from authorized billing records.</p></div><span class="eyebrow">Live · read-only</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Account</th><th>Learner / payer</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${accounts.map((row) => `<tr><td>${escapeHtml(row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.totalAmount))}</td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td>${escapeHtml(bursarMoney(row.balanceRemaining))}</td><td><span class="badge ${String(row.status).toLowerCase() === "paid" ? "green" : "gold"}">${escapeHtml(row.status || "unpaid")}</span></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No authorized fee accounts are recorded yet.</div></td></tr>'}</tbody></table></div>`;
+  }
+
+  function bursarPaymentsView() {
+    const payments = Array.isArray(state.liveData?.bursar?.payments) ? state.liveData.bursar.payments : [];
+    return `<div class="workspace-title"><div><h2>Payments</h2><p class="muted">Payment transactions linked to this institution.</p></div><span class="eyebrow">Live · read-only</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td><span class="badge ${String(row.status).toLowerCase() === "completed" ? "green" : "gold"}">${escapeHtml(row.status || "pending")}</span></td><td>${escapeHtml(row.paymentDate || "—")}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No authorized payments are recorded yet.</div></td></tr>'}</tbody></table></div>`;
+  }
+
+  function bursarStatementsView() {
+    const summary = state.liveData?.bursar?.summary || {};
+    return `<div class="workspace-title"><div><h2>Statements</h2><p class="muted">Current institution-level statement summary.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Total billed</label><input value="${escapeHtml(bursarMoney(summary.totalDue))}" readonly></div><div class="form-field"><label>Total received</label><input value="${escapeHtml(bursarMoney(summary.totalPaid))}" readonly></div><div class="form-field"><label>Outstanding</label><input value="${escapeHtml(bursarMoney(summary.outstandingBalance))}" readonly></div><p class="muted">Statement export and reconciliation remain a later bursar step.</p></div>`;
+  }
+
   function liveRecordsView(titleText, records, emptyText) {
     const rows = Array.isArray(records) ? records : [];
     return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div><div class="empty-state">${rows.length ? "Live records are available through the connected school account." : escapeHtml(emptyText)}</div></div>`;
@@ -151,6 +198,7 @@
   }
 
   function getNavItems() {
+    if (isBursar()) return bursarNavItems;
     return isSecondary() ? secondaryNavItems : primaryNavItems;
   }
 
@@ -162,10 +210,13 @@
 
   function renderAccountContext() {
     const secondary = isSecondary();
+    const bursar = isBursar();
     const schoolName = state.liveData?.school?.name || (secondary ? "Apshule Secondary School" : "Apshule Primary School");
-    document.getElementById("toolbarKicker").textContent = schoolName;
+    document.getElementById("toolbarKicker").textContent = bursar ? `Bursar · ${schoolName}` : schoolName;
     document.getElementById("toolbarAvatar").textContent = String(schoolName).trim().charAt(0).toUpperCase() || (secondary ? "H" : "S");
-    document.getElementById("workspaceBrandContext").innerHTML = `APSHULE<small>${secondary ? "Secondary" : "Primary"}</small>`;
+    document.getElementById("workspaceBrandContext").innerHTML = `APSHULE<small>${bursar ? "Bursar" : secondary ? "Secondary" : "Primary"}</small>`;
+    const accountSwitcher = document.querySelector(".account-switcher");
+    if (accountSwitcher) accountSwitcher.style.display = bursar ? "none" : "";
     const mode = document.getElementById("workspaceModeBadge");
     if (mode) mode.innerHTML = `<i></i> ${state.authState === "checking" ? "Checking access" : liveEnabled() ? "Live" : "Preview"}`;
     const modeText = document.getElementById("educationDataMode");
@@ -176,7 +227,7 @@
       : "Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.";
     const notice = document.getElementById("workspaceNotice");
     if (notice) notice.innerHTML = liveEnabled()
-      ? `<span class="notice-icon">✓</span><span><strong>Live school workspace.</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account. Bursar and finance controls are not included here.</span>`
+      ? `<span class="notice-icon">✓</span><span><strong>${bursar ? "Live bursar workspace." : "Live school workspace."}</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account.${bursar ? " Payment entry and reconciliation are not enabled yet." : " Bursar and finance controls are not included here."}</span>`
       : `<span class="notice-icon">i</span><span><strong>${state.authState === "checking" ? "Checking secure access." : "Preview mode."}</strong> ${state.authError ? escapeHtml(state.authError) : "The numbers and learner names below are sample content from the supplied prototype, not live school records."}</span>`;
     document.querySelectorAll("[data-account]").forEach((button) => {
       button.classList.toggle("active", button.dataset.account === state.account);
@@ -184,6 +235,7 @@
   }
 
   function dashboardView() {
+    if (isBursar()) return bursarDashboardView();
     if (liveEnabled()) return liveDashboardView(false);
     return `
       <div class="workspace-title"><div><h2>Dashboard</h2><p class="muted">Welcome back, Secretary · Apshule Primary</p></div><span class="eyebrow">School overview</span></div>
@@ -306,7 +358,7 @@
   function settingsView() {
     if (liveEnabled()) {
       const school = state.liveData.school || {};
-      return `<div class="workspace-title"><div><h2>School account</h2><p class="muted">Institution details returned for the signed-in account.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Account role</label><input value="${escapeHtml(state.liveData.role || "school")}" readonly></div><div class="form-field"><label>Institution</label><input value="${escapeHtml(school.name || "Authorized school")}" readonly></div><div class="form-field"><label>Location</label><input value="${escapeHtml(school.location || "Not recorded")}" readonly></div><p class="muted">Profile editing and finance controls remain outside this read-only Education connection.</p></div>`;
+      return `<div class="workspace-title"><div><h2>School account</h2><p class="muted">Institution details returned for the signed-in account.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Account role</label><input value="${escapeHtml(state.liveData.role || "school")}" readonly></div><div class="form-field"><label>Institution</label><input value="${escapeHtml(school.name || "Authorized school")}" readonly></div><div class="form-field"><label>Location</label><input value="${escapeHtml(school.location || "Not recorded")}" readonly></div><p class="muted">Profile editing remains outside this read-only Education connection.</p></div>`;
     }
     return `<div class="workspace-title"><div><h2>My profile</h2><p class="muted">Institution details remain controlled by secure account settings.</p></div></div><div class="panel settings-card"><div class="form-field"><label>Display name</label><input value="${isSecondary() ? "Headteacher Preview" : "School Secretary"}" aria-label="Display name"></div><div class="form-field"><label>Institution</label><input value="Apshule ${isSecondary() ? "Secondary" : "Primary"} School" aria-label="Institution" readonly></div><div class="form-field"><label>Account email</label><input value="Use your APSHULE account" aria-label="Account email" readonly></div><button class="button primary" data-action="preview-action">Save preview changes</button></div>`;
   }
@@ -314,7 +366,8 @@
   function renderView() {
     const primaryViews = { dashboard: dashboardView, students: studentsView, "id-cards": idCardsView, reports: primaryReportsView, attendance: attendanceView, sms: smsView, settings: settingsView };
     const secondaryViews = { dashboard: secondaryDashboardView, students: secondaryStudentsView, "report-cards": secondaryReportsView, "report-detail": secondaryReportDetailView, marks: secondaryMarksView, "print-settings": secondaryReportsView, attendance: attendanceView, sms: smsView, settings: settingsView };
-    const views = isSecondary() ? secondaryViews : primaryViews;
+    const bursarViews = { dashboard: bursarDashboardView, fees: bursarFeesView, payments: bursarPaymentsView, statements: bursarStatementsView, settings: settingsView };
+    const views = isBursar() ? bursarViews : isSecondary() ? secondaryViews : primaryViews;
     const labels = Object.fromEntries(getNavItems().map(([id, , label]) => [id, label]));
     title.textContent = state.view === "report-detail" ? `${reportTypes[state.reportType].label} preview` : (labels[state.view] || "Dashboard");
     content.innerHTML = (views[state.view] || (isSecondary() ? secondaryDashboardView : dashboardView))();
@@ -499,6 +552,9 @@
           state.liveData = payload;
           state.authState = "live";
           state.authError = "";
+          if (payload.workspace === "bursar") {
+            state.view = "dashboard";
+          }
           if (payload.account !== "both") state.account = payload.account === "secondary" ? "secondary" : "primary";
           if (state.account === "secondary" && !secondaryViews.includes(state.view)) state.view = "dashboard";
           render();
