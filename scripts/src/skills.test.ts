@@ -77,6 +77,9 @@ describe("vocational skills MVP contracts", () => {
     const enroll = read("skills/enroll.html");
     expect(api).toContain('router.post("/skills/providers/register"');
     expect(api).toContain('router.post("/skills/provider/topup"');
+    expect(api).toContain("skills_provider_payments");
+    expect(api).toContain('status: "processing"');
+    expect(api).toContain("settleVocationalPayment");
     expect(api).toContain('router.post("/skills/admissions/payment"');
     expect(api).toContain('router.post("/skills/admissions"');
     expect(api).toContain("verificationStatus");
@@ -95,6 +98,8 @@ describe("vocational skills MVP contracts", () => {
     expect(existsSync(resolve(root, "skills/assets/obote-auto-garage.jpg"))).toBe(true);
     expect(admission).toContain("Highest education level");
     expect(admission).toContain("UGX 20,000");
+    expect(admission).not.toContain("simulated");
+    expect(admission).toContain("paymentMethod");
     expect(admission).toContain("/api/skills/admissions");
     expect(admission).toContain("Signed in and ready to apply");
     expect(admission).toContain("Forgot password?");
@@ -111,6 +116,7 @@ describe("vocational skills MVP contracts", () => {
     expect(rules).toContain("match /providers/{providerId}");
     expect(rules).toContain("match /skills_enrollments/{enrollmentId}");
     expect(rules).toContain("match /skills_admission_payments/{paymentId}");
+    expect(rules).toContain("match /skills_provider_payments/{paymentId}");
     expect(rules).toContain("get(/databases/$(database)/documents/providers/");
     expect(indexes.indexes.map((index) => index.collectionGroup)).toEqual(
       expect.arrayContaining(["providers", "skills_enrollments"]),

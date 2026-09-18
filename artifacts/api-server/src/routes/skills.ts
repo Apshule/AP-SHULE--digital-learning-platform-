@@ -119,6 +119,72 @@ async function firestoreRequest(
   return body ? JSON.parse(body) : {};
 }
 
+const VOCATIONAL_ADMISSION_FEE_UGX = 20_000;
+const PROVIDER_VERIFICATION_FEE_UGX = 20_000;
+const defaultYoProductionUrl = "https://paymentsapi1.yo.co.ug/ybs/task.php";
+const defaultYoSandboxUrl = "https://sandbox.yo.co.ug/services/yopaymentsdev/task.php";
+
+function now(): string {
+  return new Date().toISOString();
+}
+
+function xmlEscape(value: unknown): string {
+  return String(value ?? "").replace(/[<>&'"]/g, (character) => ({
+    "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", "\"": "&quot;",
+  }[character] ?? character));
+}
+
+function xmlField(xml: string, name: string): string {
+  return xml.match(new RegExp(`<${name}[^>]*>([^<]*)`, "i"))?.[1] ?? "";
+}
+
+function normalizePaymentPhone(value: unknown): string {
+  const raw = String(value ?? "").replace(/[\s()-]/g, "");
+  if (/^07\d{8}$/.test(raw)) return `+256${raw.slice(1)}`;
+  if (/^2567\d{8}$/.test(raw)) return `+${raw}`;
+  if (/^\+2567\d{8}$/.test(raw)) return raw;
+  return "";
+}
+
+function hasYoCredentials(): boolean {
+  return Boolean(process.env["YO_API_USERNAME"] && process.env["YO_API_PASSWORD"]);
+}
+
+function yoSettings(saved: Record<string, unknown> = {}) {
+  const mode = String(saved.mode ?? process.env["YO_API_MODE"] ?? "sandbox") === "production" ? "production" : "sandbox";
+  return {
+    url: mode === "production"
+      ? String(saved.productionUrl ?? process.env["YO_API_PRODUCTION_URL"] ?? defaultYoProductionUrl)
+      : String(saved.sandboxUrl ?? process.env["YO_API_SANDBOX_URL"] ?? defaultYoSandboxUrl),
+  };
+}
+
+function publicApiUrl(): string {
+  return (process.env["PUBLIC_API_URL"] ?? "https://appshule.com").replace(/\/$/, "");
+}
+
+async function startYoPayment(
+  phone: string,
+  externalRef: string,
+  amountUgx: number,
+  narrative: string,
+  settings: ReturnType<typeof yoSettings>,
+): Promise<string> {
+  if (!hasYoCredentials()) throw new Error("Yo API credentials are not configured");
+  const body = `<AutoCreate><Request><APIUsername>${xmlEscape(process.env["YO_API_USERNAME"])}</APIUsername><APIpassword>${xmlEscape(process.env["YO_API_PASSWORD"])}</APIpassword><Method>acdepositfunds</Method><NonBlocking>TRUE</NonBlocking><Amount>${amountUgx.toFixed(2)}</Amount><Account>${xmlEscape(phone)}</Account><Narrative>${xmlEscape(narrative)}</Narrative><ExternalReference>${xmlEscape(externalRef)}</ExternalReference><InstantNotificationUrl>${xmlEscape(`${publicApiUrl()}/api/webhooks/yo/ipn`)}</InstantNotificationUrl><FailureNotificationUrl>${xmlEscape(`${publicApiUrl()}/api/webhooks/yo/failure`)}</FailureNotificationUrl></Request></AutoCreate>`;
+  const response = await fetch(settings.url, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${process.env["YO_API_USERNAME"]}:${process.env["YO_API_PASSWORD"]}`).toString("base64")}`,
+      "Content-Type": "application/xml",
+    },
+    body,
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`Yo API rejected the request (${response.status})`);
+  return text;
+}
+
 function cleanText(value: unknown, maxLength = 500): string {
   return String(value ?? "").trim().slice(0, maxLength);
 }
@@ -450,8 +516,14 @@ router.post("/skills/provider/topup", async (req, res) => {
   const caller = await requireSignedIn(req, res);
   if (!caller) return;
   const providerId = cleanText(req.body?.providerId, 120);
+  const phone = normalizePaymentPhone(req.body?.phone);
+  const paymentMethod = cleanText(req.body?.paymentMethod, 20);
   if (!providerId) {
     res.status(400).json({ ok: false, error: "Provider ID is required" });
+    return;
+  }
+  if (!phone || !["MTN", "Airtel"].includes(paymentMethod)) {
+    res.status(400).json({ ok: false, error: "A valid MTN/Airtel phone number and payment method are required" });
     return;
   }
 
@@ -461,42 +533,105 @@ router.post("/skills/provider/topup", async (req, res) => {
       res.status(403).json({ ok: false, error: "You can only top up your own provider profile" });
       return;
     }
-    const now = new Date().toISOString();
+    if (provider.verificationStatus === "verified") {
+      res.status(409).json({ ok: false, error: "This provider is already verified" });
+      return;
+    }
+    const createdAt = now();
     const topupReference = `SKILL-TOPUP-${randomUUID().replace(/-/g, "").slice(0, 14).toUpperCase()}`;
+    const paymentId = `provider_payment_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
+    const externalRef = `SKILLTOPUP-${randomUUID().replace(/-/g, "").slice(0, 18).toUpperCase()}`;
+    await firestoreRequest(`/skills_provider_payments/${encodeURIComponent(paymentId)}`, {
+      method: "PATCH",
+      body: firestoreFields({
+        paymentId,
+        providerId,
+        ownerId: caller.uid,
+        externalRef,
+        topupReference,
+        amountUgx: PROVIDER_VERIFICATION_FEE_UGX,
+        phone,
+        paymentMethod,
+        status: "pending",
+        createdAt,
+      }),
+    }, caller.token);
+    if (!hasYoCredentials()) {
+      await firestoreRequest(`/skills_provider_payments/${encodeURIComponent(paymentId)}`, {
+        method: "PATCH",
+        body: firestoreFields({ status: "failed", failureReason: "Yo API credentials are not configured", updatedAt: now() }),
+      }, caller.token).catch(() => undefined);
+      res.status(503).json({ ok: false, error: "Provider verification payment is not available until Yo is configured on the server" });
+      return;
+    }
+    const savedSettings = await firestoreRequest("/payment_settings/global", {}, caller.token).catch(() => ({})) as FirestoreDocument;
+    const yoResponse = await startYoPayment(
+      phone,
+      externalRef,
+      PROVIDER_VERIFICATION_FEE_UGX,
+      "APSHULE vocational provider verification",
+      yoSettings(documentData(savedSettings)),
+    );
+    const providerReference = xmlField(yoResponse, "TransactionReference") || xmlField(yoResponse, "reference");
     await firestoreRequest(
       `/providers/${encodeURIComponent(providerId)}?${firestoreUpdateMask([
         "verificationStatus",
         "topupStatus",
         "topupAmountUgx",
         "topupReference",
-        "topupConfirmedAt",
+        "topupPaymentId",
         "updatedAt",
       ])}`,
       {
         method: "PATCH",
         body: firestoreFields({
           verificationStatus: "pending_topup",
-          topupStatus: "simulated_confirmed",
-          topupAmountUgx: 20_000,
+          topupStatus: "processing",
+          topupAmountUgx: PROVIDER_VERIFICATION_FEE_UGX,
           topupReference,
-          topupConfirmedAt: now,
-          updatedAt: now,
+          topupPaymentId: paymentId,
+          updatedAt: createdAt,
         }),
       },
       caller.token,
     );
-    res.json({
+    await firestoreRequest(`/skills_provider_payments/${encodeURIComponent(paymentId)}`, {
+      method: "PATCH",
+      body: firestoreFields({ status: "processing", providerReference, updatedAt: now() }),
+    }, caller.token);
+    res.status(202).json({
       ok: true,
       providerId,
       verificationStatus: "pending_topup",
-      topupStatus: "simulated_confirmed",
-      amountUgx: 20_000,
+      topupStatus: "processing",
+      amountUgx: PROVIDER_VERIFICATION_FEE_UGX,
       topupReference,
+      paymentId,
+      message: `Approve the UGX ${PROVIDER_VERIFICATION_FEE_UGX.toLocaleString()} payment prompt on ${paymentMethod}.`,
     });
+  } catch (error) {
+    res.status(502).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to start provider verification payment",
+    });
+  }
+});
+
+router.get("/skills/provider/topup/:paymentId", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  try {
+    const payment = await firestoreRequest(`/skills_provider_payments/${encodeURIComponent(cleanText(req.params.paymentId, 120))}`, {}, caller.token) as FirestoreDocument;
+    const data = documentData(payment);
+    if (data.ownerId !== caller.uid) {
+      res.status(403).json({ ok: false, error: "You can only view your own provider payment" });
+      return;
+    }
+    res.json({ ok: true, paymentId: documentId(payment), status: data.status, topupReference: data.topupReference ?? "" });
   } catch (error) {
     res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to confirm provider top-up",
+      error: error instanceof Error ? error.message : "Unable to load provider payment",
     });
   }
 });
@@ -568,9 +703,9 @@ router.post("/skills/admin/provider-status", async (req, res) => {
   try {
     const provider = await readProvider(providerId, caller.token);
     const canApprove =
-      provider.verificationStatus === undefined ||
       provider.verificationStatus === "verified" ||
-      provider.verificationStatus === "pending_topup";
+      (provider.verificationStatus === "pending_topup" && provider.topupStatus === "payment_confirmed") ||
+      (provider.verificationStatus === undefined && provider.topupStatus === undefined);
     if (
       status === "active" &&
       !canApprove
@@ -647,35 +782,83 @@ router.post("/skills/admissions/payment", async (req, res) => {
   const caller = await requireSignedIn(req, res);
   if (!caller) return;
   const amountUgx = Math.floor(Number(req.body?.amountUgx));
+  const phone = normalizePaymentPhone(req.body?.phone);
+  const paymentMethod = cleanText(req.body?.paymentMethod, 20);
   if (amountUgx !== 20_000) {
     res.status(400).json({ ok: false, error: "The vocational admission fee is UGX 20,000" });
+    return;
+  }
+  if (!phone || !["MTN", "Airtel"].includes(paymentMethod)) {
+    res.status(400).json({ ok: false, error: "A valid MTN/Airtel phone number and payment method are required" });
     return;
   }
 
   try {
     const paymentId = `admission_payment_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
-    const createdAt = new Date().toISOString();
+    const createdAt = now();
     const paymentReference = `SKILL-ADMISSION-${randomUUID().replace(/-/g, "").slice(0, 14).toUpperCase()}`;
+    const externalRef = `SKILLADMISSION-${randomUUID().replace(/-/g, "").slice(0, 18).toUpperCase()}`;
     await firestoreRequest(
       `/skills_admission_payments/${encodeURIComponent(paymentId)}`,
       {
         method: "PATCH",
         body: firestoreFields({
+          paymentId,
           studentId: caller.uid,
           amountUgx,
-          status: "confirmed",
+          externalRef,
           paymentReference,
+          phone,
+          paymentMethod,
+          status: "pending",
           createdAt,
         }),
       },
       caller.token,
     );
-    res.status(201).json({ ok: true, paymentReference, amountUgx, status: "confirmed" });
+    if (!hasYoCredentials()) {
+      await firestoreRequest(`/skills_admission_payments/${encodeURIComponent(paymentId)}`, {
+        method: "PATCH",
+        body: firestoreFields({ status: "failed", failureReason: "Yo API credentials are not configured", updatedAt: now() }),
+      }, caller.token).catch(() => undefined);
+      res.status(503).json({ ok: false, error: "Admission payment is not available until Yo is configured on the server" });
+      return;
+    }
+    const savedSettings = await firestoreRequest("/payment_settings/global", {}, caller.token).catch(() => ({})) as FirestoreDocument;
+    const yoResponse = await startYoPayment(
+      phone,
+      externalRef,
+      VOCATIONAL_ADMISSION_FEE_UGX,
+      "APSHULE vocational admission",
+      yoSettings(documentData(savedSettings)),
+    );
+    const providerReference = xmlField(yoResponse, "TransactionReference") || xmlField(yoResponse, "reference");
+    await firestoreRequest(`/skills_admission_payments/${encodeURIComponent(paymentId)}`, {
+      method: "PATCH",
+      body: firestoreFields({ status: "processing", providerReference, updatedAt: now() }),
+    }, caller.token);
+    res.status(202).json({ ok: true, paymentId, paymentReference, amountUgx, status: "processing", message: `Approve the UGX ${amountUgx.toLocaleString()} payment prompt on ${paymentMethod}.` });
   } catch (error) {
-    res.status(500).json({
+    res.status(502).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Unable to confirm admission payment",
+      error: error instanceof Error ? error.message : "Unable to start admission payment",
     });
+  }
+});
+
+router.get("/skills/admissions/payment/:paymentId", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  try {
+    const payment = await firestoreRequest(`/skills_admission_payments/${encodeURIComponent(cleanText(req.params.paymentId, 120))}`, {}, caller.token) as FirestoreDocument;
+    const data = documentData(payment);
+    if (data.studentId !== caller.uid) {
+      res.status(403).json({ ok: false, error: "You can only view your own admission payment" });
+      return;
+    }
+    res.json({ ok: true, paymentId: documentId(payment), paymentReference: data.paymentReference ?? "", status: data.status });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: error instanceof Error ? error.message : "Unable to load admission payment" });
   }
 });
 
@@ -750,5 +933,60 @@ router.post("/skills/admissions", async (req, res) => {
     });
   }
 });
+
+export async function settleVocationalPayment(
+  externalRef: string,
+  failed: boolean,
+  webhookData: Record<string, unknown>,
+): Promise<boolean> {
+  for (const collection of ["skills_admission_payments", "skills_provider_payments"]) {
+    const response = await firestoreRequest(`/${collection}?pageSize=1000`) as { documents?: FirestoreDocument[] };
+    const match = (response.documents ?? []).find((document) => documentData(document).externalRef === externalRef);
+    if (!match) continue;
+    const paymentId = documentId(match);
+    const payment = documentData(match);
+    if (!failed && payment.status === "confirmed") return true;
+    const updatedAt = now();
+    if (failed) {
+      await firestoreRequest(`/${collection}/${encodeURIComponent(paymentId)}`, {
+        method: "PATCH",
+        body: firestoreFields({
+          status: "failed",
+          failureReason: "The mobile money payment was not confirmed.",
+          webhookData,
+          updatedAt,
+        }),
+      });
+      if (collection === "skills_provider_payments" && payment.providerId) {
+        await firestoreRequest(`/providers/${encodeURIComponent(cleanText(payment.providerId, 120))}`, {
+          method: "PATCH",
+          body: firestoreFields({ topupStatus: "failed", updatedAt }),
+        });
+      }
+      return true;
+    }
+    await firestoreRequest(`/${collection}/${encodeURIComponent(paymentId)}`, {
+      method: "PATCH",
+      body: firestoreFields({ status: "confirmed", paidAt: updatedAt, webhookData, updatedAt }),
+    });
+    if (collection === "skills_provider_payments") {
+      const providerId = cleanText(payment.providerId, 120);
+      if (providerId) {
+        await firestoreRequest(`/providers/${encodeURIComponent(providerId)}`, {
+          method: "PATCH",
+          body: firestoreFields({
+            verificationStatus: "pending_topup",
+            topupStatus: "payment_confirmed",
+            topupConfirmedAt: updatedAt,
+            topupPaymentId: paymentId,
+            updatedAt,
+          }),
+        });
+      }
+    }
+    return true;
+  }
+  return false;
+}
 
 export default router;

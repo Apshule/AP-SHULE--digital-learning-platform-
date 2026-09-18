@@ -34,6 +34,9 @@ describe("student referral rewards", () => {
   it("requires teacher registration payment and settles the correct referral rewards", () => {
     expect(indexSource).toContain("signupRole");
     expect(indexSource).toContain("UGX 240,000 registration");
+    expect(indexSource).toContain("teacher_independent");
+    expect(indexSource).toContain("teacherAccountType");
+    expect(indexSource).toContain("isStaffTeacherSignup");
     expect(indexSource).toContain("signupRole:isTeacherSignup?'teacher':'student'");
     expect(route).toContain("TEACHER_STUDENT_REFERRAL_REWARD_UGX = 600");
     expect(route).toContain("TEACHER_REFERRAL_REWARD_UGX = 80000");
@@ -42,6 +45,13 @@ describe("student referral rewards", () => {
     expect(route).toContain("settleTeacherRegistrationPayment");
     expect(route).toContain('source: "teacher_teacher_referral"');
     expect(rules).toContain("match /teacherRegistrationPayments/{paymentId}");
+  });
+
+  it("does not force independent teachers through staff registration", () => {
+    expect(route).toContain("if (isTeacherSignup && !isStaffTeacherSignup)");
+    expect(route).toContain('teacherAccountType: "independent"');
+    expect(route).toContain("independentTeacher: true");
+    expect(route).toContain("requiresPayment: false");
   });
 
   it("makes redemption server-side and prevents claiming twice", () => {

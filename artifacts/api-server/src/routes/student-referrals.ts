@@ -493,6 +493,9 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
   const referralCode = String(req.body?.referralCode ?? "").trim().slice(0, 80);
   const rewardChoice = validReward(req.body?.rewardChoice);
   const signupRole = String(req.body?.signupRole ?? "student").trim().toLowerCase();
+  const teacherAccountType = signupRole === "teacher" && String(req.body?.teacherAccountType ?? "staff").trim().toLowerCase() === "independent"
+    ? "independent"
+    : "staff";
   const phone = normalizePhone(req.body?.phone);
   const paymentMethod = String(req.body?.paymentMethod ?? "").trim();
   if (!["student", "teacher"].includes(signupRole) || !phone || !["MTN", "Airtel"].includes(paymentMethod)) {
@@ -500,18 +503,38 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
     return;
   }
   const isTeacherSignup = signupRole === "teacher";
+  const isStaffTeacherSignup = isTeacherSignup && teacherAccountType === "staff";
   if (!isTeacherSignup && !referralCode) {
     res.status(400).json({ ok: false, error: "A referral code is required for student referral registration" });
     return;
   }
-  const paymentId = isTeacherSignup ? `TEACHERPAY-${caller.uid}` : `REFPAY-${caller.uid}`;
-  const externalRef = isTeacherSignup ? `TEACHERSIGN-${caller.uid}` : `REFSIGN-${caller.uid}`;
-  const paymentCollection = isTeacherSignup ? "teacherRegistrationPayments" : "studentReferralPayments";
-  const amount = isTeacherSignup ? TEACHER_SIGNUP_FEE_UGX : STUDENT_SIGNUP_FEE_UGX;
+  const paymentId = isStaffTeacherSignup ? `TEACHERPAY-${caller.uid}` : `REFPAY-${caller.uid}`;
+  const externalRef = isStaffTeacherSignup ? `TEACHERSIGN-${caller.uid}` : `REFSIGN-${caller.uid}`;
+  const paymentCollection = isStaffTeacherSignup ? "teacherRegistrationPayments" : "studentReferralPayments";
+  const amount = isStaffTeacherSignup ? TEACHER_SIGNUP_FEE_UGX : STUDENT_SIGNUP_FEE_UGX;
   try {
     const newUser = await getUser(caller.uid, caller.token);
     if (!newUser || String(newUser.role ?? "") !== (isTeacherSignup ? "teacher" : "individual")) {
       res.status(403).json({ ok: false, error: `Only ${isTeacherSignup ? "teacher" : "student"} accounts can use this registration payment` });
+      return;
+    }
+    if (isTeacherSignup && !isStaffTeacherSignup) {
+      await firestoreRequest(`/users/${encodeURIComponent(caller.uid)}`, {
+        method: "PATCH",
+        body: JSON.stringify(firestoreFields({
+          teacherAccountType: "independent",
+          status: "active",
+          registrationStatus: "active",
+          updatedAt: now(),
+        })),
+      }, caller.token);
+      res.json({
+        ok: true,
+        status: "active",
+        requiresPayment: false,
+        independentTeacher: true,
+        message: "Independent teacher access is active. The staff registration payment is not required.",
+      });
       return;
     }
     const referrer = referralCode ? await findReferrer(referralCode) : null;
@@ -519,7 +542,7 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
       res.status(404).json({ ok: false, error: "That referral link is invalid" });
       return;
     }
-    if (isTeacherSignup && referrer && String(referrer.data.role ?? "") !== "teacher") {
+    if (isStaffTeacherSignup && referrer && String(referrer.data.role ?? "") !== "teacher") {
       res.status(400).json({ ok: false, error: "Only a teacher can refer a teacher registration" });
       return;
     }
@@ -556,7 +579,7 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
     const payment = {
       paymentId,
       externalRef,
-      ...(isTeacherSignup ? { teacherId: caller.uid } : { referredUserId: caller.uid }),
+      ...(isStaffTeacherSignup ? { teacherId: caller.uid } : { referredUserId: caller.uid }),
       referralCode: referralCode || "",
       ...(referrer ? { referrerId: referrer.id } : {}),
       rewardChoice: selectedReward,
@@ -575,7 +598,7 @@ router.post("/referrals/registration-payment", async (req: Request, res: Respons
       externalRef,
       configuredSettings(documentData(savedSettingsDocument ?? undefined)),
       amount,
-      isTeacherSignup ? "APSHULE teacher registration" : "APSHULE student referral registration",
+      isStaffTeacherSignup ? "APSHULE teacher registration" : "APSHULE student referral registration",
     );
     const providerReference = xmlField(response, "TransactionReference") || xmlField(response, "reference");
     await firestoreRequest(`/${encodeURIComponent(paymentCollection)}/${encodeURIComponent(paymentId)}`, {

@@ -3,6 +3,7 @@ import { createHash, createPublicKey, verify as verifySignature } from "node:cry
 import { verifyFirebaseAdmin, verifyFirebaseCaller } from "../lib/firebase-auth";
 import { getFirebaseAdminToken } from "../lib/firebase-admin-token";
 import { settleStudentReferralPayment, settleTeacherRegistrationPayment } from "./student-referrals";
+import { settleVocationalPayment } from "./skills";
 
 const router = Router();
 const project = process.env["FIREBASE_PROJECT_ID"] ?? "apshule-app";
@@ -830,6 +831,17 @@ async function processWebhook(req: Request, res: Response, failed: boolean) {
         });
       }
       res.status(200).json({ ok: true, processed: true, referralRegistration: true });
+      return;
+    }
+    const vocationalPayment = await settleVocationalPayment(externalRef, failed, body);
+    if (vocationalPayment) {
+      if (logId) {
+        await firestoreRequest(`/yo_webhook_logs/${encodeURIComponent(logId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(firestoreFields({ processed: true, processedAt: now() })),
+        });
+      }
+      res.status(200).json({ ok: true, processed: true, vocationalPayment: true });
       return;
     }
     if (networkRef && msisdn && (await firestoreQuery("yo_webhook_logs", "networkRef", networkRef)).some((row) => String(firestoreDocumentData(row.document).msisdn ?? "") === msisdn && firestoreDocumentData(row.document).isVerified === true && firestoreDocumentData(row.document).processed === true)) {
