@@ -50,7 +50,11 @@
       <div class="dashboard-columns">
         <article class="panel"><div class="panel-heading"><h3>Students by level</h3><span>Current term</span></div><div class="donut-row"><div class="donut"></div><div class="legend"><span><i></i>Nursery <b>1</b></span><span><i class="green"></i>Primary <b>9</b></span><span><i class="purple"></i>Secondary <b>0</b></span></div></div></article>
         <article class="panel"><div class="panel-heading"><h3>Class size distribution</h3><span>10 learners</span></div><div class="bar-list"><div><div class="bar-label"><span>P1</span><b>5</b></div><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div></div><div><div class="bar-label"><span>P4</span><b>3</b></div><div class="bar-track"><div class="bar-fill green" style="width:30%"></div></div></div><div><div class="bar-label"><span>Baby Class</span><b>1</b></div><div class="bar-track"><div class="bar-fill orange" style="width:10%"></div></div></div><div><div class="bar-label"><span>P7</span><b>1</b></div><div class="bar-track"><div class="bar-fill orange" style="width:10%"></div></div></div></div></article>
-      </div>`;
+       </div>
+       <div class="dashboard-columns dashboard-secondary">
+         <article class="panel"><div class="panel-heading"><h3>Gender distribution</h3><span>Current register</span></div><div class="gender-bars"><div><div class="bar-label"><span>Male</span><b>8 · 80%</b></div><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div><div><div class="bar-label"><span>Female</span><b>1 · 10%</b></div><div class="bar-track"><div class="bar-fill pink" style="width:10%"></div></div></div><div><div class="bar-label"><span>Not recorded</span><b>1 · 10%</b></div><div class="bar-track"><div class="bar-fill violet" style="width:10%"></div></div></div></div></article>
+         <article class="panel"><div class="panel-heading"><h3>System status & performance</h3><span>Operational</span></div><div class="status-list"><span><i class="online"></i>Database health <b>100%</b></span><span><i class="online"></i>API responsiveness <b>Good</b></span><span><i class="online"></i>Attendance sync <b>Ready</b></span></div><div class="performance-line"><span>Term activity</span><strong>65%</strong><div class="bar-track"><div class="bar-fill violet" style="width:65%"></div></div></div></article>
+       </div>`;
   }
 
   function studentsView() {

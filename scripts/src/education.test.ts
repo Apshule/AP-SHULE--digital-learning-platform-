@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const root = resolve(import.meta.dirname, "../..");
 const educationSource = readFileSync(resolve(root, "education/index.html"), "utf8");
 const educationScript = readFileSync(resolve(root, "education/app.js"), "utf8");
+const educationMap = readFileSync(resolve(root, "education/PRIMARY_ACCOUNT_MAP.md"), "utf8");
 const serverSource = readFileSync(resolve(root, "artifacts/api-server/src/app.ts"), "utf8");
 const landingSource = readFileSync(resolve(root, "index.html"), "utf8");
 
@@ -14,10 +15,17 @@ describe("Education workspace integration", () => {
     expect(educationSource).toContain('href="../"');
     expect(educationSource).toContain('id="workspaceNav"');
     expect(educationSource).toContain('id="workspaceContent"');
+    expect(educationSource).toContain('class="login-preview"');
+    expect(educationSource).toContain("Install Orion App");
     expect(educationSource).not.toContain("secretary@apshule.com");
     expect(educationSource).not.toContain('value="password"');
     expect(educationScript).toContain("studentModal");
+    expect(educationScript).toContain("Gender distribution");
+    expect(educationScript).toContain("System status & performance");
     expect(educationScript).toContain("Preview learner saved locally");
+    expect(educationMap).toContain("# Primary Orion Account Map");
+    expect(educationMap).toContain("Video Meetings");
+    expect(educationMap).toContain("Install App");
   });
 
   it("keeps the route and landing-page education entry connected", () => {
