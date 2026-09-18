@@ -63,6 +63,8 @@ const FILES = [
   "scripts/src/push-to-github.ts",
   "scripts/src/ai-assistant.test.ts",
   "scripts/src/phase2-yopay.test.ts",
+  "scripts/src/education.test.ts",
+  "scripts/src/education-secondary-report.test.ts",
   "artifacts/api-server/src/app.ts",
   "artifacts/api-server/src/lib/ai-usage.ts",
   "artifacts/api-server/src/lib/firebase-auth.ts",
@@ -96,6 +98,10 @@ const FILES = [
   "PLAY_STORE_GUIDE.md",
   "icons/icon-192.png",
   "icons/icon-512-maskable.png",
+  "education/index.html",
+  "education/app.js",
+  "education/secondary.css",
+  "education/secondary-responsive.css",
 ];
 
 function run(cmd: string): void {
