@@ -6,6 +6,8 @@
   <meta name="description" content="Explore an active vocational training provider on APSHULE Skills.">
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./api-config.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
     :root{--paper:#f4ede2;--paper-2:#ebe0d0;--ink:#211d25;--muted:#766c69;--plum:#54284d;--plum-dark:#35172f;--orange:#e86f42;--gold:#d6a950;--line:#dcd0c1;--white:#fffaf2}
@@ -18,8 +20,8 @@
   <header><div class="shell nav"><a class="brand" href="./"><span class="mark">A</span><span>APSHULE <small style="display:block;font:10px 'DM Mono',monospace;color:var(--muted);letter-spacing:.02em">Skills / Uganda</small></span></a><a class="back" href="./">← Back to course desk</a></div></header>
   <main class="shell"><section id="providerHero" class="hero"><div class="loading">Loading institution profile</div></section><div id="providerLayout" class="layout" style="display:none"></div><footer class="footer"><strong>Powered by APSHULE</strong></footer></main>
   <script>
-    const firebaseConfig={apiKey:"AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihY_cq9kg",authDomain:"apshule-app.firebaseapp.com",projectId:"apshule-app",storageBucket:"apshule-app.firebasestorage.app",messagingSenderId:"610368652834",appId:"1:610368652834:web:1a30274d95c282a5a3ac7b"};const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));try{firebase.initializeApp(firebaseConfig)}catch(_){}
-     const params=new URLSearchParams(location.search),requestedId=params.get("id")||"",ref=params.get("ref")||"",apiBase=location.hostname==="localhost"||location.hostname==="127.0.0.1"?"":"https://ap-shule-digital-learning-platform-3.onrender.com",apiUrl=path=>`${apiBase}/${path.replace(/^\/+/,"")}`,money=value=>Number(value||0)?`UGX ${Number(value).toLocaleString()}`:"Fee on inquiry";
+     const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));try{firebase.initializeApp(window.APSHULE_FIREBASE_CONFIG)}catch(_){}
+      const params=new URLSearchParams(location.search),requestedId=params.get("id")||"",ref=params.get("ref")||"",apiBase=window.APSHULE_API_BASE,apiUrl=path=>`${apiBase}/${path.replace(/^\/+/,"")}`,money=value=>Number(value||0)?`UGX ${Number(value).toLocaleString()}`:"Fee on inquiry";
     const logo=p=>p.logoUrl?`<img class="logo" src="${esc(p.logoUrl)}" alt="${esc(p.name)} logo">`:`<div class="logo">${esc((p.name||"P").slice(0,1).toUpperCase())}</div>`;
      fetch(apiUrl("/api/skills/providers")).then(response=>response.json().then(data=>{if(!response.ok||!data.ok)throw new Error(data.error||"Provider directory unavailable");return data})).then(data=>{
        const rows=data.providers||[];

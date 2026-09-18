@@ -9,6 +9,8 @@
   <meta property="og:description" content="A trusted place to compare practical training in Uganda.">
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./api-config.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
     :root{--paper:#f4ede2;--paper-2:#ebe0d0;--ink:#211d25;--muted:#766c69;--plum:#54284d;--plum-dark:#35172f;--orange:#e86f42;--gold:#d6a950;--line:#dcd0c1;--white:#fffaf2}
@@ -29,9 +31,8 @@
   </main>
   <footer><div class="shell footer"><div><strong>APSHULE SKILLS</strong><br><small>Practical routes into work, across Uganda.</small></div><a href="https://appshule.com">Open APSHULE ↗</a></div></footer>
   <script>
-    const firebaseConfig={apiKey:"AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihY_cq9kg",authDomain:"apshule-app.firebaseapp.com",projectId:"apshule-app",storageBucket:"apshule-app.firebasestorage.app",messagingSenderId:"610368652834",appId:"1:610368652834:web:1a30274d95c282a5a3ac7b"};
-    const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));try{firebase.initializeApp(firebaseConfig)}catch(_){}
-     const apiBase=location.hostname==="localhost"||location.hostname==="127.0.0.1"?"":"https://ap-shule-digital-learning-platform-3.onrender.com",apiUrl=path=>`${apiBase}/${path.replace(/^\/+/,"")}`,imagePool=["https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/5691659/pexels-photo-5691659.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/3862130/pexels-photo-3862130.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/6474471/pexels-photo-6474471.jpeg?auto=compress&cs=tinysrgb&w=900"];
+    const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char]));try{firebase.initializeApp(window.APSHULE_FIREBASE_CONFIG)}catch(_){}
+     const apiBase=window.APSHULE_API_BASE,apiUrl=path=>`${apiBase}/${path.replace(/^\/+/,"")}`,imagePool=["https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/5691659/pexels-photo-5691659.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/3862130/pexels-photo-3862130.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=900","https://images.pexels.com/photos/6474471/pexels-photo-6474471.jpeg?auto=compress&cs=tinysrgb&w=900"];
     const money=value=>Number(value||0)?`UGX ${Number(value).toLocaleString()}`:"Fee on inquiry";let providers=[],courses=[];
     const logo=p=>p.logoUrl?`<img class="provider-logo" src="${esc(p.logoUrl)}" alt="">`:`<div class="provider-logo">${esc((p.name||"P").slice(0,1).toUpperCase())}</div>`;
     function setupFilters(){const cats=[...new Set(courses.map(x=>x.course.category).filter(Boolean))].sort(),durations=[...new Set(courses.map(x=>x.course.duration).filter(Boolean))].sort();document.getElementById("category").innerHTML='<option value="">All categories</option>'+cats.map(x=>`<option>${esc(x)}</option>`).join("");document.getElementById("duration").innerHTML='<option value="">Any duration</option>'+durations.map(x=>`<option>${esc(x)}</option>`).join("")}

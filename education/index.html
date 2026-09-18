@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="APSHULE Education workspace for schools, learners, teachers, and school operations.">
+  <meta property="og:title" content="APSHULE Education">
+  <meta property="og:description" content="A practical school management workspace built for Ugandan education teams.">
+  <title>APSHULE Education | School workspace</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="shell topbar-inner">
+      <span>🇺🇬 Built for schools across Uganda</span>
+      <span>Preview data only · <a href="../">Return to APSHULE</a></span>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="../" aria-label="APSHULE home">
+        <span class="brand-mark">A</span>
+        <span><strong>APSHULE</strong><small>Education workspace</small></span>
+      </a>
+      <nav class="header-nav" aria-label="Education navigation">
+        <a href="#workspace">Workspace</a>
+        <a href="#education-features">What it manages</a>
+        <a class="header-login" href="../">Open secure login <span>↗</span></a>
+      </nav>
+      <a class="mobile-login" href="../">Login ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">The APSHULE school workspace</p>
+          <h1>Run the school day with <em>clarity.</em></h1>
+          <p class="hero-lede">A focused home for learner records, report cards, attendance, communication, and the everyday work that keeps a school moving.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#workspace">Explore the workspace <span>↓</span></a>
+            <a class="button light" href="../">Sign in securely <span>↗</span></a>
+          </div>
+          <div class="hero-trust"><span>✓ Offline-minded</span><span>✓ NCDC-aware</span><span>✓ Mobile-ready</span></div>
+        </div>
+        <div class="hero-art" aria-label="Education workspace preview">
+          <div class="hero-art-top"><span class="status-dot"></span> Primary workspace <span class="art-time">09:41 EAT</span></div>
+          <div class="art-window">
+            <aside><div class="mini-logo">A</div><span class="mini-active">▦</span><span>♙</span><span>◫</span><span>◌</span></aside>
+            <div class="mini-main">
+              <div class="mini-heading"><div><small>GOOD MORNING, SECRETARY</small><strong>Apshule Primary</strong></div><span class="mini-avatar">S</span></div>
+              <div class="mini-stats"><i></i><i></i><i></i></div>
+              <div class="mini-panels"><div></div><div></div></div>
+            </div>
+          </div>
+          <div class="art-note"><strong>One school picture.</strong><span>From the first learner record to the final report card.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace-section" id="workspace">
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Primary account preview</p>
+            <h2>Everything your secretary needs first.</h2>
+            <p>Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.</p>
+          </div>
+          <a class="button primary compact" href="../">Open live APSHULE login <span>↗</span></a>
+        </div>
+
+        <div class="preview-notice">
+          <span class="notice-icon">i</span>
+          <span><strong>Preview mode.</strong> The numbers and learner names below are sample content from the supplied prototype, not live school records.</span>
+        </div>
+
+        <div class="app-shell">
+          <aside class="app-sidebar">
+            <div class="app-sidebar-brand"><span class="brand-mark small">A</span><span>APSHULE<small>Primary</small></span></div>
+            <nav id="workspaceNav" aria-label="Primary workspace sections"></nav>
+            <a class="sidebar-login" href="../"><span>↗</span> Secure sign in</a>
+          </aside>
+          <section class="app-main">
+            <header class="app-toolbar">
+              <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">☰</button>
+              <div><span class="toolbar-kicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
+              <div class="toolbar-actions"><span class="live-badge"><i></i> Preview</span><span class="toolbar-avatar">S</span></div>
+            </header>
+            <div class="app-content" id="workspaceContent"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-section" id="education-features">
+      <div class="shell">
+        <div class="section-heading centered">
+          <p class="eyebrow">A connected school day</p>
+          <h2>Useful modules, in the order teams use them.</h2>
+        </div>
+        <div class="feature-grid">
+          <article><span>01</span><h3>Learner records</h3><p>Keep admissions, classes, status, identity cards, and school history together.</p></article>
+          <article><span>02</span><h3>Academic progress</h3><p>Move from mark entry to remarks, report cards, and printable school documents.</p></article>
+          <article><span>03</span><h3>Attendance & messages</h3><p>See the day’s attendance picture and communicate with the people who need it.</p></article>
+          <article><span>04</span><h3>Secure by design</h3><p>Use the existing APSHULE authentication and role boundaries for live institutional data.</p></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell footer-inner">
+      <div><strong>APSHULE EDUCATION</strong><span>Practical tools for the school day.</span></div>
+      <div><a href="../">APSHULE home</a><a href="mailto:hello@appshule.com">Contact</a></div>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="studentModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <p class="eyebrow">Primary workspace</p>
+      <h2 id="studentModalTitle">Add a learner</h2>
+      <p class="modal-copy">This preview demonstrates the workflow. Live learner creation happens after secure sign-in.</p>
+      <form id="studentForm">
+        <label>Full name<input required name="name" placeholder="e.g. Amina Nakato"></label>
+        <label>Class<select name="class"><option>P1</option><option>P4</option><option>P7</option></select></label>
+        <div class="modal-actions"><button class="button light" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Save preview learner</button></div>
+      </form>
+    </div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

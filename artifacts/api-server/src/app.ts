@@ -63,11 +63,17 @@ const upgradePath = resolve(__dirname, "../../../upgrade.html");
 const youtubeSyncPath = resolve(__dirname, "../../../youtube-sync.html");
 const skillsPath = resolve(__dirname, "../../../skills");
 const skillsAdminPath = resolve(__dirname, "../../../skills-admin.html");
+const educationPath = resolve(__dirname, "../../../education");
 app.get("/", (req, res) => res.sendFile(indexPath));
 app.get("/upgrade.html", (req, res) => res.sendFile(upgradePath));
 app.get("/youtube-sync.html", (req, res) => res.sendFile(youtubeSyncPath));
 app.get("/skills-admin.html", (req, res) => res.sendFile(skillsAdminPath));
+app.get(["/education", "/education/"], (req, res) => res.sendFile(resolve(educationPath, "index.html")));
 app.use("/skills", express.static(skillsPath));
+app.use("/education", express.static(educationPath));
+app.get(["/obote", "/obote/"], (req, res) => {
+  res.sendFile(resolve(skillsPath, "provider-register.html"));
+});
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
 app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));

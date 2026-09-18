@@ -175,6 +175,24 @@ function publicProvider(provider: Provider): Omit<Provider, "ownerId"> {
   return safeProvider;
 }
 
+function providerManifestLogo(provider: Provider): { src: string; type: string } {
+  const rawLogo = provider.logoUrl.trim();
+  const src = !rawLogo
+    ? "/icons/icon-192.png"
+    : /^https?:\/\//i.test(rawLogo) || rawLogo.startsWith("/")
+      ? rawLogo
+      : `/skills/${rawLogo.replace(/^\.?\//, "")}`;
+  const extension = src.match(/\.([a-z0-9]+)(?:[?#].*)?$/i)?.[1]?.toLowerCase();
+  const type = extension === "jpg" || extension === "jpeg"
+    ? "image/jpeg"
+    : extension === "webp"
+      ? "image/webp"
+      : extension === "svg"
+        ? "image/svg+xml"
+        : "image/png";
+  return { src, type };
+}
+
 async function requireSuperAdmin(req: Request, res: Response): Promise<FirebaseCaller | null> {
   const caller = await verifyFirebaseCaller(req.headers.authorization);
   if (!("uid" in caller)) {
@@ -289,6 +307,63 @@ router.get("/skills/providers", async (_req, res) => {
     res.status(500).json({
       ok: false,
       error: error instanceof Error ? error.message : "Unable to load public providers",
+    });
+  }
+});
+
+router.get("/skills/providers/:providerId/manifest.json", async (req, res) => {
+  const providerId = cleanText(req.params.providerId, 120);
+  if (!providerId) {
+    res.status(400).json({ ok: false, error: "Provider ID is required" });
+    return;
+  }
+  try {
+    const provider = providerView(providerId, await readProvider(providerId, ""));
+    const logo = providerManifestLogo(provider);
+    const startUrl = cleanText(req.query.startUrl, 200) === "/obote"
+      ? "/obote"
+      : "/skills/provider-register.html";
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      name: `${provider.name || "Provider"} | APSHULE Skills`,
+      short_name: (provider.name || "Provider").slice(0, 24),
+      id: startUrl,
+      start_url: startUrl,
+      scope: "/",
+      display: "standalone",
+      orientation: "any",
+      theme_color: "#54284d",
+      background_color: "#f4ede2",
+      lang: "en",
+      categories: ["education", "business"],
+      icons: [
+        { ...logo, sizes: "any", purpose: "any" },
+        { ...logo, sizes: "any", purpose: "maskable" },
+      ],
+    });
+  } catch (error) {
+    res.status(404).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Provider manifest is not available",
+    });
+  }
+});
+
+router.get("/skills/providers/mine", async (req, res) => {
+  const caller = await requireSignedIn(req, res);
+  if (!caller) return;
+  try {
+    const providers = await readProviders(caller.token);
+    res.json({
+      ok: true,
+      providers: providers
+        .filter((provider) => provider.ownerId === caller.uid)
+        .map(publicProvider),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to load your provider profile",
     });
   }
 });
@@ -492,10 +567,13 @@ router.post("/skills/admin/provider-status", async (req, res) => {
 
   try {
     const provider = await readProvider(providerId, caller.token);
+    const canApprove =
+      provider.verificationStatus === undefined ||
+      provider.verificationStatus === "verified" ||
+      provider.verificationStatus === "pending_topup";
     if (
       status === "active" &&
-      provider.verificationStatus !== undefined &&
-      provider.verificationStatus !== "verified"
+      !canApprove
     ) {
       res.status(409).json({
         ok: false,
@@ -504,21 +582,22 @@ router.post("/skills/admin/provider-status", async (req, res) => {
       return;
     }
     const updatedAt = new Date().toISOString();
+    const updateMask = ["status", "updatedAt", "reviewedAt", "reviewedBy"];
+    const updateFields: Record<string, unknown> = {
+      status,
+      updatedAt,
+      reviewedAt: updatedAt,
+      reviewedBy: caller.uid,
+    };
+    if (status === "active" && provider.verificationStatus === "pending_topup") {
+      updateMask.push("verificationStatus");
+      updateFields.verificationStatus = "verified";
+    }
     await firestoreRequest(
-      `/providers/${encodeURIComponent(providerId)}?${firestoreUpdateMask([
-        "status",
-        "updatedAt",
-        "reviewedAt",
-        "reviewedBy",
-      ])}`,
+      `/providers/${encodeURIComponent(providerId)}?${firestoreUpdateMask(updateMask)}`,
       {
         method: "PATCH",
-        body: firestoreFields({
-          status,
-          updatedAt,
-          reviewedAt: updatedAt,
-          reviewedBy: caller.uid,
-        }),
+        body: firestoreFields(updateFields),
       },
       caller.token,
     );
