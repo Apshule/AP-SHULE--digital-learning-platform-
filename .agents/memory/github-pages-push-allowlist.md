@@ -14,3 +14,9 @@ For non-interactive release runs, set `PUSH_CONFIRM=y` and provide `PUSH_MESSAGE
 **Why:** Piping stdin is not reliable for the helper's top-level readline prompts under `tsx`; the explicit environment path completes the authenticated push consistently.
 
 **How to apply:** Use those two environment variables only for an intentional verified release, then confirm the pushed commit and a clean working tree.
+
+The helper only invokes `git push` after it finds allowlisted working-tree changes and creates its own release commit. If all release changes are already committed locally, it can exit with "Nothing to push" while `main` is still ahead of GitHub; push the existing commits through the same authenticated Git configuration instead.
+
+**Why:** Education changes were committed before the helper ran, so the helper staged nothing and skipped its push even though the remote was behind.
+
+**How to apply:** After a manual commit, compare local `HEAD` with `origin/main`; if local is ahead, use the helper's authenticated push environment to send `HEAD:main`, then confirm both hashes match.
