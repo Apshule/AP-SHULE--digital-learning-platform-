@@ -149,7 +149,7 @@
     const summary = state.liveData?.bursar?.summary || {};
     const schoolName = escapeHtml(state.liveData?.school?.name || "Authorized school");
     return `
-      <div class="workspace-title"><div><h2>Bursar dashboard</h2><p class="muted">Fee collection overview · ${schoolName}</p></div><span class="eyebrow">Live · read-only</span></div>
+      <div class="workspace-title"><div><h2>Bursar dashboard</h2><p class="muted">Fee collection overview · ${schoolName}</p></div><div class="workspace-title-actions"><button class="button light compact" type="button" data-action="open-bursar-reconciliation">Daily reconciliation</button><button class="button primary compact" type="button" data-action="open-bursar-payment">Record payment</button></div></div>
       <div class="workspace-grid">
         <article class="stat-card"><small>Fee accounts</small><strong>${Number(summary.accountCount || 0)}</strong></article>
         <article class="stat-card green"><small>Total collected</small><strong>${escapeHtml(bursarMoney(summary.totalPaid))}</strong></article>
@@ -158,18 +158,18 @@
       </div>
       <div class="dashboard-columns">
         <article class="panel"><div class="panel-heading"><h3>Collection summary</h3><span>Institution scoped</span></div><div class="status-list"><span><i class="online"></i>Total billed <b>${escapeHtml(bursarMoney(summary.totalDue))}</b></span><span><i class="online"></i>Payments recorded <b>${Number(summary.paymentCount || 0)}</b></span><span><i class="online"></i>Payment total <b>${escapeHtml(bursarMoney(summary.paymentTotal))}</b></span></div></article>
-        <article class="panel"><div class="panel-heading"><h3>Bursar boundary</h3><span>Read-only start</span></div><div class="empty-state">Fee account and payment records are connected. Payment entry, receipts, reminders, and reconciliation will be added after this first read-only slice.</div></article>
+        <article class="panel"><div class="panel-heading"><h3>Bursar controls</h3><span>Institution scoped</span></div><div class="empty-state">Manual payment entry and daily reconciliation are enabled for this bursar account. Provider settlement, receipt export, and month-end close remain separate controls.</div></article>
       </div>`;
   }
 
   function bursarFeesView() {
     const accounts = Array.isArray(state.liveData?.bursar?.accounts) ? state.liveData.bursar.accounts : [];
-    return `<div class="workspace-title"><div><h2>Fee accounts</h2><p class="muted">School fee balances from authorized billing records.</p></div><span class="eyebrow">Live · read-only</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Account</th><th>Learner / payer</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${accounts.map((row) => `<tr><td>${escapeHtml(row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.totalAmount))}</td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td>${escapeHtml(bursarMoney(row.balanceRemaining))}</td><td><span class="badge ${String(row.status).toLowerCase() === "paid" ? "green" : "gold"}">${escapeHtml(row.status || "unpaid")}</span></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No authorized fee accounts are recorded yet.</div></td></tr>'}</tbody></table></div>`;
+    return `<div class="workspace-title"><div><h2>Fee accounts</h2><p class="muted">School fee balances from authorized billing records.</p></div><button class="button primary compact" type="button" data-action="open-bursar-payment">Record payment</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Account</th><th>Learner / payer</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${accounts.map((row) => `<tr><td>${escapeHtml(row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.totalAmount))}</td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td>${escapeHtml(bursarMoney(row.balanceRemaining))}</td><td><span class="badge ${String(row.status).toLowerCase() === "paid" ? "green" : "gold"}">${escapeHtml(row.status || "unpaid")}</span></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No authorized fee accounts are recorded yet.</div></td></tr>'}</tbody></table></div>`;
   }
 
   function bursarPaymentsView() {
     const payments = Array.isArray(state.liveData?.bursar?.payments) ? state.liveData.bursar.payments : [];
-    return `<div class="workspace-title"><div><h2>Payments</h2><p class="muted">Payment transactions linked to this institution.</p></div><span class="eyebrow">Live · read-only</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td><span class="badge ${String(row.status).toLowerCase() === "completed" ? "green" : "gold"}">${escapeHtml(row.status || "pending")}</span></td><td>${escapeHtml(row.paymentDate || "—")}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No authorized payments are recorded yet.</div></td></tr>'}</tbody></table></div>`;
+    return `<div class="workspace-title"><div><h2>Payments</h2><p class="muted">Payment transactions linked to this institution.</p></div><button class="button primary compact" type="button" data-action="open-bursar-payment">Record payment</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td><span class="badge ${String(row.status).toLowerCase() === "completed" ? "green" : "gold"}">${escapeHtml(row.status || "pending")}</span></td><td>${escapeHtml(row.paymentDate || "—")}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No authorized payments are recorded yet.</div></td></tr>'}</tbody></table></div>`;
   }
 
   function bursarStatementsView() {
@@ -179,7 +179,22 @@
 
   function liveRecordsView(titleText, records, emptyText) {
     const rows = Array.isArray(records) ? records : [];
-    return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div><div class="empty-state">${rows.length ? "Live records are available through the connected school account." : escapeHtml(emptyText)}</div></div>`;
+    const columns = [
+      ["learnerName", "Learner"],
+      ["className", "Class"],
+      ["subject", "Subject"],
+      ["term", "Term"],
+      ["score", "Score"],
+      ["average", "Average"],
+      ["grade", "Grade"],
+      ["status", "Status"],
+      ["remark", "Remark"],
+    ].filter(([key]) => rows.some((row) => row[key] !== null && row[key] !== undefined && String(row[key]).trim() !== ""));
+    const visibleColumns = columns.length ? columns.slice(0, 7) : [["id", "Record"]];
+    const table = rows.length
+      ? `<div class="table-wrap"><table class="data-table"><thead><tr>${visibleColumns.map(([, label]) => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, 100).map((row) => `<tr>${visibleColumns.map(([key]) => `<td>${escapeHtml(row[key] ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+      : `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
+    return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div>${table}</div>`;
   }
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -191,6 +206,39 @@
     toast.classList.add("show");
     window.clearTimeout(showToast.timer);
     showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2800);
+  }
+
+  async function bursarApi(path, options = {}) {
+    const user = window.firebase?.auth?.().currentUser;
+    if (!user) throw new Error("Your secure school session has expired.");
+    const token = await user.getIdToken();
+    const base = String(window.APSHULE_API_BASE || "").replace(/\/+$/, "");
+    const response = await fetch(`${base}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "The bursar action could not be completed.");
+    return payload;
+  }
+
+  async function refreshLiveData() {
+    const user = window.firebase?.auth?.().currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
+    const base = String(window.APSHULE_API_BASE || "").replace(/\/+$/, "");
+    const response = await fetch(`${base}/api/school/education-workspace`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.ok || !payload.live) throw new Error(payload.error || "Live records could not be refreshed.");
+    state.liveData = payload;
+    state.authState = "live";
+    render();
   }
 
   function isSecondary() {
@@ -223,11 +271,13 @@
     if (modeText) modeText.innerHTML = liveEnabled() ? `Live authorized school records · <a href="../">Return to APSHULE</a>` : `Preview data only · <a href="../">Return to APSHULE</a>`;
     const description = document.getElementById("workspaceDescription");
     if (description) description.textContent = liveEnabled()
-      ? `Connected to ${schoolName}. Records are read-only and scoped to the signed-in school account.`
+      ? bursar
+        ? `Connected to ${schoolName}. Payments and daily reconciliation are scoped to the signed-in bursar account.`
+        : `Connected to ${schoolName}. Records are read-only and scoped to the signed-in school account.`
       : "Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.";
     const notice = document.getElementById("workspaceNotice");
     if (notice) notice.innerHTML = liveEnabled()
-      ? `<span class="notice-icon">✓</span><span><strong>${bursar ? "Live bursar workspace." : "Live school workspace."}</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account.${bursar ? " Payment entry and reconciliation are not enabled yet." : " Bursar and finance controls are not included here."}</span>`
+      ? `<span class="notice-icon">✓</span><span><strong>${bursar ? "Live bursar workspace." : "Live school workspace."}</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account.${bursar ? " Manual payment entry and daily reconciliation are enabled." : " Bursar and finance controls are not included here."}</span>`
       : `<span class="notice-icon">i</span><span><strong>${state.authState === "checking" ? "Checking secure access." : "Preview mode."}</strong> ${state.authError ? escapeHtml(state.authError) : "The numbers and learner names below are sample content from the supplied prototype, not live school records."}</span>`;
     document.querySelectorAll("[data-account]").forEach((button) => {
       button.classList.toggle("active", button.dataset.account === state.account);
@@ -447,6 +497,23 @@
     }
     if (action === "view-student") showToast(liveEnabled() ? "Learner record is authorized for this school account." : "Learner profile preview — sign in to open live records.");
     if (action === "preview-action") showToast(liveEnabled() ? "This live workspace is read-only for now." : "This workflow is ready for the secure APSHULE workspace.");
+    if (action === "open-bursar-payment") {
+      const modal = document.getElementById("bursarPaymentModal");
+      if (modal) {
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.querySelector("#bursarPaymentForm [name=billReference]")?.focus();
+      }
+    }
+    if (action === "open-bursar-reconciliation") {
+      const modal = document.getElementById("bursarReconciliationModal");
+      if (modal) {
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        const date = document.querySelector("#bursarReconciliationForm [name=date]");
+        if (date && !date.value) date.value = new Date().toISOString().slice(0, 10);
+      }
+    }
     if (action === "open-report") {
       state.reportType = target.dataset.report;
       state.view = "report-detail";
@@ -468,6 +535,63 @@
     event.preventDefault();
     document.getElementById("studentModal").classList.remove("open");
     showToast("Preview learner saved locally for this session.");
+  });
+  const bursarPaymentModal = document.getElementById("bursarPaymentModal");
+  const bursarReconciliationModal = document.getElementById("bursarReconciliationModal");
+  const closeBursarModal = (modal) => {
+    modal?.classList.remove("open");
+    modal?.setAttribute("aria-hidden", "true");
+  };
+  document.querySelectorAll("[data-close-bursar-payment]").forEach((button) => button.addEventListener("click", () => closeBursarModal(bursarPaymentModal)));
+  document.querySelectorAll("[data-close-bursar-reconciliation]").forEach((button) => button.addEventListener("click", () => closeBursarModal(bursarReconciliationModal)));
+  bursarPaymentModal?.addEventListener("click", (event) => {
+    if (event.target === bursarPaymentModal) closeBursarModal(bursarPaymentModal);
+  });
+  bursarReconciliationModal?.addEventListener("click", (event) => {
+    if (event.target === bursarReconciliationModal) closeBursarModal(bursarReconciliationModal);
+  });
+  document.getElementById("bursarPaymentForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = document.getElementById("bursarPaymentStatus");
+    status.textContent = "Recording payment…";
+    const values = Object.fromEntries(new FormData(form).entries());
+    if (!values.reference) delete values.reference;
+    try {
+      const payload = await bursarApi("/api/school/bursar/payments", {
+        method: "POST",
+        body: JSON.stringify({ ...values, amountPaid: Number(values.amountPaid) }),
+      });
+      closeBursarModal(bursarPaymentModal);
+      form.reset();
+      showToast(`Payment ${payload.payment?.reference || "recorded"} successfully.`);
+      await refreshLiveData();
+    } catch (error) {
+      status.textContent = error?.message || "Payment could not be recorded.";
+    }
+  });
+  document.getElementById("bursarReconciliationForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = document.getElementById("bursarReconciliationStatus");
+    status.textContent = "Saving reconciliation…";
+    const values = Object.fromEntries(new FormData(form).entries());
+    try {
+      await bursarApi("/api/school/bursar/reconciliation", {
+        method: "POST",
+        body: JSON.stringify({
+          ...values,
+          cashInHand: Number(values.cashInHand),
+          mobileMoney: Number(values.mobileMoney),
+          bank: Number(values.bank),
+        }),
+      });
+      closeBursarModal(bursarReconciliationModal);
+      form.reset();
+      showToast("Daily reconciliation saved.");
+    } catch (error) {
+      status.textContent = error?.message || "Reconciliation could not be saved.";
+    }
   });
   document.querySelector("[data-close-print-settings]").addEventListener("click", closePrintSettings);
   printModal.addEventListener("click", (event) => {

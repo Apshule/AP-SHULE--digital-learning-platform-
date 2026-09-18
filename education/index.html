@@ -166,6 +166,49 @@
       <div class="modal-actions print-settings-actions"><button class="button light" type="button" data-print-back>Back</button><button class="button primary" type="button" data-print-next>Continue</button></div>
     </div>
   </div>
+  <div id="bursarPaymentModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bursarPaymentTitle">
+      <button class="modal-close" type="button" data-close-bursar-payment aria-label="Close">×</button>
+      <p class="eyebrow">Bursar workspace</p>
+      <h2 id="bursarPaymentTitle">Record a payment</h2>
+      <p class="modal-copy">Record a verified payment against an authorized school fee account. This action updates the balance and creates an audit record.</p>
+      <form id="bursarPaymentForm">
+        <label>Bill or account reference<input required name="billReference" placeholder="e.g. BILL-2026-001"></label>
+        <div class="two-col">
+          <label>Amount paid (UGX)<input required name="amountPaid" type="number" min="1" step="1"></label>
+          <label>Payment method<select required name="paymentMethod"><option value="cash">Cash</option><option value="mobile_money">Mobile money</option><option value="bank_transfer">Bank transfer</option><option value="cheque">Cheque</option></select></label>
+        </div>
+        <div class="two-col">
+          <label>Payment reference<input name="reference" pattern="[A-Za-z0-9/_-]{3,80}" placeholder="Optional internal reference"></label>
+          <label>Payer / learner name<input name="clientName" placeholder="Optional"></label>
+        </div>
+        <label>Notes<textarea name="notes" rows="3" placeholder="Optional reconciliation note"></textarea></label>
+        <p id="bursarPaymentStatus" class="modal-copy" aria-live="polite"></p>
+        <div class="modal-actions"><button class="button light" type="button" data-close-bursar-payment>Cancel</button><button class="button primary" type="submit">Record payment</button></div>
+      </form>
+    </div>
+  </div>
+  <div id="bursarReconciliationModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="bursarReconciliationTitle">
+      <button class="modal-close" type="button" data-close-bursar-reconciliation aria-label="Close">×</button>
+      <p class="eyebrow">Bursar workspace</p>
+      <h2 id="bursarReconciliationTitle">Daily reconciliation</h2>
+      <p class="modal-copy">Save the day’s controlled cash, mobile-money, and bank totals for the authorized institution.</p>
+      <form id="bursarReconciliationForm">
+        <div class="two-col">
+          <label>Date<input required name="date" type="date"></label>
+          <label>Cash in hand (UGX)<input required name="cashInHand" type="number" min="0" step="1" value="0"></label>
+        </div>
+        <div class="two-col">
+          <label>Mobile money (UGX)<input required name="mobileMoney" type="number" min="0" step="1" value="0"></label>
+          <label>Bank (UGX)<input required name="bank" type="number" min="0" step="1" value="0"></label>
+        </div>
+        <label>Notes<textarea name="notes" rows="3" placeholder="Optional variance or close-out note"></textarea></label>
+        <p id="bursarReconciliationStatus" class="modal-copy" aria-live="polite"></p>
+        <div class="modal-actions"><button class="button light" type="button" data-close-bursar-reconciliation>Cancel</button><button class="button primary" type="submit">Save reconciliation</button></div>
+      </form>
+    </div>
+  </div>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script>

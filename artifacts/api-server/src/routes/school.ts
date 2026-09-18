@@ -123,7 +123,7 @@ async function firestoreGet(
   token: string,
 ): Promise<FirestoreDocument | null> {
   const response = await fetch(
-    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`,
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path.replace(/^\/+/, "")}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!response.ok) return null;
@@ -142,6 +142,60 @@ async function firestoreList(
   if (!response.ok) return [];
   const payload = (await response.json()) as { documents?: FirestoreDocument[] };
   return payload.documents ?? [];
+}
+
+async function firestoreCollectionIds(token: string): Promise<string[]> {
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
+      `/databases/(default)/documents:listCollectionIds`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ pageSize: 300 }),
+    },
+  );
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { collectionIds?: string[] };
+  return payload.collectionIds ?? [];
+}
+
+function firestoreEncodedValue(value: unknown): Record<string, unknown> {
+  if (value === null || value === undefined) return { nullValue: null };
+  if (typeof value === "boolean") return { booleanValue: value };
+  if (typeof value === "number") return { doubleValue: value };
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(firestoreEncodedValue) } };
+  if (typeof value === "object") {
+    return {
+      mapValue: {
+        fields: Object.fromEntries(
+          Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, firestoreEncodedValue(item)]),
+        ),
+      },
+    };
+  }
+  return { stringValue: String(value) };
+}
+
+async function firestoreWrite(
+  path: string,
+  token: string,
+  data: Record<string, unknown>,
+  method: "PATCH" | "POST" = "PATCH",
+): Promise<FirestoreDocument | null> {
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path.replace(/^\/+/, "")}`,
+    {
+      method,
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, firestoreEncodedValue(value)]),
+        ),
+      }),
+    },
+  );
+  if (!response.ok) throw new Error(`Firestore write failed (${response.status})`);
+  return (await response.json()) as FirestoreDocument;
 }
 
 function educationLevel(data: Record<string, unknown>): "primary" | "secondary" | "unknown" {
@@ -182,6 +236,69 @@ function financialRecord(data: Record<string, unknown>, id: string) {
     paymentDate: data.paymentDate ?? data.createdAt ?? "",
     dueDate: data.dueDate ?? "",
   }, id);
+}
+
+function academicText(data: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "string" || typeof value === "number") return String(value);
+  }
+  return "";
+}
+
+function academicNumber(data: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = Number(data[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+function academicRecord(data: Record<string, unknown>, id: string, kind: "marks" | "reports") {
+  return safeRecord({
+    learnerId: academicText(data, ["learnerId", "studentId", "studentNumber", "admissionNumber", "userId"]),
+    learnerName: academicText(data, ["learnerName", "studentName", "student", "name", "displayName"]),
+    className: academicText(data, ["className", "class", "classLevel", "level", "stream"]),
+    subject: academicText(data, ["subjectName", "subject", "course", "paper"]),
+    term: academicText(data, ["term", "termName", "academicTerm", "semester"]),
+    curriculum: academicText(data, ["curriculum", "curriculumType", "assessmentType"]),
+    score: academicNumber(data, ["score", "marks", "mark", "percentage", "totalScore"]),
+    average: academicNumber(data, ["average", "averageScore", "mean"]),
+    grade: academicText(data, ["grade", "division", "achievementLevel", "level"]),
+    remark: academicText(data, ["remark", "remarks", "comment", "teacherRemark"]),
+    status: academicText(data, ["status", "approvalStatus", "reportStatus"]) || "recorded",
+    recordType: kind,
+  }, id);
+}
+
+function academicCollectionNames(collectionIds: string[], kind: "marks" | "reports"): string[] {
+  const knownNames = kind === "marks"
+    ? ["school_marks", "marks", "student_marks", "academic_marks", "assessments"]
+    : ["school_report_cards", "report_cards", "academic_reports", "academic_report_cards", "learner_reports"];
+  const names = new Set([...collectionIds, ...knownNames]);
+  return [...names].filter((name) => {
+    const normalized = name.toLowerCase();
+    const matches = kind === "marks"
+      ? /(mark|score|assessment|result)/.test(normalized)
+      : /(report|result)/.test(normalized);
+    return matches && !/(lesson|compliance|curriculum_links|template)/.test(normalized);
+  });
+}
+
+async function loadAcademicRecords(
+  collectionIds: string[],
+  schoolIds: Set<string>,
+  token: string,
+  kind: "marks" | "reports",
+) {
+  const documents = await Promise.all(
+    academicCollectionNames(collectionIds, kind).map((collection) => firestoreList(collection, token)),
+  );
+  return [...new Map(
+    documents.flat()
+      .filter((item) => belongsToSchool(documentData(item), schoolIds))
+      .map((item) => [item.name ?? documentId(item), item]),
+  ).values()].slice(0, 500).map((item) => academicRecord(documentData(item), documentId(item), kind));
 }
 
 function numberValue(value: unknown): number {
@@ -226,6 +343,21 @@ async function bursarRecords(
   };
 }
 
+async function findBursarBill(
+  billReference: string,
+  schoolIds: Set<string>,
+  adminToken: string,
+): Promise<{ collection: string; id: string; data: Record<string, unknown> } | null> {
+  for (const collection of ["school_fees", "school_bills"]) {
+    const document = await firestoreGet(`${collection}/${encodeURIComponent(billReference)}`, adminToken);
+    if (!document) continue;
+    const data = documentData(document);
+    if (!belongsToSchool(data, schoolIds)) return null;
+    return { collection, id: documentId(document) || billReference, data };
+  }
+  return null;
+}
+
 /**
  * GET /api/school/education-workspace
  *
@@ -248,12 +380,13 @@ router.get("/school/education-workspace", async (req, res) => {
   }
 
   try {
-    const [directSchool, allSchools, allUsers, classes, subjects] = await Promise.all([
+    const [directSchool, allSchools, allUsers, classes, subjects, collectionIds] = await Promise.all([
       firestoreGet(`schools/${encodeURIComponent(caller.schoolId)}`, adminToken),
       firestoreList("schools", adminToken),
       firestoreList("users", adminToken),
       firestoreList("school_classes", adminToken),
       firestoreList("school_subjects", adminToken),
+      firestoreCollectionIds(adminToken),
     ]);
     const schoolDocument = directSchool ?? allSchools.find((item) => {
       const data = documentData(item);
@@ -272,6 +405,10 @@ router.get("/school/education-workspace", async (req, res) => {
     for (const value of [caller.institutionId, school.institutionId, school.schoolId]) {
       if (typeof value === "string" && value) schoolIds.add(value);
     }
+    const [reports, marks] = await Promise.all([
+      loadAcademicRecords(collectionIds, schoolIds, adminToken, "reports"),
+      loadAcademicRecords(collectionIds, schoolIds, adminToken, "marks"),
+    ]);
     const attendanceDocuments = await Promise.all(
       [...schoolIds].map((id) => firestoreList(`attendanceEvents/${encodeURIComponent(id)}/records`, adminToken)),
     );
@@ -331,13 +468,213 @@ router.get("/school/education-workspace", async (req, res) => {
       classes: scopedClasses,
       subjects: scopedSubjects,
       attendance: attendance.map((item) => safeRecord(documentData(item), documentId(item))),
-      reports: [],
-      marks: [],
+      reports,
+      marks,
       bursar,
     });
   } catch (err) {
     logger.warn({ err, schoolId: caller.schoolId }, "Education workspace read failed");
     res.status(502).json({ ok: false, error: "Unable to load authorized school records" });
+  }
+});
+
+router.post("/school/bursar/payments", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role !== "bursar") {
+    res.status(403).json({ ok: false, error: "Bursar role required" });
+    return;
+  }
+
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Bursar records are temporarily unavailable" });
+    return;
+  }
+
+  const body = req.body as {
+    billReference?: string;
+    amountPaid?: number | string;
+    paymentMethod?: string;
+    reference?: string;
+    clientName?: string;
+    clientPhone?: string;
+    notes?: string;
+  };
+  const billReference = String(body.billReference ?? "").trim();
+  const amountPaid = Number(body.amountPaid);
+  const paymentMethod = String(body.paymentMethod ?? "").trim().toLowerCase();
+  const reference = String(body.reference ?? `BUR-${Date.now()}-${caller.uid.slice(0, 8)}`).trim();
+  if (
+    !billReference ||
+    !Number.isFinite(amountPaid) ||
+    amountPaid <= 0 ||
+    !["cash", "mobile_money", "bank_transfer", "cheque"].includes(paymentMethod) ||
+    !/^[A-Za-z0-9/_-]{3,80}$/.test(reference)
+  ) {
+    res.status(400).json({
+      ok: false,
+      error: "billReference, positive amountPaid, valid paymentMethod and reference are required",
+    });
+    return;
+  }
+
+  try {
+    const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    const bill = await findBursarBill(billReference, schoolIds, adminToken);
+    if (!bill) {
+      res.status(404).json({ ok: false, error: "Authorized fee account was not found" });
+      return;
+    }
+
+    const existingPayments = await firestoreList("payment_transactions", adminToken);
+    const duplicate = existingPayments.some((item) => {
+      const data = documentData(item);
+      return String(data.reference ?? "") === reference && belongsToSchool(data, schoolIds);
+    });
+    if (duplicate) {
+      res.status(409).json({ ok: false, error: "A payment with this reference already exists" });
+      return;
+    }
+
+    const totalAmount = numberValue(bill.data.totalAmount ?? bill.data.billTotal ?? bill.data.amount);
+    const paidAmount = numberValue(bill.data.paidAmount ?? bill.data.amountPaid);
+    const outstanding = Math.max(0, totalAmount - paidAmount);
+    if (!totalAmount || amountPaid > outstanding) {
+      res.status(409).json({
+        ok: false,
+        error: outstanding ? `Payment exceeds the outstanding balance of UGX ${outstanding.toLocaleString("en-UG")}` : "This fee account has no outstanding balance",
+      });
+      return;
+    }
+
+    const nextPaid = paidAmount + amountPaid;
+    const nextBalance = Math.max(0, totalAmount - nextPaid);
+    const status = nextBalance === 0 ? "paid" : "partial";
+    const createdAt = new Date().toISOString();
+    const payment = {
+      reference,
+      billReference,
+      clientName: String(body.clientName ?? bill.data.clientName ?? bill.data.studentName ?? "").trim(),
+      clientPhone: String(body.clientPhone ?? "").trim(),
+      institutionId: caller.institutionId ?? caller.schoolId,
+      schoolId: caller.schoolId,
+      totalAmount,
+      amountPaid,
+      balanceRemaining: nextBalance,
+      fee: 0,
+      netAmount: amountPaid,
+      paymentType: amountPaid === outstanding ? "Full Payment" : "Partial Payment",
+      paymentMethod,
+      notes: String(body.notes ?? "").trim(),
+      status: "pending",
+      paymentDate: createdAt,
+      createdAt,
+      createdBy: caller.uid,
+      source: "bursar_manual",
+    };
+
+    const transaction = await firestoreWrite("payment_transactions", adminToken, payment, "POST");
+    const transactionId = documentId(transaction ?? {});
+    try {
+      await firestoreWrite(`${bill.collection}/${encodeURIComponent(bill.id)}`, adminToken, {
+        paidAmount: nextPaid,
+        amountPaid: nextPaid,
+        balanceAmount: nextBalance,
+        balanceRemaining: nextBalance,
+        paymentStatus: status === "paid" ? "Paid" : "Partially Paid",
+        status,
+        lastPaymentAmount: amountPaid,
+        lastPaymentDate: createdAt,
+        updatedAt: createdAt,
+      });
+      await firestoreWrite(`/payment_transactions/${encodeURIComponent(transactionId)}`, adminToken, {
+        status: "completed",
+        completedAt: createdAt,
+      });
+    } catch (error) {
+      if (transactionId) {
+        await firestoreWrite(`/payment_transactions/${encodeURIComponent(transactionId)}`, adminToken, {
+          status: "failed",
+          failureReason: "Fee account update failed",
+          updatedAt: new Date().toISOString(),
+        }).catch(() => undefined);
+      }
+      throw error;
+    }
+
+    await firestoreWrite("payment_audit_log", adminToken, {
+      action: "bursar_manual_payment_recorded",
+      actorId: caller.uid,
+      institutionId: caller.institutionId ?? caller.schoolId,
+      details: { reference, billReference, amountPaid, paymentMethod },
+      timestamp: createdAt,
+    }, "POST").catch(() => undefined);
+
+    res.status(201).json({
+      ok: true,
+      payment: { id: transactionId, ...payment, status: "completed", completedAt: createdAt },
+      balanceRemaining: nextBalance,
+    });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Bursar manual payment failed");
+    res.status(502).json({ ok: false, error: "Unable to record the bursar payment" });
+  }
+});
+
+router.post("/school/bursar/reconciliation", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role !== "bursar") {
+    res.status(403).json({ ok: false, error: "Bursar role required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Bursar records are temporarily unavailable" });
+    return;
+  }
+  const body = req.body as Record<string, unknown>;
+  const date = String(body.date ?? new Date().toISOString().slice(0, 10));
+  const amounts = ["cashInHand", "mobileMoney", "bank", "insuranceClaimsPending"];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || amounts.some((key) => !Number.isFinite(Number(body[key] ?? 0)) || Number(body[key] ?? 0) < 0)) {
+    res.status(400).json({ ok: false, error: "date and non-negative reconciliation amounts are required" });
+    return;
+  }
+  try {
+    const id = `${caller.schoolId}-${date}`.replace(/[^A-Za-z0-9_-]/g, "_");
+    const record = {
+      reconciliationDate: date,
+      date,
+      schoolId: caller.schoolId,
+      institutionId: caller.institutionId ?? caller.schoolId,
+      cashInHand: Number(body.cashInHand ?? 0),
+      mobileMoney: Number(body.mobileMoney ?? 0),
+      bank: Number(body.bank ?? 0),
+      insuranceClaimsPending: Number(body.insuranceClaimsPending ?? 0),
+      variances: typeof body.variances === "object" && body.variances ? body.variances : {},
+      notes: String(body.notes ?? "").trim(),
+      createdBy: caller.uid,
+      createdAt: new Date().toISOString(),
+    };
+    await firestoreWrite(`payment_daily_reconciliations/${encodeURIComponent(id)}`, adminToken, record);
+    await firestoreWrite("payment_audit_log", adminToken, {
+      action: "bursar_daily_reconciliation_created",
+      actorId: caller.uid,
+      institutionId: record.institutionId,
+      details: { date, id },
+      timestamp: record.createdAt,
+    }, "POST").catch(() => undefined);
+    res.status(201).json({ ok: true, reconciliation: { id, ...record } });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Bursar reconciliation failed");
+    res.status(502).json({ ok: false, error: "Unable to save the daily reconciliation" });
   }
 });
 
