@@ -55,13 +55,22 @@ describe("Education workspace integration", () => {
      expect(schoolRouteSource).toContain('firestoreList("payment_transactions"');
      expect(schoolRouteSource).toContain('router.post("/school/bursar/payments"');
      expect(schoolRouteSource).toContain('router.post("/school/bursar/reconciliation"');
+      expect(schoolRouteSource).toContain('router.get("/school/bursar/receipts/:paymentId"');
+      expect(schoolRouteSource).toContain('router.get("/school/bursar/statements"');
+      expect(schoolRouteSource).toContain('router.post("/school/bursar/statements/close"');
+      expect(schoolRouteSource).toContain("bursarMonthLocked");
+      expect(schoolRouteSource).toContain("receiptHash");
      expect(educationScript).toContain('const bursarNavItems');
      expect(educationScript).toContain("Bursar dashboard");
      expect(educationScript).toContain('state.liveData?.workspace === "bursar"');
      expect(educationSource).toContain('id="bursarPaymentModal"');
      expect(educationSource).toContain('id="bursarReconciliationModal"');
+      expect(educationSource).toContain('id="bursarReceiptModal"');
      expect(educationScript).toContain('bursarApi("/api/school/bursar/payments"');
      expect(educationScript).toContain('bursarApi("/api/school/bursar/reconciliation"');
+      expect(educationScript).toContain("/api/school/bursar/receipts/");
+      expect(educationScript).toContain("/api/school/bursar/statements?from=");
+      expect(educationScript).toContain("/api/school/bursar/statements/close");
   });
 
   it("keeps the route and landing-page education entry connected", () => {

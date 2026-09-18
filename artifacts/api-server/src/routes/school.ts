@@ -316,11 +316,27 @@ async function bursarMonthLocked(institutionId: string, month: string, adminToke
     `payment_monthly_archives/${encodeURIComponent(monthArchiveId(institutionId, month))}`,
     adminToken,
   );
-  return scopedArchive?.locked === true || scopedArchive?.status === "locked";
+  const archive = scopedArchive ? documentData(scopedArchive) : {};
+  return archive.locked === true || archive.status === "locked";
 }
 
 function transactionDate(data: Record<string, unknown>): number {
   return Date.parse(String(data.paymentDate ?? data.createdAt ?? ""));
+}
+
+function transactionMonth(data: Record<string, unknown>): string {
+  const date = new Date(transactionDate(data));
+  return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 7) : "";
+}
+
+function validDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function validMonth(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
 function transactionInPeriod(data: Record<string, unknown>, from?: string, to?: string): boolean {
@@ -338,6 +354,70 @@ function bursarReceiptHash(data: Record<string, unknown>): string {
     institutionId: data.institutionId,
     paymentDate: data.paymentDate ?? data.createdAt,
   })).digest("hex");
+}
+
+function bursarReceipt(data: Record<string, unknown>, id: string, institutionId: string) {
+  const receiptHash = bursarReceiptHash({ ...data, institutionId });
+  return {
+    receiptId: `RCP-${id}`,
+    transactionId: id,
+    reference: String(data.reference ?? ""),
+    billReference: String(data.billReference ?? ""),
+    clientName: String(data.clientName ?? data.studentName ?? data.payerName ?? ""),
+    amountPaid: numberValue(data.amountPaid ?? data.paidAmount ?? data.amount),
+    paymentMethod: String(data.paymentMethod ?? ""),
+    paymentDate: String(data.paymentDate ?? data.createdAt ?? ""),
+    institutionId,
+    status: String(data.status ?? ""),
+    receiptHash,
+    verification: `sha256:${receiptHash}`,
+  };
+}
+
+async function bursarStatement(
+  schoolIds: Set<string>,
+  institutionId: string,
+  from: string,
+  to: string,
+  adminToken: string,
+) {
+  const documents = await firestoreList("payment_transactions", adminToken);
+  const payments = documents
+    .map((item) => ({ id: documentId(item), data: documentData(item) }))
+    .filter(({ data }) => belongsToSchool(data, schoolIds) && transactionInPeriod(data, from, to))
+    .map(({ id, data }) => ({
+      id,
+      reference: String(data.reference ?? ""),
+      billReference: String(data.billReference ?? ""),
+      clientName: String(data.clientName ?? data.studentName ?? data.payerName ?? ""),
+      amountPaid: numberValue(data.amountPaid ?? data.paidAmount ?? data.amount),
+      paymentMethod: String(data.paymentMethod ?? ""),
+      paymentDate: String(data.paymentDate ?? data.createdAt ?? ""),
+      status: String(data.status ?? ""),
+      receiptHash: bursarReceiptHash({ ...data, institutionId }),
+    }))
+    .sort((a, b) => Date.parse(b.paymentDate) - Date.parse(a.paymentDate));
+  const totalAmount = payments.reduce((sum, payment) => sum + payment.amountPaid, 0);
+  const byMethod = payments.reduce<Record<string, number>>((totals, payment) => {
+    const method = payment.paymentMethod || "unspecified";
+    totals[method] = (totals[method] ?? 0) + payment.amountPaid;
+    return totals;
+  }, {});
+  const months = [...new Set(payments.map((payment) => transactionMonth(payment)).filter(Boolean))];
+  const lockedMonths = await Promise.all(months.map(async (month) => ({
+    month,
+    locked: await bursarMonthLocked(institutionId, month, adminToken),
+  })));
+  return {
+    institutionId,
+    from,
+    to,
+    paymentCount: payments.length,
+    totalAmount,
+    byMethod,
+    lockedMonths,
+    payments: payments.slice(0, 500),
+  };
 }
 
 async function bursarRecords(
@@ -558,6 +638,12 @@ router.post("/school/bursar/payments", async (req, res) => {
 
   try {
     const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    const institutionId = caller.institutionId ?? caller.schoolId;
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    if (await bursarMonthLocked(institutionId, currentMonth, adminToken)) {
+      res.status(409).json({ ok: false, error: `The ${currentMonth} statement is locked; payment edits are no longer allowed` });
+      return;
+    }
     const bill = await findBursarBill(billReference, schoolIds, adminToken);
     if (!bill) {
       res.status(404).json({ ok: false, error: "Authorized fee account was not found" });
@@ -589,7 +675,7 @@ router.post("/school/bursar/payments", async (req, res) => {
     const nextBalance = Math.max(0, totalAmount - nextPaid);
     const status = nextBalance === 0 ? "paid" : "partial";
     const createdAt = new Date().toISOString();
-    const payment = {
+    const payment: Record<string, unknown> = {
       reference,
       billReference,
       clientName: String(body.clientName ?? bill.data.clientName ?? bill.data.studentName ?? "").trim(),
@@ -610,6 +696,7 @@ router.post("/school/bursar/payments", async (req, res) => {
       createdBy: caller.uid,
       source: "bursar_manual",
     };
+    payment.receiptHash = bursarReceiptHash(payment);
 
     const transaction = await firestoreWrite("payment_transactions", adminToken, payment, "POST");
     const transactionId = documentId(transaction ?? {});
@@ -651,6 +738,7 @@ router.post("/school/bursar/payments", async (req, res) => {
     res.status(201).json({
       ok: true,
       payment: { id: transactionId, ...payment, status: "completed", completedAt: createdAt },
+      receipt: bursarReceipt(payment, transactionId, institutionId),
       balanceRemaining: nextBalance,
     });
   } catch (err) {
@@ -682,12 +770,18 @@ router.post("/school/bursar/reconciliation", async (req, res) => {
     return;
   }
   try {
+    const institutionId = caller.institutionId ?? caller.schoolId;
+    const month = date.slice(0, 7);
+    if (await bursarMonthLocked(institutionId, month, adminToken)) {
+      res.status(409).json({ ok: false, error: `The ${month} statement is locked; reconciliation edits are no longer allowed` });
+      return;
+    }
     const id = `${caller.schoolId}-${date}`.replace(/[^A-Za-z0-9_-]/g, "_");
     const record = {
       reconciliationDate: date,
       date,
       schoolId: caller.schoolId,
-      institutionId: caller.institutionId ?? caller.schoolId,
+      institutionId,
       cashInHand: Number(body.cashInHand ?? 0),
       mobileMoney: Number(body.mobileMoney ?? 0),
       bank: Number(body.bank ?? 0),
@@ -709,6 +803,169 @@ router.post("/school/bursar/reconciliation", async (req, res) => {
   } catch (err) {
     logger.warn({ err, schoolId: caller.schoolId }, "Bursar reconciliation failed");
     res.status(502).json({ ok: false, error: "Unable to save the daily reconciliation" });
+  }
+});
+
+router.get("/school/bursar/receipts/:paymentId", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role !== "bursar") {
+    res.status(403).json({ ok: false, error: "Bursar role required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Bursar records are temporarily unavailable" });
+    return;
+  }
+
+  try {
+    const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    const payment = await firestoreGet(
+      `payment_transactions/${encodeURIComponent(String(req.params.paymentId))}`,
+      adminToken,
+    );
+    if (!payment) {
+      res.status(404).json({ ok: false, error: "Payment transaction was not found" });
+      return;
+    }
+    const data = documentData(payment);
+    if (!belongsToSchool(data, schoolIds)) {
+      res.status(404).json({ ok: false, error: "Payment transaction was not found" });
+      return;
+    }
+    const status = String(data.status ?? "").toLowerCase();
+    if (["failed", "pending", "processing"].includes(status)) {
+      res.status(409).json({ ok: false, error: "A receipt is available only after the payment is completed" });
+      return;
+    }
+    const institutionId = caller.institutionId ?? caller.schoolId;
+    const receipt = bursarReceipt(data, documentId(payment) || String(req.params.paymentId), institutionId);
+    res.json({
+      ok: true,
+      receipt: {
+        ...receipt,
+        verified: !data.receiptHash || data.receiptHash === receipt.receiptHash,
+      },
+    });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Bursar receipt retrieval failed");
+    res.status(502).json({ ok: false, error: "Unable to retrieve the payment receipt" });
+  }
+});
+
+router.get("/school/bursar/statements", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role !== "bursar") {
+    res.status(403).json({ ok: false, error: "Bursar role required" });
+    return;
+  }
+  const from = String(req.query.from ?? "");
+  const to = String(req.query.to ?? "");
+  if (!validDateOnly(from) || !validDateOnly(to) || from > to) {
+    res.status(400).json({ ok: false, error: "A valid from and to date are required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Bursar records are temporarily unavailable" });
+    return;
+  }
+
+  try {
+    const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    const statement = await bursarStatement(
+      schoolIds,
+      caller.institutionId ?? caller.schoolId,
+      from,
+      to,
+      adminToken,
+    );
+    res.json({ ok: true, statement });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Bursar statement retrieval failed");
+    res.status(502).json({ ok: false, error: "Unable to generate the bursar statement" });
+  }
+});
+
+router.post("/school/bursar/statements/close", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role !== "bursar") {
+    res.status(403).json({ ok: false, error: "Bursar role required" });
+    return;
+  }
+  const month = String((req.body as Record<string, unknown>).month ?? "");
+  if (!validMonth(month)) {
+    res.status(400).json({ ok: false, error: "A valid statement month is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Bursar records are temporarily unavailable" });
+    return;
+  }
+
+  try {
+    const institutionId = caller.institutionId ?? caller.schoolId;
+    const archiveId = monthArchiveId(institutionId, month);
+    const archivePath = `payment_monthly_archives/${encodeURIComponent(archiveId)}`;
+    const existing = await firestoreGet(archivePath, adminToken);
+    const existingData = existing ? documentData(existing) : {};
+    if (existingData.locked === true || existingData.status === "locked") {
+      res.json({ ok: true, alreadyLocked: true, statement: { id: archiveId, ...existingData } });
+      return;
+    }
+
+    const from = `${month}-01`;
+    const lastDay = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0))
+      .toISOString().slice(0, 10);
+    const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    const statement = await bursarStatement(schoolIds, institutionId, from, lastDay, adminToken);
+    const lockedAt = new Date().toISOString();
+    const archive = {
+      month,
+      institutionId,
+      schoolId: caller.schoolId,
+      from,
+      to: lastDay,
+      paymentCount: statement.paymentCount,
+      totalAmount: statement.totalAmount,
+      byMethod: statement.byMethod,
+      statementHash: createHash("sha256").update(JSON.stringify({
+        institutionId,
+        month,
+        paymentCount: statement.paymentCount,
+        totalAmount: statement.totalAmount,
+        byMethod: statement.byMethod,
+      })).digest("hex"),
+      locked: true,
+      status: "locked",
+      lockedAt,
+      lockedBy: caller.uid,
+    };
+    await firestoreWrite(archivePath, adminToken, archive);
+    await firestoreWrite("payment_audit_log", adminToken, {
+      action: "bursar_monthly_statement_locked",
+      actorId: caller.uid,
+      institutionId,
+      details: { month, archiveId, totalAmount: statement.totalAmount, paymentCount: statement.paymentCount },
+      timestamp: lockedAt,
+    }, "POST").catch(() => undefined);
+    res.status(201).json({ ok: true, alreadyLocked: false, statement: { id: archiveId, ...archive } });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Bursar monthly statement close failed");
+    res.status(502).json({ ok: false, error: "Unable to close the monthly statement" });
   }
 });
 

@@ -66,6 +66,8 @@
     account: initialAccount,
     view: initialAccount === "secondary" && secondaryViews.includes(previewParams.get("view") ?? "") ? previewParams.get("view") : "dashboard",
     liveData: null,
+    bursarStatement: null,
+    bursarReceipt: null,
     authState: "checking",
     authError: "",
     query: "",
@@ -145,6 +147,14 @@
     return `UGX ${Number(value || 0).toLocaleString("en-UG")}`;
   }
 
+  function bursarMonthRange() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const lastDay = new Date(year, today.getMonth() + 1, 0).getDate();
+    return { from: `${year}-${month}-01`, to: `${year}-${month}-${String(lastDay).padStart(2, "0")}`, month: `${year}-${month}` };
+  }
+
   function bursarDashboardView() {
     const summary = state.liveData?.bursar?.summary || {};
     const schoolName = escapeHtml(state.liveData?.school?.name || "Authorized school");
@@ -158,7 +168,7 @@
       </div>
       <div class="dashboard-columns">
         <article class="panel"><div class="panel-heading"><h3>Collection summary</h3><span>Institution scoped</span></div><div class="status-list"><span><i class="online"></i>Total billed <b>${escapeHtml(bursarMoney(summary.totalDue))}</b></span><span><i class="online"></i>Payments recorded <b>${Number(summary.paymentCount || 0)}</b></span><span><i class="online"></i>Payment total <b>${escapeHtml(bursarMoney(summary.paymentTotal))}</b></span></div></article>
-        <article class="panel"><div class="panel-heading"><h3>Bursar controls</h3><span>Institution scoped</span></div><div class="empty-state">Manual payment entry and daily reconciliation are enabled for this bursar account. Provider settlement, receipt export, and month-end close remain separate controls.</div></article>
+        <article class="panel"><div class="panel-heading"><h3>Bursar controls</h3><span>Institution scoped</span></div><div class="empty-state">Manual payment entry, verifiable receipts, date-range statements, and monthly close are enabled for this bursar account.</div></article>
       </div>`;
   }
 
@@ -169,12 +179,24 @@
 
   function bursarPaymentsView() {
     const payments = Array.isArray(state.liveData?.bursar?.payments) ? state.liveData.bursar.payments : [];
-    return `<div class="workspace-title"><div><h2>Payments</h2><p class="muted">Payment transactions linked to this institution.</p></div><button class="button primary compact" type="button" data-action="open-bursar-payment">Record payment</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td><span class="badge ${String(row.status).toLowerCase() === "completed" ? "green" : "gold"}">${escapeHtml(row.status || "pending")}</span></td><td>${escapeHtml(row.paymentDate || "—")}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No authorized payments are recorded yet.</div></td></tr>'}</tbody></table></div>`;
+    return `<div class="workspace-title"><div><h2>Payments</h2><p class="muted">Payment transactions linked to this institution.</p></div><button class="button primary compact" type="button" data-action="open-bursar-payment">Record payment</button></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.billReference || row.id || "—")}</td><td><strong>${escapeHtml(row.clientName || "—")}</strong></td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td><span class="badge ${String(row.status).toLowerCase() === "completed" ? "green" : "gold"}">${escapeHtml(row.status || "pending")}</span></td><td>${escapeHtml(row.paymentDate || "—")}</td><td>${row.id ? `<button class="button light compact" type="button" data-action="open-bursar-receipt" data-payment-id="${escapeHtml(row.id)}">Receipt</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No authorized payments are recorded yet.</div></td></tr>'}</tbody></table></div>`;
   }
 
   function bursarStatementsView() {
     const summary = state.liveData?.bursar?.summary || {};
-    return `<div class="workspace-title"><div><h2>Statements</h2><p class="muted">Current institution-level statement summary.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Total billed</label><input value="${escapeHtml(bursarMoney(summary.totalDue))}" readonly></div><div class="form-field"><label>Total received</label><input value="${escapeHtml(bursarMoney(summary.totalPaid))}" readonly></div><div class="form-field"><label>Outstanding</label><input value="${escapeHtml(bursarMoney(summary.outstandingBalance))}" readonly></div><p class="muted">Statement export and reconciliation remain a later bursar step.</p></div>`;
+    const range = bursarMonthRange();
+    const statement = state.bursarStatement?.statement;
+    const payments = Array.isArray(statement?.payments) ? statement.payments : [];
+    return `<div class="workspace-title"><div><h2>Statements</h2><p class="muted">Generate an institution-scoped statement for a selected date range, then close a month when reconciliation is complete.</p></div><span class="eyebrow">Live · controlled</span></div>
+      <div class="panel settings-card">
+        <form id="bursarStatementForm">
+          <div class="two-col"><label>From<input required name="from" type="date" value="${escapeHtml(state.bursarStatement?.from || range.from)}"></label><label>To<input required name="to" type="date" value="${escapeHtml(state.bursarStatement?.to || range.to)}"></label></div>
+          <div class="modal-actions"><button class="button primary compact" type="submit">Generate statement</button></div>
+        </form>
+        <div class="statement-summary"><div><small>Total billed</small><strong>${escapeHtml(bursarMoney(summary.totalDue))}</strong></div><div><small>Total received</small><strong>${escapeHtml(bursarMoney(summary.totalPaid))}</strong></div><div><small>Outstanding</small><strong>${escapeHtml(bursarMoney(summary.outstandingBalance))}</strong></div></div>
+      </div>
+      ${statement ? `<div class="panel"><div class="panel-heading"><h3>${statement.paymentCount} payments · ${escapeHtml(statement.from)} to ${escapeHtml(statement.to)}</h3><span>${escapeHtml(bursarMoney(statement.totalAmount))}</span></div><div class="status-list">${Object.entries(statement.byMethod || {}).map(([method, amount]) => `<span><i class="online"></i>${escapeHtml(method)} <b>${escapeHtml(bursarMoney(amount))}</b></span>`).join("") || '<span>No payments in this range.</span>'}</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Reference</th><th>Payer</th><th>Amount</th><th>Method</th><th>Date</th></tr></thead><tbody>${payments.map((row) => `<tr><td>${escapeHtml(row.reference || row.id)}</td><td>${escapeHtml(row.clientName || "—")}</td><td>${escapeHtml(bursarMoney(row.amountPaid))}</td><td>${escapeHtml(row.paymentMethod || "—")}</td><td>${escapeHtml(row.paymentDate || "—")}</td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No payments were recorded in this range.</div></td></tr>'}</tbody></table></div></div>` : ""}
+      <div class="panel settings-card"><div class="panel-heading"><h3>Close monthly statement</h3><span>Locks later payment and reconciliation edits</span></div><form id="bursarCloseStatementForm"><div class="two-col"><label>Month<input required name="month" type="month" value="${escapeHtml(state.bursarStatement?.month || range.month)}"></label><div class="empty-state">Closing is institution-scoped and cannot be undone by this bursar workflow.</div></div><p id="bursarStatementStatus" class="modal-copy" aria-live="polite"></p><div class="modal-actions"><button class="button primary compact" type="submit">Close month</button></div></form></div>`;
   }
 
   function liveRecordsView(titleText, records, emptyText) {
@@ -514,6 +536,24 @@
         if (date && !date.value) date.value = new Date().toISOString().slice(0, 10);
       }
     }
+    if (action === "open-bursar-receipt" && target.dataset.paymentId) {
+      const modal = document.getElementById("bursarReceiptModal");
+      const receiptContent = document.getElementById("bursarReceiptContent");
+      if (modal && receiptContent) {
+        receiptContent.innerHTML = '<div class="empty-state">Loading receipt…</div>';
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        bursarApi(`/api/school/bursar/receipts/${encodeURIComponent(target.dataset.paymentId)}`)
+          .then((payload) => {
+            state.bursarReceipt = payload.receipt;
+            const receipt = payload.receipt;
+            receiptContent.innerHTML = `<div class="receipt-verification ${receipt.verified ? "verified" : "warning"}"><strong>${receipt.verified ? "Verified receipt" : "Verification warning"}</strong><span>${escapeHtml(receipt.verification)}</span></div><div class="receipt-grid"><span>Receipt number<b>${escapeHtml(receipt.receiptId)}</b></span><span>Payment reference<b>${escapeHtml(receipt.reference || "—")}</b></span><span>Payer / learner<b>${escapeHtml(receipt.clientName || "—")}</b></span><span>Account<b>${escapeHtml(receipt.billReference || "—")}</b></span><span>Amount paid<b>${escapeHtml(bursarMoney(receipt.amountPaid))}</b></span><span>Payment method<b>${escapeHtml(receipt.paymentMethod || "—")}</b></span><span>Payment date<b>${escapeHtml(receipt.paymentDate || "—")}</b></span><span>Institution<b>${escapeHtml(receipt.institutionId)}</b></span></div><p class="muted">This receipt is verifiable against the server-issued SHA-256 transaction fingerprint.</p>`;
+          })
+          .catch((error) => {
+            receiptContent.innerHTML = `<div class="empty-state">${escapeHtml(error?.message || "Receipt could not be loaded.")}</div>`;
+          });
+      }
+    }
     if (action === "open-report") {
       state.reportType = target.dataset.report;
       state.view = "report-detail";
@@ -592,6 +632,36 @@
     } catch (error) {
       status.textContent = error?.message || "Reconciliation could not be saved.";
     }
+  });
+  content.addEventListener("submit", async (event) => {
+    const form = event.target;
+    if (form.id !== "bursarStatementForm" && form.id !== "bursarCloseStatementForm") return;
+    event.preventDefault();
+    const values = Object.fromEntries(new FormData(form).entries());
+    const status = document.getElementById("bursarStatementStatus");
+    if (status) status.textContent = form.id === "bursarStatementForm" ? "Generating statement…" : "Closing monthly statement…";
+    try {
+      if (form.id === "bursarStatementForm") {
+        const payload = await bursarApi(`/api/school/bursar/statements?from=${encodeURIComponent(values.from)}&to=${encodeURIComponent(values.to)}`);
+        state.bursarStatement = { ...payload, from: values.from, to: values.to, month: String(values.from).slice(0, 7) };
+        renderView();
+      } else {
+        const payload = await bursarApi("/api/school/bursar/statements/close", {
+          method: "POST",
+          body: JSON.stringify({ month: values.month }),
+        });
+        state.bursarStatement = { ...(state.bursarStatement || {}), month: values.month, closed: payload.statement };
+        renderView();
+        showToast(payload.alreadyLocked ? "That month was already closed." : `Statement for ${values.month} closed.`);
+      }
+    } catch (error) {
+      if (status) status.textContent = error?.message || "The statement action could not be completed.";
+    }
+  });
+  const bursarReceiptModal = document.getElementById("bursarReceiptModal");
+  document.querySelectorAll("[data-close-bursar-receipt]").forEach((button) => button.addEventListener("click", () => closeBursarModal(bursarReceiptModal)));
+  bursarReceiptModal?.addEventListener("click", (event) => {
+    if (event.target === bursarReceiptModal) closeBursarModal(bursarReceiptModal);
   });
   document.querySelector("[data-close-print-settings]").addEventListener("click", closePrintSettings);
   printModal.addEventListener("click", (event) => {
