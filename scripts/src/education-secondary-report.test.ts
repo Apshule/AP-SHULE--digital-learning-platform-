@@ -14,19 +14,13 @@ function sectionBetween(source: string, start: string, end: string) {
   return source.slice(startIndex, endIndex);
 }
 
-describe("Secondary report-card preview contract", () => {
-  it("keeps all three curriculum column structures visible", () => {
-    const reportTableSection = sectionBetween(appSource, "function reportTable", "function secondaryReportDetailView");
-    const requiredHeaders = [
-      ["Subject", "A1", "U1", "Avg/3", "/100", "Grade", "Level"],
-      ["Subject", "U1", "U2", "U3", "U4", "AVE", "Pts", "Total/20", "MT", "EOT", "Total 100%", "Grade", "Remark"],
-      ["Code", "Subject", "A1", "A2", "A3", "AVG", "20%", "EOT", "80%", "100%", "Grade", "Comment", "TR"],
-    ];
-
-    for (const headers of requiredHeaders) {
-      for (const header of headers) expect(reportTableSection).toContain(`<th>${header}</th>`);
-    }
-    expect((reportTableSection.match(/class="report-table-wrap"/g) ?? []).length).toBe(3);
+describe("Secondary report-card live contract", () => {
+  it("does not render hard-coded curriculum rows or fake report details", () => {
+    expect(appSource).not.toContain("function reportTable");
+    expect(appSource).not.toContain("Preview Learner");
+    expect(appSource).not.toContain("Division 2");
+    expect(appSource).toContain('return liveRecordsView("Secondary report cards"');
+    expect(appSource).toContain('return liveRecordsView("Secondary report details"');
   });
 
   it("keeps secondary navigation separate from primary and finance-only modules", () => {
@@ -36,8 +30,8 @@ describe("Secondary report-card preview contract", () => {
     expect(secondaryNavSection).toContain('"print-settings"');
     expect(secondaryNavSection).not.toContain('"id-cards"');
     expect(secondaryNavSection).not.toContain("bursar");
-    expect(appSource).toContain("Secondary-only access boundary");
-    expect(appSource).toContain("× Finance and payroll");
+    expect(appSource).not.toContain("Secondary-only access boundary");
+    expect(appSource).not.toContain("× Finance and payroll");
   });
 
   it("keeps every print-settings step and validation guard", () => {
@@ -46,15 +40,16 @@ describe("Secondary report-card preview contract", () => {
     expect(appSource).toContain("Include student positions?");
     expect(appSource).toContain("Select activities to show");
     expect(appSource).toContain("Report details");
-    expect(appSource).toContain("Ready to preview and print");
+    expect(appSource).toContain("Ready to print");
     expect(appSource).toContain("state.printSettings.activities.length === 0");
     expect(appSource).toContain("Add a report title and class-teacher initials.");
     expect(appSource).toContain("window.print()");
   });
 
-  it("keeps wide report tables usable at mobile widths", () => {
+  it("keeps the live records table responsive at mobile widths", () => {
     expect(responsiveStyles).toContain(".report-table-wrap");
     expect(responsiveStyles).toContain("overflow-x:auto");
-    expect(appSource).toContain('<div class="report-table-wrap"><table class="report-table wide">');
+    expect(appSource).toContain('return liveRecordsView("Secondary marks"');
+    expect(appSource).toContain('return liveRecordsView("Secondary report cards"');
   });
 });

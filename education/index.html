@@ -17,7 +17,7 @@
   <div class="topbar">
     <div class="shell topbar-inner">
       <span>🇺🇬 Built for schools across Uganda</span>
-        <span id="educationDataMode">Preview data only · <a href="../">Return to APSHULE</a></span>
+        <span id="educationDataMode">Live records require secure sign-in · <a href="../">Open APSHULE login</a></span>
     </div>
   </div>
 
@@ -49,7 +49,7 @@
           </div>
           <div class="hero-trust"><span>✓ Offline-minded</span><span>✓ NCDC-aware</span><span>✓ Mobile-ready</span></div>
         </div>
-        <div class="hero-art" aria-label="Education workspace preview">
+        <div class="hero-art" aria-label="Education workspace overview">
           <div class="hero-art-top"><span class="status-dot"></span> Primary workspace <span class="art-time">09:41 EAT</span></div>
           <div class="art-window">
             <aside><div class="mini-logo">A</div><span class="mini-active">▦</span><span>♙</span><span>◫</span><span>◌</span></aside>
@@ -66,13 +66,12 @@
 
     <section class="access-section">
       <div class="shell access-grid">
-        <div class="login-preview">
-          <div class="login-preview-brand"><span class="orion-mark">O</span><div><strong>Orion</strong><small>School Management System</small></div></div>
-          <span class="preview-label">Primary account</span>
-          <div class="preview-input">Email or username</div>
-          <div class="preview-input">Password <span>••••••••</span></div>
+        <div class="login-preview secure-access-card">
+          <div class="login-preview-brand"><span class="orion-mark">O</span><div><strong>Secure school access</strong><small>Authorized APSHULE workspace</small></div></div>
+          <span class="preview-label">Live account access</span>
+          <p class="access-card-copy">Sign in through APSHULE to load the school, learner, academic, attendance, or bursar records your account is authorized to access.</p>
           <a class="button primary full" href="../">Open secure APSHULE login <span>↗</span></a>
-          <p class="preview-footnote">This is a visual reference only. Credentials are never collected on this preview page.</p>
+          <p class="preview-footnote">No credentials are collected on this page.</p>
         </div>
         <div class="access-story">
           <p class="eyebrow">Access state reference</p>
@@ -89,16 +88,16 @@
       <div class="shell">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Primary account preview</p>
+            <p class="eyebrow">Authenticated school workspace</p>
             <h2>Everything your secretary needs first.</h2>
-            <p id="workspaceDescription">Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.</p>
+            <p id="workspaceDescription">Live records appear here after secure sign-in and remain scoped to the authorized school account.</p>
           </div>
           <a class="button primary compact" href="../">Open live APSHULE login <span>↗</span></a>
         </div>
 
         <div class="preview-notice" id="workspaceNotice">
           <span class="notice-icon">i</span>
-          <span><strong>Preview mode.</strong> The numbers and learner names below are sample content from the supplied prototype, not live school records.</span>
+          <span><strong>Secure sign-in required.</strong> No records are shown. Open secure login to load authorized school data.</span>
         </div>
 
         <div class="app-shell">
@@ -111,7 +110,7 @@
             <header class="app-toolbar">
               <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">☰</button>
               <div><span class="toolbar-kicker" id="toolbarKicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
-              <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Workspace account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge" id="workspaceModeBadge"><i></i> Preview</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
+              <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Workspace account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge" id="workspaceModeBadge"><i></i> Sign in required</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
             </header>
             <div class="app-content" id="workspaceContent"></div>
           </section>
@@ -143,19 +142,6 @@
   </footer>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="studentModal" class="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="studentModalTitle">
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
-      <p class="eyebrow">Primary workspace</p>
-      <h2 id="studentModalTitle">Add a learner</h2>
-      <p class="modal-copy">This preview demonstrates the workflow. Live learner creation happens after secure sign-in.</p>
-      <form id="studentForm">
-        <label>Full name<input required name="name" placeholder="e.g. Amina Nakato"></label>
-        <label>Class<select name="class"><option>P1</option><option>P4</option><option>P7</option></select></label>
-        <div class="modal-actions"><button class="button light" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Save preview learner</button></div>
-      </form>
-    </div>
-  </div>
   <div id="printSettingsModal" class="modal" aria-hidden="true">
     <div class="modal-card print-settings-card" role="dialog" aria-modal="true" aria-labelledby="printSettingsTitle">
       <button class="modal-close" type="button" data-close-print-settings aria-label="Close">×</button>
