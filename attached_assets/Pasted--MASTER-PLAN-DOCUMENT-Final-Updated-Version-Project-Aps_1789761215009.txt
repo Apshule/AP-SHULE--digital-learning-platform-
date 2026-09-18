@@ -1,0 +1,481 @@
+📘 MASTER PLAN DOCUMENT (Final Updated Version)
+
+Project: Apshule Management System
+
+Version: 3.0 (Final)
+Contact: 0705732540 | apshule@gmail.com
+Prepared By: Project Owner
+Target Audience: Development Team / Freelance Developer
+Purpose: Complete blueprint for building a multi-role School Management System.
+
+---
+
+📖 SECTION 1: PROJECT OVERVIEW
+
+1.1 What Is This Project?
+
+The Apshule Management System is a web-based school management platform that helps schools manage students, academics, finances, attendance, and communication. It serves three distinct user types, each with their own dashboard, permissions, and modules.
+
+1.2 Project Goal
+
+Build a system that:
+
+· Allows a Secretary to manage students (Nursery to P7).
+· Allows a Headteacher to manage Secondary students (S1-S6) with O-Level and A-Level report cards.
+· Allows a Bursar to manage all school finances (fees, budgets, payroll, expenses, bank reconciliation).
+· Works on both mobile phones and desktop computers.
+· Generates professional PDF documents (report cards, ID cards, receipts).
+
+1.3 Target Users
+
+Role Email Example Primary Responsibility
+Primary Secretary secretary@apshule.com Student records, ID Cards, Admission Letters
+Secondary Headteacher headteacher@apshule.com Report Cards, Mark Entry, Grading
+Bursar bursar@apshule.com Fees, Payments, Payroll, Budgets
+
+---
+
+👥 SECTION 2: USER ROLES & PERMISSIONS
+
+2.1 Primary Account (Secretary)
+
+Who: School administrative secretary for Primary section.
+Can Access:
+
+· Dashboard (Primary stats)
+· Students List (Nursery, P1-P7)
+· ID Cards, Admission Letters, Graduation Certificates
+· Primary Report Cards
+· Attendance
+· Send SMS
+· My Profile
+
+Cannot Access:
+
+· Secondary Report Cards
+· A-Level Combinations
+· Finance Modules
+· Payroll
+
+2.2 Secondary Account (Headteacher)
+
+Who: School headteacher or academic administrator for Secondary section.
+Can Access:
+
+· Dashboard (Secondary stats)
+· Students List (S1-S6)
+· A-Level Combinations
+· O-Level Report Cards
+· A-Level Report Cards
+· Mark Entry
+· Custom Grading Scales
+· Signature Management
+· Assign Teachers to Subjects
+· Attendance
+· Send SMS
+· My Profile
+
+Cannot Access:
+
+· Primary Report Cards
+· Finance Modules
+· Payroll
+
+2.3 Bursar Account (Finance)
+
+Who: School bursar or finance officer.
+Can Access:
+
+· Dashboard (Financial stats)
+· Learner Sponsorships
+· Fee Structures
+· Optional Payments
+· Manage Optional Payment Items
+· Record Payment
+· Budgets
+· Expenses
+· Bank Reconciliation
+· Staff Contracts
+· Payroll Runs
+· Financial Reports
+· Send SMS
+· My Profile
+
+Cannot Access:
+
+· Student Academic Records
+· Report Cards
+· Grading Scales
+
+---
+
+🎨 SECTION 3: UI/UX DESIGN SYSTEM
+
+3.1 Layout Structure
+
+```
+┌─────────────────────────────────────────────┐
+│  TOP NAVBAR (School Name | Role | Bell)     │
+├──────────┬──────────────────────────────────┤
+│          │                                  │
+│  LEFT    │      MAIN CONTENT AREA           │
+│  SIDEBAR │      (Tables, Cards, Charts)     │
+│          │                                  │
+└──────────┴──────────────────────────────────┘
+```
+
+3.2 Color Palette
+
+Purpose Color Code Hex
+Primary Action Blue #2563eb
+Secondary Action Purple #7c3aed
+Success Green #16a34a
+Warning Orange #f59e0b
+Danger Red #dc2626
+Info Sky Blue #0ea5e9
+Background Light Gray #f3f4f6
+Text Main Dark Gray #1f2937
+Text Muted Gray #6b7280
+Border Light Gray #e5e7eb
+
+3.3 Component Standards
+
+· Buttons: Rounded corners (8px), clear labels, icons where helpful.
+· Cards: White background, subtle shadow, 4px accent border on top or left.
+· Tables: Striped rows on hover, uppercase headers, badges for statuses.
+· Modals: Centered, overlay background, close X button.
+· Wizards: 3-step or 5-step with circle indicators and connecting line.
+· Filters: Always available above data tables.
+
+3.4 Responsive Design
+
+· Desktop: Full sidebar + content.
+· Mobile: Sidebar collapses to icons, content stacks vertically.
+· Print Mode: Hides sidebar, navbar, and buttons; only shows report cards.
+
+---
+
+🧩 SECTION 4: CORE MODULES (Detailed)
+
+4.1 Authentication Module
+
+· Login page with email + password.
+· Account type dropdown (Primary / Secondary / Bursar).
+· Role-based redirect after login.
+· Password reset (email or SMS OTP).
+· Logout with confirmation.
+
+4.2 Dashboard Module
+
+· Primary: Total Students, Active/Inactive, Students by Level chart, Class Size Distribution.
+· Secondary: S1-S6 breakdown, O-Level vs A-Level counts, Streams Distribution.
+· Bursar: Fees Collected, Outstanding Balance, Today's Collections, Fee Payment Status.
+
+4.3 Students Module
+
+· Primary: Nursery to P7 students, ID Cards, Admission Letters, Graduation Certificates.
+· Secondary: S1 to S6 students, A-Level Combinations, Promotion.
+· Shared Features: Search, Filter by Class/Gender/Status, Add/Edit/Delete, Import Excel, Export Excel/PDF.
+
+4.4 Academic Module (Primary)
+
+· Report Cards Dashboard (Mark Entry → Grade & Rank → Remarks → View Reports).
+· Primary Grading Scale (A, B, C, D, E).
+· Bulk Print Settings.
+
+4.5 Academic Module (Secondary) — CRITICAL
+
+· O-Level Report Cards (NCDC New Curriculum):
+  · Columns: A1, U1, Avg/3, /100, Grade, Level.
+  · Grading: A (2.4-3.0) to E (0.0-1.4).
+· O-Level Report Cards (Old Curriculum):
+  · Columns: U1-U4, AVE, Pts, Total/20, MT, EOT, Total 80%, Total 100%, Grade, Remark.
+· A-Level Report Cards (UACE):
+  · Columns: Code, Subject, Paper 1/2, A1, A2, A3, AVG, 20%, EOT, 80%, 100%, Grade, Comment, TR.
+  · Project Work table.
+  · Fees Balance / Fees Next Term.
+  · Division calculation.
+· Print Settings Modal (Template, Positions Toggle, Activities, Title, Initials).
+· Online Parent Access (Authorize per student).
+· Signature Management (Headteacher + Class Teacher).
+
+4.6 Finance Module (Bursar)
+
+· Fee Structures: Total fees, paid, balance per student.
+· Record Payment: Amount, method (MTN/Airtel/Cash/Bank), reference, receipt generation.
+· Optional Payments: Transport, Tours, Trips with rate options.
+· Budgets: Year, Term, Allocated, Daily/Weekly/Monthly/Termly breakdown.
+· Expenses: Category, Description, Payee, Amount, Status.
+· Bank Reconciliation: Opening/Closing balance, transaction list, save draft, reconcile.
+· Payroll: Prepare run, select staff, gross/deductions/net, approve.
+· Staff Contracts: Issue, print PDF, expiry tracking.
+· Learner Sponsorships: Type (Bursary/Scholarship), Amount, Source, Status.
+· Reports: Collection, Expense, Budget vs Actual, Sponsorship.
+
+4.7 Attendance Module
+
+· Biometric dashboard (Total, Present, Late, Absent, Checked Out).
+· 14-Day Trend chart.
+· Check-In / Check-Out (Student, Staff, Daily Log).
+· Attendance Reports with date range and CSV export.
+· Attendance Records table.
+· Biometric Device Setup (ZK series TCP/IP, Port 4370).
+
+4.8 Communication Module (SMS)
+
+· SMS Balance, This Month Usage, Total Sent.
+· Bulk SMS: All Parents or Specific Classes.
+· Manual numbers input.
+· Character counter (160 chars), SMS count calculation.
+· Balance check before sending.
+· Recent SMS Activity log.
+
+4.9 Settings Module
+
+· My Profile (Name, Email, School, Role).
+· Change Password.
+· Configure Term Dates.
+· 403 Access Denied Page.
+
+---
+
+📄 SECTION 5: REPORT CARD SPECIFICATIONS
+
+5.1 O-Level NCDC (New Curriculum)
+
+```
+Subject | A1 | U1 | Avg/3 | /100 | Grade | Level
+Grading: A (2.4-3.0), B (2.1-2.3), C (1.8-2.0), D (1.5-1.7), E (0.0-1.4)
+```
+
+5.2 O-Level Old Curriculum
+
+```
+Subject | U1 | U2 | U3 | U4 | AVE | Pts | Total/20 | MT | EOT | Total 80% | Total 100% | Grade | Remark
+```
+
+5.3 A-Level UACE
+
+```
+Subject | Paper 1 | Paper 2 | Formative (A1-A3) | Summative (EOT, 80%, 100%) | Grade | Comment | TR
+Grading: A (75-100), B (65-74), C (50-64), D (35-49), E (0-34)
+```
+
+5.4 Print Settings Modal
+
+· Step 1: Choose Template (Classic Dark, Official Report, Forest Green, Maroon & Gold, B&W).
+· Step 2: Include Student Positions toggle.
+· Step 3: Select Activities (A1, A2, U1, U2).
+· Step 4: Report Title.
+· Step 5: Teacher Initials.
+
+---
+
+🛠️ SECTION 6: TECHNICAL ARCHITECTURE
+
+6.1 Tech Stack
+
+Layer Technology
+Frontend HTML5, CSS3, JavaScript (Vanilla or React)
+Backend Node.js (Express) OR PHP (Laravel) OR Python (Django)
+Database MySQL OR PostgreSQL
+PDF Generation Dompdf (PHP) OR Puppeteer (Node.js)
+SMS Gateway Africa's Talking / Twilio / Local Provider
+Hosting Shared Hosting OR VPS (DigitalOcean, AWS)
+Version Control Git + GitHub
+
+6.2 Database Schema (Minimum)
+
+```sql
+users (id, name, email, password, role, school_id)
+schools (id, name, logo, contact, address, motto)
+students (id, admission_no, name, class, stream, gender, section, status, photo)
+teachers (id, name, email, phone)
+subjects (id, name, level_type, code)
+marks (id, student_id, subject_id, term, year, score, grade, level, points)
+report_cards (id, student_id, term, year, type, comments, fees_balance)
+attendance (id, student_id, date, status, remarks)
+payments (id, student_id, amount, method, receipt_no, date)
+expenses (id, category, description, amount, date, status)
+budgets (id, year, term, allocated, frequency, items, status)
+payroll (id, staff_id, month, year, gross, deductions, net, status)
+staff_contracts (id, staff_id, contract_no, period, salary, status)
+sponsorships (id, student_id, type, amount, source, status)
+sms_logs (id, recipient, message, status, sent_at)
+settings (id, school_id, key, value)
+```
+
+---
+
+✅ SECTION 7: DETAILED TASK BREAKDOWN
+
+PHASE 1: Foundation Setup (Week 1)
+
+# Task Priority Deliverable
+1.1 Set up hosting & domain High Live server URL
+1.2 Install Git & create GitHub repo High Repo link
+1.3 Set up database (MySQL/PostgreSQL) High Database created
+1.4 Install Node.js/PHP + dependencies High Dev environment
+1.5 Import existing index.html prototype High Working frontend
+
+PHASE 2: Authentication & Users (Week 2)
+
+# Task Priority Deliverable
+2.1 Build login API (POST /login) High Working login
+2.2 Implement password hashing (bcrypt) High Secure passwords
+2.3 Create session/JWT tokens High Auth tokens
+2.4 Role-based redirect (Primary/Secondary/Bursar) High Correct dashboard loads
+2.5 Build logout API Medium Logout works
+2.6 Password reset via email Medium Reset link works
+
+PHASE 3: Student Module (Week 3)
+
+# Task Priority Deliverable
+3.1 Build students table & API (CRUD) High Add/Edit/Delete students
+3.2 Build student list with filters High Filterable table
+3.3 Build Import Excel/CSV feature High Bulk import
+3.4 Build Export Excel/PDF feature Medium Download data
+3.5 Build ID Cards Wizard (3 steps) High PDF ID cards
+3.6 Build Admission Letters Wizard High PDF letters
+3.7 Build Graduation Certificates Wizard High PDF certificates
+3.8 Build Recommendation Letters (P.7) Medium PDF letters
+
+PHASE 4: Academic Engine - Primary (Week 4)
+
+# Task Priority Deliverable
+4.1 Build marks table & API High Save marks
+4.2 Build Mark Entry form High Enter marks
+4.3 Build Grade & Rank processing High Auto-calculate
+4.4 Build Remarks auto-generation Medium Auto comments
+4.5 Build Primary Report Card PDF High Download PDF
+4.6 Build Bulk Print Settings modal High Print multiple
+
+PHASE 5: Academic Engine - Secondary (Week 5-6)
+
+# Task Priority Deliverable
+5.1 Build O-Level NCDC Report Card PDF High Download PDF
+5.2 Build O-Level Old Curriculum PDF High Download PDF
+5.3 Build A-Level UACE Report Card PDF High Download PDF
+5.4 Build Print Settings Modal (5 steps) High Configure print
+5.5 Build Online Parent Access Medium Authorize students
+5.6 Build Signature Management Medium Upload signatures
+5.7 Build Custom Grading Scales Medium Create scales
+5.8 Build A-Level Combinations Medium Manage combinations
+
+PHASE 6: Finance Module (Week 7-8)
+
+# Task Priority Deliverable
+6.1 Build Fee Structures table & API High Fee records
+6.2 Build Record Payment form High Save payments
+6.3 Build Receipt PDF generator High Print receipts
+6.4 Build Optional Payments module Medium Extra fees
+6.5 Build Budgets module Medium Create budgets
+6.6 Build Expenses module Medium Record expenses
+6.7 Build Bank Reconciliation modal Medium Reconcile bank
+6.8 Build Staff Contracts module Medium Issue contracts
+6.9 Build Payroll Runs module Medium Process salaries
+6.10 Build Learner Sponsorships Low Track bursaries
+6.11 Build Financial Reports Medium Generate reports
+
+PHASE 7: Attendance & Biometrics (Week 9)
+
+# Task Priority Deliverable
+7.1 Build Biometric Dashboard High View attendance
+7.2 Build Check-In/Check-Out High Manual entry
+7.3 Build Attendance Reports High CSV export
+7.4 Build Attendance Records table Medium View records
+7.5 Integrate ZK Biometric Device Low Auto-sync
+
+PHASE 8: SMS & Communication (Week 10)
+
+# Task Priority Deliverable
+8.1 Integrate SMS Gateway High Send SMS
+8.2 Build SMS Dashboard High View balance
+8.3 Build Bulk SMS form High Send to many
+8.4 Build Recent SMS Activity log Medium View history
+
+PHASE 9: Settings & Polish (Week 11)
+
+# Task Priority Deliverable
+9.1 Build My Profile page High Update profile
+9.2 Build Change Password High Secure update
+9.3 Build Term Dates config Medium Set dates
+9.4 Build 403 Access Denied page Low Error page
+9.5 Mobile responsiveness testing High Works on phones
+9.6 Cross-browser testing High Works on Chrome/Edge/Firefox
+
+PHASE 10: Testing & Deployment (Week 12)
+
+# Task Priority Deliverable
+10.1 Unit testing (all APIs) High Test report
+10.2 User acceptance testing High Feedback form
+10.3 Security audit (SQL injection, XSS) High Secure app
+10.4 Performance optimization Medium Fast loading
+10.5 Deploy to production High Live app
+10.6 Train school staff High User manual
+
+---
+
+🗓️ SECTION 8: DEVELOPMENT ROADMAP
+
+Phase Duration Focus
+1 Week 1 Setup & Foundation
+2 Week 2 Authentication
+3 Week 3 Students Module
+4 Week 4 Primary Academic
+5-6 Weeks 5-6 Secondary Academic
+7-8 Weeks 7-8 Finance Module
+9 Week 9 Attendance
+10 Week 10 SMS
+11 Week 11 Settings & Polish
+12 Week 12 Testing & Deploy
+Total 12 Weeks Full System
+
+---
+
+📦 SECTION 9: HANDOVER ITEMS
+
+Before starting, ensure the developer has:
+
+☑ This Master Plan Document
+☑ index.html Prototype File
+☑ Screenshots Folder (Primary, Secondary, Bursar)
+☑ Login Credentials for Testing
+☑ SMS Gateway API Key (if available)
+☑ Biometric Device Documentation (if available)
+☑ School Logo & Branding Assets
+☑ Sample Report Cards (all 3 formats)
+
+---
+
+⚠️ SECTION 10: CRITICAL NOTES FOR DEVELOPER
+
+1. Report Cards Are Complex: The O-Level (NCDC), O-Level (Old), and A-Level report cards are completely different. Do not assume one template fits all.
+2. Role-Based Access is Key: Never let a Primary Secretary see Bursar data, and vice versa.
+3. Data Backup: Implement automatic daily database backups.
+4. PDF Generation: Use a server-side library. Do not rely on window.print() for production.
+5. SMS Costs: Ensure SMS balance is checked before sending. Deduct cost from school balance.
+6. Security: Use HTTPS, hash passwords, sanitize all inputs.
+7. Testing: Test every module on mobile (Chrome mobile view) before delivery.
+
+---
+
+🎯 SECTION 11: ACCEPTANCE CRITERIA
+
+The project is complete when:
+
+· ✅ All 3 roles (Primary, Secondary, Bursar) can log in and see their correct dashboards.
+· ✅ Students can be added, edited, deleted, and searched.
+· ✅ All report cards (Primary, O-Level NCDC, O-Level Old, A-Level) generate as PDFs.
+· ✅ Payments can be recorded and receipts printed.
+· ✅ Payroll runs can be prepared and approved.
+· ✅ SMS can be sent to parents.
+· ✅ Attendance can be recorded and reported.
+· ✅ System works on mobile and desktop.
+· ✅ School staff can use it without technical help.
+
+---
+
+Document Ends.
+
+This Master Plan is your complete blueprint. Hand it over to your developer along with the index.html prototype file, screenshots, and login credentials. Everything needed to build the Apshule Management System is contained in this document.
