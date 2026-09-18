@@ -10,6 +10,7 @@
   <link rel="icon" href="../icons/icon-192.png">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./access.css">
+  <link rel="stylesheet" href="./secondary.css">
 </head>
 <body>
   <div class="topbar">
@@ -101,15 +102,15 @@
 
         <div class="app-shell">
           <aside class="app-sidebar">
-            <div class="app-sidebar-brand"><span class="brand-mark small">A</span><span>APSHULE<small>Primary</small></span></div>
+             <div class="app-sidebar-brand"><span class="brand-mark small">A</span><span id="workspaceBrandContext">APSHULE<small>Primary</small></span></div>
             <nav id="workspaceNav" aria-label="Primary workspace sections"></nav>
             <a class="sidebar-login" href="../"><span>↗</span> Secure sign in</a>
           </aside>
           <section class="app-main">
             <header class="app-toolbar">
               <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">☰</button>
-              <div><span class="toolbar-kicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
-              <div class="toolbar-actions"><span class="live-badge"><i></i> Preview</span><span class="toolbar-avatar">S</span></div>
+              <div><span class="toolbar-kicker" id="toolbarKicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
+              <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Preview account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge"><i></i> Preview</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
             </header>
             <div class="app-content" id="workspaceContent"></div>
           </section>
@@ -152,6 +153,16 @@
         <label>Class<select name="class"><option>P1</option><option>P4</option><option>P7</option></select></label>
         <div class="modal-actions"><button class="button light" type="button" data-close-modal>Cancel</button><button class="button primary" type="submit">Save preview learner</button></div>
       </form>
+    </div>
+  </div>
+  <div id="printSettingsModal" class="modal" aria-hidden="true">
+    <div class="modal-card print-settings-card" role="dialog" aria-modal="true" aria-labelledby="printSettingsTitle">
+      <button class="modal-close" type="button" data-close-print-settings aria-label="Close">×</button>
+      <p class="eyebrow">Secondary report cards</p>
+      <h2 id="printSettingsTitle">Print settings</h2>
+      <div class="print-stepper" id="printStepper"></div>
+      <div id="printSettingsContent"></div>
+      <div class="modal-actions print-settings-actions"><button class="button light" type="button" data-print-back>Back</button><button class="button primary" type="button" data-print-next>Continue</button></div>
     </div>
   </div>
   <script src="./app.js"></script>
