@@ -17,7 +17,7 @@
   <div class="topbar">
     <div class="shell topbar-inner">
       <span>🇺🇬 Built for schools across Uganda</span>
-      <span>Preview data only · <a href="../">Return to APSHULE</a></span>
+        <span id="educationDataMode">Preview data only · <a href="../">Return to APSHULE</a></span>
     </div>
   </div>
 
@@ -91,12 +91,12 @@
           <div>
             <p class="eyebrow">Primary account preview</p>
             <h2>Everything your secretary needs first.</h2>
-            <p>Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.</p>
+            <p id="workspaceDescription">Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.</p>
           </div>
           <a class="button primary compact" href="../">Open live APSHULE login <span>↗</span></a>
         </div>
 
-        <div class="preview-notice">
+        <div class="preview-notice" id="workspaceNotice">
           <span class="notice-icon">i</span>
           <span><strong>Preview mode.</strong> The numbers and learner names below are sample content from the supplied prototype, not live school records.</span>
         </div>
@@ -111,7 +111,7 @@
             <header class="app-toolbar">
               <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">☰</button>
               <div><span class="toolbar-kicker" id="toolbarKicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
-              <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Preview account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge"><i></i> Preview</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
+              <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Workspace account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge" id="workspaceModeBadge"><i></i> Preview</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
             </header>
             <div class="app-content" id="workspaceContent"></div>
           </section>
@@ -166,6 +166,28 @@
       <div class="modal-actions print-settings-actions"><button class="button light" type="button" data-print-back>Back</button><button class="button primary" type="button" data-print-next>Continue</button></div>
     </div>
   </div>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script>
+    window.APSHULE_API_BASE = window.APSHULE_API_BASE ||
+      (/^(www\.)?appshule\.com$/i.test(window.location.hostname)
+        ? "https://ap-shule-digital-learning-platform-3.onrender.com"
+        : "");
+    try {
+      if (window.firebase && !firebase.apps.length) {
+        firebase.initializeApp({
+          apiKey: "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
+          authDomain: "apshule-app.firebaseapp.com",
+          projectId: "apshule-app",
+          storageBucket: "apshule-app.firebasestorage.app",
+          messagingSenderId: "610368652834",
+          appId: "1:610368652834:web:1a30274d95c282a5a3ac7b"
+        });
+      }
+    } catch (error) {
+      console.warn("Education Firebase initialization unavailable:", error);
+    }
+  </script>
   <script src="./app.js"></script>
 </body>
 </html>

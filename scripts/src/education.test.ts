@@ -7,6 +7,7 @@ const educationSource = readFileSync(resolve(root, "education/index.html"), "utf
 const educationScript = readFileSync(resolve(root, "education/app.js"), "utf8");
 const educationMap = readFileSync(resolve(root, "education/PRIMARY_ACCOUNT_MAP.md"), "utf8");
 const serverSource = readFileSync(resolve(root, "artifacts/api-server/src/app.ts"), "utf8");
+const schoolRouteSource = readFileSync(resolve(root, "artifacts/api-server/src/routes/school.ts"), "utf8");
 const landingSource = readFileSync(resolve(root, "index.html"), "utf8");
 
 describe("Education workspace integration", () => {
@@ -20,6 +21,8 @@ describe("Education workspace integration", () => {
     expect(educationSource).toContain('id="printSettingsModal"');
     expect(educationSource).toContain('href="./secondary.css"');
     expect(educationSource).toContain("Install Orion App");
+    expect(educationSource).toContain("firebase-auth-compat.js");
+    expect(educationSource).toContain("APSHULE_API_BASE");
     expect(educationSource).not.toContain("secretary@apshule.com");
     expect(educationSource).not.toContain('value="password"');
     expect(educationScript).toContain("studentModal");
@@ -35,6 +38,18 @@ describe("Education workspace integration", () => {
     expect(educationMap).toContain("# Primary Orion Account Map");
     expect(educationMap).toContain("Video Meetings");
     expect(educationMap).toContain("Install App");
+  });
+
+  it("connects live primary and secondary accounts through a protected read-only contract", () => {
+    expect(educationScript).toContain("firebase.auth().onAuthStateChanged");
+    expect(educationScript).toContain("/api/school/education-workspace");
+    expect(educationScript).toContain("Live school workspace");
+    expect(schoolRouteSource).toContain('router.get("/school/education-workspace"');
+    expect(schoolRouteSource).toContain('["school", "school_admin", "headteacher"]');
+    expect(schoolRouteSource).toContain("safeRecord");
+    expect(schoolRouteSource).toContain("attendanceEvents");
+    expect(schoolRouteSource).toContain("const safeSchool");
+    expect(schoolRouteSource).toContain("/password|secret|token|credential|privatekey|apiKey/i");
   });
 
   it("keeps the route and landing-page education entry connected", () => {

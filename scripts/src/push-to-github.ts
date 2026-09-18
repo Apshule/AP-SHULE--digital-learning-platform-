@@ -85,6 +85,7 @@ const FILES = [
   "storage.rules",
   "upgrade.html",
   ".agents/memory/MEMORY.md",
+  ".agents/memory/education-live-account-boundary.md",
   ".agents/memory/github-pages-push-allowlist.md",
   ".agents/memory/pwa-release-cache-invalidation.md",
   "CNAME",

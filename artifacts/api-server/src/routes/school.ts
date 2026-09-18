@@ -19,7 +19,7 @@ const JWKS = createRemoteJWKSet(
  */
 async function verifySchoolCaller(
   authHeader: string | undefined,
-): Promise<{ uid: string; schoolId: string } | null> {
+): Promise<{ uid: string; role: string; schoolId: string; institutionId?: string } | null> {
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
   if (!token) return null;
 
@@ -45,16 +45,238 @@ async function verifySchoolCaller(
       fields?: {
         role?: { stringValue?: string };
         schoolId?: { stringValue?: string };
+        institutionId?: { stringValue?: string };
       };
     };
     const role = docData.fields?.role?.stringValue;
-    const schoolId = docData.fields?.schoolId?.stringValue;
-    if (role !== "school" || !schoolId) return null;
-    return { uid, schoolId };
+    if (!["school", "school_admin", "headteacher"].includes(String(role))) return null;
+    const schoolId = docData.fields?.schoolId?.stringValue ?? docData.fields?.institutionId?.stringValue;
+    if (!schoolId) return null;
+    return { uid, role: String(role), schoolId, institutionId: docData.fields?.institutionId?.stringValue };
   } catch {
     return null;
   }
 }
+
+type FirestoreField = {
+  stringValue?: string;
+  integerValue?: string;
+  doubleValue?: number;
+  booleanValue?: boolean;
+  timestampValue?: string;
+  referenceValue?: string;
+  arrayValue?: { values?: FirestoreField[] };
+  mapValue?: { fields?: Record<string, FirestoreField> };
+};
+
+function firestoreValue(field: FirestoreField | undefined): unknown {
+  if (!field) return undefined;
+  if (field.stringValue !== undefined) return field.stringValue;
+  if (field.integerValue !== undefined) return Number(field.integerValue);
+  if (field.doubleValue !== undefined) return field.doubleValue;
+  if (field.booleanValue !== undefined) return field.booleanValue;
+  if (field.timestampValue !== undefined) return field.timestampValue;
+  if (field.referenceValue !== undefined) return field.referenceValue;
+  if (field.arrayValue) return (field.arrayValue.values ?? []).map(firestoreValue);
+  if (field.mapValue) {
+    return Object.fromEntries(
+      Object.entries(field.mapValue.fields ?? {}).map(([key, value]) => [key, firestoreValue(value)]),
+    );
+  }
+  return null;
+}
+
+type FirestoreDocument = {
+  name?: string;
+  fields?: Record<string, FirestoreField>;
+};
+
+function documentId(document: FirestoreDocument): string {
+  return String(document.name?.split("/").pop() ?? "");
+}
+
+function documentData(document: FirestoreDocument): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(document.fields ?? {}).map(([key, value]) => [key, firestoreValue(value)]),
+  );
+}
+
+function safeRecord(data: Record<string, unknown>, id: string): Record<string, unknown> {
+  const blocked = /password|secret|token|credential|privatekey|apiKey/i;
+  return {
+    id,
+    ...Object.fromEntries(
+      Object.entries(data).filter(([key, value]) => !blocked.test(key) && typeof value !== "function"),
+    ),
+  };
+}
+
+function belongsToSchool(data: Record<string, unknown>, schoolIds: Set<string>): boolean {
+  return ["schoolId", "institutionId", "school", "schoolRef", "institution", "institutionRef"].some((key) => {
+    const value = data[key];
+    return typeof value === "string" && schoolIds.has(value);
+  });
+}
+
+async function firestoreGet(
+  path: string,
+  token: string,
+): Promise<FirestoreDocument | null> {
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as FirestoreDocument;
+}
+
+async function firestoreList(
+  collection: string,
+  token: string,
+): Promise<FirestoreDocument[]> {
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}` +
+      `/databases/(default)/documents/${collection}?pageSize=500`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { documents?: FirestoreDocument[] };
+  return payload.documents ?? [];
+}
+
+function educationLevel(data: Record<string, unknown>): "primary" | "secondary" | "unknown" {
+  const value = String(
+    data.educationLevel ?? data.schoolLevel ?? data.level ?? data.classLevel ??
+    data.className ?? data.class ?? data.section ?? "",
+  ).toLowerCase();
+  if (/(secondary|o[- ]?level|a[- ]?level|^s[1-6]\b|^f[1-6]\b)/i.test(value)) return "secondary";
+  if (/(primary|nursery|^p[1-7]\b|^baby\b|^top\b|^middle\b)/i.test(value)) return "primary";
+  return "unknown";
+}
+
+function learnerRecord(data: Record<string, unknown>, id: string) {
+  return safeRecord({
+    name: data.name ?? data.displayName ?? "",
+    admissionNumber: data.admissionNumber ?? data.admissionNo ?? data.studentNumber ?? "",
+    className: data.className ?? data.class ?? data.classLevel ?? data.level ?? "",
+    stream: data.stream ?? data.section ?? "",
+    status: data.status ?? "active",
+    gender: data.gender ?? "",
+    educationLevel: educationLevel(data),
+  }, id);
+}
+
+/**
+ * GET /api/school/education-workspace
+ *
+ * Read-only Education workspace bootstrap. The server verifies the Firebase
+ * school role, resolves the linked school/institution, and returns only
+ * records belonging to that school. Legacy school documents are sanitized so
+ * loginPassword and other credentials never leave the server.
+ */
+router.get("/school/education-workspace", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Education records are temporarily unavailable" });
+    return;
+  }
+
+  try {
+    const [directSchool, allSchools, allUsers, classes, subjects] = await Promise.all([
+      firestoreGet(`schools/${encodeURIComponent(caller.schoolId)}`, adminToken),
+      firestoreList("schools", adminToken),
+      firestoreList("users", adminToken),
+      firestoreList("school_classes", adminToken),
+      firestoreList("school_subjects", adminToken),
+    ]);
+    const schoolDocument = directSchool ?? allSchools.find((item) => {
+      const data = documentData(item);
+      return item.name?.endsWith(`/${caller.schoolId}`) ||
+        data.institutionId === caller.schoolId ||
+        data.schoolId === caller.schoolId;
+    });
+    if (!schoolDocument) {
+      res.status(404).json({ ok: false, error: "No authorized school profile was found" });
+      return;
+    }
+
+    const school = documentData(schoolDocument);
+    const resolvedSchoolId = documentId(schoolDocument) || caller.schoolId;
+    const schoolIds = new Set([caller.schoolId, resolvedSchoolId]);
+    for (const value of [caller.institutionId, school.institutionId, school.schoolId]) {
+      if (typeof value === "string" && value) schoolIds.add(value);
+    }
+    const attendanceDocuments = await Promise.all(
+      [...schoolIds].map((id) => firestoreList(`attendanceEvents/${encodeURIComponent(id)}/records`, adminToken)),
+    );
+    const attendance = [...new Map(
+      attendanceDocuments.flat().map((item) => [item.name ?? documentId(item), item]),
+    ).values()];
+
+    const linkedUsers = allUsers
+      .map((item) => ({ id: documentId(item), data: documentData(item) }))
+      .filter(({ data }) => belongsToSchool(data, schoolIds));
+    const learners = linkedUsers
+      .filter(({ data }) => ["individual", "student"].includes(String(data.role ?? "").toLowerCase()))
+      .map(({ id, data }) => learnerRecord(data, id));
+    const staff = linkedUsers
+      .filter(({ data }) => ["school", "school_admin", "headteacher", "teacher"].includes(String(data.role ?? "").toLowerCase()))
+      .map(({ id, data }) => safeRecord({
+        name: data.name ?? data.displayName ?? "",
+        role: data.role ?? "",
+        subjects: data.subjectsTaught ?? data.subjects ?? "",
+      }, id));
+    const scopedClasses = classes
+      .map((item) => ({ id: documentId(item), data: documentData(item) }))
+      .filter(({ data }) => belongsToSchool(data, schoolIds))
+      .map(({ id, data }) => safeRecord(data, id));
+    const scopedSubjects = subjects
+      .map((item) => ({ id: documentId(item), data: documentData(item) }))
+      .filter(({ data }) => belongsToSchool(data, schoolIds))
+      .map(({ id, data }) => safeRecord(data, id));
+
+    const levels = new Set<string>();
+    const schoolLevel = educationLevel(school);
+    if (schoolLevel !== "unknown") levels.add(schoolLevel);
+    for (const row of [...learners, ...scopedClasses]) {
+      const level = educationLevel(row);
+      if (level !== "unknown") levels.add(level);
+    }
+    const account = levels.size > 1 ? "both" : levels.has("secondary") ? "secondary" : "primary";
+    const safeSchool = safeRecord({
+      name: school.name ?? school.schoolName ?? "Authorized school",
+      contact: school.contact ?? school.phone ?? "",
+      location: school.location ?? school.address ?? "",
+      logo: school.logo ?? "",
+      educationLevel: school.educationLevel ?? school.schoolLevel ?? school.level ?? account,
+      status: school.status ?? "active",
+    }, resolvedSchoolId);
+
+    res.json({
+      ok: true,
+      live: true,
+      account,
+      role: caller.role,
+      school: safeSchool,
+      learners,
+      staff,
+      classes: scopedClasses,
+      subjects: scopedSubjects,
+      attendance: attendance.map((item) => safeRecord(documentData(item), documentId(item))),
+      reports: [],
+      marks: [],
+    });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "Education workspace read failed");
+    res.status(502).json({ ok: false, error: "Unable to load authorized school records" });
+  }
+});
 
 /**
  * POST /api/school/create-student

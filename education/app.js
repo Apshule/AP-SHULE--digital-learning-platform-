@@ -58,6 +58,9 @@
   const state = {
     account: initialAccount,
     view: initialAccount === "secondary" && secondaryViews.includes(previewParams.get("view") ?? "") ? previewParams.get("view") : "dashboard",
+    liveData: null,
+    authState: "checking",
+    authError: "",
     query: "",
     reportType: "ncdc",
     printStep: 1,
@@ -78,6 +81,59 @@
   const printModal = document.getElementById("printSettingsModal");
   const printSettingsContent = document.getElementById("printSettingsContent");
   const printStepper = document.getElementById("printStepper");
+
+  function liveEnabled() {
+    return Boolean(state.liveData?.live);
+  }
+
+  function liveLearners(account = state.account) {
+    const rows = Array.isArray(state.liveData?.learners) ? state.liveData.learners : [];
+    if (!liveEnabled()) return [];
+    const level = account === "secondary" ? "secondary" : "primary";
+    const matching = rows.filter((row) => row.educationLevel === level);
+    return matching.length || !rows.length ? matching : rows;
+  }
+
+  function liveRowValues(row) {
+    return [
+      row.admissionNumber || row.id || "—",
+      row.name || "Unnamed learner",
+      row.className || "—",
+      row.stream || "—",
+      row.status || "Active",
+    ];
+  }
+
+  function liveDashboardView(secondary) {
+    const learners = liveLearners(secondary ? "secondary" : "primary");
+    const classes = Array.isArray(state.liveData?.classes) ? state.liveData.classes : [];
+    const subjects = Array.isArray(state.liveData?.subjects) ? state.liveData.subjects : [];
+    const attendance = Array.isArray(state.liveData?.attendance) ? state.liveData.attendance : [];
+    const classCounts = classes.reduce((counts, item) => {
+      const label = item.name || item.className || item.classLevel || item.level;
+      if (label) counts[label] = (counts[label] || 0) + 1;
+      return counts;
+    }, {});
+    const schoolName = escapeHtml(state.liveData?.school?.name || "Authorized school");
+    const roleLabel = escapeHtml(state.liveData?.role || "school");
+    return `
+      <div class="workspace-title"><div><h2>${secondary ? "Secondary dashboard" : "School dashboard"}</h2><p class="muted">${roleLabel} overview · ${schoolName}</p></div><span class="eyebrow">Live school data</span></div>
+      <div class="workspace-grid">
+        <article class="stat-card"><small>${secondary ? "Secondary learners" : "Authorized learners"}</small><strong>${learners.length}</strong></article>
+        <article class="stat-card green"><small>Classes</small><strong>${classes.length}</strong></article>
+        <article class="stat-card orange"><small>Attendance records</small><strong>${attendance.length}</strong></article>
+        <article class="stat-card violet"><small>Subjects</small><strong>${subjects.length}</strong></article>
+      </div>
+      <div class="dashboard-columns">
+        <article class="panel"><div class="panel-heading"><h3>Authorized school context</h3><span>Read-only</span></div><div class="status-list"><span><i class="online"></i>School profile <b>Loaded</b></span><span><i class="online"></i>Account role <b>${roleLabel}</b></span><span><i class="online"></i>Institution boundary <b>Enforced</b></span></div></article>
+        <article class="panel"><div class="panel-heading"><h3>Class register</h3><span>${classes.length} classes</span></div><div class="bar-list">${Object.entries(classCounts).slice(0, 6).map(([name, count]) => `<div><div class="bar-label"><span>${escapeHtml(name)}</span><b>${count}</b></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, count * 10)}%"></div></div></div>`).join("") || '<div class="empty-state">No classes are recorded for this school yet.</div>'}</div></article>
+      </div>`;
+  }
+
+  function liveRecordsView(titleText, records, emptyText) {
+    const rows = Array.isArray(records) ? records : [];
+    return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div><div class="empty-state">${rows.length ? "Live records are available through the connected school account." : escapeHtml(emptyText)}</div></div>`;
+  }
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
@@ -106,15 +162,29 @@
 
   function renderAccountContext() {
     const secondary = isSecondary();
-    document.getElementById("toolbarKicker").textContent = secondary ? "Apshule Secondary School" : "Apshule Primary School";
-    document.getElementById("toolbarAvatar").textContent = secondary ? "H" : "S";
+    const schoolName = state.liveData?.school?.name || (secondary ? "Apshule Secondary School" : "Apshule Primary School");
+    document.getElementById("toolbarKicker").textContent = schoolName;
+    document.getElementById("toolbarAvatar").textContent = String(schoolName).trim().charAt(0).toUpperCase() || (secondary ? "H" : "S");
     document.getElementById("workspaceBrandContext").innerHTML = `APSHULE<small>${secondary ? "Secondary" : "Primary"}</small>`;
+    const mode = document.getElementById("workspaceModeBadge");
+    if (mode) mode.innerHTML = `<i></i> ${state.authState === "checking" ? "Checking access" : liveEnabled() ? "Live" : "Preview"}`;
+    const modeText = document.getElementById("educationDataMode");
+    if (modeText) modeText.innerHTML = liveEnabled() ? `Live authorized school records · <a href="../">Return to APSHULE</a>` : `Preview data only · <a href="../">Return to APSHULE</a>`;
+    const description = document.getElementById("workspaceDescription");
+    if (description) description.textContent = liveEnabled()
+      ? `Connected to ${schoolName}. Records are read-only and scoped to the signed-in school account.`
+      : "Use the preview to review the information architecture. Live records remain behind APSHULE’s existing secure sign-in.";
+    const notice = document.getElementById("workspaceNotice");
+    if (notice) notice.innerHTML = liveEnabled()
+      ? `<span class="notice-icon">✓</span><span><strong>Live school workspace.</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account. Bursar and finance controls are not included here.</span>`
+      : `<span class="notice-icon">i</span><span><strong>${state.authState === "checking" ? "Checking secure access." : "Preview mode."}</strong> ${state.authError ? escapeHtml(state.authError) : "The numbers and learner names below are sample content from the supplied prototype, not live school records."}</span>`;
     document.querySelectorAll("[data-account]").forEach((button) => {
       button.classList.toggle("active", button.dataset.account === state.account);
     });
   }
 
   function dashboardView() {
+    if (liveEnabled()) return liveDashboardView(false);
     return `
       <div class="workspace-title"><div><h2>Dashboard</h2><p class="muted">Welcome back, Secretary · Apshule Primary</p></div><span class="eyebrow">School overview</span></div>
       <div class="workspace-grid">
@@ -134,6 +204,7 @@
   }
 
   function secondaryDashboardView() {
+    if (liveEnabled()) return liveDashboardView(true);
     return `
       <div class="workspace-title"><div><h2>Secondary dashboard</h2><p class="muted">Headteacher overview · Apshule Secondary</p></div><span class="eyebrow">Preview data</span></div>
       <div class="workspace-grid">
@@ -154,18 +225,22 @@
 
   function studentsView() {
     const query = state.query.toLowerCase();
-    const rows = sampleStudents.filter((student) => student.join(" ").toLowerCase().includes(query));
+    const rows = liveEnabled()
+      ? liveLearners("primary").map(liveRowValues).filter((student) => student.join(" ").toLowerCase().includes(query))
+      : sampleStudents.filter((student) => student.join(" ").toLowerCase().includes(query));
     return `
-      <div class="workspace-title"><div><h2>Students</h2><p class="muted">Search and review the school register.</p></div><button class="button primary compact" type="button" data-action="add-student">＋ Add learner</button></div>
+       <div class="workspace-title"><div><h2>Students</h2><p class="muted">Search and review the school register.</p></div><button class="button primary compact" type="button" data-action="add-student" ${liveEnabled() ? "disabled" : ""}>＋ Add learner</button></div>
       <div class="filter-row"><input id="studentSearch" type="search" value="${escapeHtml(state.query)}" placeholder="Search by name or admission number" aria-label="Search students"><select aria-label="Filter class"><option>All classes</option><option>P1</option><option>P4</option><option>P7</option></select><select aria-label="Filter status"><option>All statuses</option><option>Active</option><option>Inactive</option></select></div>
       <div class="table-wrap"><table class="data-table"><thead><tr><th>Admission</th><th>Name</th><th>Class</th><th>Section</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(([admission, name, studentClass, section, status]) => `<tr><td>${admission}</td><td><strong>${name}</strong></td><td>${studentClass}</td><td><span class="badge gold">${section}</span></td><td><span class="badge green">${status}</span></td><td><button class="button light compact" type="button" data-action="view-student">View</button></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No learners match this search.</div></td></tr>'}</tbody></table></div>`;
   }
 
   function secondaryStudentsView() {
     const query = state.query.toLowerCase();
-    const rows = secondaryStudents.filter((student) => student.join(" ").toLowerCase().includes(query));
+    const rows = liveEnabled()
+      ? liveLearners("secondary").map(liveRowValues).filter((student) => student.join(" ").toLowerCase().includes(query))
+      : secondaryStudents.filter((student) => student.join(" ").toLowerCase().includes(query));
     return `
-      <div class="workspace-title"><div><h2>Secondary students</h2><p class="muted">Review S1-S6 learners, streams, and academic context.</p></div><button class="button primary compact" type="button" data-action="preview-action">＋ Add learner</button></div>
+       <div class="workspace-title"><div><h2>Secondary students</h2><p class="muted">Review S1-S6 learners, streams, and academic context.</p></div><button class="button primary compact" type="button" data-action="preview-action" ${liveEnabled() ? "disabled" : ""}>＋ Add learner</button></div>
       <div class="filter-row"><input id="studentSearch" type="search" value="${escapeHtml(state.query)}" placeholder="Search by name or admission number" aria-label="Search secondary students"><select aria-label="Filter secondary class"><option>All classes</option><option>S1</option><option>S3</option><option>S5</option><option>S6</option></select><select aria-label="Filter stream"><option>All streams</option><option>Blue</option><option>Green</option><option>Arts</option><option>Sciences</option></select></div>
       <div class="table-wrap"><table class="data-table"><thead><tr><th>Admission</th><th>Name</th><th>Class</th><th>Stream</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(([admission, name, studentClass, stream, status]) => `<tr><td>${admission}</td><td><strong>${name}</strong></td><td>${studentClass}</td><td><span class="badge gold">${stream}</span></td><td><span class="badge green">${status}</span></td><td><button class="button light compact" type="button" data-action="view-student">View</button></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No secondary learners match this search.</div></td></tr>'}</tbody></table></div>`;
   }
@@ -175,10 +250,12 @@
   }
 
   function primaryReportsView() {
+    if (liveEnabled()) return liveRecordsView("Primary report cards", state.liveData.reports, "No live report-card records are available for this school yet.");
     return `<div class="workspace-title"><div><h2>Primary report cards</h2><p class="muted">Keep marking, remarks, and report generation in one flow.</p></div><button class="button primary compact" data-action="preview-action">Generate reports</button></div><div class="workspace-grid"><article class="stat-card"><small>Students with marks</small><strong>10</strong></article><article class="stat-card green"><small>Reports generated</small><strong>4</strong></article><article class="stat-card orange"><small>Pending remarks</small><strong>1</strong></article><article class="stat-card violet"><small>Completion rate</small><strong>65%</strong></article></div><div class="action-grid"><article class="action-card"><strong>01 · Mark entry</strong><p>Capture term marks by class and subject.</p><button class="button light compact" data-action="preview-action">Enter marks</button></article><article class="action-card"><strong>02 · Grade & rank</strong><p>Review grades before sharing reports.</p><button class="button light compact" data-action="preview-action">Grade & rank</button></article><article class="action-card"><strong>03 · Remarks</strong><p>Add class-teacher and school remarks.</p><button class="button light compact" data-action="preview-action">Add remarks</button></article><article class="action-card"><strong>04 · View reports</strong><p>Preview, print, or save the final report.</p><button class="button light compact" data-action="preview-action">View reports</button></article></div>`;
   }
 
   function secondaryReportsView() {
+    if (liveEnabled()) return liveRecordsView("Secondary report cards", state.liveData.reports, "No live report-card records are available for this school yet.");
     return `
       <div class="workspace-title"><div><h2>Secondary report cards</h2><p class="muted">Choose a curriculum format before entering marks or preparing a print-ready report.</p></div><span class="eyebrow">Preview workflow</span></div>
       <div class="preview-notice"><span class="notice-icon">i</span><span><strong>Secondary preview.</strong> These examples follow the supplied report-card references. Live marks and private learner records remain behind secure sign-in.</span></div>
@@ -198,6 +275,7 @@
   }
 
   function secondaryReportDetailView() {
+    if (liveEnabled()) return liveRecordsView("Secondary report details", state.liveData.reports, "No live report-card details are available for this school yet.");
     const type = state.reportType;
     const report = reportTypes[type];
     const extra = type === "alevel"
@@ -209,10 +287,15 @@
   }
 
   function secondaryMarksView() {
+    if (liveEnabled()) return liveRecordsView("Secondary marks", state.liveData.marks, "No live marks records are available for this school yet.");
     return `<div class="workspace-title"><div><h2>Mark entry</h2><p class="muted">Capture formative and summative marks before generating a report.</p></div><span class="eyebrow">Secondary preview</span></div><div class="filter-row"><select aria-label="Mark entry class"><option>S3 · Blue</option><option>S5 · Sciences</option><option>S6 · Arts</option></select><select aria-label="Mark entry subject"><option>Biology</option><option>Chemistry</option><option>Mathematics</option></select><button class="button primary compact" data-action="preview-action">Load register</button></div><div class="panel"><div class="panel-heading"><h3>Mark-entry table</h3><span>Draft only</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Learner</th><th>A1 / U1</th><th>A2 / U2</th><th>A3 / U3</th><th>Teacher remark</th></tr></thead><tbody><tr><td><strong>Preview Learner A</strong></td><td>3.0</td><td>2.8</td><td>3.0</td><td><span class="badge green">Ready</span></td></tr><tr><td><strong>Preview Learner B</strong></td><td>2.0</td><td>2.2</td><td>2.1</td><td><span class="badge gold">Needs remark</span></td></tr></tbody></table></div></div>`;
   }
 
   function attendanceView() {
+    if (liveEnabled()) {
+      const attendance = Array.isArray(state.liveData.attendance) ? state.liveData.attendance : [];
+      return liveRecordsView(isSecondary() ? "Secondary attendance" : "Attendance dashboard", attendance, "No live attendance records are available for this school yet.");
+    }
     return `<div class="workspace-title"><div><h2>${isSecondary() ? "Secondary attendance" : "Attendance dashboard"}</h2><p class="muted">A simple daily picture for the school office.</p></div><span class="eyebrow">Today · Preview</span></div><div class="workspace-grid"><article class="stat-card"><small>Total today</small><strong>${isSecondary() ? "124" : "10"}</strong></article><article class="stat-card green"><small>Present</small><strong>${isSecondary() ? "119" : "10"}</strong></article><article class="stat-card orange"><small>Late</small><strong>${isSecondary() ? "3" : "0"}</strong></article><article class="stat-card violet"><small>Absent</small><strong>${isSecondary() ? "2" : "0"}</strong></article></div><div class="panel"><div class="panel-heading"><h3>Attendance follow-up</h3><span>Nothing urgent</span></div><div class="empty-state"><strong>Preview attendance records</strong>The live workspace will connect this view to class attendance records after secure sign-in.</div></div>`;
   }
 
@@ -221,6 +304,10 @@
   }
 
   function settingsView() {
+    if (liveEnabled()) {
+      const school = state.liveData.school || {};
+      return `<div class="workspace-title"><div><h2>School account</h2><p class="muted">Institution details returned for the signed-in account.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Account role</label><input value="${escapeHtml(state.liveData.role || "school")}" readonly></div><div class="form-field"><label>Institution</label><input value="${escapeHtml(school.name || "Authorized school")}" readonly></div><div class="form-field"><label>Location</label><input value="${escapeHtml(school.location || "Not recorded")}" readonly></div><p class="muted">Profile editing and finance controls remain outside this read-only Education connection.</p></div>`;
+    }
     return `<div class="workspace-title"><div><h2>My profile</h2><p class="muted">Institution details remain controlled by secure account settings.</p></div></div><div class="panel settings-card"><div class="form-field"><label>Display name</label><input value="${isSecondary() ? "Headteacher Preview" : "School Secretary"}" aria-label="Display name"></div><div class="form-field"><label>Institution</label><input value="Apshule ${isSecondary() ? "Secondary" : "Primary"} School" aria-label="Institution" readonly></div><div class="form-field"><label>Account email</label><input value="Use your APSHULE account" aria-label="Account email" readonly></div><button class="button primary" data-action="preview-action">Save preview changes</button></div>`;
   }
 
@@ -301,9 +388,12 @@
   content.addEventListener("click", (event) => {
     const target = event.target.closest("[data-action]");
     const action = target?.dataset.action;
-    if (action === "add-student") document.getElementById("studentModal").classList.add("open");
-    if (action === "view-student") showToast("Learner profile preview — sign in to open live records.");
-    if (action === "preview-action") showToast("This workflow is ready for the secure APSHULE workspace.");
+    if (action === "add-student") {
+      if (liveEnabled()) showToast("Learner creation is not enabled in this read-only workspace.");
+      else document.getElementById("studentModal").classList.add("open");
+    }
+    if (action === "view-student") showToast(liveEnabled() ? "Learner record is authorized for this school account." : "Learner profile preview — sign in to open live records.");
+    if (action === "preview-action") showToast(liveEnabled() ? "This live workspace is read-only for now." : "This workflow is ready for the secure APSHULE workspace.");
     if (action === "open-report") {
       state.reportType = target.dataset.report;
       state.view = "report-detail";
@@ -378,5 +468,54 @@
     showToast("Print-ready preview prepared for this session.");
   });
 
+  async function bootLiveWorkspace() {
+    if (!window.firebase || typeof firebase.auth !== "function") {
+      state.authState = "preview";
+      render();
+      return;
+    }
+    try {
+      firebase.auth().onAuthStateChanged(async (user) => {
+        if (!user) {
+          state.liveData = null;
+          state.authState = "preview";
+          state.authError = "";
+          render();
+          return;
+        }
+        state.authState = "loading";
+        state.authError = "";
+        render();
+        try {
+          const token = await user.getIdToken();
+          const base = String(window.APSHULE_API_BASE || "").replace(/\/+$/, "");
+          const response = await fetch(`${base}/api/school/education-workspace`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok || !payload.ok || !payload.live) {
+            throw new Error(payload.error || "This account is not authorized for a school workspace.");
+          }
+          state.liveData = payload;
+          state.authState = "live";
+          state.authError = "";
+          if (payload.account !== "both") state.account = payload.account === "secondary" ? "secondary" : "primary";
+          if (state.account === "secondary" && !secondaryViews.includes(state.view)) state.view = "dashboard";
+          render();
+        } catch (error) {
+          state.liveData = null;
+          state.authState = "preview";
+          state.authError = error?.message || "Live school records could not be loaded.";
+          render();
+        }
+      });
+    } catch (error) {
+      state.authState = "preview";
+      state.authError = "Secure sign-in is unavailable in this browser.";
+      render();
+    }
+  }
+
   render();
+  bootLiveWorkspace();
 })();
