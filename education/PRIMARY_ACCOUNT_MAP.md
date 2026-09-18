@@ -1,8 +1,8 @@
-# Primary Orion Account Map
+# APSHULE MANAGEMENT SYSTEM — Primary Account Map
 
 ## Purpose
 
-This map documents the primary school-management experience visible in the supplied Orion screenshots and the corresponding APSHULE Education preview. It intentionally contains no passwords, session tokens, private school records, or account recovery instructions.
+This map documents the primary school-management experience visible in the APSHULE MANAGEMENT SYSTEM reference screens and the corresponding APSHULE Education workspace. It intentionally contains no passwords, session tokens, private school records, or account recovery instructions.
 
 ## Reference material
 
@@ -15,7 +15,7 @@ This map documents the primary school-management experience visible in the suppl
 
 ## Primary flow
 
-1. **Public entry** — Orion branding, school-fees and IT-services options, Login, Parents Portal, Students Portal, and resource links such as Notice Board, Jobs, Pricing, and Support.
+1. **Public entry** — APSHULE MANAGEMENT SYSTEM branding, school-fees and IT-services options, Login, Parents Portal, Students Portal, and resource links such as Notice Board, Jobs, Pricing, and Support.
 2. **Primary login** — account context, email-or-username field, password field, sign-in action, and a “back to options” path. The right-hand panel communicates “Transforming Schools,” EAT time, support promises, and product announcements.
 3. **School dashboard** — institution header, school contact context, role badge, alerts/settings affordances, and a dashboard landing view.
 4. **Dashboard insights** — learners by level, gender distribution, class-size distribution, system status, performance metrics, and quick statistics.

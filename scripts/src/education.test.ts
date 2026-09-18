@@ -20,7 +20,7 @@ describe("Education workspace integration", () => {
     expect(educationSource).toContain('data-account="secondary"');
     expect(educationSource).toContain('id="printSettingsModal"');
     expect(educationSource).toContain('href="./secondary.css"');
-    expect(educationSource).toContain("Install Orion App");
+    expect(educationSource).toContain("Install APSHULE MANAGEMENT SYSTEM");
     expect(educationSource).toContain("firebase-auth-compat.js");
     expect(educationSource).toContain("APSHULE_API_BASE");
     expect(educationSource).not.toContain("secretary@apshule.com");
@@ -39,7 +39,7 @@ describe("Education workspace integration", () => {
     expect(educationSource).not.toContain('id="studentModal"');
     expect(educationSource).not.toContain("Preview mode");
     expect(educationSource).not.toContain("sample content");
-    expect(educationMap).toContain("# Primary Orion Account Map");
+    expect(educationMap).toContain("# APSHULE MANAGEMENT SYSTEM — Primary Account Map");
     expect(educationMap).toContain("Video Meetings");
     expect(educationMap).toContain("Install App");
   });
