@@ -1882,7 +1882,8 @@
             <input type="tel" id="signupPhone" placeholder="Phone Number" class="login-input">
             <select id="signupRole" class="login-input">
                 <option value="student">Join as Student</option>
-                <option value="teacher">Join as Teacher — UGX 240,000 registration</option>
+                <option value="teacher_staff">Join the APSHULE teaching team — UGX 240,000 registration</option>
+                <option value="teacher_independent">Use APSHULE as an independent teacher — no staff registration fee</option>
             </select>
             <input type="text" id="signupTeacherSubject" placeholder="Subject(s) you teach (optional)" class="login-input" style="display:none;">
             <div id="referralSignupPaymentFields" style="display:none;background:#fff8e8;border:1px solid #ffd38a;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
@@ -17695,13 +17696,14 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
 
     function updateSignupPaymentUi() {
         const role = document.getElementById('signupRole')?.value || 'student';
-        const teacher = role === 'teacher';
+        const teacher = role === 'teacher_staff' || role === 'teacher_independent';
+        const staffTeacher = role === 'teacher_staff';
         const subject = document.getElementById('signupTeacherSubject');
         const paymentFields = document.getElementById('referralSignupPaymentFields');
         const paymentHint = document.getElementById('signupPaymentHint');
         if(subject) subject.style.display = teacher ? 'block' : 'none';
-        if(paymentFields) paymentFields.style.display = teacher || Boolean(sessionStorage.getItem('pendingReferral')) ? 'block' : 'none';
-        if(paymentHint) paymentHint.textContent = teacher
+        if(paymentFields) paymentFields.style.display = staffTeacher || (role === 'student' && Boolean(sessionStorage.getItem('pendingReferral'))) ? 'block' : 'none';
+        if(paymentHint) paymentHint.textContent = staffTeacher
             ? 'A valid MTN or Airtel number is required. Approve the UGX 240,000 teacher registration prompt after pressing Create Account.'
             : 'Enter a valid MTN or Airtel number above. Approve the UGX 1,000 payment prompt after pressing Create Account.';
     }
@@ -17713,7 +17715,9 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         e.preventDefault();
         let name=document.getElementById('signupName').value.trim(),email=document.getElementById('signupEmail').value.trim(),phone=document.getElementById('signupPhone').value.trim(),pwd=document.getElementById('signupPassword').value,level=document.getElementById('signupEducationLevel').value;
         const signupRole=document.getElementById('signupRole')?.value || 'student';
-        const isTeacherSignup=signupRole==='teacher';
+        const isTeacherSignup=signupRole==='teacher_staff' || signupRole==='teacher_independent';
+        const isStaffTeacherSignup=signupRole==='teacher_staff';
+        const teacherAccountType=isTeacherSignup ? (isStaffTeacherSignup ? 'staff' : 'independent') : '';
         const teacherSubject=document.getElementById('signupTeacherSubject')?.value.trim() || '';
         if(!name||!email||!phone||!pwd||(!isTeacherSignup&&!level)){document.getElementById('loginError').innerText="Fill all required fields";return;}
         if(pwd.length<4){document.getElementById('loginError').innerText="Password min 4 chars";return;}
@@ -17724,11 +17728,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
             const pendingInvite=sessionStorage.getItem('pendingSchoolInvite');
             if(pendingInvite){try{const snap=await getDocs(query(collection(db,'schools'),where('inviteCode','==',pendingInvite)));if(snap.docs.length>0)extraFields.schoolId=snap.docs[0].id;sessionStorage.removeItem('pendingSchoolInvite');}catch(e){}}
             const pendingRef = sessionStorage.getItem('pendingReferral');
-            const needsPayment=isTeacherSignup||Boolean(pendingRef);
-            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:isTeacherSignup?'':level,subjectsTaught:isTeacherSignup?teacherSubject:'',role:isTeacherSignup?'teacher':'individual',status:needsPayment?'pending_payment':'active',registrationStatus:needsPayment?'pending_payment':'active',subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
+            const needsPayment=isStaffTeacherSignup||(!isTeacherSignup&&Boolean(pendingRef));
+            await setDoc(doc(db,"users",cred.user.uid),{uid:cred.user.uid,name,email,phone,educationLevel:isTeacherSignup?'':level,subjectsTaught:isTeacherSignup?teacherSubject:'',role:isTeacherSignup?'teacher':'individual',teacherAccountType:isTeacherSignup?teacherAccountType:'',status:needsPayment?'pending_payment':'active',registrationStatus:needsPayment?'pending_payment':'active',subscriptionTier:"free",aiRequestsLimit:10,createdAt:new Date().toISOString(),loginCount:1,lastLogin:new Date().toISOString(),detectedLocation:location,address:"",...extraFields});
             // Redeem the referral server-side so the referrer cannot be
             // impersonated or awarded twice by client-side writes.
-            if(isTeacherSignup||pendingRef) {
+            if(isStaffTeacherSignup||(!isTeacherSignup&&pendingRef)) {
                 const pendingReward = sessionStorage.getItem('pendingReferralReward') === 'cash' ? 'cash' : 'day';
                 try {
                     const token = await cred.user.getIdToken();
@@ -17739,6 +17743,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                             referralCode:pendingRef||'',
                             rewardChoice:pendingReward,
                             signupRole:isTeacherSignup?'teacher':'student',
+                            teacherAccountType,
                             phone,
                             paymentMethod:document.getElementById('signupPaymentMethod')?.value || 'MTN'
                         })
@@ -17755,11 +17760,11 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
                         if(!teacherReferralResponse.ok) throw new Error(teacherReferralResult.error || 'Teacher referral could not be applied');
                         showNotification(teacherReferralResult.message || 'Account created!');
                     } else {
-                        showNotification(paymentResult.message || (isTeacherSignup ? 'Approve the UGX 240,000 teacher registration payment to activate your account.' : 'Approve the UGX 1,000 payment prompt to finish signing up.'));
+                        showNotification(paymentResult.message || (isStaffTeacherSignup ? 'Approve the UGX 240,000 teacher registration payment to activate your account.' : 'Approve the UGX 1,000 payment prompt to finish signing up.'));
                     }
                 } catch(e) {
                     console.warn('[APSHULE] Referral redemption failed:', e);
-                    showNotification(`Account created but still pending the ${isTeacherSignup?'UGX 240,000 teacher registration':'UGX 1,000 referral'} payment: ` + e.message, 'error');
+                    showNotification(`Account created but still pending the ${isStaffTeacherSignup?'UGX 240,000 teacher registration':'UGX 1,000 referral'} payment: ` + e.message, 'error');
                 } finally {
                     sessionStorage.removeItem('pendingReferral');
                     sessionStorage.removeItem('pendingReferralReward');
