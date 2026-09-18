@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { createHash } from "node:crypto";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { logger } from "../lib/logger";
 import { getFirebaseAdminToken } from "../lib/firebase-admin-token";
@@ -304,6 +305,39 @@ async function loadAcademicRecords(
 function numberValue(value: unknown): number {
   const number = Number(value ?? 0);
   return Number.isFinite(number) ? number : 0;
+}
+
+function monthArchiveId(institutionId: string, month: string): string {
+  return `${institutionId}-${month}`.replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
+async function bursarMonthLocked(institutionId: string, month: string, adminToken: string): Promise<boolean> {
+  const scopedArchive = await firestoreGet(
+    `payment_monthly_archives/${encodeURIComponent(monthArchiveId(institutionId, month))}`,
+    adminToken,
+  );
+  return scopedArchive?.locked === true || scopedArchive?.status === "locked";
+}
+
+function transactionDate(data: Record<string, unknown>): number {
+  return Date.parse(String(data.paymentDate ?? data.createdAt ?? ""));
+}
+
+function transactionInPeriod(data: Record<string, unknown>, from?: string, to?: string): boolean {
+  const date = transactionDate(data);
+  if (!Number.isFinite(date)) return false;
+  const fromDate = from ? Date.parse(`${from}T00:00:00.000Z`) : Number.NEGATIVE_INFINITY;
+  const toDate = to ? Date.parse(`${to}T23:59:59.999Z`) : Number.POSITIVE_INFINITY;
+  return date >= fromDate && date <= toDate;
+}
+
+function bursarReceiptHash(data: Record<string, unknown>): string {
+  return createHash("sha256").update(JSON.stringify({
+    reference: data.reference,
+    amountPaid: data.amountPaid,
+    institutionId: data.institutionId,
+    paymentDate: data.paymentDate ?? data.createdAt,
+  })).digest("hex");
 }
 
 async function bursarRecords(
