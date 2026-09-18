@@ -49,7 +49,7 @@ async function verifySchoolCaller(
       };
     };
     const role = docData.fields?.role?.stringValue;
-    if (!["school", "school_admin", "headteacher"].includes(String(role))) return null;
+    if (!["school", "school_admin", "headteacher", "bursar"].includes(String(role))) return null;
     const schoolId = docData.fields?.schoolId?.stringValue ?? docData.fields?.institutionId?.stringValue;
     if (!schoolId) return null;
     return { uid, role: String(role), schoolId, institutionId: docData.fields?.institutionId?.stringValue };
@@ -166,6 +166,66 @@ function learnerRecord(data: Record<string, unknown>, id: string) {
   }, id);
 }
 
+function financialRecord(data: Record<string, unknown>, id: string) {
+  return safeRecord({
+    reference: data.reference ?? data.paymentReference ?? "",
+    billReference: data.billReference ?? data.billId ?? id,
+    clientName: data.clientName ?? data.studentName ?? data.payerName ?? "",
+    amountPaid: Number(data.amountPaid ?? data.paidAmount ?? data.amount ?? 0),
+    totalAmount: Number(data.totalAmount ?? data.billTotal ?? data.amount ?? 0),
+    balanceRemaining: Number(data.balanceRemaining ?? data.balanceAmount ?? Math.max(
+      0,
+      Number(data.totalAmount ?? data.billTotal ?? data.amount ?? 0) -
+      Number(data.amountPaid ?? data.paidAmount ?? 0),
+    )),
+    status: data.status ?? data.paymentStatus ?? "unpaid",
+    paymentDate: data.paymentDate ?? data.createdAt ?? "",
+    dueDate: data.dueDate ?? "",
+  }, id);
+}
+
+function numberValue(value: unknown): number {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number) ? number : 0;
+}
+
+async function bursarRecords(
+  schoolIds: Set<string>,
+  adminToken: string,
+) {
+  const [paymentDocuments, feeDocuments, billDocuments] = await Promise.all([
+    firestoreList("payment_transactions", adminToken),
+    firestoreList("school_fees", adminToken),
+    firestoreList("school_bills", adminToken),
+  ]);
+  const scopedPayments = paymentDocuments
+    .map((item) => ({ id: documentId(item), data: documentData(item) }))
+    .filter(({ data }) => belongsToSchool(data, schoolIds))
+    .map(({ id, data }) => financialRecord(data, id));
+  const scopedFees = [...feeDocuments, ...billDocuments]
+    .map((item) => ({ id: documentId(item), data: documentData(item) }))
+    .filter(({ data }) => belongsToSchool(data, schoolIds))
+    .map(({ id, data }) => financialRecord(data, id));
+  const accountsByReference = new Map(scopedFees.map((row) => [String(row.billReference ?? row.id), row]));
+  const accounts = [...accountsByReference.values()];
+  const totalDue = accounts.reduce((sum, row) => sum + numberValue(row.totalAmount), 0);
+  const totalPaid = accounts.reduce((sum, row) => sum + numberValue(row.amountPaid), 0);
+  const paymentTotal = scopedPayments.reduce((sum, row) => sum + numberValue(row.amountPaid), 0);
+  return {
+    summary: {
+      accountCount: accounts.length,
+      totalDue,
+      totalPaid,
+      outstandingBalance: Math.max(0, totalDue - totalPaid),
+      paymentCount: scopedPayments.length,
+      paymentTotal,
+      pendingPayments: scopedPayments.filter((row) => ["pending", "processing"].includes(String(row.status).toLowerCase())).length,
+    },
+    accounts: accounts.slice(0, 500),
+    payments: scopedPayments.slice(0, 500),
+  };
+}
+
 /**
  * GET /api/school/education-workspace
  *
@@ -258,10 +318,12 @@ router.get("/school/education-workspace", async (req, res) => {
       status: school.status ?? "active",
     }, resolvedSchoolId);
 
+    const bursar = caller.role === "bursar" ? await bursarRecords(schoolIds, adminToken) : null;
     res.json({
       ok: true,
       live: true,
-      account,
+      account: caller.role === "bursar" ? "primary" : account,
+      workspace: caller.role === "bursar" ? "bursar" : "education",
       role: caller.role,
       school: safeSchool,
       learners,
@@ -271,6 +333,7 @@ router.get("/school/education-workspace", async (req, res) => {
       attendance: attendance.map((item) => safeRecord(documentData(item), documentId(item))),
       reports: [],
       marks: [],
+      bursar,
     });
   } catch (err) {
     logger.warn({ err, schoolId: caller.schoolId }, "Education workspace read failed");
