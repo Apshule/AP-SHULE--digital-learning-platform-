@@ -59,6 +59,14 @@ async function verifySchoolCaller(
   }
 }
 
+async function requireSchoolManager(
+  authHeader: string | undefined,
+): Promise<{ uid: string; role: string; schoolId: string; institutionId?: string } | null> {
+  const caller = await verifySchoolCaller(authHeader);
+  if (!caller || !["school", "school_admin", "headteacher"].includes(caller.role)) return null;
+  return caller;
+}
+
 type FirestoreField = {
   stringValue?: string;
   integerValue?: string;
@@ -196,6 +204,30 @@ async function firestoreWrite(
     },
   );
   if (!response.ok) throw new Error(`Firestore write failed (${response.status})`);
+  return (await response.json()) as FirestoreDocument;
+}
+
+async function firestoreUpdate(
+  path: string,
+  token: string,
+  data: Record<string, unknown>,
+): Promise<FirestoreDocument | null> {
+  const updateMask = Object.keys(data)
+    .map((key) => `updateMask.fieldPaths=${encodeURIComponent(key)}`)
+    .join("&");
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${path.replace(/^\/+/, "")}?${updateMask}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, firestoreEncodedValue(value)]),
+        ),
+      }),
+    },
+  );
+  if (!response.ok) throw new Error(`Firestore update failed (${response.status})`);
   return (await response.json()) as FirestoreDocument;
 }
 
