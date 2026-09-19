@@ -63,6 +63,13 @@ describe("teacher earnings and payout contracts", () => {
     expect(indexes.indexes.some((index) => index.collectionGroup === "teacherPdfs")).toBe(true);
   });
 
+  it("opens Firebase-hosted PDFs directly instead of routing them through Google viewer", () => {
+    expect(indexSource).toContain("function isFirebaseStoragePdfUrl(url)");
+    expect(indexSource).toContain("firebasestorage.googleapis.com");
+    expect(indexSource).toContain("const viewerUrl = isFirebaseStoragePdfUrl(url)");
+    expect(indexSource).toContain("viewer.src = viewerUrl");
+  });
+
   it("keeps both upload paths and shared reads within the intended roles", () => {
     expect(rules).toContain("match /pdfs/{pdfId}");
     expect(rules).toContain("allow create, update, delete: if isSuperAdmin();");
