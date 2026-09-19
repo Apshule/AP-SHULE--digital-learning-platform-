@@ -18297,7 +18297,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
     try {
       // Query-bust the worker script so an installed PWA cannot keep serving
       // an older cached shell after a GitHub Pages release.
-      var registration = await navigator.serviceWorker.register("/sw.js?v=20260918-12", { scope: "/" });
+      var registration = await navigator.serviceWorker.register("/sw.js?v=20260919-13", { scope: "/" });
       await navigator.serviceWorker.ready;
       window._swRegistration = registration;
       if(("PushManager" in window) && ("Notification" in window)) {
