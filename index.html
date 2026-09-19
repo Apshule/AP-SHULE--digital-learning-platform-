@@ -949,11 +949,15 @@
         /* ===== NEW STYLES (added features) ===== */
 
         /* PDF inline viewer modal */
-        .pdf-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 6000; display: none; flex-direction: column; }
+        .pdf-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 6000; display: none; flex-direction: column; user-select: none; }
         .pdf-modal.show { display: flex; }
         .pdf-modal-header { background: #4B2E9E; padding: 15px; color: white; display: flex; justify-content: space-between; align-items: center; }
         .pdf-modal-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        .pdf-modal iframe { flex: 1; border: none; width: 100%; }
+        .pdf-viewer-stage { flex: 1; position: relative; overflow: auto; overscroll-behavior: contain; padding: 14px 10px 28px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        .pdf-viewer-pages { width: min(100%, 860px); margin: 0 auto; }
+        .pdf-viewer-page { display: block; width: 100%; height: auto; margin: 0 auto 14px; background: white; box-shadow: 0 2px 12px rgba(0,0,0,.35); pointer-events: none; }
+        .pdf-viewer-status { color: white; text-align: center; padding: 36px 18px; font-size: 14px; }
+        .pdf-viewer-watermark { position: sticky; top: 8px; z-index: 2; width: max-content; max-width: 100%; margin: 0 auto 8px; padding: 5px 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; color: rgba(255,255,255,.72); background: rgba(35,20,75,.72); font-size: 11px; pointer-events: none; }
 
         /* Teacher dashboard */
         .teacher-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 16px; }
@@ -2012,7 +2016,10 @@
             <span id="pdfModalTitle"><i class="fas fa-file-pdf"></i> PDF Viewer</span>
             <button id="closePdfModal">&times;</button>
         </div>
-        <iframe id="pdfViewerIframe" src="" title="PDF Viewer"></iframe>
+        <div id="pdfViewerStage" class="pdf-viewer-stage" aria-live="polite">
+            <div id="pdfViewerStatus" class="pdf-viewer-status">Preparing the protected viewer…</div>
+            <div id="pdfViewerPages" class="pdf-viewer-pages"></div>
+        </div>
     </div>
 
     <!-- LIVE LESSON PAYMENT MODAL -->
@@ -6114,7 +6121,8 @@
     }
 
     // ===== PDF INLINE VIEWER (NEW) =====
-    let _settingsPdfObjectUrl = null;
+    let _pdfJsPromise = null;
+    let _pdfRenderToken = 0;
     function isPdfFile(file) {
         return !!file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || ''));
     }
@@ -6179,14 +6187,79 @@
             console.warn('Teacher PDF view tracking failed:',error);
         }
     }
-    function isFirebaseStoragePdfUrl(url) {
+    function loadPdfJs() {
+        if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+        if(_pdfJsPromise) return _pdfJsPromise;
+        _pdfJsPromise = new Promise((resolve,reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            script.async = true;
+            script.onload = () => window.pdfjsLib ? resolve(window.pdfjsLib) : reject(new Error('The protected PDF viewer did not load.'));
+            script.onerror = () => reject(new Error('The protected PDF viewer could not load. Check your connection and try again.'));
+            document.head.appendChild(script);
+        }).catch(error => {
+            _pdfJsPromise = null;
+            throw error;
+        });
+        return _pdfJsPromise;
+    }
+    function setPdfViewerStatus(message, error) {
+        const status = document.getElementById('pdfViewerStatus');
+        if(!status) return;
+        status.textContent = message || '';
+        status.style.color = error ? '#ffb4ab' : '';
+    }
+    async function renderProtectedPdf(source, title) {
+        const token = ++_pdfRenderToken;
+        const pages = document.getElementById('pdfViewerPages');
+        if(!pages) return;
+        pages.innerHTML = '';
+        setPdfViewerStatus('Opening this study material in view-only mode…');
         try {
-            const parsed = new URL(url, window.location.href);
-            return parsed.hostname === 'firebasestorage.googleapis.com'
-                || parsed.hostname === 'storage.googleapis.com'
-                || parsed.hostname.endsWith('.firebasestorage.app');
-        } catch(_) {
-            return false;
+            const pdfjs = await loadPdfJs();
+            pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            const documentSource = typeof source === 'string'
+                ? { url: source, withCredentials: false }
+                : { data: new Uint8Array(await source.arrayBuffer()) };
+            const loadingTask = pdfjs.getDocument(documentSource);
+            const pdf = await loadingTask.promise;
+            if(token !== _pdfRenderToken) return;
+            const stage = document.getElementById('pdfViewerStage');
+            stage?.querySelectorAll('.pdf-viewer-watermark').forEach(element => element.remove());
+            const watermark = document.createElement('div');
+            watermark.className = 'pdf-viewer-watermark';
+            watermark.textContent = `View only · ${currentUser?.name || currentUser?.email || 'Authorized student'}`;
+            stage?.insertBefore(watermark, pages);
+            const pageCount = Number(pdf.numPages || 0);
+            setPdfViewerStatus('');
+            for(let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+                if(token !== _pdfRenderToken) return;
+                const page = await pdf.getPage(pageNumber);
+                const baseViewport = page.getViewport({ scale: 1 });
+                const availableWidth = Math.max(280, (stage?.clientWidth || window.innerWidth) - 32);
+                const cssScale = Math.min(1.55, availableWidth / baseViewport.width);
+                const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+                const cssViewport = page.getViewport({ scale: cssScale });
+                const renderViewport = page.getViewport({ scale: cssScale * pixelRatio });
+                const canvas = document.createElement('canvas');
+                canvas.className = 'pdf-viewer-page';
+                canvas.width = Math.ceil(renderViewport.width);
+                canvas.height = Math.ceil(renderViewport.height);
+                canvas.style.width = `${Math.ceil(cssViewport.width)}px`;
+                canvas.style.height = `${Math.ceil(cssViewport.height)}px`;
+                canvas.setAttribute('aria-label', `${title || 'Study material'} page ${pageNumber}`);
+                pages.appendChild(canvas);
+                await page.render({ canvasContext: canvas.getContext('2d', { alpha: false }), viewport: renderViewport }).promise;
+            }
+            if(token === _pdfRenderToken && !pageCount) setPdfViewerStatus('This study material has no readable pages.', true);
+        } catch(error) {
+            if(token !== _pdfRenderToken) return;
+            pages.innerHTML = '';
+            setPdfViewerStatus(
+                'This PDF could not be displayed. Please ask the administrator to upload the actual PDF file to APSHULE instead of a private Google Drive link.',
+                true
+            );
+            console.warn('Protected PDF viewer failed:', error);
         }
     }
     window.openPdfInline = async function(url, title, pdfDocId, trigger, sourceCollection) {
@@ -6196,23 +6269,21 @@
         }
         document.getElementById('pdfModalTitle').innerHTML = `<i class="fas fa-file-pdf"></i> ${title}`;
         document.getElementById('pdfViewModal').classList.add('show');
-        const viewer=document.getElementById('pdfViewerIframe');
-        if(_settingsPdfObjectUrl) { URL.revokeObjectURL(_settingsPdfObjectUrl); _settingsPdfObjectUrl=null; }
-        // Use a locally cached PDF when offline. Firebase download URLs must be
-        // opened directly: Google's viewer fetches them server-side and cannot
-        // use the signed-in browser/session, which produces a 403 on mobile.
+        const pages = document.getElementById('pdfViewerPages');
+        if(pages) pages.innerHTML = '';
+        document.getElementById('pdfViewerStage')?.querySelectorAll('.pdf-viewer-watermark').forEach(element => element.remove());
+        setPdfViewerStatus('Preparing the protected viewer…');
+        // Render pages onto canvases instead of embedding a native PDF viewer.
+        // This removes browser download/print controls and avoids Google Viewer,
+        // which cannot fetch protected Firebase URLs with the student's session.
         if(!navigator.onLine && Offline && pdfDocId) {
             Offline.getCachedPdf(pdfDocId).then(record=>{
                 if(record?.pdfBlob) {
-                    _settingsPdfObjectUrl=URL.createObjectURL(record.pdfBlob);
-                    viewer.src=_settingsPdfObjectUrl;
-                } else viewer.src='';
-            }).catch(()=>{ viewer.src=''; });
+                    renderProtectedPdf(record.pdfBlob, title);
+                } else setPdfViewerStatus('This study material is not available offline.', true);
+            }).catch(()=>{ setPdfViewerStatus('This study material is not available offline.', true); });
         } else {
-            const viewerUrl = isFirebaseStoragePdfUrl(url)
-                ? url
-                : `https://docs.google.com/gviewer?embedded=true&url=${encodeURIComponent(url)}`;
-            viewer.src = viewerUrl;
+            renderProtectedPdf(url, title);
             if(Offline && currentUser && url) Offline.cachePdf({pdfId:pdfDocId||url,url,title},{userId:currentUser.uid}).catch(()=>{});
         }
         // Track views and, for teacher-owned material, create an earning using
@@ -6231,8 +6302,20 @@
 
     document.getElementById('closePdfModal')?.addEventListener('click', () => {
         document.getElementById('pdfViewModal').classList.remove('show');
-        document.getElementById('pdfViewerIframe').src = '';
-        if(_settingsPdfObjectUrl) { URL.revokeObjectURL(_settingsPdfObjectUrl); _settingsPdfObjectUrl=null; }
+        _pdfRenderToken++;
+        const pages = document.getElementById('pdfViewerPages');
+        if(pages) pages.innerHTML = '';
+        setPdfViewerStatus('');
+    });
+    document.getElementById('pdfViewerStage')?.addEventListener('contextmenu', event => event.preventDefault());
+    document.getElementById('pdfViewerStage')?.addEventListener('dragstart', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+        const modal = document.getElementById('pdfViewModal');
+        if(!modal?.classList.contains('show')) return;
+        if((event.ctrlKey || event.metaKey) && ['s','p','u'].includes(String(event.key).toLowerCase())) {
+            event.preventDefault();
+            setPdfViewerStatus('This material is view-only.', true);
+        }
     });
 
     // ===== RENDER FUNCTIONS =====
