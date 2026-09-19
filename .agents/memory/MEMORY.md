@@ -22,3 +22,4 @@
 - [Authenticated Firestore listeners](authenticated-firestore-listeners.md) — Bind listeners after auth and unsubscribe on logout; anonymous permission failures do not reliably recover after login.
 - [Vocational public read boundary](vocational-public-read-boundary.md) — Serve public provider and course reads through the API when browser Firestore permissions vary by environment.
 - [Education live-account boundary](education-live-account-boundary.md) — Use server-side school scoping for academic reads; keep bursar writes on separate role-protected endpoints.
+- [Authenticated greeting boundary](authenticated-greeting-boundary.md) — Keep public Education preview copy non-authenticated; use the shared localized time-of-day contract in signed-in workspaces.

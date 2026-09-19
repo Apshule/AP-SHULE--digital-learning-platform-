@@ -102,6 +102,8 @@ describe("Education workspace integration", () => {
   it("keeps the route and landing-page education entry connected", () => {
     expect(serverSource).toContain('app.get(["/education", "/education/"]');
     expect(serverSource).toContain('app.use("/education", express.static(educationPath))');
+    expect(serverSource).toContain('app.get("/greeting.js"');
+    expect(educationSource).toContain('<script src="../greeting.js"></script>');
     expect(landingSource).toContain('<a href="education/">For Schools</a>');
     expect(landingSource).toContain('<a class="landing-link" href="education/">Explore education →</a>');
   });

@@ -74,9 +74,41 @@
   const printModal = document.getElementById("printSettingsModal");
   const printSettingsContent = document.getElementById("printSettingsContent");
   const printStepper = document.getElementById("printStepper");
+  let greetingTimer = null;
 
   function liveEnabled() {
     return Boolean(state.liveData?.live);
+  }
+
+  function educationAccountName() {
+    const user = window.firebase?.auth?.().currentUser;
+    return user?.displayName || user?.email?.split("@")[0] || state.liveData?.staff?.find((row) => row.id === user?.uid)?.name || "";
+  }
+
+  function renderWorkspaceGreeting() {
+    const element = document.getElementById("workspaceGreeting");
+    if (!element) return;
+    if (!liveEnabled()) {
+      element.textContent = "";
+      return;
+    }
+    const api = window.apshuleGreeting;
+    element.textContent = api?.formatGreeting
+      ? api.formatGreeting(educationAccountName(), state.liveData?.language || "English", new Date(), "team")
+      : `Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}!`;
+  }
+
+  function stopGreetingRefresh() {
+    if (greetingTimer) {
+      window.clearInterval(greetingTimer);
+      greetingTimer = null;
+    }
+  }
+
+  function startGreetingRefresh() {
+    stopGreetingRefresh();
+    renderWorkspaceGreeting();
+    greetingTimer = window.setInterval(renderWorkspaceGreeting, 60000);
   }
 
   function isBursar() {
@@ -395,6 +427,7 @@
     if (notice) notice.innerHTML = liveEnabled()
       ? `<span class="notice-icon">✓</span><span><strong>${bursar ? "Live bursar workspace." : "Live school workspace."}</strong> ${escapeHtml(schoolName)} records are loaded through your authorized account.${bursar ? " Manual payment entry and daily reconciliation are enabled." : " Bursar and finance controls are not included here."}</span>`
       : `<span class="notice-icon">i</span><span><strong>${state.authState === "checking" || state.authState === "loading" ? "Checking secure access." : "Secure sign-in required."}</strong> ${state.authError ? escapeHtml(state.authError) : "No records are shown. Open secure login to load authorized school data."}</span>`;
+    renderWorkspaceGreeting();
     document.querySelectorAll("[data-account]").forEach((button) => {
       button.classList.toggle("active", button.dataset.account === state.account);
     });
@@ -951,6 +984,7 @@
     try {
       firebase.auth().onAuthStateChanged(async (user) => {
         if (!user) {
+          stopGreetingRefresh();
           state.liveData = null;
           state.authState = "signed_out";
           state.authError = "";
@@ -973,6 +1007,7 @@
           state.liveData = payload;
           state.authState = "live";
           state.authError = "";
+          startGreetingRefresh();
           if (payload.workspace === "bursar") {
             state.view = "dashboard";
           }
@@ -980,6 +1015,7 @@
           if (state.account === "secondary" && !secondaryViews.includes(state.view)) state.view = "dashboard";
           render();
         } catch (error) {
+          stopGreetingRefresh();
           state.liveData = null;
           state.authState = "error";
           state.authError = error?.message || "Live school records could not be loaded.";

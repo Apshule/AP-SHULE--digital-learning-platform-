@@ -74,6 +74,7 @@ app.use("/education", express.static(educationPath));
 app.get(["/obote", "/obote/"], (req, res) => {
   res.sendFile(resolve(skillsPath, "provider-register.html"));
 });
+app.get("/greeting.js", (req, res) => res.sendFile(resolve(__dirname, "../../../greeting.js")));
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
 app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));

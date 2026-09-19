@@ -1916,7 +1916,7 @@
         <div class="header-left">
             <img id="headerLogoImg" class="header-logo-img logo--responsive" src="https://i.ibb.co/YFrCtRW8/IMG-20260328-WA0041-9.jpg" alt="APSHULE">
             <img id="headerSchoolLogoImg" src="" alt="School logo" style="display:none;width:36px;height:36px;border-radius:8px;object-fit:cover;border:1.5px solid rgba(255,255,255,0.35);margin-left:6px;flex-shrink:0;">
-            <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div id="appTagline" class="tagline" data-i18n="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div class="greeting"><span data-i18n="greeting">Hello</span>, <span id="userName">Student</span>!</div></div>
+            <div><div class="app-title">APSHULE</div><div id="headerInstitutionName" class="header-institution-name" style="display:none;"></div><div id="appTagline" class="tagline" data-i18n="tagline">Let's Learn With Ease From Anywhere at Anytime</div><div id="greeting" class="greeting" aria-live="polite"></div></div>
         </div>
         <div class="header-right">
             <div id="connectionModeBadge" class="connection-mode-badge" data-mode="offline" data-online="false" data-syncing="false" role="status" aria-live="polite" aria-label="Offline">
@@ -2731,7 +2731,7 @@
         <div id="superAdminCommandCenterPage" class="page command-center-page">
             <div class="command-center-hero">
                 <h2>⚙️ APSHULE COMMAND CENTER</h2>
-                <p>Welcome, <strong id="commandCenterAdminName">Super Admin</strong>. Manage users, institutions, analytics, and platform settings.</p>
+                <p><span id="commandCenterGreeting">Welcome</span>, <strong id="commandCenterAdminName">Super Admin</strong>. Manage users, institutions, analytics, and platform settings.</p>
             </div>
             <div class="command-section-title"><span>📊 Quick Stats</span><button id="commandRefreshStatsBtn" class="command-secondary-btn" type="button">Refresh</button></div>
             <div class="command-stats-grid">
@@ -2831,7 +2831,7 @@
         </div>
         <!-- MFI FOUNDATION -->
         <div id="mfiDashboardPage" class="page mfi-page">
-            <div class="mfi-hero"><h2>🏦 <span id="mfiInstitutionName">MFI Dashboard</span></h2><p>Welcome, <strong id="mfiAdminName">MFI team</strong>. Manage customers and collateral securely.</p></div>
+            <div class="mfi-hero"><h2>🏦 <span id="mfiInstitutionName">MFI Dashboard</span></h2><p><span id="mfiAdminGreeting">Welcome</span>, <strong id="mfiAdminName">MFI team</strong>. Manage customers and collateral securely.</p></div>
             <div id="mfiOfflineNotice" class="mfi-offline-note mfi-hidden">Offline mode: customer registration requires internet. Collateral drafts can be saved offline and synced when connected.</div>
             <div class="mfi-section">📊 Quick Stats</div>
             <div class="mfi-stats-grid"><div class="mfi-stat-card"><strong id="mfiTotalCustomers">—</strong><span>Total Customers</span></div><div class="mfi-stat-card"><strong id="mfiCollateralCaptured">—</strong><span>Collateral Captured</span></div><div class="mfi-stat-card"><strong id="mfiPendingReviews">—</strong><span>Pending Reviews</span></div></div>
@@ -2859,7 +2859,7 @@
             <div class="mfi-panel-card"><div class="mfi-filter-row"><input id="mfiLoanSearch" type="search" placeholder="Search loan number or customer" aria-label="Search loans"><select id="mfiLoanStatusFilter" aria-label="Filter loans"><option value="">All statuses</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="under_review">Under review</option><option value="approved">Approved</option><option value="disbursed">Disbursed</option><option value="repaying">Repaying</option><option value="overdue">Overdue</option><option value="fully_repaid">Fully repaid</option><option value="rejected">Rejected</option></select><select id="mfiLoanProductFilter" aria-label="Filter loan product"><option value="">All products</option></select></div><div id="mfiLoanPortfolioList"><div class="mfi-activity-item">Loading loans…</div></div></div>
         </div>
         <div id="mfiManagerHomePage" class="page mfi-page">
-            <div class="mfi-hero"><h2>🏦 <span id="mfiManagerInstitutionName">MFI Name — Manager View</span></h2><p>Welcome, <strong id="mfiManagerName">Loan Manager</strong>. Review collateral, coordinate verification, and record decisions.</p></div>
+            <div class="mfi-hero"><h2>🏦 <span id="mfiManagerInstitutionName">MFI Name — Manager View</span></h2><p><span id="mfiManagerGreeting">Welcome</span>, <strong id="mfiManagerName">Loan Manager</strong>. Review collateral, coordinate verification, and record decisions.</p></div>
             <div id="mfiManagerOfflineNotice" class="mfi-offline-note mfi-hidden">Offline mode: assigned field activities can be completed and will sync when connected.</div>
             <div class="mfi-section">📊 Quick Stats</div>
             <div class="mfi-stats-grid"><div class="mfi-stat-card"><strong id="mfiManagerPending">—</strong><span>Pending Reviews</span></div><div class="mfi-stat-card"><strong id="mfiManagerApproved">—</strong><span>Approved This Month</span></div><div class="mfi-stat-card"><strong id="mfiManagerRejected">—</strong><span>Rejected This Month</span></div></div>
@@ -2879,7 +2879,7 @@
             <div class="mfi-panel-card" style="margin-top:14px;"><div class="mfi-section" style="margin-top:0;font-size:14px;">Legal Officers <button id="mfiAddLegalOfficerBtn" class="mfi-primary-btn" type="button" style="float:right;">＋ Add Officer</button></div><div id="mfiLegalOfficersList" class="mfi-activity-card"><div class="mfi-activity-item">Loading legal officers…</div></div></div>
         </div>
         <div id="mfiDirectorHomePage" class="page mfi-page">
-            <div class="mfi-hero"><h2>🏦 <span id="mfiDirectorInstitutionName">MFI Name — Director View</span></h2><p>Welcome, <strong id="mfiDirectorName">Loan Director</strong>. Monitor portfolio health, risk, and compliance.</p></div>
+            <div class="mfi-hero"><h2>🏦 <span id="mfiDirectorInstitutionName">MFI Name — Director View</span></h2><p><span id="mfiDirectorGreeting">Welcome</span>, <strong id="mfiDirectorName">Loan Director</strong>. Monitor portfolio health, risk, and compliance.</p></div>
             <div id="mfiDirectorOfflineNotice" class="mfi-offline-note mfi-hidden">Offline mode: showing cached director data. Reports and risk actions require internet.</div>
             <div class="mfi-section">📊 Key Metrics</div>
             <div class="mfi-stats-grid mfi-director-stats"><div class="mfi-stat-card"><strong id="mfiDirectorCustomers">—</strong><span>Total Customers</span></div><div class="mfi-stat-card"><strong id="mfiDirectorActivePortfolio">—</strong><span>Active Portfolio</span></div><div class="mfi-stat-card"><strong id="mfiDirectorOutstanding">—</strong><span>Outstanding Principal</span></div><div class="mfi-stat-card"><strong id="mfiDirectorPar30">—</strong><span>PAR 30</span></div><div class="mfi-stat-card"><strong id="mfiDirectorRepaymentRate">—</strong><span>Repayment Rate</span></div><div class="mfi-stat-card"><strong id="mfiDirectorCollateralValue">—</strong><span>Collateral Value</span></div><div class="mfi-stat-card"><strong id="mfiDirectorCoverage">—</strong><span>Collateral Coverage</span></div><div class="mfi-stat-card"><strong id="mfiDirectorPending">—</strong><span>Pending Reviews</span></div><div class="mfi-stat-card"><strong id="mfiDirectorApproved">—</strong><span>Approved This Month</span></div></div>
@@ -4568,6 +4568,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js" onerror="window._firebaseReady&&window._firebaseReady()"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js" onerror="void 0"></script>
 <script src="/offline-manager.js"></script>
+<script src="greeting.js"></script>
 
 <script>
     // Initialise Firebase (wrapped in try-catch so any error unblocks the login form)
@@ -4704,6 +4705,7 @@
 
     // ===== GLOBAL STATE =====
     let currentUser = null;
+    let _greetingTimer = null;
     let _studentProjects = [];
     let schools = [];
     let globalEventsList = [];
@@ -4812,7 +4814,12 @@
             'offlineViewsOverviewContent'
         ].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = ''; });
         // Reset greeting and profile
-        const greet = document.getElementById('greeting'); if(greet) greet.textContent = 'Welcome';
+        stopGreetingRefresh();
+        const greet = document.getElementById('greeting'); if(greet) greet.textContent = '';
+        const roleGreetingIds = ['commandCenterGreeting','mfiAdminGreeting','mfiManagerGreeting','mfiDirectorGreeting'];
+        roleGreetingIds.forEach(id => { const element = document.getElementById(id); if(element) element.textContent = 'Welcome'; });
+        const clinicWelcome = document.getElementById('clinicWelcomeText'); if(clinicWelcome) clinicWelcome.textContent = 'Coordinate safe, connected care for every patient.';
+        const farmWelcome = document.getElementById('farmWelcome'); if(farmWelcome) farmWelcome.textContent = 'Farm operations';
         const pic = document.getElementById('profilePicImg'); if(pic) pic.src = '';
         // Collapse admin panel
         const ap = document.getElementById('adminPanel'); if(ap) ap.classList.remove('show');
@@ -4890,6 +4897,7 @@
         const version=document.getElementById('settingsAppVersion'); if(version) version.textContent=APP_VERSION;
         const build=document.getElementById('settingsBuildInfo'); if(build) build.textContent=APP_BUILD;
         const syncButton=document.getElementById('globalSyncPopoverBtn'); if(syncButton) syncButton.textContent=t('syncNow');
+        updateGreeting();
     }
     window.apshuleTranslation = { t, applyTranslations, LANGUAGE_CODES, TRANSLATIONS };
     const Offline = window.AppShuleOffline;
@@ -5654,16 +5662,47 @@
         return url.trim();
     }
 
-    function updateGreeting() {
+    function accountGreeting(name, fallback) {
+        if(window.apshuleGreeting?.getGreeting) return window.apshuleGreeting.getGreeting(currentAppLanguage, new Date());
         const hour = new Date().getHours();
-        let greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-        const nameSpan = document.getElementById('userName');
-        if(nameSpan && currentUser) {
-            let firstName = currentUser.name?.split(' ')[0] || "Student";
-            nameSpan.innerText = `${greeting}, ${firstName}!`;
+        return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    }
+    function accountGreetingText(name, fallback) {
+        if(window.apshuleGreeting?.formatGreeting) return window.apshuleGreeting.formatGreeting(name, currentAppLanguage, new Date(), fallback);
+        return `${accountGreeting()}${name ? `, ${String(name).split(/\s+/)[0]}!` : '!'}`;
+    }
+    function updateAccountGreetings() {
+        const phrase = accountGreeting();
+        const commandName = document.getElementById('commandCenterAdminName');
+        if(commandName && currentUser) commandName.textContent = currentUser.name || currentUser.email || 'Super Admin';
+        ['commandCenterGreeting','mfiAdminGreeting','mfiManagerGreeting','mfiDirectorGreeting'].forEach(id => {
+            const element = document.getElementById(id);
+            if(element && currentUser) element.textContent = phrase;
+        });
+        const clinicWelcome = document.getElementById('clinicWelcomeText');
+        if(clinicWelcome && currentUser && isClinicRole()) clinicWelcome.textContent = accountGreetingText(currentUser.name, clinicRoleLabel()).replace(/!$/, '.');
+        const farmWelcome = document.getElementById('farmWelcome');
+        if(farmWelcome && currentUser && isFarmRole()) {
+            const farmType = typeof farmState !== 'undefined' ? farmState?.farm?.farmType || 'Mixed farm' : 'Mixed farm';
+            farmWelcome.textContent = `${accountGreetingText(currentUser.name, 'farm team')} · ${farmType}`;
         }
     }
-    setInterval(updateGreeting, 60000);
+    function updateGreeting() {
+        const greeting = document.getElementById('greeting');
+        if(greeting) greeting.textContent = currentUser ? accountGreetingText(currentUser.name, 'Student') : '';
+        updateAccountGreetings();
+    }
+    function stopGreetingRefresh() {
+        if(_greetingTimer) {
+            clearInterval(_greetingTimer);
+            _greetingTimer = null;
+        }
+    }
+    function startGreetingRefresh() {
+        stopGreetingRefresh();
+        updateGreeting();
+        _greetingTimer = setInterval(updateGreeting, 60000);
+    }
 
     // ===== YOUTUBE PLAYER (IFrame API for progress tracking) =====
     // This is called by YouTube IFrame API when ready
@@ -15989,7 +16028,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
      async function loadClinicDashboard(){
          if(!isClinicRole()) return;
          const name=document.getElementById('clinicInstitutionName'); if(name) name.textContent=currentUser?.institutionName||'Clinic dashboard';
-         const welcome=document.getElementById('clinicWelcomeText'); if(welcome) welcome.textContent=`Welcome, ${currentUser?.name||clinicRoleLabel()}.`;
+         const welcome=document.getElementById('clinicWelcomeText'); if(welcome) welcome.textContent=accountGreetingText(currentUser?.name,clinicRoleLabel()).replace(/!$/, '.');
          const offline=document.getElementById('clinicOfflineNotice'); if(offline) offline.hidden=navigator.onLine;
          try {
              const [patients,appointments,prescriptions]=await Promise.all([clinicLoadPatients(),clinicLoadAppointments(),getDocs(query(collection(db,'clinic_prescriptions'),where('institutionId','==',clinicInstitutionId()),limit(300))).then(s=>s.docs.map(d=>({id:d.id,...d.data()}))).catch(()=>[])]);
@@ -16306,7 +16345,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
      function clinicStep3RenderDashboard(data){
          const admin=clinicAdminOnly(),section=document.getElementById('clinicAdminDashboardSection');section?.classList.toggle('is-visible',admin);
          const metrics=clinicStep3Metrics(data),set=(id,value)=>{const element=document.getElementById(id);if(element)element.textContent=value;};
-         set('clinicInstitutionName',currentUser?.institutionName||'Clinic dashboard');set('clinicWelcomeText',`Welcome, ${currentUser?.name||clinicRoleLabel()}.`);
+          set('clinicInstitutionName',currentUser?.institutionName||'Clinic dashboard');set('clinicWelcomeText',accountGreetingText(currentUser?.name,clinicRoleLabel()).replace(/!$/, '.'));
          set('clinicStatPatients',data.patients.length);set('clinicStatAppointments',metrics.todayAppointments.length);set('clinicStatWaiting',metrics.todayAppointments.filter(row=>['checked_in','scheduled'].includes(row.status||'scheduled')).length);set('clinicStatPrescriptions',data.prescriptions.filter(row=>['pending','ready'].includes(row.status||'pending')).length);
          const offline=document.getElementById('clinicOfflineNotice');if(offline){offline.hidden=navigator.onLine;offline.textContent=data.cachedAt?`Offline mode: showing dashboard data from ${new Date(data.cachedAt).toLocaleString()}.`:'Offline mode: dashboard data is not cached yet.';}
          if(admin){set('clinicAdminPatientsToday',metrics.todayPatients);set('clinicAdminAppointmentsToday',metrics.todayAppointments.length);set('clinicAdminRevenueToday',clinicStep3Money(metrics.revenueToday));set('clinicAdminPendingBills',metrics.outstanding.length);set('clinicAdminLowStock',metrics.lowStock.length);set('clinicAdminRevenueMonth',clinicStep3Money(metrics.revenueMonth));set('clinicAdminNewPatients',metrics.newPatients.length);set('clinicAdminAverageVisit',clinicStep3Money(metrics.averageVisit));set('clinicAdminOutstanding',clinicStep3Money(metrics.outstanding.reduce((sum,row)=>sum+Number(row.balanceAmount||0),0)));set('clinicAdminClaimsPending',data.claims.filter(row=>['Draft','Submitted','Under Review'].includes(row.status)).length);
@@ -16663,7 +16702,7 @@ Use the saved activity suggestion: ${record.activitySuggestion||'Use locally ava
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('appScreen').classList.remove('hidden');
          window.appHistory?.replacePage('home');
-        updateGreeting();
+        startGreetingRefresh();
         let address = currentUser.address || 'Not set';
         document.getElementById('accountInfo').innerHTML = `
             <div class="account-field"><label>Name</label><div>${escHtml(currentUser.name)}</div></div>
@@ -19275,7 +19314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function farmRender(){
         farmEnsureUi(); const farm=farmState.farm||{}; const content=document.getElementById('farmContent'); if(!content)return;
         document.getElementById('farmPageTitle').textContent=`🌾 ${farm.farmName||'Farm Dashboard'}`;
-        document.getElementById('farmWelcome').textContent=`Welcome, ${currentUser?.name||'farm team'} · ${farm.farmType||'Mixed farm'}`;
+        document.getElementById('farmWelcome').textContent=`${accountGreetingText(currentUser?.name,'farm team')} · ${farm.farmType||'Mixed farm'}`;
         document.getElementById('farmOnlineStatus').textContent=navigator.onLine?'● Online':'● Offline — changes will sync';
         document.getElementById('farmOnlineStatus').className=`farm-online ${navigator.onLine?'':'farm-offline'}`;
         if(farmState.section==='home'){
@@ -19454,7 +19493,7 @@ document.addEventListener('DOMContentLoaded', () => {
     farmRender=function(){
         farmEnsureUi();const content=document.getElementById('farmContent');if(!content)return;
         document.getElementById('farmPageTitle').textContent=`🌾 ${farmState.farm?.farmName||'Farm Dashboard'}`;
-        document.getElementById('farmWelcome').textContent=`Welcome, ${currentUser?.name||'farm team'} · ${farmState.farm?.farmType||'Mixed farm'}`;
+        document.getElementById('farmWelcome').textContent=`${accountGreetingText(currentUser?.name,'farm team')} · ${farmState.farm?.farmType||'Mixed farm'}`;
         document.getElementById('farmOnlineStatus').textContent=navigator.onLine?'● Online':'● Offline — cached data';
         if(farmState.section==='home')farmRenderEnhancedHome(content);
         else if(farmState.section==='analytics'){farmOpenAnalytics();farmState.section='home';}

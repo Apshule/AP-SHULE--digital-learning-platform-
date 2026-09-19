@@ -109,7 +109,7 @@
           <section class="app-main">
             <header class="app-toolbar">
               <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle menu">☰</button>
-              <div><span class="toolbar-kicker" id="toolbarKicker">Apshule Primary School</span><strong id="viewTitle">Dashboard</strong></div>
+              <div><span class="toolbar-kicker" id="toolbarKicker">Apshule Primary School</span><span class="toolbar-greeting" id="workspaceGreeting" aria-live="polite"></span><strong id="viewTitle">Dashboard</strong></div>
               <div class="toolbar-actions"><div class="account-switcher" role="group" aria-label="Workspace account"><button type="button" data-account="primary" class="active">Primary</button><button type="button" data-account="secondary">Secondary</button></div><span class="live-badge" id="workspaceModeBadge"><i></i> Sign in required</span><span class="toolbar-avatar" id="toolbarAvatar">S</span></div>
             </header>
             <div class="app-content" id="workspaceContent"></div>
@@ -226,6 +226,7 @@
       console.warn("Education Firebase initialization unavailable:", error);
     }
   </script>
+  <script src="../greeting.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
