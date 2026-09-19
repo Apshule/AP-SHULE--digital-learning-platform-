@@ -50,7 +50,7 @@ async function verifySchoolCaller(
       };
     };
     const role = docData.fields?.role?.stringValue;
-    if (!["school", "school_admin", "headteacher", "bursar"].includes(String(role))) return null;
+    if (!["school", "school_admin", "headteacher", "teacher", "bursar"].includes(String(role))) return null;
     const schoolId = docData.fields?.schoolId?.stringValue ?? docData.fields?.institutionId?.stringValue;
     if (!schoolId) return null;
     return { uid, role: String(role), schoolId, institutionId: docData.fields?.institutionId?.stringValue };
@@ -209,6 +209,39 @@ function educationLevel(data: Record<string, unknown>): "primary" | "secondary" 
   return "unknown";
 }
 
+type SecondaryTrack = "o_level" | "a_level" | "unknown";
+
+function secondaryTrack(data: Record<string, unknown>): SecondaryTrack {
+  const value = String(
+    data.academicLevel ?? data.secondaryLevel ?? data.levelType ?? data.curriculum ??
+    data.classLevel ?? data.className ?? data.class ?? data.level ?? "",
+  ).toLowerCase().replace(/\s+/g, " ");
+  if (/(a[_ -]?level|a' level|advanced|^s[56]\b|^senior [56]\b|^form [56]\b|uace)/i.test(value)) return "a_level";
+  if (/(o[_ -]?level|o' level|ordinary|^s[1-4]\b|^senior [1-4]\b|^form [1-4]\b|uce|ncdc)/i.test(value)) return "o_level";
+  return "unknown";
+}
+
+function academicGrade(score: number, maxScore: number, track: SecondaryTrack): string {
+  const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0;
+  if (track === "a_level") {
+    if (percentage >= 80) return "A";
+    if (percentage >= 70) return "B";
+    if (percentage >= 60) return "C";
+    if (percentage >= 50) return "D";
+    if (percentage >= 40) return "E";
+    return "O";
+  }
+  if (percentage >= 80) return "1";
+  if (percentage >= 75) return "2";
+  if (percentage >= 65) return "3";
+  if (percentage >= 60) return "4";
+  if (percentage >= 55) return "5";
+  if (percentage >= 50) return "6";
+  if (percentage >= 45) return "7";
+  if (percentage >= 40) return "8";
+  return "9";
+}
+
 function learnerRecord(data: Record<string, unknown>, id: string) {
   return safeRecord({
     name: data.name ?? data.displayName ?? "",
@@ -256,6 +289,7 @@ function academicNumber(data: Record<string, unknown>, keys: string[]): number |
 }
 
 function academicRecord(data: Record<string, unknown>, id: string, kind: "marks" | "reports") {
+  const track = secondaryTrack(data);
   return safeRecord({
     learnerId: academicText(data, ["learnerId", "studentId", "studentNumber", "admissionNumber", "userId"]),
     learnerName: academicText(data, ["learnerName", "studentName", "student", "name", "displayName"]),
@@ -263,7 +297,10 @@ function academicRecord(data: Record<string, unknown>, id: string, kind: "marks"
     subject: academicText(data, ["subjectName", "subject", "course", "paper"]),
     term: academicText(data, ["term", "termName", "academicTerm", "semester"]),
     curriculum: academicText(data, ["curriculum", "curriculumType", "assessmentType"]),
+    level: track,
+    assessment: academicText(data, ["assessment", "assessmentName", "paperCode", "activity"]),
     score: academicNumber(data, ["score", "marks", "mark", "percentage", "totalScore"]),
+    maxScore: academicNumber(data, ["maxScore", "outOf", "maximumMarks"]) ?? 100,
     average: academicNumber(data, ["average", "averageScore", "mean"]),
     grade: academicText(data, ["grade", "division", "achievementLevel", "level"]),
     remark: academicText(data, ["remark", "remarks", "comment", "teacherRemark"]),
@@ -475,9 +512,10 @@ async function findBursarBill(
 /**
  * GET /api/school/education-workspace
  *
- * Read-only Education workspace bootstrap. The server verifies the Firebase
+ * Education workspace bootstrap. The server verifies the Firebase
  * school role, resolves the linked school/institution, and returns only
- * records belonging to that school. Legacy school documents are sanitized so
+ * records belonging to that school. Academic writes use a separate role-checked
+ * endpoint. Legacy school documents are sanitized so
  * loginPassword and other credentials never leave the server.
  */
 router.get("/school/education-workspace", async (req, res) => {
@@ -589,6 +627,112 @@ router.get("/school/education-workspace", async (req, res) => {
   } catch (err) {
     logger.warn({ err, schoolId: caller.schoolId }, "Education workspace read failed");
     res.status(502).json({ ok: false, error: "Unable to load authorized school records" });
+  }
+});
+
+router.post("/school/academic/marks", async (req, res) => {
+  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  if (!caller) {
+    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    return;
+  }
+  if (caller.role === "bursar") {
+    res.status(403).json({ ok: false, error: "Academic mark entry is not available to bursar accounts" });
+    return;
+  }
+
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "Academic records are temporarily unavailable" });
+    return;
+  }
+
+  const learnerId = String(req.body?.learnerId ?? "").trim().slice(0, 160);
+  const subject = String(req.body?.subject ?? req.body?.subjectName ?? "").trim().slice(0, 160);
+  const className = String(req.body?.className ?? "").trim().slice(0, 80);
+  const term = String(req.body?.term ?? "Term 1").trim().slice(0, 80) || "Term 1";
+  const assessment = String(req.body?.assessment ?? "A1").trim().slice(0, 40) || "A1";
+  const curriculum = String(req.body?.curriculum ?? "").trim().slice(0, 100);
+  const requestedLevel = String(req.body?.level ?? req.body?.academicLevel ?? "").trim().toLowerCase();
+  const rawScore = Number(req.body?.score);
+  const rawMaxScore = Number(req.body?.maxScore ?? 100);
+  const remark = String(req.body?.remark ?? "").trim().slice(0, 240);
+
+  if (!learnerId || !subject || !Number.isFinite(rawScore) || !Number.isFinite(rawMaxScore)) {
+    res.status(400).json({ ok: false, error: "Learner, subject, score, and maximum score are required" });
+    return;
+  }
+  if (rawMaxScore <= 0 || rawMaxScore > 1000 || rawScore < 0 || rawScore > rawMaxScore) {
+    res.status(400).json({ ok: false, error: "Score must be between zero and the maximum score" });
+    return;
+  }
+
+  try {
+    const learnerDocument = await firestoreGet(`users/${encodeURIComponent(learnerId)}`, adminToken);
+    const learnerData = learnerDocument ? documentData(learnerDocument) : {};
+    const schoolIds = new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+    if (!learnerDocument || !belongsToSchool(learnerData, schoolIds)) {
+      res.status(404).json({ ok: false, error: "That learner is not part of your school account" });
+      return;
+    }
+    if (!["individual", "student"].includes(String(learnerData.role ?? "").toLowerCase())) {
+      res.status(400).json({ ok: false, error: "Marks can only be entered for learner accounts" });
+      return;
+    }
+
+    const learner = learnerRecord(learnerData, learnerId);
+    const track = secondaryTrack({
+      ...learnerData,
+      className: className || learner.className,
+      academicLevel: requestedLevel,
+      curriculum,
+    });
+    if (track === "unknown") {
+      res.status(400).json({ ok: false, error: "Choose O-Level or A-Level and use an S1-S6 learner class" });
+      return;
+    }
+    if (requestedLevel && !["o_level", "a_level"].includes(requestedLevel)) {
+      res.status(400).json({ ok: false, error: "Academic level must be O-Level or A-Level" });
+      return;
+    }
+
+    const normalizedScore = Math.round(rawScore * 100) / 100;
+    const normalizedMaxScore = Math.round(rawMaxScore * 100) / 100;
+    const markId = `mark_${createHash("sha256")
+      .update([caller.schoolId, learnerId, subject.toLowerCase(), term.toLowerCase(), assessment.toLowerCase()].join("|"))
+      .digest("hex")
+      .slice(0, 32)}`;
+    const createdAt = new Date().toISOString();
+    const mark = {
+      schoolId: caller.schoolId,
+      institutionId: caller.institutionId ?? caller.schoolId,
+      learnerId,
+      learnerName: learner.name,
+      admissionNumber: learner.admissionNumber,
+      className: className || learner.className,
+      stream: learner.stream,
+      subject,
+      subjectName: subject,
+      term,
+      assessment,
+      curriculum: curriculum || (track === "a_level" ? "A-Level UACE" : "O-Level NCDC"),
+      academicLevel: track,
+      score: normalizedScore,
+      maxScore: normalizedMaxScore,
+      percentage: Math.round((normalizedScore / normalizedMaxScore) * 10000) / 100,
+      grade: academicGrade(normalizedScore, normalizedMaxScore, track),
+      remark,
+      status: "recorded",
+      recordedBy: caller.uid,
+      recordedByRole: caller.role,
+      updatedAt: createdAt,
+      createdAt,
+    };
+    await firestoreWrite(`school_marks/${encodeURIComponent(markId)}`, adminToken, mark);
+    res.status(201).json({ ok: true, mark: academicRecord(mark, markId, "marks") });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId, learnerId }, "School academic mark save failed");
+    res.status(502).json({ ok: false, error: "Unable to save the academic mark" });
   }
 });
 

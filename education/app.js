@@ -50,6 +50,16 @@
       classTeacher: "JD",
       headTeacher: "AB",
     },
+    markEntry: {
+      level: "o_level",
+      learnerId: "",
+    },
+    reportScope: {
+      level: "o_level",
+      learnerId: "",
+      term: "Term 1",
+      curriculum: "ncdc",
+    },
   };
   const nav = document.getElementById("workspaceNav");
   const content = document.getElementById("workspaceContent");
@@ -74,6 +84,33 @@
     const level = account === "secondary" ? "secondary" : "primary";
     const matching = rows.filter((row) => row.educationLevel === level);
     return matching.length || !rows.length ? matching : rows;
+  }
+
+  function secondaryTrack(row = {}) {
+    const value = String(
+      row.academicLevel || row.level || row.className || row.class || row.curriculum || ""
+    ).toLowerCase().replace(/\s+/g, " ");
+    if (/(a[_ -]?level|a' level|advanced|^s[56]\b|^senior [56]\b|^form [56]\b|uace)/i.test(value)) return "a_level";
+    if (/(o[_ -]?level|o' level|ordinary|^s[1-4]\b|^senior [1-4]\b|^form [1-4]\b|uce|ncdc)/i.test(value)) return "o_level";
+    return "unknown";
+  }
+
+  function trackLabel(track) {
+    return track === "a_level" ? "A-Level (S5–S6)" : "O-Level (S1–S4)";
+  }
+
+  function secondaryLearnersFor(track) {
+    const rows = liveLearners("secondary");
+    const matching = rows.filter((row) => secondaryTrack(row) === track);
+    return matching.length || !rows.length ? matching : rows;
+  }
+
+  function schoolSubjects() {
+    const rows = Array.isArray(state.liveData?.subjects) ? state.liveData.subjects : [];
+    return rows.map((row) => ({
+      id: row.id || row.subjectId || row.name,
+      name: row.name || row.subjectName || row.title || row.subject || row.id,
+    })).filter((row) => row.name);
   }
 
   function liveRowValues(row) {
@@ -187,17 +224,82 @@
       ["className", "Class"],
       ["subject", "Subject"],
       ["term", "Term"],
+      ["level", "Level"],
+      ["assessment", "Assessment"],
       ["score", "Score"],
+      ["maxScore", "Out of"],
+      ["percentage", "%"],
       ["average", "Average"],
       ["grade", "Grade"],
       ["status", "Status"],
       ["remark", "Remark"],
     ].filter(([key]) => rows.some((row) => row[key] !== null && row[key] !== undefined && String(row[key]).trim() !== ""));
-    const visibleColumns = columns.length ? columns.slice(0, 7) : [["id", "Record"]];
+    const visibleColumns = columns.length ? columns.slice(0, 10) : [["id", "Record"]];
     const table = rows.length
       ? `<div class="table-wrap"><table class="data-table"><thead><tr>${visibleColumns.map(([, label]) => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, 100).map((row) => `<tr>${visibleColumns.map(([key]) => `<td>${escapeHtml(row[key] ?? "—")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
       : `<div class="empty-state">${escapeHtml(emptyText)}</div>`;
-    return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div>${table}</div>`;
+    const modeLabel = titleText === "Saved marks" ? "Live · saved" : "Live · read-only";
+    return `<div class="workspace-title"><div><h2>${titleText}</h2><p class="muted">Only records authorized for ${escapeHtml(state.liveData?.school?.name || "this school")} are shown.</p></div><span class="eyebrow">${modeLabel}</span></div><div class="panel"><div class="panel-heading"><h3>${rows.length ? `${rows.length} records` : "No records"}</h3><span>Institution scoped</span></div>${table}</div>`;
+  }
+
+  function reportMarks() {
+    const rows = Array.isArray(state.liveData?.marks) ? state.liveData.marks : [];
+    return rows.filter((row) => {
+      const track = row.level || secondaryTrack(row);
+      const learnerMatches = !state.reportScope.learnerId || row.learnerId === state.reportScope.learnerId;
+      const termMatches = !state.reportScope.term || String(row.term || "").toLowerCase() === state.reportScope.term.toLowerCase();
+      return track === state.reportScope.level && learnerMatches && termMatches;
+    }).sort((a, b) => `${a.subject}${a.assessment}`.localeCompare(`${b.subject}${b.assessment}`));
+  }
+
+  function reportLearner() {
+    return (Array.isArray(state.liveData?.learners) ? state.liveData.learners : [])
+      .find((learner) => learner.id === state.reportScope.learnerId);
+  }
+
+  function reportPreviewView() {
+    const learner = reportLearner();
+    const marks = reportMarks();
+    const schoolName = state.liveData?.school?.name || "Authorized school";
+    const average = marks.length
+      ? Math.round(marks.reduce((sum, row) => sum + Number(row.percentage ?? row.score ?? 0), 0) / marks.length * 100) / 100
+      : 0;
+    return `
+      <div class="workspace-title no-print"><div><h2>Report preview</h2><p class="muted">This report is generated from the saved marks in your school account.</p></div><div class="workspace-title-actions"><button class="button light compact" type="button" data-action="download-report">Download CSV</button><button class="button primary compact" type="button" data-action="print-report">Print report</button></div></div>
+      <article class="report-paper">
+        <div class="report-paper-header"><div><span class="report-school-name">${escapeHtml(schoolName)}</span><strong>${escapeHtml(state.printSettings.title || "STUDENT REPORT")}</strong><span class="muted">${escapeHtml(trackLabel(state.reportScope.level))} · ${escapeHtml(state.reportScope.curriculum)} · ${escapeHtml(state.reportScope.term)}</span></div><span class="report-school-badge">${escapeHtml(String(schoolName).trim().charAt(0) || "S")}</span></div>
+        <div class="report-learner-meta"><span><small>Learner</small>${escapeHtml(learner?.name || "Learner not selected")}</span><span><small>Class</small>${escapeHtml(learner?.className || "—")}</span><span><small>Average</small>${marks.length ? `${average}%` : "—"}</span><span><small>Initials</small>${escapeHtml(state.printSettings.classTeacher || "—")}</span></div>
+        ${marks.length ? `<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Subject</th><th>Assessment</th><th>Mark</th><th>Out of</th><th>%</th><th>Grade</th><th>Remark</th></tr></thead><tbody>${marks.map((row) => `<tr><td>${escapeHtml(row.subject || "—")}</td><td>${escapeHtml(row.assessment || "—")}</td><td>${escapeHtml(row.score ?? "—")}</td><td>${escapeHtml(row.maxScore ?? 100)}</td><td>${escapeHtml(row.percentage ?? "—")}</td><td><strong>${escapeHtml(row.grade || "—")}</strong></td><td>${escapeHtml(row.remark || "—")}</td></tr>`).join("")}</tbody></table></div>` : '<div class="empty-state">No saved marks match this learner, level, and term. Return to Mark entry and save marks first.</div>'}
+        <div class="report-signatures"><span>Class teacher: <b>${escapeHtml(state.printSettings.classTeacher || "—")}</b></span><span>Headteacher: <b>${escapeHtml(state.printSettings.headTeacher || "—")}</b></span></div>
+      </article>`;
+  }
+
+  function downloadReportCsv() {
+    const marks = reportMarks();
+    if (!marks.length) {
+      showToast("There are no saved marks to download for this report.");
+      return;
+    }
+    const cell = (value) => `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+    const lines = [
+      ["School", state.liveData?.school?.name || "Authorized school"],
+      ["Learner", reportLearner()?.name || ""],
+      ["Level", trackLabel(state.reportScope.level)],
+      ["Term", state.reportScope.term],
+      [],
+      ["Subject", "Assessment", "Mark", "Out of", "Percentage", "Grade", "Remark"],
+      ...marks.map((row) => [row.subject, row.assessment, row.score, row.maxScore, row.percentage, row.grade, row.remark]),
+    ].map((row) => row.map(cell).join(",")).join("\n");
+    const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${String(reportLearner()?.name || "student").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${state.reportScope.term.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-report.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    showToast("Report downloaded as CSV.");
   }
 
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -228,6 +330,8 @@
     if (!response.ok || !payload.ok) throw new Error(payload.error || "The bursar action could not be completed.");
     return payload;
   }
+
+  const schoolApi = bursarApi;
 
   async function refreshLiveData() {
     const user = window.firebase?.auth?.().currentUser;
@@ -276,7 +380,7 @@
     if (description) description.textContent = liveEnabled()
       ? bursar
         ? `Connected to ${schoolName}. Payments and daily reconciliation are scoped to the signed-in bursar account.`
-        : `Connected to ${schoolName}. Records are read-only and scoped to the signed-in school account.`
+        : `Connected to ${schoolName}. Academic entry and reports are scoped to the signed-in school account.`
       : "Live school records and actions are available after secure sign-in.";
     const notice = document.getElementById("workspaceNotice");
     if (notice) notice.innerHTML = liveEnabled()
@@ -331,17 +435,64 @@
 
   function secondaryReportsView() {
     if (!liveEnabled()) return accessRequiredView();
-    return liveRecordsView("Secondary report cards", state.liveData.reports, "No live report-card records are available for this school yet.");
+    const learners = secondaryLearnersFor(state.reportScope.level);
+    const marks = reportMarks();
+    return `
+      <div class="workspace-title"><div><h2>Secondary report cards</h2><p class="muted">Choose one learner and term to prepare a report from the marks saved in this school account.</p></div><span class="eyebrow">School account · controlled</span></div>
+      <div class="panel settings-card report-builder">
+        <div class="panel-heading"><h3>Prepare a report</h3><span>${marks.length} matching marks</span></div>
+        <form id="reportBuilderForm">
+          <div class="two-col">
+            <label>Level<select name="level" id="reportLevel"><option value="o_level" ${state.reportScope.level === "o_level" ? "selected" : ""}>O-Level (S1–S4)</option><option value="a_level" ${state.reportScope.level === "a_level" ? "selected" : ""}>A-Level (S5–S6)</option></select></label>
+            <label>Curriculum<select name="curriculum"><option value="ncdc" ${state.reportScope.curriculum === "ncdc" ? "selected" : ""}>O-Level NCDC</option><option value="old" ${state.reportScope.curriculum === "old" ? "selected" : ""}>O-Level old curriculum</option><option value="alevel" ${state.reportScope.curriculum === "alevel" ? "selected" : ""}>A-Level UACE</option></select></label>
+          </div>
+          <div class="two-col">
+            <label>Learner<select required name="learnerId">${learners.map((learner) => `<option value="${escapeHtml(learner.id)}" ${state.reportScope.learnerId === learner.id ? "selected" : ""}>${escapeHtml(learner.name || learner.id)} · ${escapeHtml(learner.className || "class not recorded")}</option>`).join("") || '<option value="">No learners available</option>'}</select></label>
+            <label>Term<input required name="term" value="${escapeHtml(state.reportScope.term)}" placeholder="e.g. Term 1"></label>
+          </div>
+          <p class="form-help">The report uses only marks belonging to this school, learner, level, and term.</p>
+          <div class="modal-actions"><button class="button primary compact" type="submit" ${learners.length ? "" : "disabled"}>Prepare and print report</button><button class="button light compact" type="button" data-view="marks">Enter marks</button></div>
+        </form>
+      </div>
+      ${liveRecordsView("Saved report-card records", state.liveData.reports, "No saved report-card records are available; prepare a report from saved marks above.")}`;
   }
 
   function secondaryReportDetailView() {
     if (!liveEnabled()) return accessRequiredView();
-    return liveRecordsView("Secondary report details", state.liveData.reports, "No live report-card details are available for this school yet.");
+    return reportPreviewView();
   }
 
   function secondaryMarksView() {
     if (!liveEnabled()) return accessRequiredView();
-    return liveRecordsView("Secondary marks", state.liveData.marks, "No live marks records are available for this school yet.");
+    const learners = secondaryLearnersFor(state.markEntry.level);
+    const subjects = schoolSubjects();
+    return `
+      <div class="workspace-title"><div><h2>Secondary marks</h2><p class="muted">Enter O-Level or A-Level marks. The server calculates the grade and keeps every record inside this school account.</p></div><span class="eyebrow">Institution scoped</span></div>
+      <div class="panel settings-card academic-entry-card">
+        <div class="panel-heading"><h3>Record a mark</h3><span>${trackLabel(state.markEntry.level)}</span></div>
+        <form id="markEntryForm">
+          <div class="two-col">
+            <label>Academic level<select required name="level" id="markLevel"><option value="o_level" ${state.markEntry.level === "o_level" ? "selected" : ""}>O-Level (S1–S4)</option><option value="a_level" ${state.markEntry.level === "a_level" ? "selected" : ""}>A-Level (S5–S6)</option></select></label>
+            <label>Assessment<select name="assessment"><option>A1</option><option>A2</option><option>A3</option><option>U1</option><option>U2</option></select></label>
+          </div>
+          <div class="two-col">
+            <label>Learner<select required name="learnerId">${learners.map((learner) => `<option value="${escapeHtml(learner.id)}" ${state.markEntry.learnerId === learner.id ? "selected" : ""}>${escapeHtml(learner.name || learner.id)} · ${escapeHtml(learner.className || "class not recorded")}</option>`).join("") || '<option value="">No learners available</option>'}</select></label>
+            <label>Subject<input required name="subject" list="schoolSubjects" placeholder="e.g. Mathematics"><datalist id="schoolSubjects">${subjects.map((subject) => `<option value="${escapeHtml(subject.name)}"></option>`).join("")}</datalist></label>
+          </div>
+          <div class="two-col">
+            <label>Term<input required name="term" value="Term 1" placeholder="e.g. Term 1"></label>
+            <label>Curriculum<select name="curriculum"><option value="O-Level NCDC">O-Level NCDC</option><option value="O-Level old curriculum">O-Level old curriculum</option><option value="A-Level UACE">A-Level UACE</option></select></label>
+          </div>
+          <div class="two-col">
+            <label>Mark obtained<input required name="score" type="number" min="0" max="100" step="0.01" placeholder="e.g. 78"></label>
+            <label>Maximum mark<input required name="maxScore" type="number" min="1" max="1000" step="0.01" value="100"></label>
+          </div>
+          <label>Teacher remark<textarea name="remark" rows="2" maxlength="240" placeholder="Optional remark"></textarea></label>
+          <p id="markEntryStatus" class="form-help" aria-live="polite">Save one subject and assessment at a time.</p>
+          <div class="modal-actions"><button class="button primary compact" type="submit" ${learners.length ? "" : "disabled"}>Save mark</button><button class="button light compact" type="button" data-view="report-cards">Prepare report</button></div>
+        </form>
+      </div>
+      ${liveRecordsView("Saved marks", state.liveData.marks, "No marks have been saved for this school yet.")}`;
   }
 
   function attendanceView() {
@@ -438,13 +589,33 @@
     search?.setSelectionRange(state.query.length, state.query.length);
   });
 
+  content.addEventListener("change", (event) => {
+    if (event.target.id === "markLevel") {
+      state.markEntry.level = event.target.value;
+      state.markEntry.learnerId = "";
+      renderView();
+    }
+    if (event.target.id === "reportLevel") {
+      state.reportScope.level = event.target.value;
+      state.reportScope.learnerId = "";
+      renderView();
+    }
+  });
+
   content.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-action]");
+    const target = event.target.closest("[data-action], [data-view]");
     const action = target?.dataset.action;
+    if (target?.dataset.view) {
+      state.view = target.dataset.view;
+      render();
+      return;
+    }
     if (action === "add-student") {
       showToast("Learner creation is not enabled in this read-only workspace.");
     }
     if (action === "view-student") showToast(liveEnabled() ? "Learner record is authorized for this school account." : "Sign in to open authorized learner records.");
+    if (action === "download-report") downloadReportCsv();
+    if (action === "print-report") window.print();
     if (action === "open-bursar-payment") {
       const modal = document.getElementById("bursarPaymentModal");
       if (modal) {
@@ -542,9 +713,41 @@
   });
   content.addEventListener("submit", async (event) => {
     const form = event.target;
-    if (form.id !== "bursarStatementForm" && form.id !== "bursarCloseStatementForm") return;
+    if (!["bursarStatementForm", "bursarCloseStatementForm", "markEntryForm", "reportBuilderForm"].includes(form.id)) return;
     event.preventDefault();
     const values = Object.fromEntries(new FormData(form).entries());
+    if (form.id === "markEntryForm") {
+      const status = document.getElementById("markEntryStatus");
+      if (status) status.textContent = "Saving mark…";
+      try {
+        await schoolApi("/api/school/academic/marks", {
+          method: "POST",
+          body: JSON.stringify({
+            ...values,
+            score: Number(values.score),
+            maxScore: Number(values.maxScore),
+          }),
+        });
+        state.markEntry.level = values.level;
+        state.markEntry.learnerId = values.learnerId;
+        await refreshLiveData();
+        showToast("Mark saved and grade calculated.");
+      } catch (error) {
+        if (status) status.textContent = error?.message || "The mark could not be saved.";
+      }
+      return;
+    }
+    if (form.id === "reportBuilderForm") {
+      state.reportScope = {
+        level: values.level,
+        learnerId: values.learnerId,
+        term: values.term,
+        curriculum: values.curriculum,
+      };
+      state.reportType = values.level === "a_level" ? "alevel" : values.curriculum === "old" ? "old" : "ncdc";
+      openPrintSettings(state.reportType);
+      return;
+    }
     const status = document.getElementById("bursarStatementStatus");
     if (status) status.textContent = form.id === "bursarStatementForm" ? "Generating statement…" : "Closing monthly statement…";
     try {

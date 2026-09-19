@@ -44,12 +44,14 @@ describe("Education workspace integration", () => {
     expect(educationMap).toContain("Install App");
   });
 
-  it("connects live primary and secondary accounts through a protected read-only contract", () => {
+  it("connects live primary and secondary accounts through a protected school contract", () => {
     expect(educationScript).toContain("firebase.auth().onAuthStateChanged");
     expect(educationScript).toContain("/api/school/education-workspace");
     expect(educationScript).toContain("Live school workspace");
     expect(schoolRouteSource).toContain('router.get("/school/education-workspace"');
-     expect(schoolRouteSource).toContain('["school", "school_admin", "headteacher", "bursar"]');
+     expect(schoolRouteSource).toContain('["school", "school_admin", "headteacher", "teacher", "bursar"]');
+     expect(schoolRouteSource).toContain('router.post("/school/academic/marks"');
+     expect(schoolRouteSource).toContain("academicGrade");
     expect(schoolRouteSource).toContain("safeRecord");
     expect(schoolRouteSource).toContain("attendanceEvents");
     expect(schoolRouteSource).toContain("const safeSchool");

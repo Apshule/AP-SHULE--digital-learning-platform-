@@ -19,8 +19,9 @@ describe("Secondary report-card live contract", () => {
     expect(appSource).not.toContain("function reportTable");
     expect(appSource).not.toContain("Preview Learner");
     expect(appSource).not.toContain("Division 2");
-    expect(appSource).toContain('return liveRecordsView("Secondary report cards"');
-    expect(appSource).toContain('return liveRecordsView("Secondary report details"');
+    expect(appSource).toContain('function secondaryReportsView');
+    expect(appSource).toContain("function reportPreviewView");
+    expect(appSource).toContain("Download CSV");
   });
 
   it("keeps secondary navigation separate from primary and finance-only modules", () => {
@@ -44,12 +45,15 @@ describe("Secondary report-card live contract", () => {
     expect(appSource).toContain("state.printSettings.activities.length === 0");
     expect(appSource).toContain("Add a report title and class-teacher initials.");
     expect(appSource).toContain("window.print()");
+    expect(appSource).toContain('id="markEntryForm"');
+    expect(appSource).toContain('id="reportBuilderForm"');
+    expect(appSource).toContain("/api/school/academic/marks");
   });
 
   it("keeps the live records table responsive at mobile widths", () => {
     expect(responsiveStyles).toContain(".report-table-wrap");
     expect(responsiveStyles).toContain("overflow-x:auto");
-    expect(appSource).toContain('return liveRecordsView("Secondary marks"');
-    expect(appSource).toContain('return liveRecordsView("Secondary report cards"');
+    expect(appSource).toContain('function secondaryMarksView');
+    expect(appSource).toContain('function secondaryReportsView');
   });
 });
