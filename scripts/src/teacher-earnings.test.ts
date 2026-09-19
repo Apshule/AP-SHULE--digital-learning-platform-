@@ -7,6 +7,7 @@ const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
 const route = readFileSync(resolve(root, "artifacts/api-server/src/routes/yo-payments.ts"), "utf8");
 const referralRoute = readFileSync(resolve(root, "artifacts/api-server/src/routes/student-referrals.ts"), "utf8");
 const rules = readFileSync(resolve(root, "firestore.rules"), "utf8");
+const storageRules = readFileSync(resolve(root, "storage.rules"), "utf8");
 const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"), "utf8")) as {
   indexes: Array<{ collectionGroup: string }>;
 };
@@ -83,6 +84,12 @@ describe("teacher earnings and payout contracts", () => {
     expect(indexSource).toContain('id="teacherPdfFile"');
     expect(indexSource).toContain('id="teacherPdfCategory"');
     expect(indexSource).toContain("category, url: downloadURL");
+  });
+
+  it("keeps Super Admin PDF uploads compatible with legacy role values", () => {
+    expect(storageRules).toContain("match /adminPdfs/{adminId}/{fileName}");
+    expect(storageRules).toContain("'superadmin', 'super_admin', 'super-admin', 'super admin'");
+    expect(storageRules).toContain("request.resource.contentType == 'application/pdf'");
   });
 
   it("gives the Command Center a direct, source-aware PDF uploader", () => {
