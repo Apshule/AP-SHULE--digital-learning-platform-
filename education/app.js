@@ -60,6 +60,11 @@
       term: "Term 1",
       curriculum: "ncdc",
     },
+    management: {
+      learnerId: "",
+      classId: "",
+      subjectId: "",
+    },
   };
   const nav = document.getElementById("workspaceNav");
   const content = document.getElementById("workspaceContent");
@@ -76,6 +81,10 @@
 
   function isBursar() {
     return state.liveData?.workspace === "bursar" || state.liveData?.role === "bursar";
+  }
+
+  function isSchoolManager() {
+    return ["school", "school_admin", "headteacher"].includes(String(state.liveData?.role || ""));
   }
 
   function liveLearners(account = state.account) {
@@ -407,7 +416,7 @@
     const query = state.query.toLowerCase();
     const rows = liveLearners("primary").map(liveRowValues).filter((student) => student.join(" ").toLowerCase().includes(query));
     return `
-       <div class="workspace-title"><div><h2>Students</h2><p class="muted">Search and review the authorized school register.</p></div><button class="button primary compact" type="button" data-action="add-student" disabled>＋ Add learner</button></div>
+       <div class="workspace-title"><div><h2>Students</h2><p class="muted">Search and review the authorized school register.</p></div><button class="button primary compact" type="button" data-action="add-student" ${isSchoolManager() ? "" : "disabled"}>＋ Add learner</button></div>
       <div class="filter-row"><input id="studentSearch" type="search" value="${escapeHtml(state.query)}" placeholder="Search by name or admission number" aria-label="Search students"><select aria-label="Filter class"><option>All classes</option><option>P1</option><option>P4</option><option>P7</option></select><select aria-label="Filter status"><option>All statuses</option><option>Active</option><option>Inactive</option></select></div>
       <div class="table-wrap"><table class="data-table"><thead><tr><th>Admission</th><th>Name</th><th>Class</th><th>Section</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(([admission, name, studentClass, section, status]) => `<tr><td>${admission}</td><td><strong>${name}</strong></td><td>${studentClass}</td><td><span class="badge gold">${section}</span></td><td><span class="badge green">${status}</span></td><td><button class="button light compact" type="button" data-action="view-student">View</button></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No learners match this search.</div></td></tr>'}</tbody></table></div>`;
   }
@@ -417,7 +426,7 @@
     const query = state.query.toLowerCase();
     const rows = liveLearners("secondary").map(liveRowValues).filter((student) => student.join(" ").toLowerCase().includes(query));
     return `
-       <div class="workspace-title"><div><h2>Secondary students</h2><p class="muted">Review authorized S1-S6 learners, streams, and academic context.</p></div><button class="button primary compact" type="button" data-action="add-student" disabled>＋ Add learner</button></div>
+       <div class="workspace-title"><div><h2>Secondary students</h2><p class="muted">Review authorized S1-S6 learners, streams, and academic context.</p></div><button class="button primary compact" type="button" data-action="add-student" ${isSchoolManager() ? "" : "disabled"}>＋ Add learner</button></div>
       <div class="filter-row"><input id="studentSearch" type="search" value="${escapeHtml(state.query)}" placeholder="Search by name or admission number" aria-label="Search secondary students"><select aria-label="Filter secondary class"><option>All classes</option><option>S1</option><option>S3</option><option>S5</option><option>S6</option></select><select aria-label="Filter stream"><option>All streams</option><option>Blue</option><option>Green</option><option>Arts</option><option>Sciences</option></select></div>
       <div class="table-wrap"><table class="data-table"><thead><tr><th>Admission</th><th>Name</th><th>Class</th><th>Stream</th><th>Status</th><th></th></tr></thead><tbody>${rows.map(([admission, name, studentClass, stream, status]) => `<tr><td>${admission}</td><td><strong>${name}</strong></td><td>${studentClass}</td><td><span class="badge gold">${stream}</span></td><td><span class="badge green">${status}</span></td><td><button class="button light compact" type="button" data-action="view-student">View</button></td></tr>`).join("") || '<tr><td colspan="6"><div class="empty-state">No secondary learners match this search.</div></td></tr>'}</tbody></table></div>`;
   }
@@ -509,6 +518,56 @@
   function settingsView() {
     if (liveEnabled()) {
       const school = state.liveData.school || {};
+      if (isSchoolManager()) {
+        const learners = Array.isArray(state.liveData.learners) ? state.liveData.learners : [];
+        const classes = Array.isArray(state.liveData.classes) ? state.liveData.classes : [];
+        const subjects = Array.isArray(state.liveData.subjects) ? state.liveData.subjects : [];
+        const selectedLearner = learners.find((row) => row.id === state.management.learnerId) || {};
+        const selectedClass = classes.find((row) => row.id === state.management.classId) || {};
+        const selectedSubject = subjects.find((row) => row.id === state.management.subjectId) || {};
+        const levelValue = (row) => row.educationLevel || row.level || "primary";
+        return `
+          <div class="workspace-title"><div><h2>School setup</h2><p class="muted">Manage the learner register, classes, and subjects for ${escapeHtml(school.name || "this school")}.</p></div><span class="eyebrow">Manager controls</span></div>
+          <div class="management-grid">
+            <section class="panel settings-card management-card">
+              <div class="panel-heading"><h3>${selectedLearner.id ? "Edit learner" : "Add learner"}</h3><span>Roster</span></div>
+              <form id="learnerManagementForm">
+                <input type="hidden" name="id" value="${escapeHtml(selectedLearner.id || "")}">
+                <div class="two-col"><label>Full name<input required name="name" maxlength="120" value="${escapeHtml(selectedLearner.name || "")}" placeholder="e.g. Amina Nakato"></label><label>Admission number<input required name="admissionNumber" maxlength="80" value="${escapeHtml(selectedLearner.admissionNumber || "")}" placeholder="e.g. APS-001"></label></div>
+                <div class="two-col"><label>Class<input required name="className" maxlength="80" value="${escapeHtml(selectedLearner.className || "")}" placeholder="e.g. S2"></label><label>Stream<input name="stream" maxlength="80" value="${escapeHtml(selectedLearner.stream || "")}" placeholder="e.g. Blue"></label></div>
+                <div class="two-col"><label>Education level<select name="educationLevel"><option value="primary" ${levelValue(selectedLearner) === "primary" ? "selected" : ""}>Primary</option><option value="secondary" ${levelValue(selectedLearner) === "secondary" ? "selected" : ""}>Secondary</option></select></label><label>Gender<input name="gender" maxlength="40" value="${escapeHtml(selectedLearner.gender || "")}" placeholder="Optional"></label></div>
+                <label>Status<select name="status"><option value="active" ${String(selectedLearner.status || "active") === "active" ? "selected" : ""}>Active</option><option value="inactive" ${String(selectedLearner.status || "") === "inactive" ? "selected" : ""}>Inactive</option></select></label>
+                <p class="form-help">Learners are added to the school roster without creating a password or login account.</p>
+                <div class="modal-actions"><button class="button primary compact" type="submit">${selectedLearner.id ? "Save learner" : "Add learner"}</button>${selectedLearner.id ? '<button class="button light compact" type="button" data-action="clear-management" data-management-type="learner">Cancel edit</button>' : ""}</div>
+              </form>
+            </section>
+            <section class="panel settings-card management-card">
+              <div class="panel-heading"><h3>${selectedClass.id ? "Edit class" : "Add class"}</h3><span>Register</span></div>
+              <form id="classManagementForm">
+                <input type="hidden" name="id" value="${escapeHtml(selectedClass.id || "")}">
+                <div class="two-col"><label>Class name<input required name="name" maxlength="80" value="${escapeHtml(selectedClass.name || selectedClass.className || "")}" placeholder="e.g. S2"></label><label>Stream<input name="stream" maxlength="80" value="${escapeHtml(selectedClass.stream || "")}" placeholder="Optional"></label></div>
+                <div class="two-col"><label>Education level<select name="educationLevel"><option value="primary" ${levelValue(selectedClass) === "primary" ? "selected" : ""}>Primary</option><option value="secondary" ${levelValue(selectedClass) === "secondary" ? "selected" : ""}>Secondary</option></select></label><label>Room<input name="room" maxlength="80" value="${escapeHtml(selectedClass.room || "")}" placeholder="Optional"></label></div>
+                <div class="two-col"><label>Capacity<input name="capacity" type="number" min="0" max="10000" step="1" value="${Number(selectedClass.capacity || 0)}"></label><label>Status<select name="status"><option value="active" ${String(selectedClass.status || (selectedClass.active === false ? "inactive" : "active")) === "active" ? "selected" : ""}>Active</option><option value="inactive" ${String(selectedClass.status || "") === "inactive" ? "selected" : ""}>Inactive</option></select></label></div>
+                <div class="modal-actions"><button class="button primary compact" type="submit">${selectedClass.id ? "Save class" : "Add class"}</button>${selectedClass.id ? '<button class="button light compact" type="button" data-action="clear-management" data-management-type="class">Cancel edit</button>' : ""}</div>
+              </form>
+            </section>
+            <section class="panel settings-card management-card">
+              <div class="panel-heading"><h3>${selectedSubject.id ? "Edit subject" : "Add subject"}</h3><span>Curriculum</span></div>
+              <form id="subjectManagementForm">
+                <input type="hidden" name="id" value="${escapeHtml(selectedSubject.id || "")}">
+                <div class="two-col"><label>Subject name<input required name="name" maxlength="100" value="${escapeHtml(selectedSubject.name || selectedSubject.subjectName || "")}" placeholder="e.g. Mathematics"></label><label>Abbreviation<input name="abbreviation" maxlength="12" value="${escapeHtml(selectedSubject.abbreviation || "")}" placeholder="e.g. MTC"></label></div>
+                <div class="two-col"><label>Education level<select name="educationLevel"><option value="primary" ${levelValue(selectedSubject) === "primary" ? "selected" : ""}>Primary</option><option value="secondary" ${levelValue(selectedSubject) === "secondary" ? "selected" : ""}>Secondary</option></select></label><label>Periods per week<input name="periodsPerWeek" type="number" min="0" max="100" step="1" value="${Number(selectedSubject.periodsPerWeek || 0)}"></label></div>
+                <label>Status<select name="status"><option value="active" ${String(selectedSubject.status || (selectedSubject.active === false ? "inactive" : "active")) === "active" ? "selected" : ""}>Active</option><option value="inactive" ${String(selectedSubject.status || "") === "inactive" ? "selected" : ""}>Inactive</option></select></label>
+                <div class="modal-actions"><button class="button primary compact" type="submit">${selectedSubject.id ? "Save subject" : "Add subject"}</button>${selectedSubject.id ? '<button class="button light compact" type="button" data-action="clear-management" data-management-type="subject">Cancel edit</button>' : ""}</div>
+              </form>
+            </section>
+          </div>
+          <div class="management-lists">
+            <section class="panel"><div class="panel-heading"><h3>Learners</h3><span>${learners.length} records</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Admission</th><th>Name</th><th>Class</th><th>Status</th><th></th></tr></thead><tbody>${learners.map((row) => `<tr><td>${escapeHtml(row.admissionNumber || row.id)}</td><td><strong>${escapeHtml(row.name || "Unnamed learner")}</strong></td><td>${escapeHtml(row.className || "—")}</td><td><span class="badge ${String(row.status || "active") === "active" ? "green" : "gold"}">${escapeHtml(row.status || "active")}</span></td><td><button class="button light compact" type="button" data-action="edit-management" data-management-type="learner" data-management-id="${escapeHtml(row.id)}">Edit</button></td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No learners are recorded yet.</div></td></tr>'}</tbody></table></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Classes</h3><span>${classes.length} records</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Class</th><th>Level</th><th>Stream</th><th>Status</th><th></th></tr></thead><tbody>${classes.map((row) => `<tr><td><strong>${escapeHtml(row.name || row.className || "Unnamed class")}</strong></td><td>${escapeHtml(levelValue(row))}</td><td>${escapeHtml(row.stream || "—")}</td><td><span class="badge ${String(row.status || (row.active === false ? "inactive" : "active")) === "active" ? "green" : "gold"}">${escapeHtml(row.status || (row.active === false ? "inactive" : "active"))}</span></td><td><button class="button light compact" type="button" data-action="edit-management" data-management-type="class" data-management-id="${escapeHtml(row.id)}">Edit</button></td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No classes are recorded yet.</div></td></tr>'}</tbody></table></div></section>
+            <section class="panel"><div class="panel-heading"><h3>Subjects</h3><span>${subjects.length} records</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Subject</th><th>Code</th><th>Level</th><th>Status</th><th></th></tr></thead><tbody>${subjects.map((row) => `<tr><td><strong>${escapeHtml(row.name || row.subjectName || "Unnamed subject")}</strong></td><td>${escapeHtml(row.abbreviation || "—")}</td><td>${escapeHtml(levelValue(row))}</td><td><span class="badge ${String(row.status || (row.active === false ? "inactive" : "active")) === "active" ? "green" : "gold"}">${escapeHtml(row.status || (row.active === false ? "inactive" : "active"))}</span></td><td><button class="button light compact" type="button" data-action="edit-management" data-management-type="subject" data-management-id="${escapeHtml(row.id)}">Edit</button></td></tr>`).join("") || '<tr><td colspan="5"><div class="empty-state">No subjects are recorded yet.</div></td></tr>'}</tbody></table></div></section>
+          </div>`;
+      }
       return `<div class="workspace-title"><div><h2>School account</h2><p class="muted">Institution details returned for the signed-in account.</p></div><span class="eyebrow">Live · read-only</span></div><div class="panel settings-card"><div class="form-field"><label>Account role</label><input value="${escapeHtml(state.liveData.role || "school")}" readonly></div><div class="form-field"><label>Institution</label><input value="${escapeHtml(school.name || "Authorized school")}" readonly></div><div class="form-field"><label>Location</label><input value="${escapeHtml(school.location || "Not recorded")}" readonly></div><p class="muted">Profile editing remains outside this read-only Education connection.</p></div>`;
     }
     return accessRequiredView();
@@ -611,7 +670,31 @@
       return;
     }
     if (action === "add-student") {
-      showToast("Learner creation is not enabled in this read-only workspace.");
+      if (!isSchoolManager()) {
+        showToast("Only a school manager can add learners.");
+        return;
+      }
+      state.management.learnerId = "";
+      state.view = "settings";
+      render();
+      window.setTimeout(() => document.querySelector("#learnerManagementForm [name=name]")?.focus(), 0);
+    }
+    if (action === "edit-management") {
+      if (!isSchoolManager()) return;
+      const type = target.dataset.managementType;
+      if (type === "learner") state.management.learnerId = target.dataset.managementId || "";
+      if (type === "class") state.management.classId = target.dataset.managementId || "";
+      if (type === "subject") state.management.subjectId = target.dataset.managementId || "";
+      state.view = "settings";
+      render();
+      window.setTimeout(() => document.querySelector(`#${type}ManagementForm [name=name]`)?.focus(), 0);
+    }
+    if (action === "clear-management") {
+      const type = target.dataset.managementType;
+      if (type === "learner") state.management.learnerId = "";
+      if (type === "class") state.management.classId = "";
+      if (type === "subject") state.management.subjectId = "";
+      renderView();
     }
     if (action === "view-student") showToast(liveEnabled() ? "Learner record is authorized for this school account." : "Sign in to open authorized learner records.");
     if (action === "download-report") downloadReportCsv();
@@ -713,9 +796,43 @@
   });
   content.addEventListener("submit", async (event) => {
     const form = event.target;
-    if (!["bursarStatementForm", "bursarCloseStatementForm", "markEntryForm", "reportBuilderForm"].includes(form.id)) return;
+    if (!["bursarStatementForm", "bursarCloseStatementForm", "markEntryForm", "reportBuilderForm", "learnerManagementForm", "classManagementForm", "subjectManagementForm"].includes(form.id)) return;
     event.preventDefault();
     const values = Object.fromEntries(new FormData(form).entries());
+    const managementType = form.id === "learnerManagementForm"
+      ? "learner"
+      : form.id === "classManagementForm"
+        ? "class"
+        : form.id === "subjectManagementForm"
+          ? "subject"
+          : "";
+    if (managementType) {
+      if (!isSchoolManager()) {
+        showToast("Only a school manager can change school setup.");
+        return;
+      }
+      const id = String(values.id || "");
+      delete values.id;
+      const endpoint = managementType === "learner"
+        ? "/api/school/learners"
+        : managementType === "class"
+          ? "/api/school/classes"
+          : "/api/school/subjects";
+      if (managementType === "class") values.capacity = Number(values.capacity || 0);
+      if (managementType === "subject") values.periodsPerWeek = Number(values.periodsPerWeek || 0);
+      try {
+        await schoolApi(id ? `${endpoint}/${encodeURIComponent(id)}` : endpoint, {
+          method: id ? "PATCH" : "POST",
+          body: JSON.stringify(values),
+        });
+        state.management[`${managementType}Id`] = "";
+        await refreshLiveData();
+        showToast(`${managementType[0].toUpperCase()}${managementType.slice(1)} ${id ? "updated" : "added"} successfully.`);
+      } catch (error) {
+        showToast(error?.message || `The ${managementType} could not be saved.`);
+      }
+      return;
+    }
     if (form.id === "markEntryForm") {
       const status = document.getElementById("markEntryStatus");
       if (status) status.textContent = "Saving mark…";

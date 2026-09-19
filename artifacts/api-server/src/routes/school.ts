@@ -231,6 +231,50 @@ async function firestoreUpdate(
   return (await response.json()) as FirestoreDocument;
 }
 
+async function firestoreCreate(
+  collection: string,
+  id: string,
+  token: string,
+  data: Record<string, unknown>,
+): Promise<FirestoreDocument | null> {
+  const response = await fetch(
+    `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${collection}` +
+      `?documentId=${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, firestoreEncodedValue(value)]),
+        ),
+      }),
+    },
+  );
+  if (!response.ok) throw new Error(`Firestore create failed (${response.status})`);
+  return (await response.json()) as FirestoreDocument;
+}
+
+function schoolScopeIds(caller: { schoolId: string; institutionId?: string }): Set<string> {
+  return new Set([caller.schoolId, caller.institutionId].filter(Boolean) as string[]);
+}
+
+function managerText(body: Record<string, unknown>, key: string, maxLength: number): string {
+  return String(body[key] ?? "").trim().slice(0, maxLength);
+}
+
+function managerTimestamp(): string {
+  return new Date().toISOString();
+}
+
+function managerDocumentId(prefix: string, schoolId: string, values: string[]): string {
+  return `${prefix}_${createHash("sha256").update([schoolId, ...values].join("|")).digest("hex").slice(0, 28)}`;
+}
+
+function managerEducationLevel(value: string): "primary" | "secondary" | "" {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "primary" || normalized === "secondary" ? normalized : "";
+}
+
 function educationLevel(data: Record<string, unknown>): "primary" | "secondary" | "unknown" {
   const value = String(
     data.educationLevel ?? data.schoolLevel ?? data.level ?? data.classLevel ??
@@ -659,6 +703,383 @@ router.get("/school/education-workspace", async (req, res) => {
   } catch (err) {
     logger.warn({ err, schoolId: caller.schoolId }, "Education workspace read failed");
     res.status(502).json({ ok: false, error: "Unable to load authorized school records" });
+  }
+});
+
+router.post("/school/learners", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const name = managerText(body, "name", 120);
+  const admissionNumber = managerText(body, "admissionNumber", 80);
+  const className = managerText(body, "className", 80);
+  const stream = managerText(body, "stream", 80);
+  const gender = managerText(body, "gender", 40);
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase() || "active";
+  if (!name || !admissionNumber || !className || !education || !["active", "inactive"].includes(status)) {
+    res.status(400).json({
+      ok: false,
+      error: "Name, admission number, class, education level, and a valid status are required",
+    });
+    return;
+  }
+
+  const learnerId = managerDocumentId("learner", caller.schoolId, [admissionNumber]);
+  const createdAt = managerTimestamp();
+  const learner = {
+    uid: learnerId,
+    role: "individual",
+    schoolId: caller.schoolId,
+    institutionId: caller.institutionId ?? caller.schoolId,
+    name,
+    displayName: name,
+    admissionNumber,
+    admissionNo: admissionNumber,
+    studentNumber: admissionNumber,
+    className,
+    classLevel: className,
+    stream,
+    educationLevel: education,
+    gender,
+    status,
+    registrationStatus: status,
+    rosterOnly: true,
+    createdBy: caller.uid,
+    createdByRole: caller.role,
+    createdAt,
+    updatedAt: createdAt,
+  };
+
+  try {
+    if (await firestoreGet(`users/${encodeURIComponent(learnerId)}`, adminToken)) {
+      res.status(409).json({ ok: false, error: "A learner with that admission number already exists" });
+      return;
+    }
+    const document = await firestoreCreate("users", learnerId, adminToken, learner);
+    res.status(201).json({ ok: true, learner: learnerRecord(document ? documentData(document) : learner, learnerId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "School learner creation failed");
+    res.status(502).json({ ok: false, error: "Unable to create the learner record" });
+  }
+});
+
+router.patch("/school/learners/:learnerId", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+
+  const learnerId = String(req.params.learnerId ?? "").trim();
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+  const name = managerText(body, "name", 120);
+  const admissionNumber = managerText(body, "admissionNumber", 80);
+  const className = managerText(body, "className", 80);
+  const stream = managerText(body, "stream", 80);
+  const gender = managerText(body, "gender", 40);
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase();
+  if (name) {
+    updates.name = name;
+    updates.displayName = name;
+  }
+  if (admissionNumber) {
+    updates.admissionNumber = admissionNumber;
+    updates.admissionNo = admissionNumber;
+    updates.studentNumber = admissionNumber;
+  }
+  if (className) {
+    updates.className = className;
+    updates.classLevel = className;
+  }
+  if (body.stream !== undefined) updates.stream = stream;
+  if (body.gender !== undefined) updates.gender = gender;
+  if (body.educationLevel !== undefined) {
+    if (!education) {
+      res.status(400).json({ ok: false, error: "Education level must be primary or secondary" });
+      return;
+    }
+    updates.educationLevel = education;
+  }
+  if (body.status !== undefined) {
+    if (!["active", "inactive"].includes(status)) {
+      res.status(400).json({ ok: false, error: "Status must be active or inactive" });
+      return;
+    }
+    updates.status = status;
+    updates.registrationStatus = status;
+  }
+  if (!learnerId || !Object.keys(updates).length) {
+    res.status(400).json({ ok: false, error: "Provide at least one learner field to update" });
+    return;
+  }
+
+  try {
+    const current = await firestoreGet(`users/${encodeURIComponent(learnerId)}`, adminToken);
+    const currentData = current ? documentData(current) : {};
+    if (!current || !belongsToSchool(currentData, schoolScopeIds(caller))) {
+      res.status(404).json({ ok: false, error: "That learner is not part of your school account" });
+      return;
+    }
+    if (!["individual", "student"].includes(String(currentData.role ?? "").toLowerCase())) {
+      res.status(400).json({ ok: false, error: "Only learner accounts can be edited here" });
+      return;
+    }
+    updates.updatedAt = managerTimestamp();
+    const document = await firestoreUpdate(`users/${encodeURIComponent(learnerId)}`, adminToken, updates);
+    res.json({ ok: true, learner: learnerRecord(document ? documentData(document) : { ...currentData, ...updates }, learnerId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId, learnerId }, "School learner update failed");
+    res.status(502).json({ ok: false, error: "Unable to update the learner record" });
+  }
+});
+
+router.post("/school/classes", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const name = managerText(body, "name", 80);
+  const stream = managerText(body, "stream", 80);
+  const room = managerText(body, "room", 80);
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase() || "active";
+  const capacity = body.capacity === undefined || body.capacity === "" ? 0 : Number(body.capacity);
+  if (!name || !education || !Number.isInteger(capacity) || capacity < 0 || capacity > 10000 || !["active", "inactive"].includes(status)) {
+    res.status(400).json({ ok: false, error: "Class name, education level, capacity, and a valid status are required" });
+    return;
+  }
+  const classId = managerDocumentId("class", caller.schoolId, [name.toLowerCase(), stream.toLowerCase()]);
+  const createdAt = managerTimestamp();
+  const classData = {
+    schoolId: caller.schoolId,
+    institutionId: caller.institutionId ?? caller.schoolId,
+    name,
+    className: name,
+    classLevel: name,
+    level: education,
+    educationLevel: education,
+    stream,
+    room,
+    capacity,
+    status,
+    active: status === "active",
+    createdBy: caller.uid,
+    createdByRole: caller.role,
+    createdAt,
+    updatedAt: createdAt,
+  };
+  try {
+    if (await firestoreGet(`school_classes/${encodeURIComponent(classId)}`, adminToken)) {
+      res.status(409).json({ ok: false, error: "That class and stream already exist" });
+      return;
+    }
+    const document = await firestoreCreate("school_classes", classId, adminToken, classData);
+    res.status(201).json({ ok: true, class: safeRecord(document ? documentData(document) : classData, classId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "School class creation failed");
+    res.status(502).json({ ok: false, error: "Unable to create the class" });
+  }
+});
+
+router.patch("/school/classes/:classId", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+  const classId = String(req.params.classId ?? "").trim();
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+  const name = managerText(body, "name", 80);
+  const stream = managerText(body, "stream", 80);
+  const room = managerText(body, "room", 80);
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase();
+  const capacity = body.capacity === undefined || body.capacity === "" ? undefined : Number(body.capacity);
+  if (name) Object.assign(updates, { name, className: name, classLevel: name });
+  if (body.stream !== undefined) updates.stream = stream;
+  if (body.room !== undefined) updates.room = room;
+  if (body.educationLevel !== undefined) {
+    if (!education) {
+      res.status(400).json({ ok: false, error: "Education level must be primary or secondary" });
+      return;
+    }
+    Object.assign(updates, { level: education, educationLevel: education });
+  }
+  if (body.capacity !== undefined) {
+    if (!Number.isInteger(capacity) || Number(capacity) < 0 || Number(capacity) > 10000) {
+      res.status(400).json({ ok: false, error: "Capacity must be a whole number from zero to 10,000" });
+      return;
+    }
+    updates.capacity = capacity;
+  }
+  if (body.status !== undefined) {
+    if (!["active", "inactive"].includes(status)) {
+      res.status(400).json({ ok: false, error: "Status must be active or inactive" });
+      return;
+    }
+    Object.assign(updates, { status, active: status === "active" });
+  }
+  if (!classId || !Object.keys(updates).length) {
+    res.status(400).json({ ok: false, error: "Provide at least one class field to update" });
+    return;
+  }
+  try {
+    const current = await firestoreGet(`school_classes/${encodeURIComponent(classId)}`, adminToken);
+    const currentData = current ? documentData(current) : {};
+    if (!current || !belongsToSchool(currentData, schoolScopeIds(caller))) {
+      res.status(404).json({ ok: false, error: "That class is not part of your school account" });
+      return;
+    }
+    updates.updatedAt = managerTimestamp();
+    const document = await firestoreUpdate(`school_classes/${encodeURIComponent(classId)}`, adminToken, updates);
+    res.json({ ok: true, class: safeRecord(document ? documentData(document) : { ...currentData, ...updates }, classId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId, classId }, "School class update failed");
+    res.status(502).json({ ok: false, error: "Unable to update the class" });
+  }
+});
+
+router.post("/school/subjects", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const name = managerText(body, "name", 100);
+  const abbreviation = managerText(body, "abbreviation", 12).toUpperCase();
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase() || "active";
+  const periodsPerWeek = body.periodsPerWeek === undefined || body.periodsPerWeek === "" ? 0 : Number(body.periodsPerWeek);
+  if (!name || !education || !Number.isInteger(periodsPerWeek) || periodsPerWeek < 0 || periodsPerWeek > 100 || !["active", "inactive"].includes(status)) {
+    res.status(400).json({ ok: false, error: "Subject name, education level, periods per week, and a valid status are required" });
+    return;
+  }
+  const subjectId = managerDocumentId("subject", caller.schoolId, [name.toLowerCase(), education]);
+  const createdAt = managerTimestamp();
+  const subjectData = {
+    schoolId: caller.schoolId,
+    institutionId: caller.institutionId ?? caller.schoolId,
+    name,
+    subjectName: name,
+    abbreviation,
+    level: education,
+    educationLevel: education,
+    periodsPerWeek,
+    status,
+    active: status === "active",
+    createdBy: caller.uid,
+    createdByRole: caller.role,
+    createdAt,
+    updatedAt: createdAt,
+  };
+  try {
+    if (await firestoreGet(`school_subjects/${encodeURIComponent(subjectId)}`, adminToken)) {
+      res.status(409).json({ ok: false, error: "That subject already exists for this education level" });
+      return;
+    }
+    const document = await firestoreCreate("school_subjects", subjectId, adminToken, subjectData);
+    res.status(201).json({ ok: true, subject: safeRecord(document ? documentData(document) : subjectData, subjectId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId }, "School subject creation failed");
+    res.status(502).json({ ok: false, error: "Unable to create the subject" });
+  }
+});
+
+router.patch("/school/subjects/:subjectId", async (req, res) => {
+  const caller = await requireSchoolManager(req.headers["authorization"]);
+  if (!caller) {
+    res.status(403).json({ ok: false, error: "School manager access is required" });
+    return;
+  }
+  const adminToken = await getFirebaseAdminToken();
+  if (!adminToken) {
+    res.status(503).json({ ok: false, error: "School records are temporarily unavailable" });
+    return;
+  }
+  const subjectId = String(req.params.subjectId ?? "").trim();
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+  const name = managerText(body, "name", 100);
+  const abbreviation = managerText(body, "abbreviation", 12).toUpperCase();
+  const education = managerEducationLevel(managerText(body, "educationLevel", 20));
+  const status = managerText(body, "status", 30).toLowerCase();
+  const periodsPerWeek = body.periodsPerWeek === undefined || body.periodsPerWeek === "" ? undefined : Number(body.periodsPerWeek);
+  if (name) Object.assign(updates, { name, subjectName: name });
+  if (body.abbreviation !== undefined) updates.abbreviation = abbreviation;
+  if (body.educationLevel !== undefined) {
+    if (!education) {
+      res.status(400).json({ ok: false, error: "Education level must be primary or secondary" });
+      return;
+    }
+    Object.assign(updates, { level: education, educationLevel: education });
+  }
+  if (body.periodsPerWeek !== undefined) {
+    if (!Number.isInteger(periodsPerWeek) || Number(periodsPerWeek) < 0 || Number(periodsPerWeek) > 100) {
+      res.status(400).json({ ok: false, error: "Periods per week must be a whole number from zero to 100" });
+      return;
+    }
+    updates.periodsPerWeek = periodsPerWeek;
+  }
+  if (body.status !== undefined) {
+    if (!["active", "inactive"].includes(status)) {
+      res.status(400).json({ ok: false, error: "Status must be active or inactive" });
+      return;
+    }
+    Object.assign(updates, { status, active: status === "active" });
+  }
+  if (!subjectId || !Object.keys(updates).length) {
+    res.status(400).json({ ok: false, error: "Provide at least one subject field to update" });
+    return;
+  }
+  try {
+    const current = await firestoreGet(`school_subjects/${encodeURIComponent(subjectId)}`, adminToken);
+    const currentData = current ? documentData(current) : {};
+    if (!current || !belongsToSchool(currentData, schoolScopeIds(caller))) {
+      res.status(404).json({ ok: false, error: "That subject is not part of your school account" });
+      return;
+    }
+    updates.updatedAt = managerTimestamp();
+    const document = await firestoreUpdate(`school_subjects/${encodeURIComponent(subjectId)}`, adminToken, updates);
+    res.json({ ok: true, subject: safeRecord(document ? documentData(document) : { ...currentData, ...updates }, subjectId) });
+  } catch (err) {
+    logger.warn({ err, schoolId: caller.schoolId, subjectId }, "School subject update failed");
+    res.status(502).json({ ok: false, error: "Unable to update the subject" });
   }
 });
 
@@ -1154,16 +1575,21 @@ router.post("/school/bursar/statements/close", async (req, res) => {
  * Uses the service-account token so the school admin's own session is unaffected.
  */
 router.post("/school/create-student", async (req, res) => {
-  const caller = await verifySchoolCaller(req.headers["authorization"]);
+  const caller = await requireSchoolManager(req.headers["authorization"]);
   if (!caller) {
-    res.status(401).json({ ok: false, error: "Unauthorized — school account required" });
+    res.status(403).json({ ok: false, error: "School manager access is required" });
     return;
   }
 
-  const { name, email, password } = req.body as {
+  const { name, email, password, admissionNumber, className, stream, educationLevel, gender } = req.body as {
     name?: string;
     email?: string;
     password?: string;
+    admissionNumber?: string;
+    className?: string;
+    stream?: string;
+    educationLevel?: string;
+    gender?: string;
   };
 
   if (!name || !email || !password) {
@@ -1172,6 +1598,13 @@ router.post("/school/create-student", async (req, res) => {
   }
   if (password.length < 6) {
     res.status(400).json({ ok: false, error: "Password must be at least 6 characters" });
+    return;
+  }
+  const normalizedEducationLevel = educationLevel
+    ? managerEducationLevel(String(educationLevel))
+    : "";
+  if (educationLevel && !normalizedEducationLevel) {
+    res.status(400).json({ ok: false, error: "Education level must be primary or secondary" });
     return;
   }
 
@@ -1234,6 +1667,13 @@ router.post("/school/create-student", async (req, res) => {
           email: { stringValue: email },
           role: { stringValue: "individual" },
           schoolId: { stringValue: caller.schoolId },
+           institutionId: { stringValue: caller.institutionId ?? caller.schoolId },
+           admissionNumber: admissionNumber ? { stringValue: String(admissionNumber).trim().slice(0, 80) } : undefined,
+           className: className ? { stringValue: String(className).trim().slice(0, 80) } : undefined,
+           classLevel: className ? { stringValue: String(className).trim().slice(0, 80) } : undefined,
+           stream: stream ? { stringValue: String(stream).trim().slice(0, 80) } : undefined,
+           educationLevel: normalizedEducationLevel ? { stringValue: normalizedEducationLevel } : undefined,
+           gender: gender ? { stringValue: String(gender).trim().slice(0, 40) } : undefined,
           mustChangePassword: { booleanValue: true },
           subscriptionTier: { stringValue: "free" },
           aiRequestsLimit: { integerValue: "10" },

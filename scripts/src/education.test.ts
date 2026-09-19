@@ -66,6 +66,14 @@ describe("Education workspace integration", () => {
       expect(schoolRouteSource).toContain('router.post("/school/bursar/statements/close"');
       expect(schoolRouteSource).toContain("bursarMonthLocked");
       expect(schoolRouteSource).toContain("receiptHash");
+      expect(schoolRouteSource).toContain('router.post("/school/learners"');
+      expect(schoolRouteSource).toContain('router.patch("/school/learners/:learnerId"');
+      expect(schoolRouteSource).toContain('router.post("/school/classes"');
+      expect(schoolRouteSource).toContain('router.patch("/school/classes/:classId"');
+      expect(schoolRouteSource).toContain('router.post("/school/subjects"');
+      expect(schoolRouteSource).toContain('router.patch("/school/subjects/:subjectId"');
+      expect(schoolRouteSource).toContain("requireSchoolManager");
+      expect(schoolRouteSource).toContain("firestoreUpdate");
      expect(educationScript).toContain('const bursarNavItems');
      expect(educationScript).toContain("Bursar dashboard");
      expect(educationScript).toContain('state.liveData?.workspace === "bursar"');
@@ -78,6 +86,18 @@ describe("Education workspace integration", () => {
       expect(educationScript).toContain("/api/school/bursar/statements?from=");
       expect(educationScript).toContain("/api/school/bursar/statements/close");
   });
+
+   it("provides manager-only school setup forms for learners, classes, and subjects", () => {
+     expect(educationScript).toContain("function isSchoolManager()");
+     expect(educationScript).toContain('id="learnerManagementForm"');
+     expect(educationScript).toContain('id="classManagementForm"');
+     expect(educationScript).toContain('id="subjectManagementForm"');
+     expect(educationScript).toContain("/api/school/learners");
+     expect(educationScript).toContain("/api/school/classes");
+     expect(educationScript).toContain("/api/school/subjects");
+     expect(educationScript).toContain('data-action="edit-management"');
+     expect(educationScript).toContain("roster without creating a password");
+   });
 
   it("keeps the route and landing-page education entry connected", () => {
     expect(serverSource).toContain('app.get(["/education", "/education/"]');
