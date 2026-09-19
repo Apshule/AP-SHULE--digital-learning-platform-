@@ -6179,6 +6179,16 @@
             console.warn('Teacher PDF view tracking failed:',error);
         }
     }
+    function isFirebaseStoragePdfUrl(url) {
+        try {
+            const parsed = new URL(url, window.location.href);
+            return parsed.hostname === 'firebasestorage.googleapis.com'
+                || parsed.hostname === 'storage.googleapis.com'
+                || parsed.hostname.endsWith('.firebasestorage.app');
+        } catch(_) {
+            return false;
+        }
+    }
     window.openPdfInline = async function(url, title, pdfDocId, trigger, sourceCollection) {
         if(!url) {
             showContextualMessage(trigger,'PDF not available yet. Please ask an administrator to add it.','info');
@@ -6188,7 +6198,9 @@
         document.getElementById('pdfViewModal').classList.add('show');
         const viewer=document.getElementById('pdfViewerIframe');
         if(_settingsPdfObjectUrl) { URL.revokeObjectURL(_settingsPdfObjectUrl); _settingsPdfObjectUrl=null; }
-        // Use a locally cached PDF when offline; otherwise use the existing Google Docs viewer.
+        // Use a locally cached PDF when offline. Firebase download URLs must be
+        // opened directly: Google's viewer fetches them server-side and cannot
+        // use the signed-in browser/session, which produces a 403 on mobile.
         if(!navigator.onLine && Offline && pdfDocId) {
             Offline.getCachedPdf(pdfDocId).then(record=>{
                 if(record?.pdfBlob) {
@@ -6197,7 +6209,9 @@
                 } else viewer.src='';
             }).catch(()=>{ viewer.src=''; });
         } else {
-            const viewerUrl = `https://docs.google.com/gviewer?embedded=true&url=${encodeURIComponent(url)}`;
+            const viewerUrl = isFirebaseStoragePdfUrl(url)
+                ? url
+                : `https://docs.google.com/gviewer?embedded=true&url=${encodeURIComponent(url)}`;
             viewer.src = viewerUrl;
             if(Offline && currentUser && url) Offline.cachePdf({pdfId:pdfDocId||url,url,title},{userId:currentUser.uid}).catch(()=>{});
         }
