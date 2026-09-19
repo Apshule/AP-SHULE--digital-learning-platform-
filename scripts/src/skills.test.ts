@@ -93,7 +93,7 @@ describe("vocational skills MVP contracts", () => {
     expect(providerRegister).toContain('id="providerManifestLink"');
     expect(providerRegister).toContain('id="installAppButton"');
     expect(providerRegister).toContain("beforeinstallprompt");
-    expect(providerRegister).toContain('register("/sw.js?v=20260918-12"');
+    expect(providerRegister).toContain('register("/sw.js?v=20260919-13"');
     expect(providerRegister).toContain("configureProviderPwa");
     expect(existsSync(resolve(root, "skills/assets/obote-auto-garage.jpg"))).toBe(true);
     expect(admission).toContain("Highest education level");
