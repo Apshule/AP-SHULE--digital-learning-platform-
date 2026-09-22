@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shule-Tech Softwares Uganda | Website &amp; App Development | 0794221315</title>
+<meta name="description" content="We build affordable websites and mobile apps in Uganda. Call 0794221315.">
+<meta name="theme-color" content="#0A1A2F">
+<link rel="canonical" href="https://appshule.com/tech/">
+<meta property="og:title" content="Shule-Tech Softwares | let's build with ease">
+<meta property="og:description" content="Websites, mobile apps, branding, hosting, and coding lessons from Uganda.">
+<meta property="og:url" content="https://appshule.com/tech/">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"LocalBusiness",
+  "name":"Shule-Tech Softwares",
+  "description":"Websites, mobile apps, branding, hosting, and coding lessons in Uganda.",
+  "telephone":"+256794221315",
+  "email":"shuletech15@gmail.com",
+  "url":"https://appshule.com/tech/",
+  "areaServed":"Uganda"
+}
+</script>
+</head>
+<body>
+
+<header class="st-site-header" id="top">
+  <div class="st-container st-header-inner">
+    <a class="st-brand" href="#top">
+      <span class="st-brand-mark">&lt;/&gt;</span>
+      <span class="st-brand-copy"><strong>Shule-Tech</strong><small>Softwares</small></span>
+    </a>
+    <button class="st-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+    <nav class="st-main-nav" aria-label="Main navigation">
+      <a class="st-active" href="#top">Home</a>
+      <a href="#services">Services</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="st-header-actions">
+      <a class="st-header-phone" href="tel:+256794221315">0794221315</a>
+      <a class="st-button st-button-whatsapp st-button-small" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section class="st-hero" aria-labelledby="hero-title">
+  <div class="st-hero-grid"></div>
+  <div class="st-container st-hero-inner">
+    <div class="st-hero-copy">
+      <p class="st-eyebrow st-hero-eyebrow"><span class="st-code-dot">&lt;/&gt;</span> Shule-Tech Softwares</p>
+      <h1 id="hero-title">We build <span class="st-gradient-text">websites</span> &amp; <span class="st-gradient-text">mobile apps</span> that bring clients.</h1>
+      <p class="st-hero-lead">Shule-Tech Softwares — your tech partner in Uganda.</p>
+      <p class="st-hero-tagline">LET'S BUILD WITH EASE</p>
+      <div class="st-hero-actions">
+        <a class="st-button st-button-whatsapp" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20hire%20you%20for%20a%20project." target="_blank" rel="noopener">Hire Us — 0794221315 ↗</a>
+        <a class="st-button st-button-outline" href="#pricing">View Pricing ↗</a>
+      </div>
+    </div>
+    <div class="st-hero-visual">
+      <div class="st-visual-orbit st-orbit-one"></div>
+      <div class="st-visual-orbit st-orbit-two"></div>
+      <div class="st-visual-card">
+        <div class="st-visual-topbar"><span></span><span></span><span></span><small>shule-tech / build</small></div>
+        <div class="st-visual-art"><span class="st-art-wordmark"><b>SHULE-</b>TECH<br><small>Softwares · let's build with ease</small></span></div>
+        <div class="st-visual-code"><i class="st-blue-line"></i><i class="st-orange-line"></i><i class="st-white-line"></i></div>
+      </div>
+      <div class="st-floating-chip st-chip-projects"><b>✦</b><span><strong>50+</strong><small>projects shipped</small></span></div>
+      <div class="st-floating-chip st-chip-support"><b class="st-status-dot"></b><span><strong>Always on</strong><small>friendly support</small></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="st-section st-services" id="services" aria-labelledby="services-title">
+  <div class="st-container">
+    <div class="st-section-heading">
+      <div><p class="st-eyebrow">What we do</p><h2 id="services-title">Everything you need to <span class="st-blue-text">build better.</span></h2></div>
+      <p class="st-section-intro">From your first idea to your next big launch, we turn ambitious plans into simple, useful digital products.</p>
+    </div>
+    <div class="st-service-grid">
+      <article class="st-service-card"><div class="st-service-icon st-icon-blue">⌘</div><h3>Website Development</h3><p>Custom, responsive websites built for speed, SEO, and conversions — from business sites to e-commerce stores.</p><a href="#contact">Start a website ↗</a></article>
+      <article class="st-service-card"><div class="st-service-icon st-icon-orange">▯</div><h3>Android Apps</h3><p>Native Android applications built with Kotlin, deployed to Google Play with full support.</p><a href="#contact">Build an app ↗</a></article>
+      <article class="st-service-card"><div class="st-service-icon st-icon-purple">✣</div><h3>iOS Apps</h3><p>Swift and SwiftUI applications for iPhone and iPad, from concept to App Store submission.</p><a href="#contact">Build an app ↗</a></article>
+      <article class="st-service-card"><div class="st-service-icon st-icon-green">⌁</div><h3>Logo &amp; Hosting</h3><p>Professional logo design and reliable hosting setup, including domain, SSL, and cPanel configuration.</p><a href="#contact">Get set up ↗</a></article>
+      <article class="st-service-card"><div class="st-service-icon st-icon-coral">▦</div><h3>Learn Coding</h3><p>One-on-one and group lessons in HTML, CSS, JavaScript, Python, and WordPress — skills that earn money.</p><a href="#contact">Learn with us ↗</a></article>
+    </div>
+  </div>
+</section>
+
+<section class="st-section st-pricing" id="pricing" aria-labelledby="pricing-title">
+  <div class="st-container">
+    <div class="st-section-heading st-pricing-heading">
+      <div><p class="st-eyebrow st-eyebrow-light">Simple packages</p><h2 id="pricing-title">A clear path from <span class="st-gradient-text">idea to launch.</span></h2></div>
+      <p class="st-section-intro">Choose a starting point, then we'll tailor the details around your goals. No confusing tech talk.</p>
+    </div>
+    <div class="st-pricing-grid">
+      <article class="st-price-card">
+        <p class="st-price-kicker">01 / STARTER</p><h3>Starter Website</h3>
+        <p class="st-price-description">Everything you need to show up professionally online.</p>
+        <strong class="st-price-amount">600K <small>UGX</small></strong>
+        <ul class="st-feature-list"><li>5-page website</li><li>Mobile responsive</li><li>Contact form</li><li>1 year hosting</li></ul>
+        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Starter%20Website%20package." target="_blank" rel="noopener">Get Started ↗</a>
+      </article>
+      <article class="st-price-card st-featured">
+        <span class="st-popular-badge">MOST POPULAR</span>
+        <p class="st-price-kicker">02 / BUSINESS</p><h3>Business Website</h3>
+        <p class="st-price-description">A stronger digital home for a growing business.</p>
+        <strong class="st-price-amount">1.2M <small>UGX</small></strong>
+        <ul class="st-feature-list"><li>10-page website</li><li>E-commerce ready</li><li>SEO optimization</li><li>Hosting + domain</li></ul>
+        <a class="st-button st-button-primary" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Business%20Website%20package." target="_blank" rel="noopener">Get Started ↗</a>
+      </article>
+      <article class="st-price-card">
+        <p class="st-price-kicker">03 / MOBILE</p><h3>Android App</h3>
+        <p class="st-price-description">A useful, polished Android experience for your customers.</p>
+        <strong class="st-price-amount">1M <small>UGX</small></strong>
+        <ul class="st-feature-list"><li>Custom Android app</li><li>Play Store deployment</li><li>3 months support</li><li>Source code included</li></ul>
+        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Android%20App%20package." target="_blank" rel="noopener">Get Started ↗</a>
+      </article>
+      <article class="st-price-card">
+        <p class="st-price-kicker">04 / COMPLETE</p><h3>Full Package</h3>
+        <p class="st-price-description">The complete digital launch kit for your next chapter.</p>
+        <strong class="st-price-amount">2M <small>UGX</small></strong>
+        <ul class="st-feature-list"><li>Business website</li><li>Android app</li><li>Logo, hosting + domain</li><li>Priority support</li></ul>
+        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Full%20Package." target="_blank" rel="noopener">Get Started ↗</a>
+      </article>
+    </div>
+    <p class="st-pricing-note">Need something specific? <a href="#contact">Tell us what you're building ↗</a></p>
+  </div>
+</section>
+
+<section class="st-section st-portfolio" id="portfolio" aria-labelledby="portfolio-title">
+  <div class="st-container">
+    <div class="st-section-heading">
+      <div><p class="st-eyebrow">Selected work</p><h2 id="portfolio-title">Ideas we've helped <span class="st-blue-text">move forward.</span></h2></div>
+      <a class="st-text-link" href="#contact">Have a project in mind? ↗</a>
+    </div>
+    <div class="st-portfolio-grid">
+      <article class="st-portfolio-card">
+        <div class="st-portfolio-preview">
+          <div class="st-portfolio-grid-lines"></div>
+          <div class="st-portfolio-wordmark"><span>AP</span>SHULE</div>
+          <div class="st-portfolio-window"><div></div><div></div><div></div><b>Learn<br>without limits.</b><small>Courses · Exams · Notes</small></div>
+          <span class="st-preview-label">LIVE PLATFORM / 2026</span>
+        </div>
+        <div class="st-portfolio-info">
+          <p class="st-eyebrow">Featured project</p>
+          <h3>APSHULE — Digital Learning Platform</h3>
+          <p>A full learning management platform with courses, exams, notes, and video lessons. Built as a modern PWA with custom features.</p>
+          <div class="st-tag-list"><span>PWA</span><span>Firebase</span><span>LMS</span><span>Responsive</span><span>Payments</span></div>
+          <a class="st-text-link" href="/" target="_blank" rel="noopener">Visit APSHULE ↗</a>
+        </div>
+      </article>
+      <article class="st-portfolio-card st-coming-soon">
+        <div class="st-coming-art"><span class="st-coming-plus">+</span><i class="st-shape-one"></i><i class="st-shape-two"></i><i class="st-shape-three"></i></div>
+        <div class="st-portfolio-info">
+          <p class="st-eyebrow">Next up</p>
+          <h3>More projects on the way</h3>
+          <p>We're always building, learning, and making room for the next good idea. Yours could be here.</p>
+          <a class="st-text-link" href="#contact">Start something new ↗</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="st-contact" id="contact" aria-labelledby="contact-title">
+  <div class="st-contact-glow"></div>
+  <div class="st-container st-contact-grid">
+    <div class="st-contact-copy">
+      <p class="st-eyebrow st-eyebrow-light">Let's talk</p>
+      <h2 id="contact-title">Let's build<br><span class="st-gradient-text">something useful.</span></h2>
+      <p class="st-contact-lead">Have a question, a half-formed idea, or a launch date in mind? Send us a note. We'll reply with a clear next step.</p>
+      <div class="st-contact-methods">
+        <a class="st-contact-method" href="tel:+256794221315"><b>⌕</b><span><small>Call us</small><strong>0794221315</strong></span></a>
+        <a class="st-contact-method" href="mailto:shuletech15@gmail.com"><b>@</b><span><small>Email us</small><strong>shuletech15@gmail.com</strong></span></a>
+        <a class="st-contact-method" href="https://wa.me/256794221315" target="_blank" rel="noopener"><b>◔</b><span><small>Message us</small><strong>WhatsApp chat</strong></span></a>
+      </div>
+    </div>
+    <form class="st-contact-form" id="contact-form">
+      <div class="st-form-heading"><span>PROJECT INQUIRY</span><strong>Tell us a little about it.</strong></div>
+      <div class="st-form-row">
+        <label>Name<input type="text" name="name" autocomplete="name" placeholder="Your name" required></label>
+        <label>Phone<input type="tel" name="phone" autocomplete="tel" placeholder="0794 221 315" required></label>
+      </div>
+      <label>Email<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+      <label>What can we help with?<select name="service"><option value="Website">Website development</option><option value="Android">Android app</option><option value="iOS">iOS app</option><option value="Logo & Hosting">Logo &amp; hosting</option><option value="Learn Coding">Learn coding</option><option value="Other">Something else</option></select></label>
+      <label>Message<textarea name="message" rows="4" placeholder="What are you hoping to build?" required></textarea></label>
+      <button class="st-button st-button-primary st-button-submit" type="submit">Send Message ↗</button>
+      <div class="st-form-success" role="status" hidden>✓ Message sent successfully! We will get back to you shortly.</div>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<footer class="st-site-footer">
+  <div class="st-container">
+    <div class="st-footer-grid">
+      <div class="st-footer-brand">
+        <a class="st-brand st-brand-footer" href="/"><span class="st-brand-mark">&lt;/&gt;</span><span class="st-brand-copy"><strong>APSHULE</strong><small>let's learn with ease</small></span></a>
+        <p>Making learning more accessible with simple, useful technology.</p>
+        <a href="https://appshule.com">appshule.com ↗</a>
+        <a href="tel:+256731038702">+256731038702</a>
+      </div>
+      <div class="st-footer-brand">
+        <a class="st-brand st-brand-footer" href="#top"><span class="st-brand-mark st-brand-mark-tech">&lt;/&gt;</span><span class="st-brand-copy"><strong>Shule-Tech</strong><small>let's build with ease</small></span></a>
+        <p>Websites, apps, and digital solutions built around your goals.</p>
+        <a href="https://appshule.com/tech/">appshule.com/tech ↗</a>
+        <a href="mailto:shuletech15@gmail.com">shuletech15@gmail.com</a>
+      </div>
+      <div class="st-footer-cta">
+        <p class="st-eyebrow st-eyebrow-light">Have a good idea?</p>
+        <h3>Let's make it real.</h3>
+        <a class="st-button st-button-light" href="#contact">Start a conversation ↗</a>
+      </div>
+    </div>
+    <div class="st-footer-bottom">
+      <p>© 2026 APSHULE. All rights reserved. Shule-Tech Softwares is a sub-brand of APSHULE.</p>
+      <div><a href="/">Privacy Policy</a><a href="/">Terms of Service</a></div>
+    </div>
+  </div>
+</footer>
+
+<a class="st-floating-whatsapp" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">◔</a>
+<script src="script.js"></script>
+</body>
+</html>
