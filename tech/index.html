@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shule-Tech Softwares Uganda | Website &amp; App Development | 0794221315</title>
 <meta name="description" content="We build affordable websites and mobile apps in Uganda. Call 0794221315.">
-<meta name="theme-color" content="#0A1A2F">
 <link rel="canonical" href="https://appshule.com/tech/">
 <meta property="og:title" content="Shule-Tech Softwares | let's build with ease">
 <meta property="og:description" content="Websites, mobile apps, branding, hosting, and coding lessons from Uganda.">
@@ -14,6 +13,9 @@
 <meta property="og:image" content="https://appshule.com/tech/shule-tech-logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+<meta name="theme-color" content="#0A1A2F">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script type="application/ld+json">
@@ -186,7 +188,11 @@
         <a class="st-contact-method" href="https://wa.me/256794221315" target="_blank" rel="noopener"><b>◔</b><span><small>Message us</small><strong>WhatsApp chat</strong></span></a>
       </div>
     </div>
-    <form class="st-contact-form" id="contact-form">
+    <form class="st-contact-form" id="contact-form" action="https://api.web3forms.com/submit" method="POST">
+      <input type="hidden" name="access_key" value="PASTE_YOUR_ACCESS_KEY_HERE">
+      <input type="hidden" name="subject" value="New Shule-Tech Inquiry from Website">
+      <input type="hidden" name="from_name" value="Shule-Tech Website">
+      <input type="hidden" name="redirect" value="https://appshule.com/tech/?sent=1">
       <div class="st-form-heading"><span>PROJECT INQUIRY</span><strong>Tell us a little about it.</strong></div>
       <div class="st-form-row">
         <label>Name<input type="text" name="name" autocomplete="name" placeholder="Your name" required></label>
