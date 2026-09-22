@@ -44,4 +44,4 @@
       window.setTimeout(function () { successBanner.hidden = true; }, 7000);
     });
   }
-})();
+}());
