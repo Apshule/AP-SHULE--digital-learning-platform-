@@ -1,236 +1,267 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shule-Tech Softwares Uganda | Website &amp; App Development | 0794221315</title>
-<meta name="description" content="We build affordable websites and mobile apps in Uganda. Call 0794221315.">
-<meta name="theme-color" content="#0A1A2F">
-<link rel="canonical" href="https://appshule.com/tech/">
-<meta property="og:title" content="Shule-Tech Softwares | let's build with ease">
-<meta property="og:description" content="Websites, mobile apps, branding, hosting, and coding lessons from Uganda.">
-<meta property="og:url" content="https://appshule.com/tech/">
-<meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"LocalBusiness",
-  "name":"Shule-Tech Softwares",
-  "description":"Websites, mobile apps, branding, hosting, and coding lessons in Uganda.",
-  "telephone":"+256794221315",
-  "email":"shuletech15@gmail.com",
-  "url":"https://appshule.com/tech/",
-  "areaServed":"Uganda"
+:root {
+  --st-navy: #0a1a2f;
+  --st-navy-deep: #061426;
+  --st-blue: #0096ff;
+  --st-orange: #ff8c00;
+  --st-white: #fff;
+  --st-light: #f8faff;
+  --st-border: #e8edf5;
+  --st-whatsapp: #25d366;
+  --st-ink: #172438;
+  --st-muted: #65728a;
+  --st-purple: #735cf5;
+  --st-shadow: 0 22px 60px rgba(10, 26, 47, .09);
 }
-</script>
-</head>
-<body>
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; color: var(--st-ink); background: var(--st-light); font-family: "Poppins", sans-serif; font-size: 15px; line-height: 1.6; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+.st-container { width: min(1170px, calc(100% - 56px)); margin: 0 auto; }
 
-<header class="st-site-header" id="top">
-  <div class="st-container st-header-inner">
-    <a class="st-brand" href="#top">
-      <span class="st-brand-mark">&lt;/&gt;</span>
-      <span class="st-brand-copy"><strong>Shule-Tech</strong><small>Softwares</small></span>
-    </a>
-    <button class="st-menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
-    <nav class="st-main-nav" aria-label="Main navigation">
-      <a class="st-active" href="#top">Home</a>
-      <a href="#services">Services</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#contact">Contact</a>
-    </nav>
-    <div class="st-header-actions">
-      <a class="st-header-phone" href="tel:+256794221315">0794221315</a>
-      <a class="st-button st-button-whatsapp st-button-small" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener">WhatsApp</a>
-    </div>
-  </div>
-</header>
+.st-site-header { position: fixed; z-index: 20; inset: 0 0 auto; color: var(--st-white); background: rgba(7, 24, 45, .88); border-bottom: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(16px); }
+.st-header-inner { min-height: 78px; display: flex; align-items: center; gap: 30px; }
+.st-brand { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.st-brand-mark { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; color: var(--st-navy); background: linear-gradient(135deg, var(--st-blue), #68c4ff); border-radius: 10px; font-family: monospace; font-size: 15px; font-weight: 800; box-shadow: 0 7px 18px rgba(0,150,255,.24); }
+.st-brand-mark-tech { background: linear-gradient(135deg, var(--st-orange), #ffbe55); }
+.st-brand-copy { display: flex; flex-direction: column; justify-content: center; height: 38px; line-height: 1.08; }
+.st-brand-copy strong { font-size: 15px; letter-spacing: -.02em; color: #fff; }
+.st-brand-copy small { color: #9daabd; font-size: 9px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; margin-top: 5px; }
+.st-main-nav { display: flex; align-items: center; gap: 27px; margin-left: auto; }
+.st-main-nav a { color: #aab6c7; font-size: 12px; font-weight: 500; transition: color .2s ease; }
+.st-main-nav a:hover, .st-main-nav a.st-active { color: var(--st-white); }
+.st-header-actions { display: flex; align-items: center; gap: 15px; }
+.st-header-phone { display: inline-flex; align-items: center; gap: 7px; color: #cbd5e2; font-size: 11px; white-space: nowrap; }
+.st-menu-toggle { display: none; border: 0; padding: 6px; background: transparent; }
+.st-menu-toggle span { display: block; width: 23px; height: 2px; margin: 5px 0; background: white; transition: transform .2s, opacity .2s; }
 
-<main>
+.st-button { display: inline-flex; justify-content: center; align-items: center; gap: 10px; min-height: 48px; padding: 0 21px; border: 1px solid transparent; border-radius: 8px; font-size: 12px; font-weight: 600; transition: transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease; cursor: pointer; text-decoration: none; }
+.st-button:hover { transform: translateY(-2px); }
+.st-button-whatsapp { color: var(--st-white); background: var(--st-whatsapp); box-shadow: 0 8px 20px rgba(37,211,102,.18); }
+.st-button-whatsapp:hover { background: #1fbe5b; }
+.st-button-small { min-height: 34px; padding: 0 13px; font-size: 10px; border-radius: 6px; }
+.st-button-outline { color: var(--st-white); border-color: rgba(255,255,255,.26); background: rgba(255,255,255,.04); }
+.st-button-outline:hover { background: rgba(255,255,255,.11); border-color: rgba(255,255,255,.5); }
+.st-button-primary { color: var(--st-navy); background: var(--st-blue); box-shadow: 0 10px 22px rgba(0,150,255,.2); }
+.st-button-primary:hover { background: #2da7ff; }
+.st-button-dark-outline { width: 100%; color: white; border-color: #29415f; background: transparent; }
+.st-button-dark-outline:hover { border-color: #5f7796; background: #152c49; }
+.st-button-light { color: var(--st-navy); background: white; }
+.st-button-light:hover { background: #e7f4ff; }
 
-<section class="st-hero" aria-labelledby="hero-title">
-  <div class="st-hero-grid"></div>
-  <div class="st-container st-hero-inner">
-    <div class="st-hero-copy">
-      <p class="st-eyebrow st-hero-eyebrow"><span class="st-code-dot">&lt;/&gt;</span> Shule-Tech Softwares</p>
-      <h1 id="hero-title">We build <span class="st-gradient-text">websites</span> &amp; <span class="st-gradient-text">mobile apps</span> that bring clients.</h1>
-      <p class="st-hero-lead">Shule-Tech Softwares — your tech partner in Uganda.</p>
-      <p class="st-hero-tagline">LET'S BUILD WITH EASE</p>
-      <div class="st-hero-actions">
-        <a class="st-button st-button-whatsapp" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20hire%20you%20for%20a%20project." target="_blank" rel="noopener">Hire Us — 0794221315 ↗</a>
-        <a class="st-button st-button-outline" href="#pricing">View Pricing ↗</a>
-      </div>
-    </div>
-    <div class="st-hero-visual">
-      <div class="st-visual-orbit st-orbit-one"></div>
-      <div class="st-visual-orbit st-orbit-two"></div>
-      <div class="st-visual-card">
-        <div class="st-visual-topbar"><span></span><span></span><span></span><small>shule-tech / build</small></div>
-        <div class="st-visual-art"><span class="st-art-wordmark"><b>SHULE-</b>TECH<br><small>Softwares · let's build with ease</small></span></div>
-        <div class="st-visual-code"><i class="st-blue-line"></i><i class="st-orange-line"></i><i class="st-white-line"></i></div>
-      </div>
-      <div class="st-floating-chip st-chip-projects"><b>✦</b><span><strong>50+</strong><small>projects shipped</small></span></div>
-      <div class="st-floating-chip st-chip-support"><b class="st-status-dot"></b><span><strong>Always on</strong><small>friendly support</small></span></div>
-    </div>
-  </div>
-</section>
+.st-hero { position: relative; min-height: 760px; display: flex; align-items: center; padding: 142px 0 100px; overflow: hidden; color: var(--st-white); background: radial-gradient(circle at 80% 40%, rgba(0,150,255,.14), transparent 32%), radial-gradient(circle at 15% 60%, rgba(255,140,0,.08), transparent 27%), linear-gradient(135deg, #07182d, #0b213b 60%, #07182d); }
+.st-hero-grid { position: absolute; top: 7%; right: -10%; width: 58%; height: 72%; opacity: .24; background-image: linear-gradient(rgba(104,196,255,.11) 1px, transparent 1px), linear-gradient(90deg, rgba(104,196,255,.11) 1px, transparent 1px); background-size: 55px 55px; mask-image: radial-gradient(circle, black, transparent 70%); -webkit-mask-image: radial-gradient(circle, black, transparent 70%); transform: perspective(600px) rotateY(-22deg) rotateX(18deg); }
+.st-hero-inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, .95fr) minmax(420px, 1.05fr); align-items: center; gap: 70px; }
+.st-eyebrow { margin: 0 0 15px; color: var(--st-blue); font-size: 10px; font-weight: 700; letter-spacing: .19em; text-transform: uppercase; }
+.st-eyebrow-light { color: #68c4ff; }
+.st-hero-eyebrow { display: inline-flex; align-items: center; gap: 9px; padding: 7px 12px 7px 8px; color: #a7dcff; letter-spacing: .08em; background: rgba(0,150,255,.09); border: 1px solid rgba(0,150,255,.3); border-radius: 100px; }
+.st-code-dot { display: grid; place-items: center; width: 23px; height: 23px; color: var(--st-navy); background: var(--st-blue); border-radius: 50%; font-family: monospace; font-size: 9px; font-weight: 700; }
+h1, h2, h3, p { margin-top: 0; }
+h1 { max-width: 650px; margin-bottom: 24px; font-size: clamp(42px, 5.1vw, 70px); font-weight: 700; letter-spacing: -.065em; line-height: 1.06; color: #fff; }
+h2 { font-size: clamp(32px, 4vw, 48px); letter-spacing: -.055em; line-height: 1.12; }
+.st-gradient-text { color: transparent; background: linear-gradient(100deg, #29aaff, #ff951e); -webkit-background-clip: text; background-clip: text; }
+.st-blue-text { color: var(--st-blue); }
+.st-hero-lead { margin-bottom: 7px; color: #b7c4d5; font-size: 16px; }
+.st-hero-tagline { color: var(--st-orange); font-size: 11px; font-weight: 700; letter-spacing: .23em; }
+.st-hero-actions { display: flex; gap: 12px; margin-top: 30px; }
+.st-hero-visual { position: relative; min-height: 470px; display: grid; place-items: center; }
+.st-visual-card { position: relative; z-index: 2; width: min(410px, 88%); padding: 9px; background: #102943; border: 1px solid rgba(137,194,235,.21); border-radius: 19px; box-shadow: 0 30px 70px rgba(0,0,0,.28); transform: rotate(3deg); }
+.st-visual-topbar { display: flex; align-items: center; gap: 5px; padding: 8px 9px 10px; color: #66829f; font-family: monospace; font-size: 8px; }
+.st-visual-topbar span { width: 6px; height: 6px; border-radius: 50%; background: #ff715f; }
+.st-visual-topbar span:nth-child(2) { background: #f6bd4c; }
+.st-visual-topbar span:nth-child(3) { background: #55cf83; }
+.st-visual-art { height: 315px; overflow: hidden; border-radius: 11px; background: radial-gradient(circle at 50% 45%, rgba(0,150,255,.25), transparent 60%), #08182d; display: grid; place-items: center; text-align: center; }
+.st-art-wordmark { color: #fff; font-size: 26px; font-weight: 800; letter-spacing: -.04em; line-height: 1.1; }
+.st-art-wordmark b { color: var(--st-blue); }
+.st-art-wordmark small { display: block; margin-top: 8px; color: var(--st-orange); font-size: 9px; font-weight: 600; letter-spacing: .16em; }
+.st-visual-code { display: flex; flex-direction: column; gap: 5px; padding: 12px 7px 5px; }
+.st-visual-code i { display: block; height: 3px; border-radius: 4px; }
+.st-blue-line { width: 38%; background: var(--st-blue); }
+.st-orange-line { width: 62%; background: var(--st-orange); }
+.st-white-line { width: 25%; background: #7b96b3; }
+.st-visual-orbit { position: absolute; border: 1px solid rgba(0,150,255,.25); border-radius: 50%; }
+.st-orbit-one { width: 465px; height: 465px; transform: rotate(48deg) scaleY(.42); }
+.st-orbit-two { width: 440px; height: 440px; transform: rotate(-43deg) scaleY(.43); border-color: rgba(255,140,0,.2); }
+.st-floating-chip { position: absolute; z-index: 3; display: flex; align-items: center; gap: 9px; padding: 11px 14px; color: white; background: rgba(15,39,66,.9); border: 1px solid rgba(127,189,236,.2); border-radius: 9px; box-shadow: 0 16px 30px rgba(0,0,0,.18); }
+.st-chip-projects { top: 65px; right: 3px; }
+.st-chip-support { bottom: 59px; left: 6px; }
+.st-floating-chip > b { display: grid; place-items: center; width: 26px; height: 26px; color: #0c2943; background: var(--st-orange); border-radius: 7px; }
+.st-floating-chip strong, .st-floating-chip small { display: block; color: #fff; }
+.st-floating-chip strong { font-size: 10px; }
+.st-floating-chip small { color: #8da6c0; font-size: 8px; }
+.st-status-dot { width: 8px !important; height: 8px !important; background: var(--st-whatsapp) !important; border-radius: 50%; box-shadow: 0 0 0 5px rgba(37,211,102,.12); }
 
-<section class="st-section st-services" id="services" aria-labelledby="services-title">
-  <div class="st-container">
-    <div class="st-section-heading">
-      <div><p class="st-eyebrow">What we do</p><h2 id="services-title">Everything you need to <span class="st-blue-text">build better.</span></h2></div>
-      <p class="st-section-intro">From your first idea to your next big launch, we turn ambitious plans into simple, useful digital products.</p>
-    </div>
-    <div class="st-service-grid">
-      <article class="st-service-card"><div class="st-service-icon st-icon-blue">⌘</div><h3>Website Development</h3><p>Custom, responsive websites built for speed, SEO, and conversions — from business sites to e-commerce stores.</p><a href="#contact">Start a website ↗</a></article>
-      <article class="st-service-card"><div class="st-service-icon st-icon-orange">▯</div><h3>Android Apps</h3><p>Native Android applications built with Kotlin, deployed to Google Play with full support.</p><a href="#contact">Build an app ↗</a></article>
-      <article class="st-service-card"><div class="st-service-icon st-icon-purple">✣</div><h3>iOS Apps</h3><p>Swift and SwiftUI applications for iPhone and iPad, from concept to App Store submission.</p><a href="#contact">Build an app ↗</a></article>
-      <article class="st-service-card"><div class="st-service-icon st-icon-green">⌁</div><h3>Logo &amp; Hosting</h3><p>Professional logo design and reliable hosting setup, including domain, SSL, and cPanel configuration.</p><a href="#contact">Get set up ↗</a></article>
-      <article class="st-service-card"><div class="st-service-icon st-icon-coral">▦</div><h3>Learn Coding</h3><p>One-on-one and group lessons in HTML, CSS, JavaScript, Python, and WordPress — skills that earn money.</p><a href="#contact">Learn with us ↗</a></article>
-    </div>
-  </div>
-</section>
+.st-section { background: var(--st-light); }
+.st-services, .st-pricing, .st-portfolio, .st-contact { padding: 110px 0 120px; }
+.st-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 40px; margin-bottom: 45px; }
+.st-section-heading h2 { max-width: 610px; margin-bottom: 0; color: var(--st-ink); }
+.st-section-intro { max-width: 320px; margin: 0 0 3px; color: var(--st-muted); font-size: 12px; line-height: 1.8; }
 
-<section class="st-section st-pricing" id="pricing" aria-labelledby="pricing-title">
-  <div class="st-container">
-    <div class="st-section-heading st-pricing-heading">
-      <div><p class="st-eyebrow st-eyebrow-light">Simple packages</p><h2 id="pricing-title">A clear path from <span class="st-gradient-text">idea to launch.</span></h2></div>
-      <p class="st-section-intro">Choose a starting point, then we'll tailor the details around your goals. No confusing tech talk.</p>
-    </div>
-    <div class="st-pricing-grid">
-      <article class="st-price-card">
-        <p class="st-price-kicker">01 / STARTER</p><h3>Starter Website</h3>
-        <p class="st-price-description">Everything you need to show up professionally online.</p>
-        <strong class="st-price-amount">600K <small>UGX</small></strong>
-        <ul class="st-feature-list"><li>5-page website</li><li>Mobile responsive</li><li>Contact form</li><li>1 year hosting</li></ul>
-        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Starter%20Website%20package." target="_blank" rel="noopener">Get Started ↗</a>
-      </article>
-      <article class="st-price-card st-featured">
-        <span class="st-popular-badge">MOST POPULAR</span>
-        <p class="st-price-kicker">02 / BUSINESS</p><h3>Business Website</h3>
-        <p class="st-price-description">A stronger digital home for a growing business.</p>
-        <strong class="st-price-amount">1.2M <small>UGX</small></strong>
-        <ul class="st-feature-list"><li>10-page website</li><li>E-commerce ready</li><li>SEO optimization</li><li>Hosting + domain</li></ul>
-        <a class="st-button st-button-primary" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Business%20Website%20package." target="_blank" rel="noopener">Get Started ↗</a>
-      </article>
-      <article class="st-price-card">
-        <p class="st-price-kicker">03 / MOBILE</p><h3>Android App</h3>
-        <p class="st-price-description">A useful, polished Android experience for your customers.</p>
-        <strong class="st-price-amount">1M <small>UGX</small></strong>
-        <ul class="st-feature-list"><li>Custom Android app</li><li>Play Store deployment</li><li>3 months support</li><li>Source code included</li></ul>
-        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Android%20App%20package." target="_blank" rel="noopener">Get Started ↗</a>
-      </article>
-      <article class="st-price-card">
-        <p class="st-price-kicker">04 / COMPLETE</p><h3>Full Package</h3>
-        <p class="st-price-description">The complete digital launch kit for your next chapter.</p>
-        <strong class="st-price-amount">2M <small>UGX</small></strong>
-        <ul class="st-feature-list"><li>Business website</li><li>Android app</li><li>Logo, hosting + domain</li><li>Priority support</li></ul>
-        <a class="st-button st-button-dark-outline" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27m%20interested%20in%20the%20Full%20Package." target="_blank" rel="noopener">Get Started ↗</a>
-      </article>
-    </div>
-    <p class="st-pricing-note">Need something specific? <a href="#contact">Tell us what you're building ↗</a></p>
-  </div>
-</section>
+.st-service-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 13px; }
+.st-service-card { position: relative; min-height: 290px; padding: 25px 19px 19px; background: white; border: 1px solid var(--st-border); border-radius: 16px; overflow: hidden; transition: transform .25s ease, box-shadow .25s ease; }
+.st-service-card::before { position: absolute; content: ""; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--st-blue), var(--st-orange)); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; }
+.st-service-card:hover { box-shadow: var(--st-shadow); transform: translateY(-7px); }
+.st-service-card:hover::before { transform: scaleX(1); }
+.st-service-icon { display: grid; place-items: center; width: 43px; height: 43px; margin-bottom: 23px; border-radius: 11px; font-size: 23px; font-weight: 700; }
+.st-icon-blue { color: var(--st-blue); background: #e7f6ff; }
+.st-icon-orange { color: #e87900; background: #fff1dc; }
+.st-icon-purple { color: var(--st-purple); background: #eeebff; }
+.st-icon-green { color: #1ba66b; background: #e4f8ee; }
+.st-icon-coral { color: #e55f57; background: #fff0ee; }
+.st-service-card h3 { margin-bottom: 11px; font-size: 15px; line-height: 1.3; color: var(--st-ink); }
+.st-service-card p { min-height: 102px; color: var(--st-muted); font-size: 11px; line-height: 1.75; }
+.st-service-card a, .st-text-link { color: var(--st-blue); font-size: 10px; font-weight: 700; }
 
-<section class="st-section st-portfolio" id="portfolio" aria-labelledby="portfolio-title">
-  <div class="st-container">
-    <div class="st-section-heading">
-      <div><p class="st-eyebrow">Selected work</p><h2 id="portfolio-title">Ideas we've helped <span class="st-blue-text">move forward.</span></h2></div>
-      <a class="st-text-link" href="#contact">Have a project in mind? ↗</a>
-    </div>
-    <div class="st-portfolio-grid">
-      <article class="st-portfolio-card">
-        <div class="st-portfolio-preview">
-          <div class="st-portfolio-grid-lines"></div>
-          <div class="st-portfolio-wordmark"><span>AP</span>SHULE</div>
-          <div class="st-portfolio-window"><div></div><div></div><div></div><b>Learn<br>without limits.</b><small>Courses · Exams · Notes</small></div>
-          <span class="st-preview-label">LIVE PLATFORM / 2026</span>
-        </div>
-        <div class="st-portfolio-info">
-          <p class="st-eyebrow">Featured project</p>
-          <h3>APSHULE — Digital Learning Platform</h3>
-          <p>A full learning management platform with courses, exams, notes, and video lessons. Built as a modern PWA with custom features.</p>
-          <div class="st-tag-list"><span>PWA</span><span>Firebase</span><span>LMS</span><span>Responsive</span><span>Payments</span></div>
-          <a class="st-text-link" href="/" target="_blank" rel="noopener">Visit APSHULE ↗</a>
-        </div>
-      </article>
-      <article class="st-portfolio-card st-coming-soon">
-        <div class="st-coming-art"><span class="st-coming-plus">+</span><i class="st-shape-one"></i><i class="st-shape-two"></i><i class="st-shape-three"></i></div>
-        <div class="st-portfolio-info">
-          <p class="st-eyebrow">Next up</p>
-          <h3>More projects on the way</h3>
-          <p>We're always building, learning, and making room for the next good idea. Yours could be here.</p>
-          <a class="st-text-link" href="#contact">Start something new ↗</a>
-        </div>
-      </article>
-    </div>
-  </div>
-</section>
+.st-pricing { position: relative; overflow: hidden; color: var(--st-white); background: var(--st-navy); }
+.st-pricing::before { position: absolute; content: ""; width: 480px; height: 480px; top: -220px; right: -100px; border-radius: 50%; background: rgba(0,150,255,.09); }
+.st-pricing .st-section-heading h2 { color: var(--st-white); }
+.st-pricing-heading .st-section-intro { color: #8da1b7; }
+.st-pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; position: relative; z-index: 1; }
+.st-price-card { position: relative; display: flex; flex-direction: column; min-height: 440px; padding: 26px 20px 20px; background: #0e2743; border: 1px solid #213b58; border-radius: 14px; }
+.st-price-card.st-featured { border-color: var(--st-blue); background: linear-gradient(165deg, #103657, #0d2742); }
+.st-popular-badge { position: absolute; top: 15px; right: 14px; padding: 4px 7px; color: #05182d; background: var(--st-orange); border-radius: 3px; font-size: 7px; font-weight: 800; letter-spacing: .08em; }
+.st-price-kicker { margin-bottom: 14px; color: #7c9ab7; font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.st-price-card h3 { margin-bottom: 8px; font-size: 18px; color: #fff; }
+.st-price-description { min-height: 55px; margin-bottom: 20px; color: #8da1b7; font-size: 11px; line-height: 1.65; }
+.st-price-amount { padding-bottom: 20px; color: var(--st-white); border-bottom: 1px solid #29445f; font-size: 36px; letter-spacing: -.06em; line-height: 1; }
+.st-price-amount small { color: #86a0b9; font-size: 10px; font-weight: 500; letter-spacing: .04em; }
+.st-feature-list { display: flex; flex-direction: column; gap: 11px; padding: 20px 0 24px; margin: 0; list-style: none; color: #bdcad8; font-size: 11px; }
+.st-feature-list li::before { content: "✓"; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 8px; color: var(--st-blue); background: rgba(0,150,255,.11); border-radius: 50%; font-size: 9px; }
+.st-price-card .st-button { margin-top: auto; }
+.st-pricing-note { margin: 37px 0 0; color: #8da1b7; text-align: center; font-size: 11px; position: relative; z-index: 1; }
+.st-pricing-note a { color: #71c7ff; font-weight: 600; }
 
-<section class="st-contact" id="contact" aria-labelledby="contact-title">
-  <div class="st-contact-glow"></div>
-  <div class="st-container st-contact-grid">
-    <div class="st-contact-copy">
-      <p class="st-eyebrow st-eyebrow-light">Let's talk</p>
-      <h2 id="contact-title">Let's build<br><span class="st-gradient-text">something useful.</span></h2>
-      <p class="st-contact-lead">Have a question, a half-formed idea, or a launch date in mind? Send us a note. We'll reply with a clear next step.</p>
-      <div class="st-contact-methods">
-        <a class="st-contact-method" href="tel:+256794221315"><b>⌕</b><span><small>Call us</small><strong>0794221315</strong></span></a>
-        <a class="st-contact-method" href="mailto:shuletech15@gmail.com"><b>@</b><span><small>Email us</small><strong>shuletech15@gmail.com</strong></span></a>
-        <a class="st-contact-method" href="https://wa.me/256794221315" target="_blank" rel="noopener"><b>◔</b><span><small>Message us</small><strong>WhatsApp chat</strong></span></a>
-      </div>
-    </div>
-    <form class="st-contact-form" id="contact-form">
-      <div class="st-form-heading"><span>PROJECT INQUIRY</span><strong>Tell us a little about it.</strong></div>
-      <div class="st-form-row">
-        <label>Name<input type="text" name="name" autocomplete="name" placeholder="Your name" required></label>
-        <label>Phone<input type="tel" name="phone" autocomplete="tel" placeholder="0794 221 315" required></label>
-      </div>
-      <label>Email<input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
-      <label>What can we help with?<select name="service"><option value="Website">Website development</option><option value="Android">Android app</option><option value="iOS">iOS app</option><option value="Logo & Hosting">Logo &amp; hosting</option><option value="Learn Coding">Learn coding</option><option value="Other">Something else</option></select></label>
-      <label>Message<textarea name="message" rows="4" placeholder="What are you hoping to build?" required></textarea></label>
-      <button class="st-button st-button-primary st-button-submit" type="submit">Send Message ↗</button>
-      <div class="st-form-success" role="status" hidden>✓ Message sent successfully! We will get back to you shortly.</div>
-    </form>
-  </div>
-</section>
+.st-portfolio { background: var(--st-light); }
+.st-portfolio-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 14px; }
+.st-portfolio-card { background: white; border: 1px solid var(--st-border); border-radius: 15px; overflow: hidden; }
+.st-portfolio-preview { position: relative; height: 255px; overflow: hidden; color: white; background: radial-gradient(circle at 83% 15%, rgba(0,150,255,.4), transparent 32%), linear-gradient(135deg, #0c2643, #071425); }
+.st-portfolio-grid-lines { position: absolute; inset: 0; opacity: .15; background-image: linear-gradient(rgba(141,203,249,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(141,203,249,.3) 1px, transparent 1px); background-size: 38px 38px; transform: perspective(400px) rotateX(55deg) scale(1.4); transform-origin: bottom; }
+.st-portfolio-wordmark { position: absolute; top: 34px; left: 35px; font-size: 24px; font-weight: 700; letter-spacing: -.06em; }
+.st-portfolio-wordmark span { color: var(--st-blue); }
+.st-portfolio-window { position: absolute; right: 13%; bottom: -4px; width: 280px; padding: 16px; color: var(--st-navy); background: #ecf6ff; border-radius: 11px 11px 0 0; box-shadow: -13px 0 30px rgba(0,0,0,.2); }
+.st-portfolio-window > div { display: inline-block; width: 5px; height: 5px; margin-right: 3px; background: var(--st-blue); border-radius: 50%; }
+.st-portfolio-window b { display: block; margin: 22px 0 5px; font-size: 21px; line-height: 1.1; }
+.st-portfolio-window small { color: #6e7f94; font-size: 9px; }
+.st-preview-label { position: absolute; left: 35px; bottom: 28px; color: #72b9eb; font-size: 8px; font-weight: 600; letter-spacing: .13em; }
+.st-portfolio-info { padding: 27px 30px 30px; }
+.st-portfolio-info h3 { margin-bottom: 13px; font-size: 19px; color: var(--st-ink); }
+.st-portfolio-info > p { color: var(--st-muted); font-size: 11px; line-height: 1.75; }
+.st-tag-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 20px 0 22px; }
+.st-tag-list span { padding: 5px 8px; color: #52708b; background: #edf7ff; border-radius: 4px; font-size: 9px; font-weight: 600; }
+.st-coming-soon { display: flex; flex-direction: column; }
+.st-coming-art { position: relative; flex: 1; min-height: 255px; overflow: hidden; background: #eef7fc; }
+.st-coming-plus { position: absolute; top: 34px; left: 36px; color: #9bc8e6; font-size: 75px; font-weight: 300; line-height: .6; }
+.st-shape-one, .st-shape-two, .st-shape-three { position: absolute; display: block; border-radius: 50%; }
+.st-shape-one { right: 16%; top: 27%; width: 112px; height: 112px; border: 17px solid #cce9fa; }
+.st-shape-two { right: 36%; bottom: -20px; width: 140px; height: 140px; background: #dcefff; }
+.st-shape-three { left: 25%; top: 53%; width: 35px; height: 35px; background: var(--st-orange); box-shadow: 45px -44px 0 var(--st-blue); }
 
-</main>
+.st-contact { position: relative; overflow: hidden; color: white; background: #08182d; }
+.st-contact-glow { position: absolute; top: -300px; left: -100px; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(circle, rgba(0,150,255,.16), transparent 68%); }
+.st-contact-grid { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1.1fr; gap: 110px; align-items: start; }
+.st-contact-copy h2 { margin-bottom: 24px; font-size: clamp(39px, 5vw, 62px); line-height: 1.04; color: #fff; }
+.st-contact-lead { max-width: 420px; color: #95a8be; font-size: 12px; line-height: 1.85; }
+.st-contact-methods { display: flex; flex-direction: column; gap: 14px; margin-top: 37px; }
+.st-contact-method { display: flex; align-items: center; gap: 13px; color: white; }
+.st-contact-method > b { display: grid; place-items: center; width: 38px; height: 38px; color: var(--st-blue); background: rgba(0,150,255,.1); border: 1px solid rgba(0,150,255,.18); border-radius: 9px; font-size: 19px; }
+.st-contact-method small, .st-contact-method strong { display: block; }
+.st-contact-method small { color: #7189a3; font-size: 9px; }
+.st-contact-method strong { font-size: 11px; font-weight: 500; }
+.st-contact-form { padding: 30px; background: white; border-radius: 15px; color: var(--st-ink); box-shadow: 0 25px 70px rgba(0,0,0,.15); }
+.st-form-heading { display: flex; flex-direction: column; padding-bottom: 23px; margin-bottom: 22px; border-bottom: 1px solid var(--st-border); }
+.st-form-heading span { margin-bottom: 5px; color: var(--st-blue); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.st-form-heading strong { font-size: 21px; }
+.st-contact-form label { display: block; margin-bottom: 17px; color: #34445a; font-size: 10px; font-weight: 600; }
+.st-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.st-contact-form input, .st-contact-form select, .st-contact-form textarea { display: block; width: 100%; margin-top: 7px; padding: 11px 12px; color: var(--st-ink); background: #fbfcfe; border: 1px solid #dce4ee; border-radius: 6px; outline: none; font-size: 11px; }
+.st-contact-form textarea { resize: vertical; min-height: 95px; }
+.st-contact-form input:focus, .st-contact-form select:focus, .st-contact-form textarea:focus { border-color: var(--st-blue); box-shadow: 0 0 0 3px rgba(0,150,255,.1); }
+.st-button-submit { width: 100%; border: 0; }
+.st-form-success { margin-top: 14px; padding: 11px 12px; color: #167746; background: #e9faf0; border: 1px solid #b8edcd; border-radius: 6px; font-size: 10px; }
 
-<footer class="st-site-footer">
-  <div class="st-container">
-    <div class="st-footer-grid">
-      <div class="st-footer-brand">
-        <a class="st-brand st-brand-footer" href="/"><span class="st-brand-mark">&lt;/&gt;</span><span class="st-brand-copy"><strong>APSHULE</strong><small>let's learn with ease</small></span></a>
-        <p>Making learning more accessible with simple, useful technology.</p>
-        <a href="https://appshule.com">appshule.com ↗</a>
-        <a href="tel:+256731038702">+256731038702</a>
-      </div>
-      <div class="st-footer-brand">
-        <a class="st-brand st-brand-footer" href="#top"><span class="st-brand-mark st-brand-mark-tech">&lt;/&gt;</span><span class="st-brand-copy"><strong>Shule-Tech</strong><small>let's build with ease</small></span></a>
-        <p>Websites, apps, and digital solutions built around your goals.</p>
-        <a href="https://appshule.com/tech/">appshule.com/tech ↗</a>
-        <a href="mailto:shuletech15@gmail.com">shuletech15@gmail.com</a>
-      </div>
-      <div class="st-footer-cta">
-        <p class="st-eyebrow st-eyebrow-light">Have a good idea?</p>
-        <h3>Let's make it real.</h3>
-        <a class="st-button st-button-light" href="#contact">Start a conversation ↗</a>
-      </div>
-    </div>
-    <div class="st-footer-bottom">
-      <p>© 2026 APSHULE. All rights reserved. Shule-Tech Softwares is a sub-brand of APSHULE.</p>
-      <div><a href="/">Privacy Policy</a><a href="/">Terms of Service</a></div>
-    </div>
-  </div>
-</footer>
+.st-site-footer { padding: 70px 0 25px; color: #98aabd; background: #061426; }
+.st-footer-grid { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 70px; padding-bottom: 54px; }
+.st-brand-footer { margin-bottom: 18px; }
+.st-footer-brand p { max-width: 235px; margin-bottom: 17px; color: #7489a0; font-size: 10px; line-height: 1.75; }
+.st-footer-brand > a:not(.st-brand) { display: block; margin-top: 6px; color: #a8bbce; font-size: 10px; }
+.st-footer-cta { padding-top: 7px; }
+.st-footer-cta h3 { margin-bottom: 21px; color: white; font-size: 25px; }
+.st-footer-bottom { display: flex; justify-content: space-between; gap: 20px; padding-top: 22px; border-top: 1px solid #1b3048; }
+.st-footer-bottom p, .st-footer-bottom a { margin: 0; color: #61778e; font-size: 9px; }
+.st-footer-bottom div { display: flex; gap: 22px; }
+.st-floating-whatsapp { position: fixed; z-index: 15; right: 22px; bottom: 22px; display: grid; place-items: center; width: 55px; height: 55px; color: white; background: var(--st-whatsapp); border: 3px solid rgba(255,255,255,.9); border-radius: 50%; box-shadow: 0 8px 24px rgba(37,211,102,.35); font-size: 27px; transition: transform .2s; }
+.st-floating-whatsapp:hover { transform: scale(1.1); }
 
-<a class="st-floating-whatsapp" href="https://wa.me/256794221315?text=Hello%20Shule-Tech%2C%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">◔</a>
-<script src="script.js"></script>
-</body>
-</html>
+@media (max-width: 1080px) {
+  .st-header-inner { gap: 18px; }
+  .st-main-nav { gap: 17px; }
+  .st-header-phone { display: none; }
+  .st-hero-inner { gap: 35px; }
+  .st-service-grid { grid-template-columns: repeat(3, 1fr); }
+  .st-service-card { min-height: 265px; }
+  .st-service-card p { min-height: 76px; }
+  .st-pricing-grid { grid-template-columns: repeat(2, 1fr); }
+  .st-price-card { min-height: 400px; }
+  .st-contact-grid { gap: 55px; }
+}
+@media (max-width: 760px) {
+  .st-container { width: min(100% - 36px, 580px); }
+  .st-header-inner { min-height: 68px; justify-content: space-between; }
+  .st-header-actions { margin-left: auto; }
+  .st-header-actions .st-button-small { display: none; }
+  .st-menu-toggle { display: block; order: 3; }
+  .st-main-nav { position: absolute; top: 68px; left: 0; right: 0; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 6px 18px 15px; background: rgba(7,24,45,.98); border-top: 1px solid rgba(255,255,255,.08); box-shadow: 0 18px 25px rgba(0,0,0,.2); transform: translateY(-130%); transition: transform .3s ease; }
+  .st-main-nav.st-open { transform: translateY(0); }
+  .st-main-nav a { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 12px; }
+  .st-main-nav a:last-child { border-bottom: 0; }
+  .st-menu-toggle.st-open span:first-child { transform: translateY(7px) rotate(45deg); }
+  .st-menu-toggle.st-open span:nth-child(2) { opacity: 0; }
+  .st-menu-toggle.st-open span:last-child { transform: translateY(-7px) rotate(-45deg); }
+  .st-hero { min-height: auto; padding: 126px 0 80px; }
+  .st-hero-inner { display: flex; flex-direction: column; align-items: stretch; gap: 15px; }
+  .st-hero-copy { text-align: center; }
+  .st-hero-eyebrow { display: inline-flex; }
+  .st-hero-copy h1 { font-size: clamp(40px, 12vw, 60px); }
+  .st-hero-actions { justify-content: center; flex-wrap: wrap; }
+  .st-hero-visual { min-height: 395px; margin-top: 18px; }
+  .st-visual-art { height: 275px; }
+  .st-visual-card { width: min(390px, 91%); }
+  .st-orbit-one { width: 420px; height: 420px; }
+  .st-orbit-two { width: 395px; height: 395px; }
+  .st-chip-projects { top: 26px; right: 0; }
+  .st-chip-support { bottom: 24px; left: 0; }
+  .st-services, .st-pricing, .st-portfolio, .st-contact { padding: 75px 0; }
+  .st-section-heading { display: block; margin-bottom: 30px; }
+  .st-section-heading h2 { font-size: 37px; }
+  .st-section-intro { max-width: 460px; margin-top: 17px; }
+  .st-service-grid { grid-template-columns: repeat(2, 1fr); }
+  .st-service-card { min-height: 270px; }
+  .st-portfolio-grid { grid-template-columns: 1fr; }
+  .st-portfolio-preview, .st-coming-art { min-height: 245px; height: 245px; }
+  .st-text-link { display: inline-block; margin-top: 18px; }
+  .st-contact-grid { grid-template-columns: 1fr; gap: 48px; }
+  .st-contact-copy h2 { font-size: 48px; }
+  .st-footer-grid { grid-template-columns: 1fr 1fr; gap: 40px 25px; }
+  .st-footer-cta { grid-column: 1 / -1; }
+  .st-footer-bottom { flex-direction: column; }
+}
+@media (max-width: 430px) {
+  .st-container { width: calc(100% - 30px); }
+  .st-hero { padding-top: 116px; }
+  .st-hero-copy h1 { font-size: 42px; }
+  .st-hero-actions .st-button { width: 100%; }
+  .st-hero-visual { min-height: 350px; }
+  .st-visual-art { height: 240px; }
+  .st-service-grid, .st-pricing-grid { grid-template-columns: 1fr; }
+  .st-service-card { min-height: auto; }
+  .st-service-card p { min-height: 0; }
+  .st-price-card { min-height: 0; }
+  .st-price-description { min-height: 0; }
+  .st-form-row { grid-template-columns: 1fr; gap: 0; }
+  .st-contact-form { padding: 22px 18px; }
+  .st-footer-grid { grid-template-columns: 1fr; gap: 35px; }
+  .st-footer-cta { grid-column: auto; }
+  .st-footer-bottom div { flex-wrap: wrap; gap: 12px; }
+  .st-floating-whatsapp { right: 15px; bottom: 15px; }
+}
