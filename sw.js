@@ -113,7 +113,6 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-  if (new URL(event.request.url).pathname.startsWith('/tech')) return;
   var request = event.request;
   var url = new URL(request.url);
   if (BLOCKED_HOST.test(url.hostname)) return;
