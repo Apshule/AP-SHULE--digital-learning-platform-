@@ -61,19 +61,22 @@ app.use("/api", router);
 const indexPath = resolve(__dirname, "../../../index.html");
 const upgradePath = resolve(__dirname, "../../../upgrade.html");
 const youtubeSyncPath = resolve(__dirname, "../../../youtube-sync.html");
-const skillsPath = resolve(__dirname, "../../../skills");
-const skillsAdminPath = resolve(__dirname, "../../../skills-admin.html");
 const educationPath = resolve(__dirname, "../../../education");
+const vocationalArchiveResponse = (_req: express.Request, res: express.Response) => {
+  res.status(410).type("html").send(`<!doctype html>
+    <html lang="en"><head><meta charset="utf-8"><title>Vocational Skills archived</title></head>
+    <body><h1>Vocational Skills is archived</h1>
+    <p>This feature is not accepting new registrations, enrollments, admissions, or payments.</p>
+    <p>Existing records are preserved for Super Admin recovery.</p></body></html>`);
+};
 app.get("/", (req, res) => res.sendFile(indexPath));
 app.get("/upgrade.html", (req, res) => res.sendFile(upgradePath));
 app.get("/youtube-sync.html", (req, res) => res.sendFile(youtubeSyncPath));
-app.get("/skills-admin.html", (req, res) => res.sendFile(skillsAdminPath));
 app.get(["/education", "/education/"], (req, res) => res.sendFile(resolve(educationPath, "index.html")));
-app.use("/skills", express.static(skillsPath));
 app.use("/education", express.static(educationPath));
-app.get(["/obote", "/obote/"], (req, res) => {
-  res.sendFile(resolve(skillsPath, "provider-register.html"));
-});
+app.use("/skills", vocationalArchiveResponse);
+app.use("/obote", vocationalArchiveResponse);
+app.get("/skills-admin.html", vocationalArchiveResponse);
 app.get("/greeting.js", (req, res) => res.sendFile(resolve(__dirname, "../../../greeting.js")));
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));

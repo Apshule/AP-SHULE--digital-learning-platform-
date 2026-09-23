@@ -121,7 +121,7 @@ function hasChanges(): boolean {
   }
 }
 
-run(`git add ${FILES.join(" ")}`);
+run(`git add -A -- ${FILES.join(" ")}`);
 
 if (!hasChanges()) {
   console.log("Nothing to push — all files are up to date on GitHub.");

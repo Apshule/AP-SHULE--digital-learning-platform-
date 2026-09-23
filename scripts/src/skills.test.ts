@@ -10,11 +10,11 @@ describe("vocational skills MVP contracts", () => {
     const config = read("skills/firebase-config.js");
     const apiConfig = read("skills/api-config.js");
     const pages = [
-      "skills/index.html",
-      "skills/provider.html",
-      "skills/provider-register.html",
-      "skills/skills-enroll.html",
-      "skills/enroll.html",
+      "archive/vocational-skills/2026-09-23-v1/source/skills/index.html",
+      "archive/vocational-skills/2026-09-23-v1/source/skills/provider.html",
+      "archive/vocational-skills/2026-09-23-v1/source/skills/provider-register.html",
+      "archive/vocational-skills/2026-09-23-v1/source/skills/skills-enroll.html",
+      "archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html",
     ];
 
     expect(config).toContain("global.APSHULE_FIREBASE_CONFIG");
@@ -42,9 +42,9 @@ describe("vocational skills MVP contracts", () => {
   });
 
   it("ships the public directory, provider profile, and attributed registration flow", () => {
-    const directory = read("skills/index.html");
-    const provider = read("skills/provider.html");
-    const enroll = read("skills/enroll.html");
+    const directory = read("archive/vocational-skills/2026-09-23-v1/source/skills/index.html");
+    const provider = read("archive/vocational-skills/2026-09-23-v1/source/skills/provider.html");
+    const enroll = read("archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html");
     expect(directory).toContain("APSHULE Skills");
     expect(directory).toContain("Choose work");
     expect(directory).toContain("/api/skills/providers");
@@ -57,13 +57,13 @@ describe("vocational skills MVP contracts", () => {
   it("keeps provider moderation and earnings surfaces behind the API", () => {
     const api = read("artifacts/api-server/src/routes/skills.ts");
     const app = read("artifacts/api-server/src/app.ts");
-    const admin = read("skills-admin.html");
+    const admin = read("archive/vocational-skills/2026-09-23-v1/source/skills-admin.html");
     expect(api).toContain('router.get("/skills/admin/providers"');
     expect(api).toContain('router.get("/skills/providers/mine"');
     expect(api).toContain('router.post("/skills/admin/provider-status"');
     expect(api).toContain("referralCode");
     expect(api).toContain('/skills/providers/:providerId/manifest.json');
-    expect(app).toContain('app.get(["/obote", "/obote/"]');
+    expect(app).toContain('app.use("/obote", vocationalArchiveResponse)');
     expect(api).toContain('provider.verificationStatus === "pending_topup"');
     expect(admin).toContain('provider.verificationStatus==="pending_topup"||provider.verificationStatus==="verified"');
     expect(admin).toContain("/api/skills/admin/providers");
@@ -72,9 +72,9 @@ describe("vocational skills MVP contracts", () => {
 
   it("supports provider verification top-ups and the separate vocational admission flow", () => {
     const api = read("artifacts/api-server/src/routes/skills.ts");
-    const providerRegister = read("skills/provider-register.html");
-    const admission = read("skills/skills-enroll.html");
-    const enroll = read("skills/enroll.html");
+    const providerRegister = read("archive/vocational-skills/2026-09-23-v1/source/skills/provider-register.html");
+    const admission = read("archive/vocational-skills/2026-09-23-v1/source/skills/skills-enroll.html");
+    const enroll = read("archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html");
     expect(api).toContain('router.post("/skills/providers/register"');
     expect(api).toContain('router.post("/skills/provider/topup"');
     expect(api).toContain("skills_provider_payments");
@@ -95,7 +95,7 @@ describe("vocational skills MVP contracts", () => {
     expect(providerRegister).toContain("beforeinstallprompt");
     expect(providerRegister).toContain('register("/sw.js?v=20260919-13"');
     expect(providerRegister).toContain("configureProviderPwa");
-    expect(existsSync(resolve(root, "skills/assets/obote-auto-garage.jpg"))).toBe(true);
+     expect(existsSync(resolve(root, "archive/vocational-skills/2026-09-23-v1/source/skills/assets/obote-auto-garage.jpg"))).toBe(true);
     expect(admission).toContain("Highest education level");
     expect(admission).toContain("UGX 20,000");
     expect(admission).not.toContain("simulated");
@@ -117,9 +117,35 @@ describe("vocational skills MVP contracts", () => {
     expect(rules).toContain("match /skills_enrollments/{enrollmentId}");
     expect(rules).toContain("match /skills_admission_payments/{paymentId}");
     expect(rules).toContain("match /skills_provider_payments/{paymentId}");
-    expect(rules).toContain("get(/databases/$(database)/documents/providers/");
+    expect(rules).toContain("allow read: if isSuperAdmin();");
     expect(indexes.indexes.map((index) => index.collectionGroup)).toEqual(
       expect.arrayContaining(["providers", "skills_enrollments"]),
     );
+  });
+
+  it("archives vocational operation while preserving a protected recovery path", () => {
+    const app = read("artifacts/api-server/src/app.ts");
+    const api = read("artifacts/api-server/src/routes/skills.ts");
+    const yo = read("artifacts/api-server/src/routes/yo-payments.ts");
+    const rules = read("firestore.rules");
+    const landing = read("index.html");
+    const manifest = read("archive/vocational-skills/2026-09-23-v1/manifest.json");
+    const restore = read("archive/vocational-skills/2026-09-23-v1/RESTORE.md");
+
+    expect(app).toContain('app.use("/skills", vocationalArchiveResponse)');
+    expect(app).toContain('app.use("/obote", vocationalArchiveResponse)');
+    expect(app).toContain('app.get("/skills-admin.html", vocationalArchiveResponse)');
+    expect(api).toContain("export const VOCATIONAL_SKILLS_ARCHIVED = true");
+    expect(api).toContain('router.get("/skills/archive/manifest"');
+    expect(api).toContain('router.get("/skills/archive/records/:collection"');
+    expect(api).toContain('router.use("/skills", (_req, res)');
+    expect(yo).toContain('ignoredReason: "vocational_feature_archived"');
+    expect(landing).not.toContain("For Vocational Skills");
+    expect(landing).not.toContain("skills-admin.html");
+    expect(rules).toContain("allow read: if isSuperAdmin();");
+    expect(rules).toContain("allow create, update, delete: if false;");
+    expect(manifest).toContain('"status": "archived"');
+    expect(restore).toContain("Future restoration procedure");
+    expect(existsSync(resolve(root, "archive/vocational-skills/2026-09-23-v1/source/skills/assets/obote-auto-garage.jpg"))).toBe(true);
   });
 });

@@ -789,29 +789,24 @@ service cloud.firestore {
       allow delete: if canManageTimetable() && sameSchool(resource.data.institutionId);
     }
 
-    // Vocational training directory. Public visitors may only see approved
-    // providers; all provider writes stay behind the Super Admin API.
+    // Vocational Skills is archived. Records remain readable only to Super
+    // Admins for recovery; no client-side create, update, or delete is allowed.
     match /providers/{providerId} {
-      allow read: if resource.data.status == 'active' || isSuperAdmin();
-      allow create, update, delete: if isSuperAdmin();
+      allow read: if isSuperAdmin();
+      allow create, update, delete: if false;
     }
     match /skills_enrollments/{enrollmentId} {
-      allow create: if signedIn()
-        && request.resource.data.studentId == request.auth.uid
-        && request.resource.data.providerId is string
-        && request.resource.data.referralCode is string
-        && exists(/databases/$(database)/documents/providers/$(request.resource.data.providerId))
-        && get(/databases/$(database)/documents/providers/$(request.resource.data.providerId)).data.status == 'active'
-        && get(/databases/$(database)/documents/providers/$(request.resource.data.providerId)).data.referralCode == request.resource.data.referralCode;
-      allow read: if isSuperAdmin() || signedIn() && resource.data.studentId == request.auth.uid;
-      allow update, delete: if isSuperAdmin();
+      allow read: if isSuperAdmin();
+      allow create, update, delete: if false;
     }
 
     match /skills_admission_payments/{paymentId} {
-      allow read, write: if false;
+      allow read: if isSuperAdmin();
+      allow write: if false;
     }
     match /skills_provider_payments/{paymentId} {
-      allow read, write: if false;
+      allow read: if isSuperAdmin();
+      allow write: if false;
     }
 
     // Preserve access for the existing authenticated application collections.

@@ -834,6 +834,20 @@ async function processWebhook(req: Request, res: Response, failed: boolean) {
       return;
     }
     const vocationalPayment = await settleVocationalPayment(externalRef, failed, body);
+    if (vocationalPayment === "archived") {
+      if (logId) {
+        await firestoreRequest(`/yo_webhook_logs/${encodeURIComponent(logId)}`, {
+          method: "PATCH",
+          body: JSON.stringify(firestoreFields({
+            processed: true,
+            processedAt: now(),
+            ignoredReason: "vocational_feature_archived",
+          })),
+        });
+      }
+      res.status(200).json({ ok: true, processed: false, archivedVocationalPayment: true });
+      return;
+    }
     if (vocationalPayment) {
       if (logId) {
         await firestoreRequest(`/yo_webhook_logs/${encodeURIComponent(logId)}`, {

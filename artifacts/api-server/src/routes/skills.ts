@@ -123,6 +123,35 @@ const VOCATIONAL_ADMISSION_FEE_UGX = 20_000;
 const PROVIDER_VERIFICATION_FEE_UGX = 20_000;
 const defaultYoProductionUrl = "https://paymentsapi1.yo.co.ug/ybs/task.php";
 const defaultYoSandboxUrl = "https://sandbox.yo.co.ug/services/yopaymentsdev/task.php";
+export const VOCATIONAL_SKILLS_ARCHIVED = true;
+const VOCATIONAL_ARCHIVE_COLLECTIONS = [
+  "providers",
+  "skills_enrollments",
+  "skills_admission_payments",
+  "skills_provider_payments",
+  "yo_webhook_logs",
+  "payment_transactions",
+] as const;
+const VOCATIONAL_ARCHIVE_MANIFEST = {
+  archiveVersion: "2026-09-23-v1",
+  feature: "APSHULE Vocational Skills",
+  status: "archived",
+  archivedAt: "2026-09-23T00:00:00.000Z",
+  sourceArchive: "archive/vocational-skills/2026-09-23-v1",
+  recovery: {
+    access: "Super Admin only",
+    mode: "read-only API export; use the documented offline restore process for any future reactivation",
+    collections: VOCATIONAL_ARCHIVE_COLLECTIONS,
+  },
+  snapshotCounts: {
+    providers: 4,
+    skills_enrollments: 1,
+    skills_admission_payments: "not present in supplied snapshot",
+    skills_provider_payments: "not present in supplied snapshot",
+    yo_webhook_logs: "not present in supplied snapshot; live records remain untouched",
+    payment_transactions: "not present in supplied snapshot; shared live records remain untouched",
+  },
+} as const;
 
 function now(): string {
   return new Date().toISOString();
@@ -280,6 +309,54 @@ async function requireSignedIn(req: Request, res: Response): Promise<FirebaseCal
   }
   return caller;
 }
+
+router.get("/skills/archive/manifest", async (req, res) => {
+  const caller = await requireSuperAdmin(req, res);
+  if (!caller) return;
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ ok: true, manifest: VOCATIONAL_ARCHIVE_MANIFEST });
+});
+
+router.get("/skills/archive/records/:collection", async (req, res) => {
+  const caller = await requireSuperAdmin(req, res);
+  if (!caller) return;
+  const collection = cleanText(req.params.collection, 80);
+  if (!VOCATIONAL_ARCHIVE_COLLECTIONS.includes(collection as typeof VOCATIONAL_ARCHIVE_COLLECTIONS[number])) {
+    res.status(404).json({ ok: false, error: "That collection is not part of the vocational archive" });
+    return;
+  }
+  try {
+    const response = await firestoreRequest(
+      `/${encodeURIComponent(collection)}?pageSize=1000`,
+      {},
+      caller.token,
+    ) as { documents?: FirestoreDocument[] };
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      ok: true,
+      archiveVersion: VOCATIONAL_ARCHIVE_MANIFEST.archiveVersion,
+      collection,
+      readOnly: true,
+      records: (response.documents ?? []).map((document) => ({
+        id: documentId(document),
+        ...documentData(document),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Unable to read archived records",
+    });
+  }
+});
+
+router.use("/skills", (_req, res) => {
+  res.status(410).json({
+    ok: false,
+    archived: true,
+    error: "Vocational Skills is archived. New registrations, enrollments, admissions, and payments are disabled.",
+  });
+});
 
 function providerCode(name: string, address: string): string {
   const first = `${name}-${address}`
@@ -938,11 +1015,12 @@ export async function settleVocationalPayment(
   externalRef: string,
   failed: boolean,
   webhookData: Record<string, unknown>,
-): Promise<boolean> {
+): Promise<boolean | "archived"> {
   for (const collection of ["skills_admission_payments", "skills_provider_payments"]) {
     const response = await firestoreRequest(`/${collection}?pageSize=1000`) as { documents?: FirestoreDocument[] };
     const match = (response.documents ?? []).find((document) => documentData(document).externalRef === externalRef);
     if (!match) continue;
+    if (VOCATIONAL_SKILLS_ARCHIVED) return "archived";
     const paymentId = documentId(match);
     const payment = documentData(match);
     if (!failed && payment.status === "confirmed") return true;
