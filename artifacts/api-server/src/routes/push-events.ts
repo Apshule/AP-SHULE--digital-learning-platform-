@@ -1,5 +1,4 @@
 import { Router, type IRouter, type Response } from "express";
-import { sendWebPush } from "../lib/vapid";
 import { isAuthorized } from "../lib/push-secret";
 import {
   loadHistory,
@@ -96,13 +95,7 @@ router.post("/push-events", async (req, res) => {
 
   req.log.info({ type, notified }, "Push event broadcast via SSE");
 
-  const title = type === "success" ? "APSHULE Push ✅" : "APSHULE Push ❌";
-  const body = (type === "success" ? "✅ " : "❌ ") + safeMessage;
-  const { sent, failed } = await sendWebPush(title, body);
-
-  req.log.info({ sent, failed }, "Push event broadcast via Web Push");
-
-  res.json({ ok: true, notified, webPush: { sent, failed } });
+  res.json({ ok: true, notified });
 });
 
 export default router;
