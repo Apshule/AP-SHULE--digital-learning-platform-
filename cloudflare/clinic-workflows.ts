@@ -140,6 +140,88 @@ async function manualPayments(env: AuthEnv, user: AuthUser, ownOnly: boolean): P
   return result.results;
 }
 
+const pharmacySalesSql = `
+  SELECT
+    sale.id,
+    sale.bill_record_id AS billId,
+    sale.patient_id AS patientId,
+    sale.patient_name AS patientName,
+    sale.total_amount AS totalAmount,
+    sale.created_by AS createdBy,
+    sale.created_at AS createdAt,
+    json_extract(bill.record_json, '$.invoiceNumber') AS invoiceNumber,
+    coalesce(json_extract(bill.record_json, '$.status'), 'missing') AS billStatus,
+    coalesce(
+      CAST(json_extract(bill.record_json, '$.balanceRemaining') AS INTEGER),
+      CAST(json_extract(bill.record_json, '$.totalAmount') AS INTEGER),
+      sale.total_amount
+    ) AS balanceRemaining,
+    json_group_array(json_object(
+      'inventoryId', line.inventory_record_id,
+      'name', line.item_name,
+      'quantity', line.quantity,
+      'unitPrice', line.unit_price,
+      'lineTotal', line.line_total
+    )) AS itemsJson
+  FROM clinic_pharmacy_sales AS sale
+  JOIN clinic_pharmacy_sale_items AS line
+    ON line.sale_id = sale.id AND line.institution_id = sale.institution_id
+  LEFT JOIN sector_records AS bill
+    ON bill.id = sale.bill_record_id
+    AND bill.sector = 'clinic'
+    AND bill.institution_id = sale.institution_id
+    AND bill.record_type IN ('billing', 'clinic_billing')
+    AND bill.is_deleted = 0
+`;
+
+async function pharmacySales(env: AuthEnv, institutionId: string, saleId?: string): Promise<RecordData[]> {
+  const filter = saleId ? " AND sale.id=?" : "";
+  const query = `${pharmacySalesSql}
+    WHERE sale.institution_id=?${filter}
+    GROUP BY sale.id, bill.record_json
+    ORDER BY sale.created_at DESC
+    LIMIT ${saleId ? "1" : "100"}`;
+  const result = saleId
+    ? await env.DB.prepare(query).bind(institutionId, saleId).all<RecordData>()
+    : await env.DB.prepare(query).bind(institutionId).all<RecordData>();
+  return result.results.map((row) => {
+    let items: RecordData[] = [];
+    try {
+      const parsed: unknown = JSON.parse(String(row.itemsJson || "[]"));
+      if (Array.isArray(parsed)) items = parsed as RecordData[];
+    } catch {
+      items = [];
+    }
+    items.sort((a, b) => clean(a.name, 160).localeCompare(clean(b.name, 160)));
+    return {
+      id: row.id,
+      billId: row.billId,
+      invoiceNumber: row.invoiceNumber,
+      patientId: row.patientId,
+      patientName: row.patientName,
+      totalAmount: Number(row.totalAmount),
+      currency: "UGX",
+      billStatus: clean(row.billStatus, 32),
+      balanceRemaining: Number(row.balanceRemaining),
+      createdBy: row.createdBy,
+      createdAt: row.createdAt,
+      items,
+    };
+  });
+}
+
+async function existingPharmacySale(
+  env: AuthEnv,
+  institutionId: string,
+  idempotencyKey: string,
+): Promise<{ id: string; requestJson: string } | null> {
+  const result = await env.DB.prepare(
+    "SELECT id,request_json AS requestJson FROM clinic_pharmacy_sales WHERE institution_id=? AND idempotency_key=? LIMIT 1",
+  ).bind(institutionId, idempotencyKey).all<RecordData>();
+  const row = result.results[0];
+  return row ? { id: clean(row.id, 300), requestJson: String(row.requestJson || "") } : null;
+}
+
 export async function handleClinicWorkflowRoute(
   request: Request,
   env: AuthEnv,
@@ -152,6 +234,7 @@ export async function handleClinicWorkflowRoute(
     && !url.pathname.startsWith("/api/clinic/visits")
     && !url.pathname.startsWith("/api/clinic/prescriptions")
     && !url.pathname.startsWith("/api/clinic/inventory")
+    && !url.pathname.startsWith("/api/clinic/pharmacy")
     && !url.pathname.startsWith("/api/clinic/billing")
     && !url.pathname.startsWith("/api/clinic/claims")
     && !url.pathname.startsWith("/api/clinic/reports")) return null;
@@ -163,6 +246,195 @@ export async function handleClinicWorkflowRoute(
 
   if (url.pathname === "/api/clinic/workspace" && request.method === "GET") {
     return json(await workspace(env, user, role as ClinicRole | "superadmin"));
+  }
+
+  if (url.pathname === "/api/clinic/pharmacy/sales" && request.method === "GET") {
+    if (!["clinic_admin", "pharmacist", "superadmin"].includes(role)) {
+      return json({ ok: false, error: "Pharmacy sales access required" }, 403);
+    }
+    return json({ ok: true, sales: await pharmacySales(env, user.institutionId) });
+  }
+
+  if (url.pathname === "/api/clinic/pharmacy/checkout" && request.method === "POST") {
+    if (!["clinic_admin", "pharmacist", "superadmin"].includes(role)) {
+      return json({ ok: false, error: "Pharmacy checkout is restricted" }, 403);
+    }
+    const input = await parseBody(request);
+    const idempotencyKey = clean(input?.idempotencyKey, 180);
+    const requestedPatientId = clean(input?.patientId, 300);
+    if (!input || !idempotencyKey || !requestedPatientId || !Array.isArray(input.items)
+      || input.items.length < 1 || input.items.length > 50) {
+      return json({ ok: false, error: "Patient, checkout key, and 1 to 50 cart items are required" }, 400);
+    }
+
+    const quantities = new Map<string, number>();
+    for (const rawLine of input.items) {
+      if (!rawLine || typeof rawLine !== "object" || Array.isArray(rawLine)) {
+        return json({ ok: false, error: "Each cart item must include an inventory item and quantity" }, 400);
+      }
+      const line = rawLine as RecordData;
+      const inventoryId = clean(line.inventoryId, 300);
+      const quantity = Number(line.quantity);
+      if (!inventoryId || !Number.isSafeInteger(quantity) || quantity <= 0 || quantity > 10000) {
+        return json({ ok: false, error: "Cart quantities must be positive whole numbers no greater than 10,000" }, 400);
+      }
+      const combined = (quantities.get(inventoryId) || 0) + quantity;
+      if (!Number.isSafeInteger(combined) || combined > 10000) {
+        return json({ ok: false, error: "Combined item quantity exceeds the checkout limit" }, 400);
+      }
+      quantities.set(inventoryId, combined);
+    }
+    const normalizedRequest = {
+      patientId: requestedPatientId,
+      items: [...quantities.entries()]
+        .map(([inventoryId, quantity]) => ({ inventoryId, quantity }))
+        .sort((a, b) => a.inventoryId.localeCompare(b.inventoryId)),
+    };
+    const requestJson = JSON.stringify(normalizedRequest);
+    const prior = await existingPharmacySale(env, user.institutionId, idempotencyKey);
+    if (prior) {
+      if (prior.requestJson !== requestJson) {
+        return json({ ok: false, error: "This checkout key was already used for different cart details" }, 409);
+      }
+      const existing = (await pharmacySales(env, user.institutionId, prior.id))[0];
+      return existing
+        ? json({ ok: true, idempotent: true, sale: existing })
+        : json({ ok: false, error: "The earlier checkout exists but its sale details are unavailable" }, 409);
+    }
+
+    const patient = await scopedPatient(env, user, requestedPatientId);
+    if (!patient) return json({ ok: false, error: "Select a patient registered in this clinic" }, 404);
+    const inventory = await list(env, user, "pharmacy_inventory");
+    const inventoryRecords = new Map<string, RecordData>();
+    const lines: Array<{
+      inventoryId: string;
+      name: string;
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    }> = [];
+    for (const requested of normalizedRequest.items) {
+      const item = inventory.find((row) =>
+        clean(row.id, 300) === requested.inventoryId
+        || clean(row.id, 300).endsWith(`/${requested.inventoryId}`),
+      );
+      if (!item) return json({ ok: false, error: "One or more cart items are outside this clinic" }, 404);
+      if (clean(item.status, 40).toLowerCase() === "discontinued") {
+        return json({ ok: false, error: `${clean(item.name, 160) || "An item"} is discontinued` }, 409);
+      }
+      const stock = Number(item.quantityInStock);
+      const unitPrice = Number(item.unitPrice);
+      if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) {
+        return json({ ok: false, error: `Set a positive whole-number UGX price for ${clean(item.name, 160) || "each item"} before checkout` }, 400);
+      }
+      if (!Number.isFinite(stock) || stock < requested.quantity) {
+        return json({ ok: false, error: `Insufficient stock for ${clean(item.name, 160) || "an item"}` }, 409);
+      }
+      const lineTotal = requested.quantity * unitPrice;
+      if (!Number.isSafeInteger(lineTotal) || lineTotal <= 0) {
+        return json({ ok: false, error: "Cart total is outside the supported UGX range" }, 400);
+      }
+      lines.push({
+        inventoryId: clean(item.id, 300),
+        name: clean(item.name, 160),
+        quantity: requested.quantity,
+        unitPrice,
+        lineTotal,
+      });
+      inventoryRecords.set(clean(item.id, 300), item);
+    }
+    const totalAmount = lines.reduce((sum, line) => sum + line.lineTotal, 0);
+    if (!Number.isSafeInteger(totalAmount) || totalAmount <= 0) {
+      return json({ ok: false, error: "Cart total is outside the supported UGX range" }, 400);
+    }
+    for (const line of lines) {
+      const item = inventoryRecords.get(line.inventoryId);
+      if (item) await ensureStored(env, user, "pharmacy_inventory", item);
+    }
+
+    const timestamp = new Date().toISOString();
+    const saleId = makeId("pharmacy_sale");
+    const billId = makeId("bill");
+    const ownerUid = clean(patient.patientUid || patient.userUid || patient.uid, 160) || null;
+    const patientName = clean(patient.fullName || patient.name, 160);
+    const invoiceNumber = `CL-PH-${timestamp.slice(0, 10).replaceAll("-", "")}-${billId.slice(-6).toUpperCase()}`;
+    const bill = {
+      id: billId,
+      recordType: "billing",
+      institutionId: user.institutionId,
+      patientId: clean(patient.id, 300),
+      patientName,
+      invoiceNumber,
+      billDate: timestamp.slice(0, 10),
+      description: `Pharmacy checkout ${saleId}`,
+      items: lines.map((line) => ({
+        description: `${line.name} × ${line.quantity}`,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        amount: line.lineTotal,
+      })),
+      total: totalAmount,
+      totalAmount,
+      amountPaid: 0,
+      balanceRemaining: totalAmount,
+      currency: "UGX",
+      status: "unpaid",
+      pharmacySaleId: saleId,
+      createdAt: timestamp,
+      createdBy: user.uid,
+    };
+    const statements = [
+      env.DB.prepare(
+        `INSERT INTO clinic_pharmacy_sales
+          (id,institution_id,bill_record_id,patient_id,patient_name,owner_uid,idempotency_key,request_json,total_amount,created_by,created_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      ).bind(
+        saleId, user.institutionId, billId, clean(patient.id, 300), patientName, ownerUid,
+        idempotencyKey, requestJson, totalAmount, user.uid, timestamp,
+      ),
+      env.DB.prepare(
+        `INSERT INTO sector_records
+          (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
+         VALUES (?,'clinic',?,NULL,?,'billing',?,?,0,?,?)`,
+      ).bind(billId, user.institutionId, ownerUid, JSON.stringify(bill), user.uid, timestamp, timestamp),
+      ...lines.map((line) => env.DB.prepare(
+        `INSERT INTO clinic_pharmacy_sale_items
+          (id,sale_id,institution_id,inventory_record_id,item_name,quantity,unit_price,line_total,created_at)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+      ).bind(
+        makeId("sale_item"), saleId, user.institutionId, line.inventoryId, line.name,
+        line.quantity, line.unitPrice, line.lineTotal, timestamp,
+      )),
+      env.DB.prepare(
+        `INSERT INTO audit
+          (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at)
+         VALUES (?,?,?,?,?,?,?,?)`,
+      ).bind(
+        makeId("audit"), user.institutionId, user.uid, "clinic.pharmacy.checkout",
+        "pharmacy_sale", saleId, JSON.stringify({ billId, totalAmount, lineCount: lines.length }), timestamp,
+      ),
+    ];
+
+    try {
+      await env.DB.batch(statements);
+    } catch {
+      const raced = await existingPharmacySale(env, user.institutionId, idempotencyKey);
+      if (raced) {
+        if (raced.requestJson !== requestJson) {
+          return json({ ok: false, error: "This checkout key was already used for different cart details" }, 409);
+        }
+        const existing = (await pharmacySales(env, user.institutionId, raced.id))[0];
+        return existing
+          ? json({ ok: true, idempotent: true, sale: existing })
+          : json({ ok: false, error: "The earlier checkout exists but its sale details are unavailable" }, 409);
+      }
+      return json({ ok: false, error: "Checkout was not completed; review current stock and item prices, then retry" }, 409);
+    }
+
+    const sale = (await pharmacySales(env, user.institutionId, saleId))[0];
+    return sale
+      ? json({ ok: true, sale }, 201)
+      : json({ ok: false, error: "Checkout committed but its sale history could not be loaded" }, 500);
   }
 
   if (url.pathname === "/api/clinic/patients" && request.method === "GET") {
@@ -328,14 +600,17 @@ export async function handleClinicWorkflowRoute(
     const name = clean(input.name, 160);
     const quantityInStock = Number(input.quantityInStock);
     const lowStockThreshold = Number(input.lowStockThreshold ?? 5);
-    if (!name || !Number.isFinite(quantityInStock) || quantityInStock < 0 || !Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
-      return json({ ok: false, error: "Item name and non-negative stock/reorder values are required" }, 400);
+    const unitPrice = input.unitPrice === undefined || input.unitPrice === "" ? 0 : Number(input.unitPrice);
+    if (!name || !Number.isFinite(quantityInStock) || quantityInStock < 0
+      || !Number.isFinite(lowStockThreshold) || lowStockThreshold < 0
+      || !Number.isSafeInteger(unitPrice) || unitPrice < 0) {
+      return json({ ok: false, error: "Item name, non-negative stock/reorder values, and a non-negative whole-number UGX price are required" }, 400);
     }
     const item = await save(env, user, "pharmacy_inventory", {
       name, genericName: clean(input.genericName, 160), category: clean(input.category, 100),
       barcode: clean(input.barcode, 80),
       quantityInStock, lowStockThreshold, unit: clean(input.unit, 40) || "unit",
-      unitPrice: Math.max(0, Number(input.unitPrice) || 0), expiryDate: clean(input.expiryDate, 32),
+      unitPrice, expiryDate: clean(input.expiryDate, 32),
       status: "active", createdAt: new Date().toISOString(),
     });
     return json({ ok: true, item }, 201);
@@ -392,6 +667,49 @@ export async function handleClinicWorkflowRoute(
       "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
     ).bind(makeId("audit"), user.institutionId, user.uid, "clinic.stock.adjust", "pharmacy_inventory", recordId, JSON.stringify({ delta }), timestamp).run();
     return json({ ok: true, item: saved.results[0] ? JSON.parse(String(saved.results[0].record_json)) : null });
+  }
+
+  const priceId = url.pathname.match(/^\/api\/clinic\/inventory\/([^/]+)\/price$/)?.[1];
+  if (priceId && request.method === "POST") {
+    if (!["clinic_admin", "pharmacist", "superadmin"].includes(role)) {
+      return json({ ok: false, error: "Pharmacy access required" }, 403);
+    }
+    const input = await parseBody(request);
+    const unitPrice = Number(input?.unitPrice);
+    if (!input || !Number.isSafeInteger(unitPrice) || unitPrice <= 0) {
+      return json({ ok: false, error: "A positive whole-number UGX unit price is required" }, 400);
+    }
+    const id = decodeSegment(priceId);
+    const item = (await list(env, user, "pharmacy_inventory")).find((row) =>
+      clean(row.id, 300) === id || clean(row.id, 300).endsWith(`/${id}`),
+    );
+    if (!item) return json({ ok: false, error: "Inventory item not found" }, 404);
+    if (clean(item.status, 40).toLowerCase() === "discontinued") {
+      return json({ ok: false, error: "Discontinued inventory cannot be repriced" }, 409);
+    }
+    const recordId = clean(item.id, 300);
+    await ensureStored(env, user, "pharmacy_inventory", item);
+    const timestamp = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE sector_records
+         SET record_json=json_set(record_json, '$.unitPrice', ?, '$.updatedAt', ?), updated_at=?
+         WHERE id=? AND sector='clinic' AND institution_id=?
+           AND record_type IN ('pharmacy_inventory', 'clinic_pharmacy_inventory')
+           AND is_deleted=0
+           AND coalesce(json_extract(record_json, '$.status'), 'active') <> 'discontinued'`,
+      ).bind(unitPrice, timestamp, timestamp, recordId, user.institutionId),
+      env.DB.prepare(
+        "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
+      ).bind(
+        makeId("audit"), user.institutionId, user.uid, "clinic.pharmacy.price.update",
+        "pharmacy_inventory", recordId, JSON.stringify({ unitPrice }), timestamp,
+      ),
+    ]);
+    const updated = (await list(env, user, "pharmacy_inventory")).find((row) => clean(row.id, 300) === recordId);
+    return updated
+      ? json({ ok: true, item: updated })
+      : json({ ok: false, error: "Inventory item was not found after its price update" }, 404);
   }
 
   if (url.pathname === "/api/clinic/billing" && request.method === "GET") {

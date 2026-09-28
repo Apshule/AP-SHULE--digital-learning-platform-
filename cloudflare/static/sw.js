@@ -1,4 +1,4 @@
-const CACHE_NAME = "apshule-cloudflare-shell-v7";
+const CACHE_NAME = "apshule-cloudflare-shell-v8";
 const APP_SHELL = ["/", "/clinic/", "/farm/", "/mfi/", "/app.css", "/reset-password.html", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512-maskable.png"];
 
 self.addEventListener("install", (event) => {

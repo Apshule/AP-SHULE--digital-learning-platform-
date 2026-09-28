@@ -119,11 +119,32 @@
             <label>Quantity<input name="quantityInStock" type="number" min="0" step="1" required></label>
             <label>Low-stock threshold<input name="lowStockThreshold" type="number" min="0" step="1" value="5" required></label>
             <label>Unit<input name="unit" maxlength="40" value="unit"></label>
+            <label>Unit price (UGX)<input name="unitPrice" type="number" min="1" step="1" required></label>
             <label>Expiry date<input name="expiryDate" type="date"></label>
             <button class="button" type="submit">Save item</button>
           </form>
         </article>
         <article class="card panel clinic-card"><h2>Inventory</h2><div id="inventory" class="clinic-list"></div></article>
+        <article class="card panel clinic-card">
+          <h2>Pharmacy checkout</h2>
+          <p class="muted">Checkout deducts stock and creates an unpaid itemized UGX bill. Billing staff record payment separately; no gateway is called.</p>
+          <form id="pharmacy-cart-item-form">
+            <label>Product<select id="pharmacy-item" name="itemId" required></select></label>
+            <label>Quantity<input name="quantity" type="number" min="1" step="1" value="1" required></label>
+            <button class="button secondary" type="submit">Add to cart</button>
+          </form>
+          <div id="pharmacy-cart" class="clinic-list" aria-live="polite"></div>
+          <p id="pharmacy-total" class="notice">Cart total: UGX 0</p>
+          <form id="pharmacy-checkout-form">
+            <label>Patient<select id="pharmacy-patient" name="patientId" required></select></label>
+            <div class="button-row">
+              <button class="button" type="submit" id="pharmacy-checkout-submit" disabled>Complete checkout</button>
+              <button class="button secondary" type="button" id="pharmacy-checkout-reset">Clear / start new cart</button>
+            </div>
+          </form>
+          <p class="muted">If a checkout request fails unexpectedly, check Sale history before clearing the cart and starting another.</p>
+        </article>
+        <article class="card panel clinic-card"><h2>Sale history</h2><div id="pharmacy-sales" class="clinic-list"></div></article>
         <article class="card panel clinic-card"><h2>Ready prescriptions</h2><div id="pharmacy-prescriptions" class="clinic-list"></div></article>
         <article class="card panel clinic-card">
           <h2>Adjust stock</h2>
@@ -132,6 +153,12 @@
             <label>Quantity change (+/-)<input name="delta" type="number" step="1" required></label>
             <label>Reason<input name="reason" maxlength="240" required></label>
             <button class="button" type="submit">Apply adjustment</button>
+          </form>
+          <h3>Update item price</h3>
+          <form id="inventory-price-form">
+            <label>Item<select id="inventory-price-item" name="itemId" required></select></label>
+            <label>Unit price (UGX)<input name="unitPrice" type="number" min="1" step="1" required></label>
+            <button class="button secondary" type="submit">Save price</button>
           </form>
         </article>
         <article class="card panel clinic-card">
@@ -208,6 +235,7 @@
     const $ = (id) => document.getElementById(id);
     let state = {};
     let currentRole = "";
+    let pharmacyCart = [];
     const tabDefinitions = [
       ["patients", "Patients", ["clinic_admin","doctor","nurse","receptionist","pharmacist","superadmin"]],
       ["appointments", "Appointments", ["clinic_admin","doctor","nurse","receptionist","patient","superadmin"]],
@@ -255,9 +283,39 @@
       }
       if ([...select.options].some((item) => item.value === current)) select.value = current;
     }
+    function populateInventorySelect(id) {
+      const select = $(id); const current = select.value; select.replaceChildren();
+      const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "Select inventory item"; select.append(placeholder);
+      for (const item of state.inventory || []) {
+        const stock = Number(item.quantityInStock || 0); const price = Number(item.unitPrice || 0);
+        const option = document.createElement("option"); option.value = item.id;
+        option.textContent = `${item.name || "Item"} · ${stock} ${item.unit || "unit"} · ${price > 0 ? `UGX ${price.toLocaleString()}` : "price not set"}`;
+        option.disabled = String(item.status || "").toLowerCase() === "discontinued"
+          || id === "pharmacy-item" && (stock <= 0 || !Number.isSafeInteger(price) || price <= 0);
+        select.append(option);
+      }
+      if ([...select.options].some((item) => item.value === current)) select.value = current;
+    }
+    function renderPharmacyCart() {
+      const container = $("pharmacy-cart"); container.replaceChildren();
+      let total = 0;
+      for (const line of pharmacyCart) {
+        const item = (state.inventory || []).find((record) => String(record.id) === line.inventoryId);
+        const name = item?.name || "Unavailable item";
+        const unitPrice = Number(item?.unitPrice || 0);
+        const lineTotal = Number.isSafeInteger(unitPrice) ? unitPrice * line.quantity : 0;
+        total += lineTotal;
+        itemRow(container, `${name} × ${line.quantity}`,
+          `UGX ${unitPrice.toLocaleString()} each · ${Number(item?.quantityInStock || 0)} in stock · line UGX ${lineTotal.toLocaleString()}`,
+          "Remove", () => { pharmacyCart = pharmacyCart.filter((entry) => entry.inventoryId !== line.inventoryId); renderPharmacyCart(); });
+      }
+      if (!pharmacyCart.length) addText(container, "Cart is empty.", "p");
+      $("pharmacy-total").textContent = `Cart total: UGX ${total.toLocaleString()}`;
+      $("pharmacy-checkout-submit").disabled = !pharmacyCart.length || !$("pharmacy-patient").value;
+    }
     function renderRecords() {
       const patients = state.patients || [];
-      for (const id of ["appointment-patient","visit-patient","prescription-patient","bill-patient","claim-patient"]) setSelect(id, patients);
+      for (const id of ["appointment-patient","visit-patient","prescription-patient","bill-patient","claim-patient","pharmacy-patient"]) setSelect(id, patients);
       setBillSelect("payment-bill", state.billing || []);
       setBillSelect("claim-bill", state.billing || [], true);
       $("patients").replaceChildren();
@@ -289,13 +347,19 @@
           });
       }
       $("inventory").replaceChildren();
-      const adjustSelect = $("inventory-adjust-item"); const previousItem = adjustSelect.value; adjustSelect.replaceChildren();
-      for (const item of state.inventory || []) { const option = document.createElement("option"); option.value = item.id; option.textContent = `${item.name} · ${item.quantityInStock || 0} ${item.unit || "unit"}`; adjustSelect.append(option); }
-      if ([...adjustSelect.options].some((option) => option.value === previousItem)) adjustSelect.value = previousItem;
+      for (const id of ["inventory-adjust-item", "inventory-price-item", "pharmacy-item"]) populateInventorySelect(id);
       for (const item of state.inventory || []) {
         const low = Number(item.quantityInStock || 0) <= Number(item.lowStockThreshold || 0);
-        itemRow($("inventory"), item.name, `${item.quantityInStock || 0} ${item.unit || "unit"} · ${item.category || "uncategorized"}${low ? " · LOW STOCK" : ""}${item.expiryDate ? ` · expires ${item.expiryDate}` : ""}`);
+        itemRow($("inventory"), item.name, `${item.quantityInStock || 0} ${item.unit || "unit"} · UGX ${Number(item.unitPrice || 0).toLocaleString()} each · ${item.category || "uncategorized"}${low ? " · LOW STOCK" : ""}${item.expiryDate ? ` · expires ${item.expiryDate}` : ""}`);
       }
+      $("pharmacy-sales").replaceChildren();
+      for (const sale of state.pharmacySales || []) {
+        const products = (sale.items || []).map((line) => `${line.name} × ${line.quantity}`).join(", ");
+        itemRow($("pharmacy-sales"), `${sale.invoiceNumber || sale.billId} · ${sale.patientName || "Patient"}`,
+          `${String(sale.createdAt || "").slice(0,16)} · UGX ${Number(sale.totalAmount || 0).toLocaleString()} · bill ${sale.billStatus || "unknown"} · balance UGX ${Number(sale.balanceRemaining || 0).toLocaleString()} · ${products}`);
+      }
+      if (!(state.pharmacySales || []).length) addText($("pharmacy-sales"), "No pharmacy sales recorded yet.", "p");
+      renderPharmacyCart();
       $("portal-visits").replaceChildren();
       for (const item of state.visits || []) itemRow($("portal-visits"), item.visitDate || "Visit", item.symptoms || "");
       $("portal-prescriptions").replaceChildren();
@@ -386,6 +450,11 @@
       showStatus("Loading clinic records…");
       try {
         state = await api("/api/clinic/workspace", { method: "GET", headers: {} });
+        state.pharmacySales = [];
+        if (["clinic_admin","pharmacist","superadmin"].includes(currentRole)) {
+          const history = await api("/api/clinic/pharmacy/sales", { method: "GET", headers: {} });
+          state.pharmacySales = history.sales || [];
+        }
         renderRecords(); showStatus("Clinic records loaded.", "success");
       } catch (error) { showStatus(error.message, "error"); }
     }
@@ -405,6 +474,61 @@
       })();
     });
     $("inventory-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/inventory", "Pharmacy item saved."); });
+    $("pharmacy-cart-item-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const raw = formObject(event.currentTarget);
+      const quantity = Number(raw.quantity);
+      const item = (state.inventory || []).find((record) => String(record.id) === raw.itemId);
+      if (!item || !Number.isSafeInteger(quantity) || quantity <= 0) { showStatus("Choose an item and a positive whole-number quantity.", "error"); return; }
+      if (String(item.status || "").toLowerCase() === "discontinued") { showStatus("Discontinued inventory cannot be sold.", "error"); return; }
+      const unitPrice = Number(item.unitPrice);
+      if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) { showStatus("Set a positive whole-number UGX price before adding this item.", "error"); return; }
+      const current = pharmacyCart.find((line) => line.inventoryId === String(item.id));
+      const nextQuantity = (current?.quantity || 0) + quantity;
+      if (!Number.isSafeInteger(nextQuantity) || nextQuantity > Number(item.quantityInStock || 0)) {
+        showStatus(`Only ${Number(item.quantityInStock || 0)} ${item.unit || "unit"} currently in stock.`, "error"); return;
+      }
+      if (current) current.quantity = nextQuantity;
+      else pharmacyCart.push({ inventoryId: String(item.id), quantity });
+      event.currentTarget.reset(); renderPharmacyCart(); showStatus("Item added to the cart.", "success");
+    });
+    $("pharmacy-patient").addEventListener("change", renderPharmacyCart);
+    $("pharmacy-checkout-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget; const raw = formObject(form);
+      if (!pharmacyCart.length || !raw.patientId) { showStatus("Choose a patient and add at least one cart item.", "error"); return; }
+      if (!form.dataset.idempotencyKey) form.dataset.idempotencyKey = crypto.randomUUID();
+      $("pharmacy-checkout-submit").disabled = true;
+      try {
+        const result = await api("/api/clinic/pharmacy/checkout", {
+          method: "POST",
+          body: JSON.stringify({ patientId: raw.patientId, items: pharmacyCart, idempotencyKey: form.dataset.idempotencyKey }),
+        });
+        pharmacyCart = []; form.reset(); delete form.dataset.idempotencyKey; $("pharmacy-cart-item-form").reset();
+        await load();
+        showStatus(result.idempotent
+          ? "Earlier checkout confirmed. The unpaid bill is in sale history."
+          : "Checkout complete. Stock was deducted and an unpaid bill was created; no payment was recorded.", "success");
+      } catch (error) {
+        await load();
+        showStatus(error.message, "error");
+      }
+    });
+    $("pharmacy-checkout-reset").addEventListener("click", () => {
+      pharmacyCart = []; $("pharmacy-checkout-form").reset(); delete $("pharmacy-checkout-form").dataset.idempotencyKey;
+      $("pharmacy-cart-item-form").reset(); renderPharmacyCart();
+      showStatus("Cart cleared. Check Sale history before starting another checkout if an earlier request may have completed.", "success");
+    });
+    $("inventory-price-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget; const raw = formObject(form);
+      try {
+        await api(`/api/clinic/inventory/${encodeURIComponent(raw.itemId)}/price`, {
+          method: "POST", body: JSON.stringify({ unitPrice: Number(raw.unitPrice) }),
+        });
+        form.reset(); await load(); showStatus("Item price updated.", "success");
+      } catch (error) { showStatus(error.message, "error"); }
+    });
     $("inventory-adjust-form").addEventListener("submit", async (event) => {
       event.preventDefault(); const form = event.currentTarget; const raw = formObject(form);
       if (!form.dataset.idempotencyKey) form.dataset.idempotencyKey = crypto.randomUUID();

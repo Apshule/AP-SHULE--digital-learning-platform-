@@ -163,7 +163,7 @@
     request("/api/auth/session", { method: "GET", headers: {} })
       .then((result) => { if (result.user?.role) finishSignIn(result.user); })
       .catch(() => {});
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-farm-feed-v1").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-clinic-pharmacy-v1").catch(() => {});
   </script>
 </body>
 </html>
