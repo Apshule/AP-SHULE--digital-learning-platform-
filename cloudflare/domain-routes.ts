@@ -382,6 +382,9 @@ function educationRoute(pathname: string): { type: string; recordId: string } | 
 
 function educationCapabilitiesFor(type: string, user: AuthUser): { read: string; write: string } {
   const currentRole = effectiveRole(user, "education");
+  if (["learner", "student"].includes(type)) {
+    return { read: "students.read", write: currentRole === "headteacher" ? "students.secondary.manage" : "students.manage" };
+  }
   if (["marks", "academic_mark", "grading"].includes(type)) return { read: "marks.manage", write: type === "grading" ? "grading.manage" : "marks.manage" };
   if (type === "teacher_assignment") return { read: "teacher_assignments.manage", write: "teacher_assignments.manage" };
   if (type === "class") return { read: "students.read", write: currentRole === "secretary" ? "students.manage" : "classes.manage" };

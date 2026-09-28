@@ -31,10 +31,10 @@
     const $ = (id) => document.getElementById(id);
     let workspace = null;
     let activeUser = null;
-    const cap = (name) => (workspace?.capabilities || []).includes(name);
+    const cap = (name) => (workspace?.capabilities || []).some((value) => value === name || value === "*");
     const showStatus = (text, kind = "") => { $("status").textContent = text; $("status").className = `notice ${kind}`; };
     async function request(path, options = {}) {
-      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const response = await fetch(path, { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
       return data;
@@ -68,9 +68,29 @@
       const form = document.createElement("form"); form.className = "form-grid";
       for (const field of fields) {
         const wrap = document.createElement("div");
-        const label = document.createElement("label"); label.textContent = field.label; label.htmlFor = field.name;
-        const input = document.createElement("input"); input.id = field.name; input.name = field.name; input.type = field.type || "text"; input.required = field.required !== false;
-        if (field.type === "number") input.min = "0";
+        const fieldId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${field.name}`;
+        const label = document.createElement("label"); label.textContent = field.label; label.htmlFor = fieldId;
+        let input;
+        if (field.options) {
+          input = document.createElement("select");
+          for (const option of field.options) {
+            const item = document.createElement("option");
+            item.value = option.value; item.textContent = option.label; input.append(item);
+          }
+        } else if (field.multiline) {
+          input = document.createElement("textarea");
+          input.rows = field.rows || 3;
+        } else {
+          input = document.createElement("input");
+          input.type = field.type || "text";
+          if (field.min != null) input.min = String(field.min);
+          if (field.max != null) input.max = String(field.max);
+          if (field.step != null) input.step = String(field.step);
+        }
+        input.id = fieldId; input.name = field.name; input.required = field.required !== false;
+        if (field.maxLength) input.maxLength = field.maxLength;
+        if (field.placeholder) input.placeholder = field.placeholder;
+        if (field.value != null) input.value = field.value;
         wrap.append(label, input); form.append(wrap);
       }
       const button = document.createElement("button"); button.className = "button"; button.type = "submit"; button.textContent = submitLabel; form.append(button);
@@ -78,7 +98,11 @@
         event.preventDefault();
         const values = Object.fromEntries(new FormData(form).entries());
         try {
-          await request(endpoint, { method: "POST", body: JSON.stringify(mapValues(values)) });
+          const mapped = mapValues ? mapValues(values) : Object.fromEntries(Object.entries(values).map(([key, value]) => {
+            const field = fields.find((item) => item.name === key);
+            return [key, field?.type === "number" && value !== "" ? Number(value) : value];
+          }));
+          await request(endpoint, { method: "POST", body: JSON.stringify(mapped) });
           form.reset(); showStatus(`${title} saved.`, "success"); await loadWorkspace();
         } catch (error) { showStatus(error.message, "error"); }
       });
@@ -86,27 +110,90 @@
     }
     function renderActions() {
       $("actions").replaceChildren();
-      if (cap("students.manage")) {
+      if (cap("students.manage") || cap("students.secondary.manage")) {
         addForm("Add learner", [
-          { name: "name", label: "Learner name" }, { name: "studentNumber", label: "Student number" },
-          { name: "className", label: "Class", required: false },
+          { name: "name", label: "Learner name", maxLength: 160 }, { name: "studentNumber", label: "Student number", maxLength: 80 },
+          { name: "className", label: "Class", required: false, maxLength: 100 },
         ], "/api/school/learners", (v) => ({ name: v.name, studentNumber: v.studentNumber, className: v.className }));
+      }
+      if (cap("classes.manage") || String(workspace?.role).toLowerCase() === "secretary") {
+        addForm("Add class", [
+          { name: "name", label: "Class name", maxLength: 100 }, { name: "level", label: "Level", required: false, maxLength: 80 },
+          { name: "academicYear", label: "Academic year", required: false, maxLength: 40 },
+        ], "/api/school/classes");
+      }
+      if (cap("subjects.manage") || String(workspace?.role).toLowerCase() === "secretary") {
+        addForm("Add subject", [
+          { name: "name", label: "Subject", maxLength: 120 }, { name: "code", label: "Subject code", required: false, maxLength: 40 },
+          { name: "className", label: "Class", required: false, maxLength: 100 },
+        ], "/api/school/subjects");
+      }
+      if (cap("admissions.manage")) {
+        addForm("Record an admission", [
+          { name: "fullName", label: "Learner name", maxLength: 160 }, { name: "phone", label: "Guardian phone", type: "tel", maxLength: 80 },
+          { name: "className", label: "Class applied for", maxLength: 100 }, { name: "previousSchool", label: "Previous school", required: false, maxLength: 160 },
+        ], "/api/school/admissions");
+      }
+      if (cap("attendance.manage")) {
+        addForm("Record attendance", [
+          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "className", label: "Class", maxLength: 100 },
+          { name: "date", label: "Date", type: "date" },
+          { name: "status", label: "Status", options: [{ value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "late", label: "Late" }, { value: "excused", label: "Excused" }] },
+        ], "/api/school/attendance");
       }
       if (cap("marks.manage")) {
         addForm("Record a mark", [
-          { name: "learnerId", label: "Learner ID" }, { name: "subject", label: "Subject" },
-          { name: "score", label: "Score", type: "number" }, { name: "term", label: "Term", required: false },
+          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "subject", label: "Subject", maxLength: 120 },
+          { name: "score", label: "Score (%)", type: "number", min: 0, max: 100, step: "0.01" }, { name: "term", label: "Term", required: false, maxLength: 80 },
         ], "/api/school/academic/marks", (v) => ({ learnerId: v.learnerId, subject: v.subject, score: Number(v.score), term: v.term }));
+      }
+      if (cap("grading.manage")) {
+        addForm("Set a grading band", [
+          { name: "gradeName", label: "Grade label", maxLength: 40 }, { name: "minimumScore", label: "Minimum score", type: "number", min: 0, max: 100, step: "0.01" },
+          { name: "maximumScore", label: "Maximum score", type: "number", min: 0, max: 100, step: "0.01" }, { name: "remarks", label: "Remarks", required: false, maxLength: 160 },
+        ], "/api/school/academic/grading", (v) => ({ gradeName: v.gradeName, minimumScore: Number(v.minimumScore), maximumScore: Number(v.maximumScore), remarks: v.remarks }));
+      }
+      if (cap("teacher_assignments.manage")) {
+        addForm("Assign a teacher", [
+          { name: "teacherUid", label: "Teacher account UID", maxLength: 160 }, { name: "teacherName", label: "Teacher name", maxLength: 160 },
+          { name: "className", label: "Class", maxLength: 100 }, { name: "subject", label: "Subject", maxLength: 120 },
+        ], "/api/school/teachers/assignments");
+      }
+      if (cap("id_cards.manage")) {
+        addForm("Prepare learner ID record", [
+          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "fullName", label: "Learner name", maxLength: 160 },
+          { name: "studentNumber", label: "Student number", maxLength: 80 }, { name: "className", label: "Class", required: false, maxLength: 100 },
+        ], "/api/school/id-cards");
+      }
+      if (cap("communications.manage")) {
+        addForm("Create a school communication", [
+          { name: "title", label: "Title", maxLength: 160 }, { name: "audience", label: "Audience", maxLength: 100 },
+          { name: "message", label: "Message", multiline: true, maxLength: 2000 },
+        ], "/api/school/communications");
+      }
+      if (cap("fees.manage")) {
+        addForm("Add a fee record", [
+          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "description", label: "Fee description", maxLength: 160 },
+          { name: "amount", label: "Amount (UGX)", type: "number", min: 1, step: 1 }, { name: "dueDate", label: "Due date", type: "date" },
+        ], "/api/school/bursar/fees", (v) => ({ learnerId: v.learnerId, description: v.description, amount: Number(v.amount), dueDate: v.dueDate }));
       }
       if (cap("payments.manage")) {
         addForm("Record a pending payment", [
-          { name: "amount", label: "Amount (UGX)", type: "number" }, { name: "idempotencyKey", label: "Receipt or unique reference" },
+          { name: "amount", label: "Amount (UGX)", type: "number", min: 1, step: 1 }, { name: "idempotencyKey", label: "Receipt or unique reference", maxLength: 200 },
         ], "/api/school/bursar/payments", (v) => ({ amount: Number(v.amount), idempotencyKey: v.idempotencyKey }));
+      }
+      if (cap("statements.manage")) {
+        addForm("Create a bursar statement", [
+          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "period", label: "Statement period", maxLength: 80 },
+          { name: "openingBalance", label: "Opening balance (UGX)", type: "number", min: 0, step: 1 },
+          { name: "balance", label: "Closing balance (UGX)", type: "number", min: 0, step: 1 },
+        ], "/api/school/bursar/statements", (v) => ({ learnerId: v.learnerId, period: v.period, openingBalance: Number(v.openingBalance), balance: Number(v.balance) }));
       }
       if (cap("reconciliation.manage")) {
         addForm("Add reconciliation note", [
-          { name: "title", label: "Title" }, { name: "reference", label: "Statement or receipt reference" },
-        ], "/api/school/bursar/reconciliation", (v) => ({ title: v.title, reference: v.reference }));
+          { name: "title", label: "Title", maxLength: 160 }, { name: "reference", label: "Statement or receipt reference", maxLength: 160 },
+          { name: "notes", label: "Notes", multiline: true, required: false, maxLength: 1000 },
+        ], "/api/school/bursar/reconciliation");
       }
     }
     async function loadWorkspace() {

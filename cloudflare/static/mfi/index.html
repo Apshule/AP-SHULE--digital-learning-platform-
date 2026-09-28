@@ -6,22 +6,24 @@
   <title>MFI workspace</title>
   <style>
     :root{font-family:system-ui,sans-serif;color:#17324d;background:#f5f8fb}body{max-width:1100px;margin:0 auto;padding:1rem}
-    main{background:#fff;border:1px solid #d8e2eb;border-radius:12px;padding:1.25rem}h1{margin:.1rem 0}.muted{color:#60758a}
+    .shell{max-width:1100px;margin:0 auto}header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem}.brand{font-weight:800;color:#1b5e87;text-decoration:none}header nav{display:flex;align-items:center;gap:.5rem}header a,header button{font-size:.9rem}main{background:#fff;border:1px solid #d8e2eb;border-radius:12px;padding:1.25rem}h1{margin:.1rem 0}.muted{color:#60758a}
     .notice{background:#fff6df;border-left:4px solid #d99b16;padding:.7rem 1rem;margin:1rem 0}.error{color:#9b1c1c;background:#fff0f0;padding:.65rem;border-radius:6px}
     section{border-top:1px solid #e1e8ee;margin-top:1.25rem;padding-top:1rem}form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.65rem}
     label{display:flex;flex-direction:column;gap:.2rem;font-weight:600;font-size:.9rem}input,select,textarea,button{font:inherit;padding:.5rem;border:1px solid #bccbd7;border-radius:6px}textarea{min-height:4rem}
     button{background:#1b5e87;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.55;cursor:wait}.full{grid-column:1/-1}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem}.card{border:1px solid #d8e2eb;border-radius:8px;padding:.75rem}.card h3{margin:.1rem 0 .5rem;font-size:1rem}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-top:1rem}.metric{padding:.8rem;border:1px solid #d8e2eb;border-radius:8px;background:#f9fbfd}.metric strong,.metric span{display:block}.metric strong{font-size:1.3rem;color:#1b5e87}.metric span{font-size:.8rem;color:#60758a}
     ul{padding-left:1.2rem}.state{padding:.6rem 0}
   </style>
 </head>
-<body><main>
+<body><div class="shell"><header><a class="brand" href="/">APSHULE · Microfinance</a><nav aria-label="Account"><a href="/profile.html">Profile</a><button id="logout" type="button">Sign out</button></nav></header><main>
   <h1>MFI workspace</h1>
   <p id="identity" class="muted">Loading workspace…</p>
   <div class="notice">Online gateway initiation and manual repayment recording are disabled in this slice. This page does not mutate schedules or balances.</div>
   <div id="error" class="error" hidden></div>
   <div id="busy" class="state muted">Loading…</div>
   <div id="app" hidden>
+    <div id="metrics" class="metrics" aria-label="Microfinance record counts"></div>
     <section id="kycSection" hidden>
       <h2>Borrower / KYC</h2><p id="kycHint" class="muted"></p>
       <form id="kycForm">
@@ -55,7 +57,7 @@
     </section>
     <section><h2>Read-only records</h2><div id="lists" class="grid"></div></section>
   </div>
-</main>
+</main></div>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -64,9 +66,9 @@
   const formData = (form) => Object.fromEntries(new FormData(form).entries());
   function showError(message) { $("error").textContent = message; $("error").hidden = !message; }
   async function api(path, options = {}) {
-    const response = await fetch(new URL("/api/mfi/" + path, "https://appshule.com"), { ...options, headers: { "content-type":"application/json", ...(options.headers || {}) } });
+    const response = await fetch("/api/mfi/" + path, { credentials:"same-origin", ...options, headers: { "content-type":"application/json", ...(options.headers || {}) } });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+    if (!response.ok || data.ok === false) { const error = new Error(data.error || `Request failed (${response.status})`); error.status = response.status; throw error; }
     return data;
   }
   function list(title, values) {
@@ -79,6 +81,20 @@
   function render(data) {
     state.workspace = data; const role = String(data.role || "").toLowerCase();
     $("identity").textContent = `Role: ${role || "unknown"} · Tenant: ${data.institutionId || "not shown"}`;
+    const metrics = [
+      ["Borrowers", data.borrowers],
+      ["Loan products", data.products],
+      ["Applications", data.applications],
+      ["Loans", data.loans],
+      ["Schedule entries", data.schedules],
+      ["Repayments", data.repayments],
+    ];
+    $("metrics").replaceChildren(...metrics.map(([label, records]) => {
+      const card = document.createElement("div"); card.className = "metric";
+      const count = document.createElement("strong"); count.textContent = String(Array.isArray(records) ? records.length : 0);
+      const name = document.createElement("span"); name.textContent = label;
+      card.append(count, name); return card;
+    }));
     const staff = ["mfi_admin","loan_officer","loan_manager","superadmin"].includes(role);
     $("kycSection").hidden = !staff;
     $("kycHint").textContent = staff ? "Staff may add a borrower; married borrowers require spouse details." : "Borrower records are read-only here.";
@@ -108,7 +124,7 @@
         data.approvals = approvals.records || [];
       }
       render(data); $("app").hidden = false;
-    } catch (error) { showError(error.message); } finally { $("busy").hidden = true; }
+    } catch (error) { showError(error.message); if (error.status === 401) location.replace("/"); } finally { $("busy").hidden = true; }
   }
   async function mutate(path, form, success) {
     const button = form.querySelector("button[type=submit],button:not([type])"); button.disabled = true; showError("");
@@ -120,6 +136,7 @@
   $("previewBtn").addEventListener("click", async () => {
     try { const data = await api("preview", { method:"POST", body:JSON.stringify(formData($("applicationForm"))) }); $("preview").textContent = JSON.stringify(data.preview, null, 2); $("preview").hidden = false; showError(""); } catch (error) { showError(error.message); }
   });
+  $("logout").addEventListener("click", async () => { try { await fetch("/api/auth/logout", { method:"POST", credentials:"same-origin" }); } finally { location.assign("/"); } });
   refresh();
 })();
 </script>

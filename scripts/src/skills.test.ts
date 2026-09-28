@@ -54,7 +54,7 @@ describe("APSHULE Skills Cloudflare frontend", () => {
     expect(stage).toContain('"skills-enroll.html"');
     expect(stage).toContain('"provider-register.html"');
     expect(read("skills/styles.css")).toContain("--plum-dark: #35172f");
-    expect(read("cloudflare/static/skills/api-config.js")).toContain("https://appshule.com");
+    expect(read("cloudflare/static/skills/api-config.js")).toContain('window.APSHULE_API_BASE = "";');
   });
 
   it("retains the D1 provider API and explicit static route boundary", () => {

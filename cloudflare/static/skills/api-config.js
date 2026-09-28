@@ -1,1 +1,1 @@
-window.APSHULE_API_BASE = "https://appshule.com";
+window.APSHULE_API_BASE = "";

@@ -15,6 +15,16 @@
     <main>
       <div class="section-title"><div><p class="eyebrow">Access control</p><h1>Manage accounts and roles</h1><p class="muted">New users must complete a password reset before signing in.</p></div><div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary">Refresh</button></div></div>
       <section class="card panel">
+        <h2>Sector workspaces</h2>
+        <p class="muted">Open a sector workspace to review tenant-scoped records and available controls. Sector-specific permissions still apply.</p>
+        <nav class="workspace-shortcuts" aria-label="Sector workspaces">
+          <a class="workspace-shortcut" href="/education/"><strong>Education</strong><span>School operations</span></a>
+          <a class="workspace-shortcut" href="/clinic/"><strong>Clinic & pharmacy</strong><span>Care and dispensary operations</span></a>
+          <a class="workspace-shortcut" href="/farm/"><strong>Farm</strong><span>Farm operations and inventory</span></a>
+          <a class="workspace-shortcut" href="/mfi/"><strong>Microfinance</strong><span>Borrower and loan workflows</span></a>
+        </nav>
+      </section>
+      <section class="card panel">
         <h2>Create a user</h2>
         <form id="create-user" class="grid">
           <div><label for="email">Email</label><input id="email" name="email" type="email" required></div>
@@ -49,10 +59,17 @@
       <p id="status" class="notice" role="status" aria-live="polite"></p>
     </main>
   </div>
+  <style>
+    .workspace-shortcuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+    .workspace-shortcut{display:grid;gap:5px;padding:15px;border:1px solid #e4deef;border-radius:12px;color:#33234e;text-decoration:none;background:#fff}
+    .workspace-shortcut:hover{border-color:#7b5fcf;background:#faf8ff}
+    .workspace-shortcut:focus-visible{outline:3px solid #ffb673;outline-offset:2px}
+    .workspace-shortcut strong{font-size:14px}.workspace-shortcut span{color:#71677f;font-size:12px}
+  </style>
   <script>
     const $ = (id) => document.getElementById(id);
     async function request(path, options = {}) {
-      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const response = await fetch(path, { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
       return data;

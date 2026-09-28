@@ -50,7 +50,7 @@
     }
     function status(text, kind = "") { $("status").textContent = text; $("status").className = `notice ${kind}`; }
     async function request(path, options = {}) {
-      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const response = await fetch(path, { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
       return data;

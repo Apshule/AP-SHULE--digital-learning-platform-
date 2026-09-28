@@ -46,7 +46,7 @@
       errorBanner.hidden = true;
       var payload = Object.fromEntries(new FormData(contactForm).entries());
 
-      fetch("https://appshule.com/api/tech/contact", {
+      fetch("/api/tech/contact", {
         method: "POST",
         body: JSON.stringify(payload),
         headers: { "Accept": "application/json", "Content-Type": "application/json" }

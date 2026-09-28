@@ -5,6 +5,9 @@
   <title>Farm workspace</title><link rel="stylesheet" href="/app.css">
   <style>
     .farm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+    .farm-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+    .farm-metric{padding:14px;border:1px solid #e0e8e2;border-radius:12px;background:#fff}
+    .farm-metric strong{display:block;color:#123b35;font-size:1.45rem}.farm-metric span{color:#586862;font-size:.82rem}
     .farm-card form{display:grid;gap:10px}.farm-card input,.farm-card select{width:100%;box-sizing:border-box}
     .farm-list{display:grid;gap:8px}.farm-row{border:1px solid #dbe4df;border-radius:10px;padding:10px}
     .farm-row strong{display:block}.farm-row small{color:#586862;overflow-wrap:anywhere}
@@ -12,11 +15,13 @@
     .farm-empty{color:#586862;font-style:italic}.hidden{display:none!important}
   </style>
 </head>
-<body><div class="shell"><header class="topbar"><a class="brand" href="/">APSHULE</a><span id="role" class="badge">Loading account</span></header>
+<body><div class="shell"><header class="topbar"><a class="brand" href="/">APSHULE</a><div class="button-row"><span id="role" class="badge">Loading account</span><a class="button secondary" href="/profile.html">Profile</a><button id="logout" class="button secondary" type="button">Sign out</button></div></header>
 <main>
   <div class="section-title"><div><p class="eyebrow">Farm operations</p><h1>Farm workspace</h1><p id="scope" class="muted"></p></div><button id="refresh" class="button secondary" type="button">Refresh</button></div>
   <p id="status" class="notice" role="status" aria-live="polite">Loading Farm records…</p>
+  <p id="connectivity" class="farm-note" role="status" aria-live="polite"></p>
   <p class="farm-note">This first Cloudflare Farm slice is partial: produce, sales, expenses, camera operations, and biometric attendance are not available here. Feed use is recorded online only and is not queued while offline.</p>
+  <section id="metrics" class="farm-metrics" aria-label="Farm operational totals"></section>
   <section id="forms" class="farm-grid hidden">
     <article id="animal-card" class="card panel farm-card"><h2>Register animal</h2><form id="animal-form">
       <label>Name / tag<input name="name" maxlength="160" required></label><label>Animal type<input name="animalType" maxlength="80" required></label>
@@ -42,7 +47,7 @@
       <label>Feed item<select name="itemId" id="feed-item" required></select></label>
       <label>Quantity used<input name="quantity" type="number" min="0.001" max="1000000" step="0.001" required></label>
       <label>Notes (optional)<input name="notes" maxlength="500"></label>
-      <input type="hidden" name="operationId"><button class="button">Record feed use</button>
+      <input type="hidden" name="operationId"><button id="feed-submit" class="button">Record feed use</button>
     </form></article>
     <article id="feed-unavailable-card" class="card panel farm-card hidden"><h2>Feed use</h2><p class="muted">Feed recording is unavailable until Farm stock protection is enabled.</p></article>
   </section>
@@ -61,13 +66,13 @@
   const allowed={admin:["farm_admin","superadmin"],manager:["farm_admin","farm_manager","superadmin"],worker:["farm_admin","farm_manager","farm_worker","superadmin"]};
   const can=kind=>allowed[kind].includes(role);
   function status(text,error=false){$("status").textContent=text;$("status").className=error?"notice farm-error":"notice";}
-  async function api(path,options={}){const r=await fetch(new URL(path,"https://appshule.com"),{credentials:"same-origin",...options,headers:{"content-type":"application/json",...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw Error(d.error||`Request failed (${r.status})`);return d;}
+  async function api(path,options={}){const r=await fetch(path,{credentials:"same-origin",...options,headers:{"content-type":"application/json",...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false){const error=Error(d.error||`Request failed (${r.status})`);error.status=r.status;throw error;}return d;}
   function formData(form){return Object.fromEntries(new FormData(form).entries());}
   function renderList(id,rows,title){const box=$(id);box.replaceChildren();if(!rows?.length){const e=document.createElement("p");e.className="farm-empty";e.textContent=`No ${title} yet.`;box.append(e);return}for(const row of rows){const a=document.createElement("div");a.className="farm-row";const strong=document.createElement("strong");strong.textContent=row.name||row.itemName||row.animalType||row.movementType||row.status||title;const small=document.createElement("small");small.textContent=JSON.stringify(row);a.append(strong,small);box.append(a);}}
-  function render(){renderList("animals",state.animals,"animals");renderList("movements",state.movements,"movements");renderList("attendance",state.attendance,"attendance");renderList("eggs",state.eggs,"egg collections");renderList("inventory",state.inventory,"inventory");renderList("feed",state.feed,"feed records");const select=$("movement-animal");select.replaceChildren();for(const a of state.animals||[]){const o=document.createElement("option");o.value=a.id;o.textContent=a.name||a.animalType||a.id;select.append(o)}const feedItems=state.feedInventory||[];const feedSelect=$("feed-item");feedSelect.replaceChildren();const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent=feedItems.length?"Choose an item":"No feed stock items available";feedSelect.append(placeholder);for(const item of feedItems){const o=document.createElement("option");o.value=item.id;o.textContent=`${item.name||"Inventory item"} — ${item.quantityInStock} ${item.unit||"unit"} available`;o.disabled=Number(item.quantityInStock)<=0;feedSelect.append(o)}}
+  function render(){renderList("animals",state.animals,"animals");renderList("movements",state.movements,"movements");renderList("attendance",state.attendance,"attendance");renderList("eggs",state.eggs,"egg collections");renderList("inventory",state.inventory,"inventory");renderList("feed",state.feed,"feed records");const metrics=[["Animals in your view",(state.animals||[]).length],["Movements recorded",(state.movements||[]).length],["Attendance entries",(state.attendance||[]).length],["Egg collections",(state.eggs||[]).length],["Inventory items",(state.inventory||[]).length]];$("metrics").replaceChildren(...metrics.map(([label,value])=>{const card=document.createElement("div");card.className="farm-metric";const strong=document.createElement("strong");strong.textContent=String(value);const span=document.createElement("span");span.textContent=label;card.append(strong,span);return card}));const select=$("movement-animal");select.replaceChildren();for(const a of state.animals||[]){const o=document.createElement("option");o.value=a.id;o.textContent=a.name||a.animalType||a.id;select.append(o)}const feedItems=state.feedInventory||[];const feedSelect=$("feed-item");feedSelect.replaceChildren();const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent=feedItems.length?"Choose an item":"No feed stock items available";feedSelect.append(placeholder);for(const item of feedItems){const o=document.createElement("option");o.value=item.id;o.textContent=`${item.name||"Inventory item"} — ${item.quantityInStock} ${item.unit||"unit"} available`;o.disabled=Number(item.quantityInStock)<=0;feedSelect.append(o)}}
   function controls(){ $("role").textContent=role||"Unknown role";$("forms").classList.toggle("hidden",!role);$("animal-card").classList.toggle("hidden",!can("admin"));$("inventory-card").classList.toggle("hidden",!can("admin"));$("inventory-list-card").classList.toggle("hidden",role==="farm_worker");$("feed-card").classList.toggle("hidden",!can("worker")||!state.feedEnabled);$("feed-unavailable-card").classList.toggle("hidden",!can("worker")||Boolean(state.feedEnabled));$("movement-card").classList.toggle("hidden",!can("manager"));$("attendance-card").classList.toggle("hidden",!can("worker"));$("egg-card").classList.toggle("hidden",!can("worker"));$("reports-card").classList.toggle("hidden",role==="farm_worker"); }
-  async function load(){status("Loading Farm records…");try{const d=await api("/api/farm/workspace");state=d;role=d.role||"";$("scope").textContent=`Role: ${role} · Institution: ${d.institutionId||"not selected"}`;controls();render();status("Farm records refreshed.");}catch(e){status(e.message,true);$("forms").classList.add("hidden");}}
-  async function submit(form,path){const b=formData(form);if(["/api/farm/movements","/api/farm/attendance","/api/farm/eggs","/api/farm/feed"].includes(path)){form.dataset.operationId=form.dataset.operationId||crypto.randomUUID();b.operationId=b.operationId||form.dataset.operationId;}try{await api(path,{method:"POST",body:JSON.stringify(b)});form.reset();delete form.dataset.operationId;await load();status("Saved and refreshed.");}catch(e){status(e.message,true);}}
+  async function load(){status("Loading Farm records…");try{const d=await api("/api/farm/workspace");state=d;role=d.role||"";$("scope").textContent=`Role: ${role} · Institution: ${d.institutionId||"not selected"}`;controls();render();status("Farm records refreshed.");}catch(e){status(e.message,true);$("forms").classList.add("hidden");if(e.status===401)location.replace("/");}}
+  async function submit(form,path){if(path==="/api/farm/feed"&&!navigator.onLine){status("Feed use is online only. Nothing was queued or changed.",true);return}const b=formData(form);if(["/api/farm/movements","/api/farm/attendance","/api/farm/eggs","/api/farm/feed"].includes(path)){form.dataset.operationId=form.dataset.operationId||crypto.randomUUID();b.operationId=b.operationId||form.dataset.operationId;}try{await api(path,{method:"POST",body:JSON.stringify(b)});form.reset();delete form.dataset.operationId;await load();status("Saved and refreshed.");}catch(e){status(e.message,true);}}
   $("animal-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/animals")});
   $("movement-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/movements")});
   $("attendance-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/attendance")});
@@ -75,5 +80,10 @@
   $("inventory-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/inventory")});
   $("feed-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/feed")});
   $("report-button").addEventListener("click",async()=>{const box=$("report");box.textContent="Loading report…";try{const d=await api("/api/farm/reports");box.textContent=`Animals: ${d.summary.animals}; movements: ${d.summary.movements}; attendance: ${d.summary.attendance}; egg collections: ${d.summary.eggCollections}; feed events: ${d.summary.feedEvents}. ${d.note}`;}catch(e){box.textContent=e.message;box.className="farm-list farm-error";}});
+  $("logout").addEventListener("click",async()=>{try{await api("/api/auth/logout",{method:"POST",body:"{}"});}finally{location.assign("/");}});
+  function updateConnectivity(){const online=navigator.onLine;$("connectivity").textContent=online?"Online — records save directly to the Cloudflare workspace.":"Offline — unsent changes are not queued; feed use is unavailable until you reconnect.";$("feed-submit").disabled=!online;}
+  window.addEventListener("online",()=>{updateConnectivity();load();});
+  window.addEventListener("offline",updateConnectivity);
+  updateConnectivity();
   $("refresh").addEventListener("click",load);load();
 </script></body></html>
