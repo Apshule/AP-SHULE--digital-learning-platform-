@@ -8,3 +8,9 @@ MFI portfolio analytics and generated-report caches must remain read-only snapsh
 **Why:** Loan Director, MFI Admin, manager, officer, and borrower workflows have different mutation rights. Keeping reporting separate from mutation reduces the chance that offline synchronization bypasses Firestore rules.
 
 **How to apply:** Add new MFI analytics or report views by extending institution-scoped reads and cache records. Keep approvals, blacklist changes, branch administration, receipts, and collateral updates on explicit online operations with field-level rules where a director has a narrow action.
+
+MFI reports and approval routes must use the shared `role_capabilities` grants as their source of truth. Production grants `loans.approve` to `loan_manager` and `loan_director`; `mfi_admin` record-management access does not itself grant loan approval.
+
+**Why:** The dedicated workflow role list had drifted from production capabilities, allowing MFI admins to approve while blocking loan directors.
+
+**How to apply:** Reuse the shared capability check for MFI workspace, reports, and approvals, and align the client controls with those same role grants.

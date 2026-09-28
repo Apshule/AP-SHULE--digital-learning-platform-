@@ -129,7 +129,7 @@ function can(caps: Capability[], capability: string): boolean {
   const readScope = capability.slice(0, -".read".length);
   return caps.some((c) => c.capability === `${readScope}.manage`);
 }
-async function allowed(env: AuthEnv, user: AuthUser, sector: string, capability: string): Promise<boolean> {
+export async function allowed(env: AuthEnv, user: AuthUser, sector: string, capability: string): Promise<boolean> {
   const caps = await capabilities(env, user, sector);
   return can(caps, capability);
 }

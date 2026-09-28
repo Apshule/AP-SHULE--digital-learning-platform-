@@ -71,7 +71,10 @@
   }
   function list(title, values) {
     const rows = Array.isArray(values) ? values : [];
-    return `<div class="card"><h3>${esc(title)}</h3>${rows.length ? `<ul>${rows.slice(0,100).map(row => `<li>${esc(row.fullName || row.name || row.id || row.loanId || row.status || "Record")}</li>`).join("")}</ul>` : '<p class="muted">No records yet.</p>'}</div>`;
+    const label = (row) => row.decision
+      ? `${row.decision}${row.loanId ? ` · ${row.loanId}` : ""}`
+      : row.title || row.reportName || row.fullName || row.name || row.loanId || row.status || row.id || "Record";
+    return `<div class="card"><h3>${esc(title)}</h3>${rows.length ? `<ul>${rows.slice(0,100).map(row => `<li>${esc(label(row))}</li>`).join("")}</ul>` : '<p class="muted">No records yet.</p>'}</div>`;
   }
   function render(data) {
     state.workspace = data; const role = String(data.role || "").toLowerCase();
@@ -81,8 +84,13 @@
     $("kycHint").textContent = staff ? "Staff may add a borrower; married borrowers require spouse details." : "Borrower records are read-only here.";
     $("applicationForm").querySelector("[name=borrowerUid]").closest("label").hidden = role === "borrower";
     $("applicationForm").querySelector("button[type=submit]").hidden = !["borrower","loan_officer","mfi_admin"].includes(role);
-    $("approvalSection").hidden = !["mfi_admin","loan_manager","superadmin"].includes(role);
-    $("lists").innerHTML = [list("Borrowers",data.borrowers),list("Loan products",data.products),list("Applications",data.applications),list("Loans",data.loans),list("Repayment schedules",data.schedules),list("Repayment history",data.repayments),list("Reports (read-only)",data.reports)].join("");
+    const canReadReports = ["mfi_admin","loan_officer","loan_manager","loan_director","superadmin"].includes(role);
+    const canApprove = ["loan_manager","loan_director","superadmin"].includes(role);
+    $("approvalSection").hidden = !canApprove;
+    const lists = [list("Borrowers",data.borrowers),list("Loan products",data.products),list("Applications",data.applications),list("Loans",data.loans),list("Repayment schedules",data.schedules),list("Repayment history",data.repayments)];
+    if (canReadReports) lists.push(list("Reports (read-only)",data.reports));
+    if (canApprove) lists.push(list("Loan approvals",data.approvals));
+    $("lists").innerHTML = lists.join("");
   }
   async function refresh() {
     $("busy").hidden = false; $("app").hidden = true; showError("");
@@ -90,6 +98,15 @@
       const data = await api("workspace");
       const applications = await api("applications");
       data.applications = applications.records || [];
+      const role = String(data.role || "").toLowerCase();
+      if (["mfi_admin","loan_officer","loan_manager","loan_director","superadmin"].includes(role)) {
+        const reports = await api("reports");
+        data.reports = reports.reports || [];
+      }
+      if (["loan_manager","loan_director","superadmin"].includes(role)) {
+        const approvals = await api("approvals");
+        data.approvals = approvals.records || [];
+      }
       render(data); $("app").hidden = false;
     } catch (error) { showError(error.message); } finally { $("busy").hidden = true; }
   }

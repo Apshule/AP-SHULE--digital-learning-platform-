@@ -5,10 +5,14 @@ import type { AuthEnv, AuthUser } from "./backend-types";
 const user = (role: string, institutionId = "tenant-a", uid = "u1"): AuthUser => ({
   uid, email: `${uid}@example.test`, displayName: uid, role, schoolId: null, institutionId, sessionVersion: 1,
 });
-function env(rows: Record<string, unknown>[] = []): AuthEnv {
+function env(
+  rows: Record<string, unknown>[] = [],
+  roleCapabilities: Record<string, unknown>[] = [],
+): AuthEnv {
   const statement = (sql: string, args: unknown[]) => ({
     bind(...values: unknown[]) { args.push(...values); return this; },
     async all<T>() {
+      if (sql.includes("role_capabilities")) return { results: roleCapabilities as T[] };
       if (sql.includes("sector_records")) return { results: rows as T[] };
       return { results: [] as T[] };
     },
@@ -38,11 +42,40 @@ describe("safe first MFI workflow slice", () => {
     expect(result.applications[0]).toMatchObject({ amountToLateFee: 25, amountToInterest: 50, amountToPrincipal: 100 });
     expect(result.overpayment).toBe(25);
   });
-  it("blocks borrower payment initiation and officer approvals", async () => {
+  it("blocks borrower payment initiation and roles without the approval capability", async () => {
     const payment = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/repayments", { method: "POST", body: JSON.stringify({ amount: 5, loanId: "l" }) }), env(), user("borrower"));
-    const approval = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals", { method: "POST", body: JSON.stringify({ loanId: "l", decision: "approved" }) }), env(), user("loan_officer"));
-    const directorApproval = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals", { method: "POST", body: JSON.stringify({ loanId: "l", decision: "approved" }) }), env(), user("loan_director"));
-    expect(payment?.status).toBe(410); expect(approval?.status).toBe(403); expect(directorApproval?.status).toBe(403);
+    const officerApproval = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals", { method: "POST", body: "{}" }), env([], [{ capability: "records.read", sector: "mfi", scope: "tenant" }]), user("loan_officer"));
+    const adminApproval = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals", { method: "POST", body: "{}" }), env([], [{ capability: "records.manage", sector: "mfi", scope: "tenant" }]), user("mfi_admin"));
+    expect(payment?.status).toBe(410);
+    expect(officerApproval?.status).toBe(403);
+    expect(adminApproval?.status).toBe(403);
+  });
+  it("uses the MFI capability grants for report and approval access", async () => {
+    const read = [{ capability: "records.read", sector: "mfi", scope: "tenant" }];
+    const approve = [{ capability: "loans.approve", sector: "mfi", scope: "tenant" }];
+
+    const reports = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/reports"), env([], read), user("loan_director"));
+    expect(reports?.status).toBe(200);
+    expect(await reports?.json()).toMatchObject({ ok: true, reports: [] });
+
+    const borrowerReports = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/reports"), env([], [{ capability: "records.own.read", sector: "mfi", scope: "tenant" }]), user("borrower"));
+    expect(borrowerReports?.status).toBe(403);
+
+    const reportWrite = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/reports", {
+      method: "POST", body: "{}",
+    }), env([], read), user("loan_director"));
+    expect(reportWrite?.status).toBe(405);
+
+    for (const role of ["loan_manager", "loan_director"]) {
+      const approvalRead = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals"), env([], approve), user(role));
+      expect(approvalRead?.status).toBe(200);
+      expect(await approvalRead?.json()).toMatchObject({ ok: true, records: [] });
+
+      const approvalWrite = await handleMfiWorkflowRoute(new Request("https://x/api/mfi/approvals", {
+        method: "POST", body: "{}",
+      }), env([], approve), user(role));
+      expect(approvalWrite?.status).toBe(400);
+    }
   });
   it("requires authentication and tenant scope", async () => {
     expect((await handleMfiWorkflowRoute(new Request("https://x/api/mfi/workspace"), env(), null))?.status).toBe(401);

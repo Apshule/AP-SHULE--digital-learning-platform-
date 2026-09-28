@@ -1,11 +1,10 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
-import { readRecords } from "./domain-routes";
+import { allowed, readRecords } from "./domain-routes";
 
 type Row = Record<string, unknown>;
 type MfiRole = "mfi_admin" | "loan_officer" | "loan_manager" | "loan_director" | "borrower" | "superadmin";
 const ROLES = new Set<MfiRole>(["mfi_admin", "loan_officer", "loan_manager", "loan_director", "borrower", "superadmin"]);
 const staff = new Set(["mfi_admin", "loan_officer", "loan_manager", "superadmin"]);
-const approvals = new Set(["loan_manager", "mfi_admin", "superadmin"]);
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
@@ -119,6 +118,10 @@ export async function handleMfiWorkflowRoute(request: Request, env: AuthEnv, use
   const path = url.pathname.replace(/^\/api\/mfi\/?/, "").split("/").filter(Boolean);
   const head = path[0] || "";
   if (head === "workspace" && request.method === "GET") {
+    const readCapability = role === "borrower" ? "records.own.read" : "records.read";
+    if (!await allowed(env, user, "mfi", readCapability)) {
+      return json({ ok: false, error: "MFI workspace access is not allowed for this role" }, 403);
+    }
     const result: Row = { ok: true, role, institutionId: tenant(user) || null, reports: [] };
     result.borrowers = await records(env, user, "borrower");
     result.products = await records(env, user, "loan_product");
@@ -127,7 +130,11 @@ export async function handleMfiWorkflowRoute(request: Request, env: AuthEnv, use
     result.repayments = role === "borrower" ? await records(env, user, "repayment") : await records(env, user, "repayment");
     return json(result);
   }
-  if (head === "reports" && request.method === "GET") {
+  if (head === "reports") {
+    if (request.method !== "GET") return json({ ok: false, error: "MFI reports are read-only" }, 405);
+    if (!await allowed(env, user, "mfi", "records.read")) {
+      return json({ ok: false, error: "MFI report access is not allowed for this role" }, 403);
+    }
     return json({ ok: true, reports: await records(env, user, "report") });
   }
   if (["loans", "schedules", "payments"].includes(head) && request.method === "GET") {
@@ -195,9 +202,13 @@ export async function handleMfiWorkflowRoute(request: Request, env: AuthEnv, use
     // schedules or balances.
     return json({ ok: false, error: "Manual repayment recording is disabled; use the repayment preview only" }, 410);
   }
-  if (head === "approvals" && request.method !== "GET") {
-    if (!approvals.has(role)) return json({ ok: false, error: "Only an explicitly authorized manager or director may approve" }, 403);
-    if (role === "loan_officer" || role === "borrower") return json({ ok: false, error: "This role cannot approve loans" }, 403);
+  if (head === "approvals") {
+    if (!await allowed(env, user, "mfi", "loans.approve")) {
+      return json({ ok: false, error: "This role is not authorized for MFI loan approvals" }, 403);
+    }
+    if (request.method === "GET") {
+      return json({ ok: true, records: await records(env, user, "loan_approval") });
+    }
     const data = await input(request); if (!data || !text(data.loanId) || !text(data.decision)) return json({ ok: false, error: "Loan, decision, and explicit role are required" }, 400);
     const decision = text(data.decision).toLowerCase();
     if (!["approved", "rejected", "top_up"].includes(decision)) return json({ ok: false, error: "Decision must be approved, rejected, or top_up" }, 400);
