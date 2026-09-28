@@ -26,3 +26,4 @@
 - [Authenticated greeting boundary](authenticated-greeting-boundary.md) — Keep public Education preview copy non-authenticated; use the shared localized time-of-day contract in signed-in workspaces.
 - [Firebase PDF viewer behavior](firebase-pdf-viewer.md) — Open Firebase Storage download URLs directly; Google Docs Viewer can return 403 for authorized student PDFs.
 - [Firebase rules deployment boundary](firebase-rules-deployment-boundary.md) — GitHub pushes do not publish Firebase Storage Rules; verify the live bucket after rule changes.
+- [Cloudflare clean URL normalization](cloudflare-clean-urls.md) — The app domain redirects `.html` requests to extensionless paths, which still resolve to the staged HTML asset.

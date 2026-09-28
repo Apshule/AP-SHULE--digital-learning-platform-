@@ -60,6 +60,43 @@ interface Env extends AuthEnv {
   VAPID_SUBJECT?: string;
 }
 
+const STATIC_ROUTE_PREFIXES = [
+  "/admin/",
+  "/clinic/",
+  "/education/",
+  "/farm/",
+  "/mfi/",
+  "/skills/",
+  "/tech/",
+  "/icons/",
+  "/.well-known/",
+];
+
+const STATIC_ROOT_FILES = new Set([
+  "/app.css",
+  "/landing.css",
+  "/manifest.json",
+  "/manifest.webmanifest",
+  "/profile.html",
+  "/reset-password.html",
+  "/sector.html",
+  "/sw.js",
+]);
+
+function isExplicitStaticRoute(pathname: string): boolean {
+  return pathname === "/"
+    || STATIC_ROOT_FILES.has(pathname)
+    || STATIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function redirectDirectoryRoot(pathname: string, search: string): Response | null {
+  if (!["/admin", "/clinic", "/education", "/farm", "/mfi", "/skills", "/tech"].includes(pathname)) return null;
+  return new Response(null, {
+    status: 308,
+    headers: { location: `${pathname}/${search}` },
+  });
+}
+
 type ProviderRow = {
   id: string;
   name: string;
@@ -421,8 +458,10 @@ export default {
       if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
         return withCors(request, await api(request, env));
       }
-      if (env.STATIC) return env.STATIC.fetch(request);
-      return json({ ok: false, error: "static assets are not configured" }, 503);
+      const directoryRedirect = redirectDirectoryRoot(url.pathname, url.search);
+      if (directoryRedirect) return directoryRedirect;
+      if (env.STATIC && isExplicitStaticRoute(url.pathname)) return env.STATIC.fetch(request);
+      return json({ ok: false, error: "not found" }, 404);
     } catch (error) {
       return withCors(request, json({ ok: false, error: error instanceof Error ? error.message : "Worker request failed" }, 500));
     }

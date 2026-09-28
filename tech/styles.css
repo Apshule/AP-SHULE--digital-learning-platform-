@@ -181,6 +181,8 @@ h2 { font-size: clamp(32px, 4vw, 48px); letter-spacing: -.055em; line-height: 1.
 .st-contact-form input:focus, .st-contact-form select:focus, .st-contact-form textarea:focus { border-color: var(--st-blue); box-shadow: 0 0 0 3px rgba(0,150,255,.1); }
 .st-button-submit { width: 100%; border: 0; }
 .st-form-success { margin-top: 14px; padding: 11px 12px; color: #167746; background: #e9faf0; border: 1px solid #b8edcd; border-radius: 6px; font-size: 10px; }
+.st-form-error { margin-top: 14px; padding: 11px 12px; color: #9a2626; background: #fff0f0; border: 1px solid #efc4c4; border-radius: 6px; font-size: 10px; }
+.st-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
 
 .st-site-footer { padding: 70px 0 25px; color: #98aabd; background: #061426; }
 .st-footer-grid { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 70px; padding-bottom: 54px; }

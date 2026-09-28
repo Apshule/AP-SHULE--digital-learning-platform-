@@ -1,13 +1,6 @@
 (function () {
   "use strict";
 
-  var params = new URLSearchParams(window.location.search);
-  var redirectBanner = document.querySelector(".st-form-success");
-  if (params.get("sent") === "1" && redirectBanner) {
-    redirectBanner.hidden = false;
-    window.setTimeout(function () { redirectBanner.hidden = true; }, 8000);
-  }
-
   var menuToggle = document.querySelector(".st-menu-toggle");
   var mainNav = document.querySelector(".st-main-nav");
   var navLinks = document.querySelectorAll(".st-main-nav a");

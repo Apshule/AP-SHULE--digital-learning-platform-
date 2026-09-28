@@ -5,147 +5,66 @@ import { describe, expect, it } from "vitest";
 const root = resolve(import.meta.dirname, "../..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("vocational skills MVP contracts", () => {
-  it("loads one shared Firebase configuration across vocational pages", () => {
-    const config = read("skills/firebase-config.js");
-    const apiConfig = read("skills/api-config.js");
-    const pages = [
-      "archive/vocational-skills/2026-09-23-v1/source/skills/index.html",
-      "archive/vocational-skills/2026-09-23-v1/source/skills/provider.html",
-      "archive/vocational-skills/2026-09-23-v1/source/skills/provider-register.html",
-      "archive/vocational-skills/2026-09-23-v1/source/skills/skills-enroll.html",
-      "archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html",
-    ];
-
-    expect(config).toContain("global.APSHULE_FIREBASE_CONFIG");
-    expect(config).toContain("apshule-app.firebaseapp.com");
-    expect(config).toContain("AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg");
-    expect(apiConfig).toContain("global.APSHULE_API_BASE");
-    expect(apiConfig).toContain(".replit.dev");
-    expect(apiConfig).toContain("ap-shule-digital-learning-platform-3.onrender.com");
-    for (const pagePath of pages) {
-      const page = read(pagePath);
-      expect(page, pagePath).toContain('<script src="./firebase-config.js"></script>');
-      expect(page, pagePath).toContain('<script src="./api-config.js"></script>');
-      expect(page, pagePath).toContain(
-        "firebase.initializeApp(window.APSHULE_FIREBASE_CONFIG)",
-      );
-      expect(page, pagePath).toContain("apiBase=window.APSHULE_API_BASE");
-      expect(page, pagePath).not.toContain("const firebaseConfig");
-      expect(page, pagePath).not.toContain(
-        "AIzaSyBaO3Al6ubOcH3NxZBYmhjuOyihYc_q9kg",
-      );
-      expect(page, pagePath).not.toContain(
-        "ap-shule-digital-learning-platform-3.onrender.com",
-      );
+describe("APSHULE Skills Cloudflare frontend", () => {
+  it("uses the Cloudflare API config and ships no Firebase config", () => {
+    expect(existsSync(resolve(root, "skills/firebase-config.js"))).toBe(false);
+    expect(read("skills/api-config.js")).toContain("https://appshule.com");
+    expect(read("skills/api-config.js")).not.toMatch(/firebase/i);
+    for (const path of [
+      "skills/index.html",
+      "skills/provider.html",
+      "cloudflare/static/skills/provider.html",
+    ]) {
+      expect(read(path), path).not.toMatch(/firebase|firestore|firebasestorage/i);
     }
   });
 
-  it("ships the public directory, provider profile, and attributed registration flow", () => {
-    const directory = read("archive/vocational-skills/2026-09-23-v1/source/skills/index.html");
-    const provider = read("archive/vocational-skills/2026-09-23-v1/source/skills/provider.html");
-    const enroll = read("archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html");
-    expect(directory).toContain("APSHULE Skills");
+  it("restores a searchable course directory backed by the current providers API", () => {
+    const directory = read("skills/index.html");
     expect(directory).toContain("Choose work");
-    expect(directory).toContain("/api/skills/providers");
-    expect(provider).toContain("Powered by APSHULE");
-    expect(provider).toContain("Apply for this course");
-    expect(enroll).toContain("referralCode");
-    expect(enroll).toContain("/api/skills/enrollments");
+    expect(directory).toContain('id="courseGrid"');
+    expect(directory).toContain('id="search"');
+    expect(directory).toContain('id="category"');
+    expect(directory).toContain('id="duration"');
+    expect(directory).toContain('fetch(api("/api/skills/providers"))');
+    expect(directory).toContain("provider.referralCode === referral");
+    expect(directory).toContain("./provider.html?id=");
+    expect(directory).not.toContain("skills-enroll.html");
+    expect(directory).not.toContain("/api/skills/enrollments");
   });
 
-  it("keeps provider moderation and earnings surfaces behind the API", () => {
-    const api = read("artifacts/api-server/src/routes/skills.ts");
-    const app = read("artifacts/api-server/src/app.ts");
-    const admin = read("archive/vocational-skills/2026-09-23-v1/source/skills-admin.html");
-    expect(api).toContain('router.get("/skills/admin/providers"');
-    expect(api).toContain('router.get("/skills/providers/mine"');
-    expect(api).toContain('router.post("/skills/admin/provider-status"');
-    expect(api).toContain("referralCode");
-    expect(api).toContain('/skills/providers/:providerId/manifest.json');
-    expect(app).toContain('app.use("/obote", vocationalArchiveResponse)');
-    expect(api).toContain('provider.verificationStatus === "pending_topup"');
-    expect(admin).toContain('provider.verificationStatus==="pending_topup"||provider.verificationStatus==="verified"');
-    expect(admin).toContain("/api/skills/admin/providers");
-    expect(admin).toContain("Recorded course value");
+  it("preserves provider storefront and profile reads without reviving archived applications", () => {
+    const directory = read("skills/index.html");
+    const provider = read("cloudflare/static/skills/provider.html");
+    expect(directory).toContain('id="storefront-section"');
+    expect(directory).toContain("showStorefront");
+    expect(provider).toContain("/api/skills/providers/");
+    expect(provider).toContain("/api/skills/providers");
+    expect(provider).toContain("contactPhone");
+    expect(provider).toContain("contactEmail");
+    expect(provider).toContain("Ask the provider about the next intake.");
+    expect(provider).not.toContain("skills-enroll.html");
+    expect(provider).not.toContain("Apply for this course");
+    expect(provider).not.toContain("/api/skills/admission");
   });
 
-  it("supports provider verification top-ups and the separate vocational admission flow", () => {
-    const api = read("artifacts/api-server/src/routes/skills.ts");
-    const providerRegister = read("archive/vocational-skills/2026-09-23-v1/source/skills/provider-register.html");
-    const admission = read("archive/vocational-skills/2026-09-23-v1/source/skills/skills-enroll.html");
-    const enroll = read("archive/vocational-skills/2026-09-23-v1/source/skills/enroll.html");
-    expect(api).toContain('router.post("/skills/providers/register"');
-    expect(api).toContain('router.post("/skills/provider/topup"');
-    expect(api).toContain("skills_provider_payments");
-    expect(api).toContain('status: "processing"');
-    expect(api).toContain("settleVocationalPayment");
-    expect(api).toContain('router.post("/skills/admissions/payment"');
-    expect(api).toContain('router.post("/skills/admissions"');
-    expect(api).toContain("verificationStatus");
-    expect(providerRegister).toContain("/api/skills/providers/register");
-    expect(providerRegister).toContain("/api/skills/provider/topup");
-    expect(providerRegister).toContain("/api/skills/providers/mine");
-    expect(providerRegister).toContain("Checking your institution profile");
-    expect(providerRegister).toContain("Forgot password?");
-    expect(providerRegister).toContain("sendPasswordResetEmail");
-    expect(providerRegister).toContain("Password reset email sent");
-    expect(providerRegister).toContain('id="providerManifestLink"');
-    expect(providerRegister).toContain('id="installAppButton"');
-    expect(providerRegister).toContain("beforeinstallprompt");
-    expect(providerRegister).toContain('register("/sw.js?v=20260919-13"');
-    expect(providerRegister).toContain("configureProviderPwa");
-     expect(existsSync(resolve(root, "archive/vocational-skills/2026-09-23-v1/source/skills/assets/obote-auto-garage.jpg"))).toBe(true);
-    expect(admission).toContain("Highest education level");
-    expect(admission).toContain("UGX 20,000");
-    expect(admission).not.toContain("simulated");
-    expect(admission).toContain("paymentMethod");
-    expect(admission).toContain("/api/skills/admissions");
-    expect(admission).toContain("Signed in and ready to apply");
-    expect(admission).toContain("Forgot password?");
-    expect(admission).toContain("sendPasswordResetEmail");
-    expect(enroll).toContain("Forgot password?");
-    expect(enroll).toContain("sendPasswordResetEmail");
+  it("stages the restored UI and excludes archived Firebase and admission clients", () => {
+    const stage = read("cloudflare/stage-assets.mjs");
+    expect(stage).toContain('"firebase-config.js"');
+    expect(stage).toContain('"skills-enroll.html"');
+    expect(stage).toContain('"provider-register.html"');
+    expect(read("skills/styles.css")).toContain("--plum-dark: #35172f");
+    expect(read("cloudflare/static/skills/api-config.js")).toContain("https://appshule.com");
   });
 
-  it("protects provider and enrollment collections with dedicated rules", () => {
-    const rules = read("firestore.rules");
-    const indexes = JSON.parse(read("firestore.indexes.json")) as {
-      indexes: Array<{ collectionGroup: string }>;
-    };
-    expect(rules).toContain("match /providers/{providerId}");
-    expect(rules).toContain("match /skills_enrollments/{enrollmentId}");
-    expect(rules).toContain("match /skills_admission_payments/{paymentId}");
-    expect(rules).toContain("match /skills_provider_payments/{paymentId}");
-    expect(rules).toContain("allow read: if isSuperAdmin();");
-    expect(indexes.indexes.map((index) => index.collectionGroup)).toEqual(
-      expect.arrayContaining(["providers", "skills_enrollments"]),
-    );
-  });
-
-  it("archives vocational operation while preserving a protected recovery path", () => {
-    const app = read("artifacts/api-server/src/app.ts");
-    const api = read("artifacts/api-server/src/routes/skills.ts");
-    const yo = read("artifacts/api-server/src/routes/yo-payments.ts");
-    const rules = read("firestore.rules");
-    const landing = read("index.html");
-    const manifest = read("archive/vocational-skills/2026-09-23-v1/manifest.json");
-    const restore = read("archive/vocational-skills/2026-09-23-v1/RESTORE.md");
-
-    expect(app).toContain('app.use("/skills", vocationalArchiveResponse)');
-    expect(app).toContain('app.use("/obote", vocationalArchiveResponse)');
-    expect(app).toContain('app.get("/skills-admin.html", vocationalArchiveResponse)');
-    expect(api).toContain("export const VOCATIONAL_SKILLS_ARCHIVED = true");
-    expect(api).toContain('router.get("/skills/archive/manifest"');
-    expect(api).toContain('router.get("/skills/archive/records/:collection"');
-    expect(api).toContain('router.use("/skills", (_req, res)');
-    expect(yo).toContain('ignoredReason: "vocational_feature_archived"');
-    expect(landing).not.toContain("For Vocational Skills");
-    expect(landing).not.toContain("skills-admin.html");
-    expect(rules).toContain("allow read: if isSuperAdmin();");
-    expect(rules).toContain("allow create, update, delete: if false;");
-    expect(manifest).toContain('"status": "archived"');
-    expect(restore).toContain("Future restoration procedure");
-    expect(existsSync(resolve(root, "archive/vocational-skills/2026-09-23-v1/source/skills/assets/obote-auto-garage.jpg"))).toBe(true);
+  it("retains the D1 provider API and explicit static route boundary", () => {
+    const worker = read("cloudflare/worker.ts");
+    expect(worker).toContain('url.pathname === "/api/skills/providers"');
+    expect(worker).toContain('url.pathname.match(/^\\/api\\/skills\\/providers\\/');
+    expect(worker).toContain('"/skills/"');
+    expect(worker).toContain('"/tech/"');
+    expect(worker).toContain('"/clinic/"');
+    expect(worker).toContain("isExplicitStaticRoute(url.pathname)");
+    expect(worker).toContain('json({ ok: false, error: "not found" }, 404)');
   });
 });

@@ -1,13 +1,6 @@
 (function () {
   "use strict";
 
-  var params = new URLSearchParams(window.location.search);
-  var redirectBanner = document.querySelector(".st-form-success");
-  if (params.get("sent") === "1" && redirectBanner) {
-    redirectBanner.hidden = false;
-    window.setTimeout(function () { redirectBanner.hidden = true; }, 8000);
-  }
-
   var menuToggle = document.querySelector(".st-menu-toggle");
   var mainNav = document.querySelector(".st-main-nav");
   var navLinks = document.querySelectorAll(".st-main-nav a");
@@ -40,32 +33,38 @@
 
   var contactForm = document.querySelector("#contact-form");
   var successBanner = document.querySelector(".st-form-success");
+  var errorBanner = document.querySelector(".st-form-error");
   var submitButton = contactForm ? contactForm.querySelector('button[type="submit"]') : null;
 
-  if (contactForm && successBanner && submitButton) {
+  if (contactForm && successBanner && errorBanner && submitButton) {
     contactForm.addEventListener("submit", function (e) {
       e.preventDefault();
       var originalText = submitButton.innerHTML;
       submitButton.disabled = true;
       submitButton.innerHTML = "Sending...";
+      successBanner.hidden = true;
+      errorBanner.hidden = true;
+      var payload = Object.fromEntries(new FormData(contactForm).entries());
 
-      fetch(contactForm.action, {
+      fetch("https://appshule.com/api/tech/contact", {
         method: "POST",
-        body: new FormData(contactForm),
-        headers: { "Accept": "application/json" }
+        body: JSON.stringify(payload),
+        headers: { "Accept": "application/json", "Content-Type": "application/json" }
       })
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (data.success) {
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          if (!res.ok || !data.ok) throw new Error(data.error || "We could not send your inquiry.");
+          return data;
+        });
+      })
+      .then(function () {
           contactForm.reset();
           successBanner.hidden = false;
           window.setTimeout(function () { successBanner.hidden = true; }, 8000);
-        } else {
-          alert("Something went wrong. Please try WhatsApp instead: 0794221315");
-        }
       })
-      .catch(function () {
-        alert("Network error. Please try WhatsApp instead: 0794221315");
+      .catch(function (error) {
+        errorBanner.textContent = (error && error.message ? error.message : "Network error.") + " You can also contact us on WhatsApp: 0794221315.";
+        errorBanner.hidden = false;
       })
       .finally(function () {
         submitButton.disabled = false;
