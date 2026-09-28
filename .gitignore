@@ -62,4 +62,5 @@ artifacts/api-server/data/push-history.json
 
 # Firebase migration export (may contain private user records)
 /backup/
+/archive/
 /cloudflare/assets/

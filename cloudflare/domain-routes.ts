@@ -253,6 +253,9 @@ async function domainRecords(
   if (sector === "clinic" && CLINIC_WORKFLOW_RECORD_TYPES.has(type)) {
     return json({ ok: false, error: "Use the Clinic workflow endpoints for operational records" }, 410);
   }
+  if (sector === "farm" && ["feed", "feed_consumption"].includes(type) && method !== "GET") {
+    return json({ ok: false, error: "Use the atomic Farm feed workflow for feed records" }, 405);
+  }
   if (role(user) !== "superadmin" && !tenant(user).institutionId && !tenant(user).schoolId) {
     return json({ ok: false, error: "Tenant scope is required" }, 403);
   }

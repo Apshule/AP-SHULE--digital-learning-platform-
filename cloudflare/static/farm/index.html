@@ -16,7 +16,7 @@
 <main>
   <div class="section-title"><div><p class="eyebrow">Farm operations</p><h1>Farm workspace</h1><p id="scope" class="muted"></p></div><button id="refresh" class="button secondary" type="button">Refresh</button></div>
   <p id="status" class="notice" role="status" aria-live="polite">Loading Farm records…</p>
-  <p class="farm-note">This first Cloudflare Farm slice is partial: produce, sales, expenses, camera operations, and biometric attendance are not available here. Feed consumption is temporarily disabled until the server can atomically save the event and deduct stock.</p>
+  <p class="farm-note">This first Cloudflare Farm slice is partial: produce, sales, expenses, camera operations, and biometric attendance are not available here. Feed use is recorded online only and is not queued while offline.</p>
   <section id="forms" class="farm-grid hidden">
     <article id="animal-card" class="card panel farm-card"><h2>Register animal</h2><form id="animal-form">
       <label>Name / tag<input name="name" maxlength="160" required></label><label>Animal type<input name="animalType" maxlength="80" required></label>
@@ -38,6 +38,13 @@
       <label>Item<input name="name" maxlength="160" required></label><label>Quantity in stock<input name="quantityInStock" type="number" min="0" step="1" required></label>
       <label>Unit<input name="unit" maxlength="40" value="kg"></label><button class="button">Add inventory</button>
     </form></article>
+    <article id="feed-card" class="card panel farm-card"><h2>Record feed use</h2><form id="feed-form">
+      <label>Feed item<select name="itemId" id="feed-item" required></select></label>
+      <label>Quantity used<input name="quantity" type="number" min="0.001" max="1000000" step="0.001" required></label>
+      <label>Notes (optional)<input name="notes" maxlength="500"></label>
+      <input type="hidden" name="operationId"><button class="button">Record feed use</button>
+    </form></article>
+    <article id="feed-unavailable-card" class="card panel farm-card hidden"><h2>Feed use</h2><p class="muted">Feed recording is unavailable until Farm stock protection is enabled.</p></article>
   </section>
   <section class="farm-grid">
     <article class="card panel farm-card"><h2>Animals</h2><div id="animals" class="farm-list"></div></article>
@@ -45,7 +52,7 @@
     <article class="card panel farm-card"><h2>Attendance</h2><div id="attendance" class="farm-list"></div></article>
     <article class="card panel farm-card"><h2>Egg collections</h2><div id="eggs" class="farm-list"></div></article>
     <article id="inventory-list-card" class="card panel farm-card"><h2>Inventory</h2><div id="inventory" class="farm-list"></div></article>
-    <article class="card panel farm-card"><h2>Feed</h2><p class="muted">Feed consumption is disabled while atomic stock synchronization is being completed.</p><div id="feed" class="farm-list"></div></article>
+    <article class="card panel farm-card"><h2>Feed</h2><div id="feed" class="farm-list"></div></article>
     <article id="reports-card" class="card panel farm-card"><h2>Operational report</h2><button id="report-button" class="button secondary" type="button">Load report</button><div id="report" class="farm-list"></div></article>
   </section>
 </main></div>
@@ -56,16 +63,17 @@
   function status(text,error=false){$("status").textContent=text;$("status").className=error?"notice farm-error":"notice";}
   async function api(path,options={}){const r=await fetch(new URL(path,"https://appshule.com"),{credentials:"same-origin",...options,headers:{"content-type":"application/json",...(options.headers||{})}});const d=await r.json().catch(()=>({}));if(!r.ok||d.ok===false)throw Error(d.error||`Request failed (${r.status})`);return d;}
   function formData(form){return Object.fromEntries(new FormData(form).entries());}
-  function renderList(id,rows,title){const box=$(id);box.replaceChildren();if(!rows?.length){const e=document.createElement("p");e.className="farm-empty";e.textContent=`No ${title} yet.`;box.append(e);return}for(const row of rows){const a=document.createElement("div");a.className="farm-row";const strong=document.createElement("strong");strong.textContent=row.name||row.animalType||row.movementType||row.status||title;const small=document.createElement("small");small.textContent=JSON.stringify(row);a.append(strong,small);box.append(a);}}
-  function render(){renderList("animals",state.animals,"animals");renderList("movements",state.movements,"movements");renderList("attendance",state.attendance,"attendance");renderList("eggs",state.eggs,"egg collections");renderList("inventory",state.inventory,"inventory");renderList("feed",state.feed,"feed records");const select=$("movement-animal");select.replaceChildren();for(const a of state.animals||[]){const o=document.createElement("option");o.value=a.id;o.textContent=a.name||a.animalType||a.id;select.append(o)}}
-  function controls(){ $("role").textContent=role||"Unknown role";$("forms").classList.toggle("hidden",!role);$("animal-card").classList.toggle("hidden",!can("admin"));$("inventory-card").classList.toggle("hidden",!can("admin"));$("inventory-list-card").classList.toggle("hidden",role==="farm_worker");$("movement-card").classList.toggle("hidden",!can("manager"));$("attendance-card").classList.toggle("hidden",!can("worker"));$("egg-card").classList.toggle("hidden",!can("worker"));$("reports-card").classList.toggle("hidden",role==="farm_worker"); }
+  function renderList(id,rows,title){const box=$(id);box.replaceChildren();if(!rows?.length){const e=document.createElement("p");e.className="farm-empty";e.textContent=`No ${title} yet.`;box.append(e);return}for(const row of rows){const a=document.createElement("div");a.className="farm-row";const strong=document.createElement("strong");strong.textContent=row.name||row.itemName||row.animalType||row.movementType||row.status||title;const small=document.createElement("small");small.textContent=JSON.stringify(row);a.append(strong,small);box.append(a);}}
+  function render(){renderList("animals",state.animals,"animals");renderList("movements",state.movements,"movements");renderList("attendance",state.attendance,"attendance");renderList("eggs",state.eggs,"egg collections");renderList("inventory",state.inventory,"inventory");renderList("feed",state.feed,"feed records");const select=$("movement-animal");select.replaceChildren();for(const a of state.animals||[]){const o=document.createElement("option");o.value=a.id;o.textContent=a.name||a.animalType||a.id;select.append(o)}const feedItems=state.feedInventory||[];const feedSelect=$("feed-item");feedSelect.replaceChildren();const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent=feedItems.length?"Choose an item":"No feed stock items available";feedSelect.append(placeholder);for(const item of feedItems){const o=document.createElement("option");o.value=item.id;o.textContent=`${item.name||"Inventory item"} — ${item.quantityInStock} ${item.unit||"unit"} available`;o.disabled=Number(item.quantityInStock)<=0;feedSelect.append(o)}}
+  function controls(){ $("role").textContent=role||"Unknown role";$("forms").classList.toggle("hidden",!role);$("animal-card").classList.toggle("hidden",!can("admin"));$("inventory-card").classList.toggle("hidden",!can("admin"));$("inventory-list-card").classList.toggle("hidden",role==="farm_worker");$("feed-card").classList.toggle("hidden",!can("worker")||!state.feedEnabled);$("feed-unavailable-card").classList.toggle("hidden",!can("worker")||Boolean(state.feedEnabled));$("movement-card").classList.toggle("hidden",!can("manager"));$("attendance-card").classList.toggle("hidden",!can("worker"));$("egg-card").classList.toggle("hidden",!can("worker"));$("reports-card").classList.toggle("hidden",role==="farm_worker"); }
   async function load(){status("Loading Farm records…");try{const d=await api("/api/farm/workspace");state=d;role=d.role||"";$("scope").textContent=`Role: ${role} · Institution: ${d.institutionId||"not selected"}`;controls();render();status("Farm records refreshed.");}catch(e){status(e.message,true);$("forms").classList.add("hidden");}}
-  async function submit(form,path){const b=formData(form);if(["/api/farm/movements","/api/farm/attendance","/api/farm/eggs"].includes(path)){form.dataset.operationId=form.dataset.operationId||crypto.randomUUID();b.operationId=b.operationId||form.dataset.operationId;}try{await api(path,{method:"POST",body:JSON.stringify(b)});form.reset();delete form.dataset.operationId;await load();status("Saved and refreshed.");}catch(e){status(e.message,true);}}
+  async function submit(form,path){const b=formData(form);if(["/api/farm/movements","/api/farm/attendance","/api/farm/eggs","/api/farm/feed"].includes(path)){form.dataset.operationId=form.dataset.operationId||crypto.randomUUID();b.operationId=b.operationId||form.dataset.operationId;}try{await api(path,{method:"POST",body:JSON.stringify(b)});form.reset();delete form.dataset.operationId;await load();status("Saved and refreshed.");}catch(e){status(e.message,true);}}
   $("animal-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/animals")});
   $("movement-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/movements")});
   $("attendance-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/attendance")});
   $("egg-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/eggs")});
   $("inventory-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/inventory")});
+  $("feed-form").addEventListener("submit",e=>{e.preventDefault();submit(e.target,"/api/farm/feed")});
   $("report-button").addEventListener("click",async()=>{const box=$("report");box.textContent="Loading report…";try{const d=await api("/api/farm/reports");box.textContent=`Animals: ${d.summary.animals}; movements: ${d.summary.movements}; attendance: ${d.summary.attendance}; egg collections: ${d.summary.eggCollections}; feed events: ${d.summary.feedEvents}. ${d.note}`;}catch(e){box.textContent=e.message;box.className="farm-list farm-error";}});
   $("refresh").addEventListener("click",load);load();
 </script></body></html>

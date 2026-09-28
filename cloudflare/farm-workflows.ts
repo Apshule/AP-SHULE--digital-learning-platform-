@@ -9,7 +9,8 @@ const workerTypes = new Set(["attendance", "egg_collection", "feed_consumption"]
 const types: Record<string, string> = {
   animals: "animal", animal: "animal", movements: "animal_movement", movement: "animal_movement",
   attendance: "attendance", eggs: "egg_collection", egg_collections: "egg_collection",
-  inventory: "inventory", feed: "feed_consumption",
+  inventory: "inventory", feed: "feed_consumption", "feed-consumption": "feed_consumption",
+  feed_consumption: "feed_consumption",
 };
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), {
   status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
@@ -61,6 +62,38 @@ async function tenantAnimals(env: AuthEnv, user: AuthUser): Promise<Row[]> {
   }));
 }
 
+async function feedInventory(env: AuthEnv, user: AuthUser): Promise<Row[]> {
+  const result = await env.DB.prepare(
+    `SELECT id,record_json FROM sector_records
+     WHERE sector='farm' AND record_type='inventory' AND is_deleted=0
+       AND institution_id=? AND (school_id IS NULL OR school_id=?)
+     ORDER BY updated_at DESC LIMIT 500`,
+  ).bind(user.institutionId || "", user.schoolId || "").all<Row>();
+  return result.results.flatMap((row) => {
+    try {
+      const record = JSON.parse(String(row.record_json || "{}")) as Row;
+      const quantityInStock = Number(record.quantityInStock);
+      if (!Number.isFinite(quantityInStock) || quantityInStock < 0) return [];
+      return [{
+        id: row.id,
+        name: clean(record.name, 160),
+        quantityInStock,
+        unit: clean(record.unit, 40) || "unit",
+      }];
+    } catch {
+      return [];
+    }
+  });
+}
+
+async function feedProtectionReady(env: AuthEnv): Promise<boolean> {
+  const result = await env.DB.prepare(
+    `SELECT name FROM sqlite_master
+     WHERE type='trigger' AND name IN ('farm_feed_consumption_validate', 'farm_feed_consumption_deduct_stock')`,
+  ).all<Row>();
+  return result.results.length === 2;
+}
+
 async function save(env: AuthEnv, user: AuthUser, type: string, fields: Row, ownerUid: string | null = null) {
   const t = tenant(user);
   const recordId = clean(fields.id, 300) || id(type);
@@ -79,6 +112,27 @@ function allowedWrite(role: string, type: string): boolean {
   return writeRoles.has(role) || role === "farm_worker" && workerTypes.has(type);
 }
 
+function priorOperation(type: string, row: Row, input: Row): Response {
+  const record: Row = { id: row.id, ...JSON.parse(String(row.record_json || "{}")) as Row };
+  if (type === "feed_consumption" &&
+      (clean(record.itemId, 300) !== clean(input.itemId, 300) || Number(record.quantity) !== Number(input.quantity))) {
+    return json({ ok: false, error: "operationId is already associated with a different feed entry" }, 409);
+  }
+  return json({ ok: true, idempotent: true, record });
+}
+
+async function findOperation(env: AuthEnv, user: AuthUser, type: string, operationId: string) {
+  const schoolScope = type === "feed_consumption" ? " AND (school_id IS NULL OR school_id=?)" : "";
+  const values: unknown[] = [user.institutionId, type, operationId];
+  if (type === "feed_consumption") values.push(user.schoolId || "");
+  return env.DB.prepare(
+    `SELECT id,record_json FROM sector_records
+     WHERE sector='farm' AND institution_id=? AND record_type=?
+       AND json_extract(record_json,'$.operationId')=? AND is_deleted=0${schoolScope}
+     LIMIT 1`,
+  ).bind(...values).all<Row>();
+}
+
 export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, user: AuthUser | null | undefined): Promise<Response | null> {
   const url = new URL(request.url);
   if (!url.pathname.startsWith("/api/farm/")) return null;
@@ -95,6 +149,8 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     result.attendance = await visibleRecords(env, user, "attendance");
     result.eggs = await visibleRecords(env, user, "egg_collection");
     result.inventory = role === "farm_worker" ? [] : await visibleRecords(env, user, "inventory");
+    result.feedEnabled = await feedProtectionReady(env);
+    result.feedInventory = result.feedEnabled ? await feedInventory(env, user) : [];
     result.feed = await visibleRecords(env, user, "feed_consumption");
     return json(result);
   }
@@ -130,12 +186,30 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   if (!input) return json({ ok: false, error: "A JSON Farm record is required" }, 400);
   const operationId = clean(input.operationId || input.idempotencyKey, 180);
   if (request.method === "POST" && !operationId && ["animal_movement", "attendance", "egg_collection", "feed_consumption"].includes(type)) {
-    return json({ ok: false, error: "An operationId is required for offline-safe operations" }, 400);
+    return json({ ok: false, error: "An operationId is required for idempotent Farm operations" }, 400);
+  }
+  let feedItemId = "";
+  let feedQuantity = 0;
+  let feedItem: Row | null = null;
+  if (type === "feed_consumption") {
+    feedItemId = clean(input.itemId, 300);
+    const quantity = Number(input.quantity);
+    const roundedQuantity = Math.round(quantity * 1000) / 1000;
+    if (!feedItemId || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1_000_000 ||
+        Math.abs(quantity - roundedQuantity) > 0.000000001) {
+      return json({ ok: false, error: "A feed item and positive quantity (up to three decimal places) are required" }, 400);
+    }
+    feedQuantity = roundedQuantity;
+    input.itemId = feedItemId;
+    input.quantity = feedQuantity;
+    input.notes = clean(input.notes, 500);
+    if (!(await feedProtectionReady(env))) {
+      return json({ ok: false, error: "Feed recording is unavailable until Farm stock protection is enabled" }, 503);
+    }
   }
   if (operationId) {
-    const prior = await env.DB.prepare("SELECT id,record_json FROM sector_records WHERE sector='farm' AND institution_id=? AND record_type=? AND json_extract(record_json,'$.operationId')=? AND is_deleted=0 LIMIT 1")
-      .bind(user.institutionId, type, operationId).all<Row>();
-    if (prior.results[0]) return json({ ok: true, idempotent: true, record: { id: prior.results[0].id, ...JSON.parse(String(prior.results[0].record_json)) } });
+    const prior = await findOperation(env, user, type, operationId);
+    if (prior.results[0]) return priorOperation(type, prior.results[0], input);
   }
   if (input.id) {
     const collision = await env.DB.prepare("SELECT id FROM sector_records WHERE id=? LIMIT 1")
@@ -207,20 +281,47 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     }
   }
   if (type === "feed_consumption") {
-    // Deferred until a single D1 batch can atomically insert the feed event and
-    // decrement inventory. Never deduct stock before saving the event.
-    return json({ ok: false, error: "Feed synchronization is temporarily disabled until atomic stock batching is enabled" }, 503);
+    const inventory = await env.DB.prepare(
+      `SELECT id,record_json FROM sector_records
+       WHERE id=? AND sector='farm' AND record_type='inventory' AND is_deleted=0
+         AND institution_id=? AND (school_id IS NULL OR school_id=?)
+       LIMIT 1`,
+    ).bind(feedItemId, user.institutionId, user.schoolId || "").all<Row>();
+    if (!inventory.results[0]) return json({ ok: false, error: "Feed inventory item was not found in this Farm" }, 404);
+    try {
+      feedItem = JSON.parse(String(inventory.results[0].record_json || "{}")) as Row;
+    } catch {
+      return json({ ok: false, error: "Feed inventory item is invalid" }, 409);
+    }
+    const available = Number(feedItem.quantityInStock);
+    if (!Number.isFinite(available) || available < feedQuantity) {
+      return json({ ok: false, error: "Not enough stock is available for this feed entry" }, 409);
+    }
   }
   try {
-    const saved = await save(env, user, type, { ...input, operationId: operationId || undefined }, owner);
+    const fields: Row = type === "feed_consumption" && feedItem
+      ? {
+          itemId: feedItemId,
+          itemName: clean(feedItem.name, 160),
+          quantity: feedQuantity,
+          unit: clean(feedItem.unit, 40) || "unit",
+          notes: clean(input.notes, 500),
+          recordedBy: user.uid,
+          ...(role === "farm_worker" ? { workerUid: user.uid, ownerUid: user.uid } : {}),
+        }
+      : { ...input };
+    const saved = await save(env, user, type, { ...fields, operationId: operationId || undefined }, owner);
     return json({ ok: true, record: saved }, 201);
   } catch (error) {
     const message = String(error);
+    if (/FARM_STOCK_UNAVAILABLE/i.test(message)) {
+      return json({ ok: false, error: "Not enough stock is available for this feed entry" }, 409);
+    }
+    if (/FARM_FEED_INVALID/i.test(message)) return json({ ok: false, error: "Feed entry is invalid" }, 400);
     if (!/UNIQUE constraint failed|PRIMARY KEY|Farm inventory cannot go below zero/i.test(message)) throw error;
     if (operationId) {
-      const prior = await env.DB.prepare("SELECT id,record_json FROM sector_records WHERE sector='farm' AND institution_id=? AND record_type=? AND json_extract(record_json,'$.operationId')=? AND is_deleted=0 LIMIT 1")
-        .bind(user.institutionId, type, operationId).all<Row>();
-      if (prior.results[0]) return json({ ok: true, idempotent: true, record: { id: prior.results[0].id, ...JSON.parse(String(prior.results[0].record_json)) } });
+      const prior = await findOperation(env, user, type, operationId);
+      if (prior.results[0]) return priorOperation(type, prior.results[0], input);
     }
     return json({ ok: false, error: "This record already exists or violates a Farm inventory guard" }, 409);
   }

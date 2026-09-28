@@ -13,7 +13,7 @@
 - [IndexedDB version migrations](indexeddb-version-migrations.md) — New offline stores need an explicit versioned upgrade branch, not only an updated initial store list.
 - [MFI installment balance compatibility](mfi-installment-balance-compatibility.md) — Normalize legacy paidAmount/paidPrincipal schedules before applying Step 2 component balances.
 - [Yo payment boundaries](yo-payment-boundaries.md) — Keep Yo credentials, signed callbacks, and balance mutations server-side; clients handle references and status only.
-- [Farm Step 2 offline safety](farm-step2-offline-safety.md) — Cache farm inventory locally and make feed sync idempotent so retries cannot deduct stock twice.
+- [Farm Step 2 offline safety](farm-step2-offline-safety.md) — Feed use is online-only and D1-atomic; any future offline queue needs versioned inventory and idempotent retries.
 - [Command Center overlay guards](command-center-overlay-guards.md) — Clear unrelated fullscreen layers and bind every Super Admin quick action during its own bootstrap.
 - [Single-file script bootstrap order](single-file-script-bootstrap-order.md) — Auth routing can run before later classic script blocks; defer or expose late helpers before calling them.
 - [Role dashboard realtime guards](role-dashboard-realtime-guards.md) — Firestore listeners must tolerate missing role-specific widgets without breaking an otherwise successful dashboard login.
@@ -25,5 +25,4 @@
 - [Authenticated greeting boundary](authenticated-greeting-boundary.md) — Keep public Education preview copy non-authenticated; use the shared localized time-of-day contract in signed-in workspaces.
 - [Firebase PDF viewer behavior](firebase-pdf-viewer.md) — Open Firebase Storage download URLs directly; Google Docs Viewer can return 403 for authorized student PDFs.
 - [Firebase rules deployment boundary](firebase-rules-deployment-boundary.md) — GitHub pushes do not publish Firebase Storage Rules; verify the live bucket after rule changes.
-- [Cloudflare account token validation](cloudflare-account-token-validation.md) — Account-scoped tokens may fail user-token verification; validate them with an account-scoped API call.
 - [Static feature archival](static-feature-archival.md) — Gate the API and replace/push static entry pages together; static hosting can bypass server-side archive middleware.
