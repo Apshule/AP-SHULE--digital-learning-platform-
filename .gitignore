@@ -11,6 +11,11 @@ out-tsc
 # dependencies
 node_modules
 
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
 # IDEs and editors
 /.idea
 .project
@@ -54,3 +59,7 @@ artifacts/api-server/data/push-history.json
 
 # VAPID key persistence (contains private key — do not commit)
 .vapid-keys.json
+
+# Firebase migration export (may contain private user records)
+/backup/
+/cloudflare/assets/

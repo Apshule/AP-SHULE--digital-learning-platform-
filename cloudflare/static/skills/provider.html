@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/app.css">
+  <title>Provider | APSHULE Skills</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a class="brand" href="/skills/"><span class="brand-mark">A</span>APSHULE Skills</a><a class="button secondary" href="/skills/">Browse providers</a></header>
+    <main>
+      <section class="card panel">
+        <p class="eyebrow">Approved provider</p>
+        <h1 id="name">Loading provider…</h1>
+        <p id="description" class="muted"></p>
+        <p id="location" class="muted"></p>
+        <div id="contact" class="button-row"></div>
+      </section>
+      <div class="section-title"><div><p class="eyebrow">Training</p><h2>Available courses</h2></div></div>
+      <section id="courses" class="grid"></section>
+      <p class="notice">Online applications remain disabled until the payment and admission checks are connected to the Cloudflare account system. Contact the provider to apply.</p>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (value) => String(value ?? "");
+    const providerId = new URLSearchParams(location.search).get("id") || "";
+    fetch(new URL(`/api/skills/providers/${encodeURIComponent(providerId)}`, "https://appshule.com"), { credentials: "same-origin" })
+      .then((response) => response.json().then((data) => { if (!response.ok || !data.ok) throw new Error(data.error || "Provider profile unavailable"); return data.provider; }))
+      .then((provider) => {
+        $("name").textContent = provider.name || "Training provider";
+        $("description").textContent = provider.description || "Practical vocational training in Uganda.";
+        $("location").textContent = provider.physicalAddress || "Uganda";
+        if (provider.contactEmail) { const email = document.createElement("a"); email.className = "button"; email.href = `mailto:${encodeURIComponent(provider.contactEmail)}`; email.textContent = "Email provider"; $("contact").append(email); }
+        if (provider.contactPhone) { const phone = document.createElement("a"); phone.className = "button secondary"; phone.href = `tel:${encodeURIComponent(provider.contactPhone)}`; phone.textContent = "Call provider"; $("contact").append(phone); }
+        for (const course of provider.courses || []) {
+          const card = document.createElement("article"); card.className = "card panel";
+          const title = document.createElement("h2"); title.textContent = course.title || "Course";
+          const details = document.createElement("p"); details.className = "muted"; details.textContent = `${course.category || "Vocational"} · ${course.duration || "Flexible"} · UGX ${Number(course.feeUgx || 0).toLocaleString()}`;
+          const description = document.createElement("p"); description.textContent = course.description || "";
+          card.append(title, details, description); $("courses").append(card);
+        }
+      })
+      .catch((error) => { $("name").textContent = "Profile unavailable"; $("description").textContent = error.message; });
+  </script>
+</body>
+</html>

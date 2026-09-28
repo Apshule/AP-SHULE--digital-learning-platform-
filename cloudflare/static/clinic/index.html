@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b35">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/app.css">
+  <title>Clinic workspace | APSHULE</title>
+  <style>
+    .clinic-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+    .clinic-tab[aria-pressed="true"]{background:#123b35;color:#fff}
+    .clinic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+    .clinic-card{min-width:0}
+    .clinic-card form{display:grid;gap:10px}
+    .clinic-card input,.clinic-card select,.clinic-card textarea{width:100%;box-sizing:border-box}
+    .clinic-list{display:grid;gap:10px}
+    .clinic-row{border:1px solid #dbe4df;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .clinic-row pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;color:#586862;font-size:.82rem}
+    .clinic-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+    .clinic-metric{background:#f0f6f3;border-radius:12px;padding:14px}
+    .clinic-metric strong{display:block;font-size:1.4rem;color:#123b35}
+    .clinic-metric span{font-size:.85rem;color:#586862}
+    .hidden{display:none!important}
+    @media(max-width:600px){.clinic-row{align-items:flex-start;flex-direction:column}}
+    @media print{.topbar,#tabs,#status,#refresh,#report-filter{display:none!important}body{background:#fff!important}.shell{box-shadow:none!important}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">A</span>APSHULE</a>
+      <div class="button-row"><span id="role" class="badge">Loading account</span><button id="logout" class="button secondary" type="button">Sign out</button></div>
+    </header>
+    <main>
+      <div class="section-title">
+        <div><p class="eyebrow">Clinic operations</p><h1>Clinic workspace</h1><p id="scope" class="muted"></p></div>
+        <button id="refresh" class="button secondary" type="button">Refresh</button>
+      </div>
+      <section class="clinic-metrics" id="metrics" aria-label="Clinic overview"></section>
+      <nav class="clinic-tabs" id="tabs" aria-label="Clinic sections"></nav>
+      <p id="status" class="notice" role="status" aria-live="polite"></p>
+
+      <section id="patients-section" class="clinic-grid">
+        <article class="card panel clinic-card" id="patient-create-card">
+          <h2>Register patient</h2>
+          <form id="patient-form">
+            <label>Full name<input name="fullName" autocomplete="name" required maxlength="160"></label>
+            <label>Phone<input name="phone" type="tel" autocomplete="tel" required maxlength="80"></label>
+            <label>Email<input name="email" type="email" autocomplete="email" maxlength="180"></label>
+            <label>Patient account UID (optional)<input name="patientUid" maxlength="160"></label>
+            <label>Sex<select name="sex"><option value="">Not specified</option><option>Female</option><option>Male</option><option>Other</option></select></label>
+            <label>Date of birth<input name="dateOfBirth" type="date"></label>
+            <label>Address<input name="address" maxlength="300"></label>
+            <label>Emergency contact<input name="emergencyContact" maxlength="160"></label>
+            <button class="button" type="submit">Register patient</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card">
+          <h2>Patients</h2>
+          <div id="patients" class="clinic-list"></div>
+        </article>
+      </section>
+
+      <section id="appointments-section" class="clinic-grid hidden">
+        <article class="card panel clinic-card" id="appointment-create-card">
+          <h2>Schedule appointment</h2>
+          <form id="appointment-form">
+            <label>Patient<select name="patientId" id="appointment-patient" required></select></label>
+            <label>Doctor account UID<input name="doctorId" maxlength="160" required></label>
+            <label>Date<input name="appointmentDate" type="date" required></label>
+            <label>Time<input name="appointmentTime" type="time" required></label>
+            <label>Reason<textarea name="reason" maxlength="500" required></textarea></label>
+            <button class="button" type="submit">Book appointment</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card"><h2>Appointments</h2><div id="appointments" class="clinic-list"></div></article>
+      </section>
+
+      <section id="care-section" class="clinic-grid hidden">
+        <article class="card panel clinic-card" id="visit-create-card">
+          <h2>Record triage / visit</h2>
+          <form id="visit-form">
+            <label>Patient<select name="patientId" id="visit-patient" required></select></label>
+            <label>Symptoms or complaint<textarea name="symptoms" maxlength="2000" required></textarea></label>
+            <label>Temperature °C<input name="temperature" type="number" min="25" max="45" step="0.1"></label>
+            <label>Pulse / min<input name="pulse" type="number" min="20" max="250" step="1"></label>
+            <label>Respiratory rate / min<input name="respiratoryRate" type="number" min="5" max="80" step="1"></label>
+            <label>Weight kg<input name="weightKg" type="number" min="0.1" step="0.1"></label>
+            <label>Height cm<input name="heightCm" type="number" min="1" step="0.1"></label>
+            <label id="clinical-notes-label">Clinical notes<textarea name="clinicalNotes" maxlength="4000"></textarea></label>
+            <button class="button" type="submit">Save visit</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card" id="prescription-create-card">
+          <h2>Issue prescription</h2>
+          <form id="prescription-form">
+            <label>Patient<select name="patientId" id="prescription-patient" required></select></label>
+            <label>Medicine<input name="medicineName" maxlength="160" required></label>
+            <label>Dosage<input name="dosage" maxlength="120" required></label>
+            <label>Frequency<input name="frequency" maxlength="120" required></label>
+            <label>Duration<input name="duration" maxlength="120" required></label>
+            <label>Quantity<input name="quantity" type="number" min="1" max="1000" step="1" value="1" required></label>
+            <button class="button" type="submit">Issue prescription</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card"><h2>Visits</h2><div id="visits" class="clinic-list"></div></article>
+        <article class="card panel clinic-card"><h2>Prescriptions</h2><div id="prescriptions" class="clinic-list"></div></article>
+      </section>
+
+      <section id="pharmacy-section" class="clinic-grid hidden">
+        <article class="card panel clinic-card" id="inventory-create-card">
+          <h2>Add pharmacy item</h2>
+          <form id="inventory-form">
+            <label>Item name<input name="name" maxlength="160" required></label>
+            <label>Generic name<input name="genericName" maxlength="160"></label>
+            <label>Category<input name="category" maxlength="100"></label>
+            <label>Barcode<input name="barcode" maxlength="80"></label>
+            <label>Quantity<input name="quantityInStock" type="number" min="0" step="1" required></label>
+            <label>Low-stock threshold<input name="lowStockThreshold" type="number" min="0" step="1" value="5" required></label>
+            <label>Unit<input name="unit" maxlength="40" value="unit"></label>
+            <label>Expiry date<input name="expiryDate" type="date"></label>
+            <button class="button" type="submit">Save item</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card"><h2>Inventory</h2><div id="inventory" class="clinic-list"></div></article>
+        <article class="card panel clinic-card"><h2>Ready prescriptions</h2><div id="pharmacy-prescriptions" class="clinic-list"></div></article>
+        <article class="card panel clinic-card">
+          <h2>Adjust stock</h2>
+          <form id="inventory-adjust-form">
+            <label>Item<select id="inventory-adjust-item" name="itemId" required></select></label>
+            <label>Quantity change (+/-)<input name="delta" type="number" step="1" required></label>
+            <label>Reason<input name="reason" maxlength="240" required></label>
+            <button class="button" type="submit">Apply adjustment</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card">
+          <h2>Find a product</h2>
+          <form id="scanner-form">
+            <label>Barcode or medicine name<input id="scanner-query" autocomplete="off" maxlength="160"></label>
+            <div class="button-row"><button class="button" type="submit">Match locally</button><button class="button secondary" id="scanner-camera" type="button">Use camera</button></div>
+          </form>
+          <video id="scanner-video" class="hidden" playsinline muted style="width:100%;margin-top:10px;border-radius:10px"></video>
+          <div id="scanner-matches" class="clinic-list"></div>
+        </article>
+      </section>
+
+      <section id="portal-section" class="card panel hidden">
+        <h2>Your clinic history</h2>
+        <p class="muted">Read-only access to your visits and prescriptions.</p>
+        <div class="clinic-grid"><div><h3>Visits</h3><div id="portal-visits" class="clinic-list"></div></div><div><h3>Prescriptions</h3><div id="portal-prescriptions" class="clinic-list"></div></div><div><h3>Billing</h3><div id="portal-billing" class="clinic-list"></div><h3>Insurance claims</h3><div id="portal-claims" class="clinic-list"></div></div></div>
+      </section>
+
+      <section id="billing-section" class="clinic-grid hidden">
+        <article id="bill-create-card" class="card panel clinic-card">
+          <h2>Create bill</h2>
+          <form id="billing-form">
+            <label>Patient<select name="patientId" id="bill-patient" required></select></label>
+            <label>Description<input name="description" maxlength="500" required></label>
+            <label>Total (UGX)<input name="totalAmount" type="number" min="1" step="1" required></label>
+            <button class="button" type="submit">Create bill</button>
+          </form>
+        </article>
+        <article id="payment-create-card" class="card panel clinic-card">
+          <h2>Record manual payment</h2>
+          <p class="muted">Records a payment already received. No payment gateway is connected.</p>
+          <form id="payment-form">
+            <label>Bill<select name="billId" id="payment-bill" required></select></label>
+            <label>Amount (UGX)<input name="amount" type="number" min="1" step="1" required></label>
+            <label>Method<select name="method" required><option value="cash">Cash</option><option value="mobile_money">Mobile money received</option><option value="bank_transfer">Bank transfer</option><option value="insurance">Insurance</option></select></label>
+            <label>Receipt / reference<input name="reference" maxlength="160"></label>
+            <button class="button" type="submit">Record payment</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card"><h2>Bills</h2><div id="billing-records" class="clinic-list"></div></article>
+        <article class="card panel clinic-card"><h2>Payment history</h2><div id="payments-list" class="clinic-list"></div></article>
+      </section>
+
+      <section id="claims-section" class="clinic-grid hidden">
+        <article id="claim-create-card" class="card panel clinic-card">
+          <h2>Submit insurance claim</h2>
+          <form id="claim-form">
+            <label>Patient<select name="patientId" id="claim-patient" required></select></label>
+            <label>Related bill (optional)<select name="billId" id="claim-bill"></select></label>
+            <label>Insurance provider<input name="provider" maxlength="120" required></label>
+            <label>Claim number<input name="claimNumber" maxlength="120"></label>
+            <label>Claim amount (UGX)<input name="claimAmount" type="number" min="1" step="1" required></label>
+            <button class="button" type="submit">Create claim</button>
+          </form>
+        </article>
+        <article class="card panel clinic-card"><h2>Insurance claims</h2><div id="claims-list" class="clinic-list"></div></article>
+      </section>
+
+      <section id="reports-section" class="hidden">
+        <article class="card panel clinic-card">
+          <h2>Clinic reports</h2>
+          <form id="report-filter" class="clinic-inline-form">
+            <label>From<input name="from" type="date"></label><label>To<input name="to" type="date"></label>
+            <div class="button-row"><button class="button" type="submit">Run report</button><button class="button secondary" id="report-export" type="button">Download CSV</button><button class="button secondary" id="report-print" type="button">Print / PDF</button></div>
+          </form>
+          <div id="report-summary" class="clinic-metrics"></div>
+          <div class="clinic-grid"><div><h3>Daily revenue</h3><div id="report-revenue" class="clinic-list"></div></div><div><h3>Appointment peak hours</h3><div id="report-hours" class="clinic-list"></div></div><div><h3>Visits by doctor</h3><div id="report-doctors" class="clinic-list"></div></div></div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let state = {};
+    let currentRole = "";
+    const tabDefinitions = [
+      ["patients", "Patients", ["clinic_admin","doctor","nurse","receptionist","pharmacist","superadmin"]],
+      ["appointments", "Appointments", ["clinic_admin","doctor","nurse","receptionist","patient","superadmin"]],
+      ["care", "Clinical care", ["clinic_admin","doctor","nurse","superadmin"]],
+      ["pharmacy", "Pharmacy", ["clinic_admin","pharmacist","superadmin"]],
+      ["portal", "My history", ["patient"]],
+      ["billing", "Billing", ["clinic_admin","receptionist","patient","superadmin"]],
+      ["claims", "Insurance", ["clinic_admin","receptionist","patient","superadmin"]],
+      ["reports", "Reports", ["clinic_admin","superadmin"]],
+    ];
+    function showStatus(message, kind = "") { $("status").textContent = message; $("status").className = `notice ${kind}`; }
+    async function api(path, options = {}) {
+      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+    function formObject(form) { return Object.fromEntries(new FormData(form).entries()); }
+    function addText(parent, value, tag = "span") { const node = document.createElement(tag); node.textContent = value ?? ""; parent.append(node); return node; }
+    function itemRow(container, title, detail, actionLabel, action) {
+      const row = document.createElement("article"); row.className = "clinic-row";
+      const copy = document.createElement("div"); addText(copy, title || "Record", "strong"); addText(copy, detail || "", "small");
+      row.append(copy);
+      if (actionLabel && action) { const button = document.createElement("button"); button.type = "button"; button.className = "button secondary"; button.textContent = actionLabel; button.addEventListener("click", action); row.append(button); }
+      container.append(row);
+    }
+    function setSelect(id, records) {
+      const select = $(id); const current = select.value; select.replaceChildren();
+      const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "Select patient"; select.append(placeholder);
+      for (const patient of records || []) {
+        const option = document.createElement("option"); option.value = patient.id;
+        option.textContent = `${patient.fullName || patient.name || "Patient"} · ${patient.phone || ""}`; select.append(option);
+      }
+      if ([...select.options].some((item) => item.value === current)) select.value = current;
+    }
+    function setBillSelect(id, records, allowEmpty = false) {
+      const select = $(id); const current = select.value; select.replaceChildren();
+      const placeholder = document.createElement("option"); placeholder.value = "";
+      placeholder.textContent = allowEmpty ? "No bill linked" : "Select unpaid bill"; select.append(placeholder);
+      for (const bill of records || []) {
+        if (!allowEmpty && ["paid","reversed"].includes(String(bill.status || "").toLowerCase())) continue;
+        const option = document.createElement("option"); option.value = bill.id;
+        option.textContent = `${bill.invoiceNumber || bill.id} · ${bill.patientName || "Patient"} · UGX ${bill.balanceRemaining ?? bill.totalAmount ?? bill.total ?? 0}`;
+        select.append(option);
+      }
+      if ([...select.options].some((item) => item.value === current)) select.value = current;
+    }
+    function renderRecords() {
+      const patients = state.patients || [];
+      for (const id of ["appointment-patient","visit-patient","prescription-patient","bill-patient","claim-patient"]) setSelect(id, patients);
+      setBillSelect("payment-bill", state.billing || []);
+      setBillSelect("claim-bill", state.billing || [], true);
+      $("patients").replaceChildren();
+      for (const patient of patients) itemRow($("patients"), patient.fullName || patient.name, `${patient.phone || ""} · ${patient.status || "active"}`);
+      $("appointments").replaceChildren();
+      for (const appointment of state.appointments || []) {
+        const canCheckIn = ["clinic_admin","receptionist","superadmin"].includes(currentRole) && appointment.status !== "checked_in";
+        itemRow($("appointments"), `${appointment.patientName || "Patient"} · ${appointment.appointmentDate || ""} ${appointment.appointmentTime || ""}`,
+          `${appointment.reason || ""} · ${appointment.status || "scheduled"}`,
+          canCheckIn ? "Check in" : "", async () => {
+            try { await api(`/api/clinic/appointments/${encodeURIComponent(appointment.id)}/check-in`, { method: "POST", body: "{}" }); await load(); showStatus("Patient checked in.", "success"); }
+            catch (error) { showStatus(error.message, "error"); }
+          });
+      }
+      $("visits").replaceChildren();
+      for (const visit of state.visits || []) itemRow($("visits"), `${visit.patientName || "Patient"} · ${String(visit.visitDate || visit.createdAt || "").slice(0,10)}`,
+        `${visit.symptoms || ""}${visit.bmi ? ` · BMI ${visit.bmi}` : ""}${visit.clinicalNotes ? ` · ${visit.clinicalNotes}` : ""}`);
+      $("prescriptions").replaceChildren();
+      for (const rx of state.prescriptions || []) itemRow($("prescriptions"), `${rx.patientName || "Patient"} · ${rx.medicineName || ""}`,
+        `${rx.dosage || ""} · ${rx.frequency || ""} · ${rx.duration || ""} · ${rx.status || "ready"}`);
+      $("pharmacy-prescriptions").replaceChildren();
+      for (const rx of (state.prescriptions || []).filter((item) => item.status !== "dispensed")) {
+        itemRow($("pharmacy-prescriptions"), `${rx.patientName || "Patient"} · ${rx.medicineName || ""}`,
+          `${rx.dosage || ""} · ${rx.quantity || 1} ${rx.status || "ready"}`,
+          ["clinic_admin","pharmacist","superadmin"].includes(currentRole) ? "Mark dispensed" : "",
+          async () => {
+            try { await api(`/api/clinic/prescriptions/${encodeURIComponent(rx.id)}/dispense`, { method: "POST", body: "{}" }); await load(); showStatus("Prescription dispensed.", "success"); }
+            catch (error) { showStatus(error.message, "error"); }
+          });
+      }
+      $("inventory").replaceChildren();
+      const adjustSelect = $("inventory-adjust-item"); const previousItem = adjustSelect.value; adjustSelect.replaceChildren();
+      for (const item of state.inventory || []) { const option = document.createElement("option"); option.value = item.id; option.textContent = `${item.name} · ${item.quantityInStock || 0} ${item.unit || "unit"}`; adjustSelect.append(option); }
+      if ([...adjustSelect.options].some((option) => option.value === previousItem)) adjustSelect.value = previousItem;
+      for (const item of state.inventory || []) {
+        const low = Number(item.quantityInStock || 0) <= Number(item.lowStockThreshold || 0);
+        itemRow($("inventory"), item.name, `${item.quantityInStock || 0} ${item.unit || "unit"} · ${item.category || "uncategorized"}${low ? " · LOW STOCK" : ""}${item.expiryDate ? ` · expires ${item.expiryDate}` : ""}`);
+      }
+      $("portal-visits").replaceChildren();
+      for (const item of state.visits || []) itemRow($("portal-visits"), item.visitDate || "Visit", item.symptoms || "");
+      $("portal-prescriptions").replaceChildren();
+      for (const item of state.prescriptions || []) itemRow($("portal-prescriptions"), item.medicineName, `${item.dosage || ""} · ${item.status || ""}`);
+      $("portal-billing").replaceChildren();
+      for (const item of state.billing || []) itemRow($("portal-billing"), item.invoiceNumber || item.id, `${item.status || ""} · UGX ${item.totalAmount || item.total || 0} · balance UGX ${item.balanceRemaining ?? item.totalAmount ?? item.total ?? 0}`);
+      $("portal-claims").replaceChildren();
+      for (const item of state.claims || []) itemRow($("portal-claims"), `${item.provider || "Insurance"} · ${item.claimNumber || item.id}`, `${item.status || "Draft"} · UGX ${item.claimAmount || 0}`);
+      $("billing-records").replaceChildren();
+      for (const bill of state.billing || []) {
+        const canPay = ["clinic_admin","receptionist","superadmin"].includes(currentRole) && !["paid","reversed"].includes(String(bill.status || "").toLowerCase());
+        itemRow($("billing-records"), `${bill.invoiceNumber || bill.id} · ${bill.patientName || "Patient"}`,
+          `${bill.description || ""} · ${bill.status || "unpaid"} · UGX ${bill.totalAmount || bill.total || 0} total · UGX ${bill.balanceRemaining ?? bill.totalAmount ?? bill.total ?? 0} due`,
+          canPay ? "Record payment" : "", () => {
+            $("payment-bill").value = bill.id;
+            $("payment-form").scrollIntoView({ behavior: "smooth", block: "center" });
+            $("payment-form").querySelector('[name="amount"]').focus();
+          });
+      }
+      $("payments-list").replaceChildren();
+      for (const payment of state.payments || []) itemRow($("payments-list"), `UGX ${payment.amount} · ${payment.method}`, `${payment.billId || ""} · ${payment.reference || ""} · ${String(payment.createdAt || "").slice(0,16)}`);
+      $("claims-list").replaceChildren();
+      const claimTransitions = {
+        Draft: ["Submitted"], Submitted: ["Under Review"],
+        "Under Review": ["Approved", "Partially Approved", "Rejected"],
+        Approved: ["Paid"], "Partially Approved": ["Paid"],
+      };
+      for (const claim of state.claims || []) {
+        const row = document.createElement("article"); row.className = "clinic-row";
+        const copy = document.createElement("div");
+        addText(copy, `${claim.provider || "Insurance"} · ${claim.claimNumber || claim.id}`, "strong");
+        addText(copy, `${claim.patientName || "Patient"} · ${claim.status || "Draft"} · UGX ${claim.claimAmount || 0}`, "small");
+        row.append(copy);
+        const choices = claimTransitions[claim.status] || [];
+        if (["clinic_admin","superadmin"].includes(currentRole) && choices.length) {
+          const select = document.createElement("select"); select.setAttribute("aria-label", "Next claim status");
+          for (const choice of choices) { const option = document.createElement("option"); option.value = choice; option.textContent = choice; select.append(option); }
+          const button = document.createElement("button"); button.type = "button"; button.className = "button secondary"; button.textContent = "Update";
+          button.addEventListener("click", async () => {
+            try { await api(`/api/clinic/claims/${encodeURIComponent(claim.id)}`, { method: "PATCH", body: JSON.stringify({ status: select.value }) }); await load(); showStatus("Claim status updated.", "success"); }
+            catch (error) { showStatus(error.message, "error"); }
+          });
+          row.append(select, button);
+        }
+        $("claims-list").append(row);
+      }
+      const metricValues = [
+        ["Patients", patients.length], ["Appointments", (state.appointments || []).length],
+        ["Visits", (state.visits || []).length], ["Ready prescriptions", (state.prescriptions || []).filter((rx) => rx.status !== "dispensed").length],
+      ];
+      $("metrics").replaceChildren();
+      for (const [label, value] of metricValues) { const card = document.createElement("div"); card.className = "clinic-metric"; addText(card, String(value), "strong"); addText(card, label); $("metrics").append(card); }
+    }
+    function setupRole() {
+      const is = (...roles) => roles.includes(currentRole);
+      $("patient-create-card").classList.toggle("hidden", !is("clinic_admin","receptionist","superadmin"));
+      $("appointment-create-card").classList.toggle("hidden", !is("clinic_admin","receptionist","patient","superadmin"));
+      $("visit-create-card").classList.toggle("hidden", !is("clinic_admin","doctor","nurse","superadmin"));
+      $("prescription-create-card").classList.toggle("hidden", !is("clinic_admin","doctor","superadmin"));
+      $("inventory-create-card").classList.toggle("hidden", !is("clinic_admin","pharmacist","superadmin"));
+      $("clinical-notes-label").classList.toggle("hidden", currentRole === "nurse");
+      $("portal-section").classList.toggle("hidden", currentRole !== "patient");
+      $("patients-section").classList.toggle("hidden", currentRole === "patient");
+      $("appointments-section").classList.add("hidden");
+      $("care-section").classList.toggle("hidden", !is("clinic_admin","doctor","nurse","superadmin"));
+      $("pharmacy-section").classList.toggle("hidden", !is("clinic_admin","pharmacist","superadmin"));
+      $("bill-create-card").classList.toggle("hidden", !is("clinic_admin","receptionist","superadmin"));
+      $("payment-create-card").classList.toggle("hidden", !is("clinic_admin","receptionist","superadmin"));
+      $("claim-create-card").classList.toggle("hidden", !is("clinic_admin","receptionist","superadmin"));
+      $("reports-section").classList.toggle("hidden", !is("clinic_admin","superadmin"));
+      $("tabs").replaceChildren();
+      for (const [section,label,roles] of tabDefinitions) {
+        if (!roles.includes(currentRole)) continue;
+        const button = document.createElement("button"); button.className = "button secondary clinic-tab"; button.textContent = label; button.type = "button"; button.setAttribute("aria-pressed", "false");
+        button.dataset.section = section;
+        button.addEventListener("click", () => {
+          for (const id of ["patients","appointments","care","pharmacy","portal","billing","claims","reports"]) {
+            const panel = $(`${id}-section`); if (panel) panel.classList.toggle("hidden", id !== section || id === "patients" && currentRole === "patient");
+          }
+          for (const tab of $("tabs").querySelectorAll("button")) tab.setAttribute("aria-pressed", String(tab === button));
+        });
+        $("tabs").append(button);
+      }
+      const defaultSection = currentRole === "patient" ? "portal" : "patients";
+      $("tabs").querySelector(`[data-section="${defaultSection}"]`)?.click();
+    }
+    async function load() {
+      showStatus("Loading clinic records…");
+      try {
+        state = await api("/api/clinic/workspace", { method: "GET", headers: {} });
+        renderRecords(); showStatus("Clinic records loaded.", "success");
+      } catch (error) { showStatus(error.message, "error"); }
+    }
+    async function submit(form, path, success) {
+      try { await api(path, { method: "POST", body: JSON.stringify(formObject(form)) }); form.reset(); await load(); showStatus(success, "success"); }
+      catch (error) { showStatus(error.message, "error"); }
+    }
+    $("patient-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/patients", "Patient registered."); });
+    $("appointment-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/appointments", "Appointment scheduled."); });
+    $("visit-form").addEventListener("submit", (event) => {
+      event.preventDefault(); const form = event.currentTarget; const raw = formObject(form); const vitals = {};
+      for (const key of ["temperature","pulse","respiratoryRate","weightKg","heightCm"]) if (raw[key]) vitals[key] = Number(raw[key]);
+      const payload = { patientId: raw.patientId, symptoms: raw.symptoms, clinicalNotes: raw.clinicalNotes, vitals };
+      (async () => {
+        try { await api("/api/clinic/visits", { method: "POST", body: JSON.stringify(payload) }); form.reset(); await load(); showStatus("Visit saved.", "success"); }
+        catch (error) { showStatus(error.message, "error"); }
+      })();
+    });
+    $("inventory-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/inventory", "Pharmacy item saved."); });
+    $("inventory-adjust-form").addEventListener("submit", async (event) => {
+      event.preventDefault(); const form = event.currentTarget; const raw = formObject(form);
+      if (!form.dataset.idempotencyKey) form.dataset.idempotencyKey = crypto.randomUUID();
+      try { await api(`/api/clinic/inventory/${encodeURIComponent(raw.itemId)}/adjust`, { method: "POST", body: JSON.stringify({ delta: Number(raw.delta), reason: raw.reason, idempotencyKey: form.dataset.idempotencyKey }) }); form.reset(); delete form.dataset.idempotencyKey; await load(); showStatus("Stock adjustment saved.", "success"); }
+      catch (error) { showStatus(error.message, "error"); }
+    });
+    $("prescription-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/prescriptions", "Prescription issued."); });
+    $("billing-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/billing", "Bill created."); });
+    $("payment-form").addEventListener("submit", async (event) => {
+      event.preventDefault(); const form = event.currentTarget; const raw = formObject(form);
+      if (!form.dataset.idempotencyKey) form.dataset.idempotencyKey = crypto.randomUUID();
+      try {
+        await api(`/api/clinic/billing/${encodeURIComponent(raw.billId)}/payments`, {
+          method: "POST",
+          body: JSON.stringify({ amount: Number(raw.amount), method: raw.method, reference: raw.reference, idempotencyKey: form.dataset.idempotencyKey }),
+        });
+        form.reset(); delete form.dataset.idempotencyKey; await load(); showStatus("Manual payment recorded; no gateway was called.", "success");
+      } catch (error) { showStatus(error.message, "error"); }
+    });
+    $("claim-form").addEventListener("submit", (event) => { event.preventDefault(); submit(event.currentTarget, "/api/clinic/claims", "Insurance claim created."); });
+    async function loadReport() {
+      const params = new URLSearchParams(formObject($("report-filter")));
+      const report = await api(`/api/clinic/reports?${params.toString()}`, { method: "GET", headers: {} });
+      state.report = report;
+      $("report-summary").replaceChildren();
+      for (const [label, value] of Object.entries(report.summary || {})) {
+        const card = document.createElement("div"); card.className = "clinic-metric";
+        addText(card, String(value), "strong"); addText(card, label); $("report-summary").append(card);
+      }
+      for (const [id, key, name, value] of [
+        ["report-revenue", "revenueTrend", "date", "amount"],
+        ["report-hours", "peakHours", "hour", "count"],
+        ["report-doctors", "doctorPerformance", "doctorId", "visitCount"],
+      ]) {
+        $(id).replaceChildren();
+        for (const row of report[key] || []) itemRow($(id), String(row[name]), String(row[value]));
+      }
+      showStatus("Clinic report updated.", "success");
+    }
+    $("report-filter").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try { await loadReport(); } catch (error) { showStatus(error.message, "error"); }
+    });
+    $("report-export").addEventListener("click", () => {
+      if (!state.report) { showStatus("Run a report before exporting it.", "error"); return; }
+      const rows = [["Metric", "Value"], ...Object.entries(state.report.summary || {})];
+      for (const [title, key, labelKey, valueKey] of [
+        ["Revenue", "revenueTrend", "date", "amount"], ["Peak hours", "peakHours", "hour", "count"],
+        ["Doctor visits", "doctorPerformance", "doctorId", "visitCount"],
+      ]) {
+        for (const item of state.report[key] || []) rows.push([title + ": " + item[labelKey], item[valueKey]]);
+      }
+      const csv = rows.map((row) => row.map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")).join("\r\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a"); link.href = url; link.download = "clinic-report.csv"; link.click(); URL.revokeObjectURL(url);
+    });
+    $("report-print").addEventListener("click", () => window.print());
+    function findProductMatches(query) {
+      const needle = String(query || "").trim().toLowerCase(); const matches = (state.inventory || []).filter((item) =>
+        !needle || [item.name,item.genericName,item.barcode].some((value) => String(value || "").toLowerCase().includes(needle))
+      ).slice(0, 8);
+      $("scanner-matches").replaceChildren();
+      for (const item of matches) itemRow($("scanner-matches"), item.name, `${item.genericName || ""} · ${item.quantityInStock || 0} ${item.unit || "unit"} · ${item.barcode || "no barcode"}`);
+      if (!matches.length) addText($("scanner-matches"), "No matching stock item.", "p");
+    }
+    $("scanner-form").addEventListener("submit", (event) => { event.preventDefault(); findProductMatches($("scanner-query").value); });
+    $("scanner-camera").addEventListener("click", async () => {
+      if (!("BarcodeDetector" in window) || !navigator.mediaDevices?.getUserMedia) { showStatus("Camera barcode scanning is not supported here; enter the barcode or medicine name to search locally.", "error"); return; }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } });
+        const video = $("scanner-video"); video.srcObject = stream; video.classList.remove("hidden"); await video.play();
+        const detector = new BarcodeDetector();
+        const scan = async () => {
+          if (!video.srcObject) return;
+          const codes = await detector.detect(video);
+          if (codes.length) {
+            $("scanner-query").value = codes[0].rawValue || "";
+            findProductMatches($("scanner-query").value);
+            for (const track of stream.getTracks()) track.stop();
+            video.srcObject = null; video.classList.add("hidden");
+            showStatus("Barcode matched against this clinic's local inventory.", "success");
+          } else requestAnimationFrame(scan);
+        };
+        requestAnimationFrame(scan);
+      } catch { showStatus("Camera access failed. Use the barcode/name search instead.", "error"); }
+    });
+    $("refresh").addEventListener("click", load);
+    $("logout").addEventListener("click", async () => { try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } finally { location.assign("/"); } });
+    async function init() {
+      try {
+        const session = await api("/api/auth/session", { method: "GET", headers: {} });
+        currentRole = String(session.user.role || "").toLowerCase();
+        $("role").textContent = session.user.role || "Clinic account";
+        $("scope").textContent = session.user.institutionId || "Clinic institution not selected";
+        setupRole(); await load();
+      } catch (error) { showStatus(error.message, "error"); setTimeout(() => location.replace("/"), 800); }
+    }
+    init();
+  </script>
+</body>
+</html>

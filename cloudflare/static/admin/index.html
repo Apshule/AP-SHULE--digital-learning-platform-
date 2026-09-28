@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/app.css">
+  <title>Super Admin | APSHULE</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">A</span>APSHULE Admin</a>
+      <div class="button-row"><span class="badge">Super Admin</span><button id="logout" class="button secondary" type="button">Sign out</button></div>
+    </header>
+    <main>
+      <div class="section-title"><div><p class="eyebrow">Access control</p><h1>Manage accounts and roles</h1><p class="muted">New users must complete a password reset before signing in.</p></div><div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary">Refresh</button></div></div>
+      <section class="card panel">
+        <h2>Create a user</h2>
+        <form id="create-user" class="grid">
+          <div><label for="email">Email</label><input id="email" name="email" type="email" required></div>
+          <div><label for="displayName">Display name</label><input id="displayName" name="displayName" required></div>
+          <div><label for="role">Role</label><select id="role" name="role">
+            <option value="secretary">Secretary</option><option value="headteacher">Head Teacher</option><option value="bursar">Bursar</option>
+            <option value="teacher">Teacher</option><option value="clinic_admin">Clinic Admin</option><option value="doctor">Doctor</option>
+            <option value="nurse">Nurse</option><option value="receptionist">Receptionist</option><option value="pharmacist">Pharmacist</option>
+            <option value="patient">Patient</option><option value="farm_admin">Farm Admin</option><option value="farm_director">Farm Director</option>
+            <option value="farm_manager">Farm Manager</option><option value="farm_worker">Farm Worker</option><option value="mfi_admin">MFI Admin</option>
+            <option value="loan_officer">Loan Officer</option><option value="loan_manager">Loan Manager</option><option value="loan_director">Loan Director</option>
+            <option value="borrower">Borrower</option><option value="superadmin">Super Admin</option>
+          </select></div>
+          <div><label for="schoolId">School ID (if applicable)</label><input id="schoolId" name="schoolId"></div>
+          <div><label for="institutionId">Institution ID</label><input id="institutionId" name="institutionId"></div>
+          <div class="button-row" style="align-self:end"><button class="button" type="submit">Create account and send reset code</button></div>
+        </form>
+        <p id="create-status" class="notice" role="status" aria-live="polite"></p>
+      </section>
+      <section class="card panel">
+        <div class="toolbar"><div><h2>Users</h2><p class="muted">Changing a role or status revokes existing sessions.</p></div></div>
+        <div id="users" class="table-wrap"></div>
+      </section>
+      <section class="card panel">
+        <h2>Role capabilities</h2>
+        <div id="roles" class="table-wrap"></div>
+      </section>
+      <section class="card panel">
+        <h2>Recent administrator actions</h2>
+        <div id="audit" class="table-wrap"></div>
+      </section>
+      <p id="status" class="notice" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function request(path, options = {}) {
+      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+    function cell(text) { const td = document.createElement("td"); td.textContent = text == null ? "" : String(text); return td; }
+    function table(headers, rows) {
+      const table = document.createElement("table"), thead = document.createElement("thead"), tr = document.createElement("tr");
+      headers.forEach((header) => { const th = document.createElement("th"); th.textContent = header; tr.append(th); });
+      thead.append(tr); table.append(thead);
+      const tbody = document.createElement("tbody");
+      rows.forEach((row) => { const tr = document.createElement("tr"); row.forEach((value) => tr.append(value instanceof Node ? value : cell(value))); tbody.append(tr); });
+      table.append(tbody); return table;
+    }
+    async function load() {
+      $("status").textContent = "Loading administration data…";
+      try {
+        const [users, roles, audit] = await Promise.all([
+          request("/api/admin/users"), request("/api/admin/roles"), request("/api/admin/audit"),
+        ]);
+        const userTableRows = (users.users || []).map((user) => {
+          const roleSelect = document.createElement("select");
+          ["secretary","headteacher","bursar","teacher","clinic_admin","doctor","nurse","receptionist","pharmacist","patient","farm_admin","farm_director","farm_manager","farm_worker","mfi_admin","loan_officer","loan_manager","loan_director","borrower","superadmin"].forEach((role) => {
+            const option = document.createElement("option"); option.value = role; option.textContent = role; option.selected = role === user.role; roleSelect.append(option);
+          });
+          roleSelect.addEventListener("change", async () => {
+            try { await request(`/api/admin/users/${encodeURIComponent(user.uid)}`, { method: "PATCH", body: JSON.stringify({ role: roleSelect.value }) }); $("status").textContent = "Role updated; sessions revoked."; }
+            catch (error) { $("status").textContent = error.message; await load(); }
+          });
+          const statusButton = document.createElement("button"); statusButton.className = `button ${user.active ? "danger" : "secondary"}`; statusButton.textContent = user.active ? "Disable" : "Enable";
+          statusButton.addEventListener("click", async () => {
+            try { await request(`/api/admin/users/${encodeURIComponent(user.uid)}`, { method: "PATCH", body: JSON.stringify({ active: !user.active }) }); await load(); }
+            catch (error) { $("status").textContent = error.message; }
+          });
+          return [user.email, user.displayName, roleSelect, user.schoolId || user.institutionId || "—", user.active ? "Active" : "Disabled", statusButton];
+        });
+        $("users").replaceChildren(table(["Email","Name","Role","Tenant","Status","Action"], userTableRows));
+        $("roles").replaceChildren(table(["Role","Sector","Capability","Scope"], (roles.roles || []).map((item) => [item.role, item.sector, item.capability, item.scope])));
+        $("audit").replaceChildren(table(["Time","Actor","Action","Resource","ID"], (audit.audit || []).map((item) => [item.created_at, item.actor_id, item.action, item.resource_type, item.resource_id])));
+        $("status").textContent = `${users.users?.length || 0} accounts loaded.`;
+      } catch (error) {
+        $("status").textContent = error.message;
+        if (error.message.includes("Authentication") || error.message.includes("Superadmin")) setTimeout(() => location.replace("/"), 700);
+      }
+    }
+    $("create-user").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+      $("create-status").textContent = "Creating account…";
+      try {
+        await request("/api/admin/users", { method: "POST", body: JSON.stringify(values) });
+        let resetMessage = "Account created; a reset code was requested. The user can enter it on the password reset page.";
+        try {
+          const reset = await request("/api/auth/request-password-reset", { method: "POST", body: JSON.stringify({ email: values.email }) });
+          resetMessage = reset.message || resetMessage;
+        } catch (error) { resetMessage = `Account created, but reset email is unavailable: ${error.message}`; }
+        $("create-status").textContent = resetMessage;
+        event.currentTarget.reset(); await load();
+      } catch (error) { $("create-status").textContent = error.message; }
+    });
+    $("refresh").addEventListener("click", load);
+    $("logout").addEventListener("click", async () => { try { await request("/api/auth/logout", { method: "POST", body: "{}" }); } finally { location.assign("/"); } });
+    load();
+  </script>
+</body>
+</html>

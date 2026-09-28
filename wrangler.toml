@@ -1,0 +1,76 @@
+name = "apshule-skills"
+main = "cloudflare/worker.ts"
+compatibility_date = "2026-09-23"
+account_id = "f2e44408681c3db94b590215ec36188c"
+workers_dev = true
+
+[vars]
+ENVIRONMENT = "production"
+D1_DATABASE_NAME = "apshule-skills-db"
+PUBLIC_SITE_URL = "https://appshule.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "apshule-skills-db"
+database_id = "a34139c7-2f60-47e4-bca1-db335a59043a"
+migrations_dir = "cloudflare/migrations"
+
+[[r2_buckets]]
+binding = "VIDEOS"
+bucket_name = "apshule-vocational-videos"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "apshule-storage"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
+
+[assets]
+directory = "cloudflare/assets"
+binding = "STATIC"
+
+[env.production]
+name = "apshule-skills-production"
+workers_dev = true
+
+routes = [
+  { pattern = "appshule.com/*", zone_name = "appshule.com" },
+  { pattern = "www.appshule.com/*", zone_name = "appshule.com" },
+]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+D1_DATABASE_NAME = "apshule-skills-db"
+PUBLIC_SITE_URL = "https://appshule.com"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "apshule-skills-db"
+database_id = "a34139c7-2f60-47e4-bca1-db335a59043a"
+migrations_dir = "cloudflare/migrations"
+
+[[env.production.r2_buckets]]
+binding = "VIDEOS"
+bucket_name = "apshule-vocational-videos"
+
+[[env.production.r2_buckets]]
+binding = "FILES"
+bucket_name = "apshule-storage"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
+
+[[env.production.kv_namespaces]]
+binding = "SESSIONS"
+id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
+
+[env.production.assets]
+directory = "cloudflare/assets"
+binding = "STATIC"

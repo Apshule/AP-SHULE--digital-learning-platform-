@@ -4,14 +4,16 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Run & Operate
 
-- `pnpm run push` — stage `index.html`, `CNAME`, and `firebase-messaging-sw.js` and push them to GitHub in one step
-- `pnpm run push:watch` — watch those same files and auto-push to GitHub on change (debounced 5 s); logs "Pushed to GitHub ✓" with a timestamp on each successful push
+- Cloudflare Worker at `https://appshule.com` is the only production host; GitHub `main` is a source-code backup and GitHub Pages is disabled.
+- `pnpm run build:cloudflare` — stage the Worker’s static assets in ignored `cloudflare/assets/`.
+- `pnpm exec wrangler deploy --env production` — deploy the Cloudflare Worker when a production deployment is explicitly requested.
+- `pnpm run push` and `pnpm run push:watch` are legacy site-sync tools. Do not use them for releases: the watcher force-pushes only a partial file list.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Database connection: `NEON_DATABASE_URL` overrides the runtime-managed `DATABASE_URL`; use Replit Secrets for external database credentials.
 
 ## Stack
 
@@ -28,7 +30,9 @@ _Populate as you build — short repo map plus pointers to the source-of-truth f
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The current production frontend source is `cloudflare/static/`; its API helpers resolve requests to `https://appshule.com/api/...`.
+- `cloudflare/stage-assets.mjs` assembles the Worker’s static asset tree; do not publish the legacy root Pages frontend.
+- Do not add Firebase/Google or Render API calls to the Cloudflare frontend. Keep payment-provider initiation on hold until credentials and approval are provided.
 
 ## Product
 

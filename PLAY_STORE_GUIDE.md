@@ -7,7 +7,7 @@ This guide packages the existing APSHULE PWA at `https://appshule.com` as a Trus
 You need:
 
 - A computer with Node.js and Java installed.
-- Access to the APSHULE domain and GitHub Pages repository.
+- Access to the APSHULE domain and Cloudflare Worker deployment.
 - A Google Play Console developer account. Google charges a one-time registration fee.
 - A secure place to keep the Android signing keystore and its passwords.
 
@@ -22,7 +22,7 @@ Open these URLs and confirm each responds successfully:
 
 The manifest includes the fields needed by Bubblewrap: app name, short name, start URL, standalone display mode, theme colors, and locally hosted PNG icons with verified 192×192 and 512×512 dimensions. The 512×512 icon keeps the APSHULE artwork inside the maskable safe area.
 
-The initial `assetlinks.json` contains a placeholder fingerprint. Replace it after Bubblewrap creates the signing key. The repository also contains `.nojekyll`, which allows GitHub Pages to publish the otherwise-hidden `.well-known` directory.
+The initial `assetlinks.json` contains a placeholder fingerprint. Replace it after Bubblewrap creates the signing key. The Cloudflare Worker serves the `.well-known` path; GitHub Pages is disabled and is not part of deployment.
 
 ## 2. Install Bubblewrap
 

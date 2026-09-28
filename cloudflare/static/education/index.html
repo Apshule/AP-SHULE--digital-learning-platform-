@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/app.css">
+  <title>Education workspace | APSHULE</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">A</span>APSHULE Education</a>
+      <div class="button-row"><span id="role-badge" class="badge">Loading workspace</span><button id="logout" class="button secondary" type="button">Sign out</button></div>
+    </header>
+    <main>
+        <div class="section-title">
+         <div><p class="eyebrow">School workspace</p><h1 id="title">Loading your workspace…</h1><p id="scope" class="muted"></p></div>
+         <div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary" type="button">Refresh</button></div>
+      </div>
+      <section class="card panel">
+        <h2>Access for this role</h2>
+        <p class="muted">Data and actions shown here are limited by your assigned role and school scope.</p>
+        <div id="capabilities" class="capabilities"></div>
+      </section>
+      <section id="actions" class="grid"></section>
+      <section id="records"></section>
+      <p id="status" class="notice" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let workspace = null;
+    let activeUser = null;
+    const cap = (name) => (workspace?.capabilities || []).includes(name);
+    const showStatus = (text, kind = "") => { $("status").textContent = text; $("status").className = `notice ${kind}`; };
+    async function request(path, options = {}) {
+      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+    function renderRecords(title, items) {
+      if (!Array.isArray(items)) return;
+      const section = document.createElement("section");
+      section.className = "card panel";
+      const heading = document.createElement("div");
+      heading.className = "section-title";
+      const text = document.createElement("div");
+      const h2 = document.createElement("h2"); h2.textContent = title;
+      const note = document.createElement("p"); note.className = "muted"; note.textContent = `${items.length} record${items.length === 1 ? "" : "s"}`;
+      text.append(h2, note); heading.append(text); section.append(heading);
+      const list = document.createElement("div"); list.className = "data-list";
+      if (!items.length) {
+        const empty = document.createElement("p"); empty.className = "muted"; empty.textContent = "No records are available yet."; list.append(empty);
+      }
+      for (const item of items.slice(0, 100)) {
+        const row = document.createElement("article"); row.className = "data-item";
+        const strong = document.createElement("strong");
+        strong.textContent = item.name || item.fullName || item.title || item.id || "Record";
+        const pre = document.createElement("pre"); pre.textContent = JSON.stringify(item, null, 2);
+        row.append(strong, pre); list.append(row);
+      }
+      section.append(list); $("records").append(section);
+    }
+    function addForm(title, fields, endpoint, mapValues, submitLabel = "Save") {
+      const card = document.createElement("section"); card.className = "card panel";
+      const heading = document.createElement("h2"); heading.textContent = title; card.append(heading);
+      const form = document.createElement("form"); form.className = "form-grid";
+      for (const field of fields) {
+        const wrap = document.createElement("div");
+        const label = document.createElement("label"); label.textContent = field.label; label.htmlFor = field.name;
+        const input = document.createElement("input"); input.id = field.name; input.name = field.name; input.type = field.type || "text"; input.required = field.required !== false;
+        if (field.type === "number") input.min = "0";
+        wrap.append(label, input); form.append(wrap);
+      }
+      const button = document.createElement("button"); button.className = "button"; button.type = "submit"; button.textContent = submitLabel; form.append(button);
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const values = Object.fromEntries(new FormData(form).entries());
+        try {
+          await request(endpoint, { method: "POST", body: JSON.stringify(mapValues(values)) });
+          form.reset(); showStatus(`${title} saved.`, "success"); await loadWorkspace();
+        } catch (error) { showStatus(error.message, "error"); }
+      });
+      card.append(form); $("actions").append(card);
+    }
+    function renderActions() {
+      $("actions").replaceChildren();
+      if (cap("students.manage")) {
+        addForm("Add learner", [
+          { name: "name", label: "Learner name" }, { name: "studentNumber", label: "Student number" },
+          { name: "className", label: "Class", required: false },
+        ], "/api/school/learners", (v) => ({ name: v.name, studentNumber: v.studentNumber, className: v.className }));
+      }
+      if (cap("marks.manage")) {
+        addForm("Record a mark", [
+          { name: "learnerId", label: "Learner ID" }, { name: "subject", label: "Subject" },
+          { name: "score", label: "Score", type: "number" }, { name: "term", label: "Term", required: false },
+        ], "/api/school/academic/marks", (v) => ({ learnerId: v.learnerId, subject: v.subject, score: Number(v.score), term: v.term }));
+      }
+      if (cap("payments.manage")) {
+        addForm("Record a pending payment", [
+          { name: "amount", label: "Amount (UGX)", type: "number" }, { name: "idempotencyKey", label: "Receipt or unique reference" },
+        ], "/api/school/bursar/payments", (v) => ({ amount: Number(v.amount), idempotencyKey: v.idempotencyKey }));
+      }
+      if (cap("reconciliation.manage")) {
+        addForm("Add reconciliation note", [
+          { name: "title", label: "Title" }, { name: "reference", label: "Statement or receipt reference" },
+        ], "/api/school/bursar/reconciliation", (v) => ({ title: v.title, reference: v.reference }));
+      }
+    }
+    async function loadWorkspace() {
+      showStatus("Loading records…");
+      try {
+        const [session, data] = await Promise.all([
+          request("/api/auth/session", { method: "GET", headers: {} }),
+          request("/api/school/education-workspace", { method: "GET", headers: {} }),
+        ]);
+        activeUser = session.user; workspace = data;
+        const labels = { secretary: "Secretary", headteacher: "Head Teacher", bursar: "Bursar", superadmin: "Super Admin" };
+        const label = labels[String(data.role).toLowerCase()] || String(data.role || "Education");
+        $("role-badge").textContent = label;
+        $("title").textContent = `${label} workspace`;
+        $("scope").textContent = [data.schoolId, data.institutionId].filter(Boolean).join(" · ") || "All authorized schools";
+        $("capabilities").replaceChildren(...(data.capabilities || []).map((value) => { const tag = document.createElement("span"); tag.textContent = value; return tag; }));
+        renderActions();
+        $("records").replaceChildren();
+        const hiddenKeys = new Set(["ok", "role", "workspace", "schoolId", "institutionId", "capabilities"]);
+        for (const [key, value] of Object.entries(data)) {
+          if (hiddenKeys.has(key)) continue;
+          if (Array.isArray(value)) renderRecords(key.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`).replace(/^./, (letter) => letter.toUpperCase()), value);
+          else if (value && typeof value === "object") {
+            for (const [childKey, childValue] of Object.entries(value)) {
+              if (Array.isArray(childValue)) renderRecords(childKey, childValue);
+              else if (childValue && typeof childValue === "object") renderRecords(childKey, [childValue]);
+            }
+          }
+        }
+        showStatus("Workspace is up to date.", "success");
+      } catch (error) {
+        if (error.message.includes("Authentication")) { location.replace("/"); return; }
+        showStatus(error.message, "error");
+      }
+    }
+    $("refresh").addEventListener("click", loadWorkspace);
+    $("logout").addEventListener("click", async () => { try { await request("/api/auth/logout", { method: "POST", body: "{}" }); } finally { location.assign("/"); } });
+    loadWorkspace();
+  </script>
+</body>
+</html>

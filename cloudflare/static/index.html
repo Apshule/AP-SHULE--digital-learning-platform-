@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#087a68">
+  <meta name="description" content="Sign in to APSHULE workspaces.">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/app.css">
+  <title>APSHULE | Sign in</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">A</span>APSHULE</a>
+      <span class="muted">Cloudflare workspace</span>
+    </header>
+    <main class="hero">
+      <section class="hero-copy">
+        <p class="eyebrow">One secure workspace</p>
+        <h1>Welcome back.</h1>
+        <p>Sign in to your school, clinic, farm, or finance workspace. Your account and records are served by the Cloudflare platform.</p>
+        <div class="button-row">
+          <a class="button secondary" href="/skills/">Browse vocational providers</a>
+          <a class="button secondary" href="/tech/">Shule-Tech Softwares</a>
+        </div>
+      </section>
+      <section class="card auth-card" aria-labelledby="signin-title">
+        <p class="eyebrow">Account access</p>
+        <h2 id="signin-title">Sign in</h2>
+        <form id="login-form" class="form-grid">
+          <div>
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="username" required>
+          </div>
+          <div>
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <button class="button" type="submit">Continue</button>
+        </form>
+        <div id="push-setup" class="push-setup" hidden>
+          <p class="eyebrow">Device alerts</p>
+          <h3>Get important APSHULE alerts</h3>
+          <p class="muted">Enable browser notifications on this device. You can continue without them.</p>
+          <div class="button-row">
+            <button id="enable-push" class="button" type="button">Enable alerts</button>
+            <button id="continue-without-push" class="button secondary" type="button">Continue without alerts</button>
+          </div>
+        </div>
+        <p id="login-message" class="notice" role="status" aria-live="polite"></p>
+        <div class="form-footer">
+          <a href="/reset-password.html">Forgot password?</a>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const message = (node, text, type = "") => { node.textContent = text; node.className = `notice ${type}`; };
+    async function request(path, options = {}) {
+      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+    function destination(role = "") {
+      const normalized = String(role).toLowerCase();
+      if (["secretary", "headteacher", "school", "school_admin", "bursar", "teacher"].includes(normalized)) return "/education/";
+      if (normalized === "superadmin") return "/admin/";
+       if (normalized.includes("clinic") || ["doctor", "nurse", "receptionist", "pharmacist", "patient"].includes(normalized)) return "/clinic/";
+      if (normalized.includes("farm") || normalized === "farm_worker") return "/farm/";
+      if (normalized.includes("loan") || normalized.includes("mfi") || normalized === "borrower") return "/mfi/";
+      return "/sector.html?sector=clinic";
+    }
+
+    let pendingDestination = "/";
+    let pendingDismissKey = "apshule-push-prompt-dismissed:account";
+
+    function base64UrlToBytes(value) {
+      const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+      const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
+      const binary = atob(padded);
+      return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    }
+
+    function pushPromptWasDismissed(key) {
+      try { return localStorage.getItem(key) === "1"; } catch { return false; }
+    }
+
+    async function registerPushSubscription() {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+        throw new Error("This browser does not support device alerts.");
+      }
+      if (Notification.permission !== "granted") throw new Error("Allow notifications to enable device alerts.");
+      const registration = await navigator.serviceWorker.ready;
+      const { publicKey } = await request("/api/push-subscription/vapid-public-key", { method: "GET", headers: {} });
+      const subscription = await registration.pushManager.getSubscription() || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: base64UrlToBytes(publicKey),
+      });
+      const serialized = subscription.toJSON();
+      if (!serialized.endpoint || !serialized.keys?.p256dh || !serialized.keys?.auth) {
+        throw new Error("The browser returned an incomplete push subscription.");
+      }
+      await request("/api/push-subscription", {
+        method: "POST",
+        body: JSON.stringify({ endpoint: serialized.endpoint, keys: serialized.keys }),
+      });
+    }
+
+    function finishSignIn(user) {
+      const target = destination(user?.role);
+      if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+        location.assign(target);
+        return;
+      }
+      if (Notification.permission === "granted") {
+        registerPushSubscription().catch((error) => console.warn("Push subscription refresh failed:", error));
+        location.assign(target);
+        return;
+      }
+      pendingDismissKey = "apshule-push-prompt-dismissed:" + String(user?.uid || user?.email || "account");
+      if (Notification.permission === "denied" || pushPromptWasDismissed(pendingDismissKey)) {
+        location.assign(target);
+        return;
+      }
+      pendingDestination = target;
+      $("login-form").hidden = true;
+      $("push-setup").hidden = false;
+      message($("login-message"), "Signed in. Choose whether to enable device alerts.");
+    }
+
+    $("enable-push").addEventListener("click", async () => {
+      try {
+        const permission = Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+        if (permission !== "granted") throw new Error("Notifications were not enabled. You can continue without alerts.");
+        await registerPushSubscription();
+        try { localStorage.setItem(pendingDismissKey, "1"); } catch {}
+        location.assign(pendingDestination);
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    });
+
+    $("continue-without-push").addEventListener("click", () => {
+      try { localStorage.setItem(pendingDismissKey, "1"); } catch {}
+      location.assign(pendingDestination);
+    });
+
+    $("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      message($("login-message"), "Signing in…");
+      try {
+        const result = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: $("email").value, password: $("password").value }) });
+        finishSignIn(result.user);
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    });
+    request("/api/auth/session", { method: "GET", headers: {} })
+      .then((result) => { if (result.user?.role) finishSignIn(result.user); })
+      .catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=sector-workflows-v2").catch(() => {});
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/app.css">
+  <title>Sector records | APSHULE</title>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">A</span>APSHULE</a>
+      <div class="button-row"><span id="role" class="badge">Loading account</span><button id="logout" class="button secondary" type="button">Sign out</button></div>
+    </header>
+    <main>
+      <div class="section-title">
+        <div><p class="eyebrow">Tenant-scoped records</p><h1 id="title">Sector workspace</h1><p id="scope" class="muted"></p></div>
+        <div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary" type="button">Refresh</button></div>
+      </div>
+      <section class="card panel">
+        <div class="grid">
+          <div><label for="record-type">Record type</label><select id="record-type"></select></div>
+          <div class="button-row" style="align-self:end"><button id="load" class="button" type="button">Load records</button></div>
+        </div>
+      </section>
+      <section id="create-card" class="card panel">
+        <h2>Create a record</h2>
+        <p id="write-note" class="muted">The server checks your role and tenant before accepting a write.</p>
+        <form id="create-form" class="form-grid">
+          <div><label for="record-json">Record data (JSON)</label><textarea id="record-json" spellcheck="false" required>{"name":"","notes":""}</textarea></div>
+          <button class="button" type="submit">Save record</button>
+        </form>
+      </section>
+      <section id="records"></section>
+      <p id="status" class="notice" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const sector = new URLSearchParams(location.search).get("sector") || "clinic";
+    const types = {
+      clinic: ["patient","appointment","visit","prescription","service","branch","pharmacy_inventory","billing","payment","insurance_claim","report_template","communication"],
+      farm: ["farm","animal_type","worker","camera","animal_movement","daily_summary","attendance","egg_collection","inventory","feed","produce","sale","expense","report_template","lost_animal"],
+      mfi: ["borrower","customer","collateral","branch","verification","decision","loan_product","loan","repayment_schedule","payment","loan_approval","loan_document","loan_audit","overdue_log","credit_note","restructure","writeoff","report"],
+    };
+    if (!types[sector]) location.replace("/");
+    $("title").textContent = `${sector === "mfi" ? "MFI" : sector[0].toUpperCase() + sector.slice(1)} workspace`;
+    for (const value of types[sector] || []) {
+      const option = document.createElement("option"); option.value = value; option.textContent = value.replaceAll("_", " "); $("record-type").append(option);
+    }
+    function status(text, kind = "") { $("status").textContent = text; $("status").className = `notice ${kind}`; }
+    async function request(path, options = {}) {
+      const response = await fetch(new URL(path, "https://appshule.com"), { credentials: "same-origin", ...options, headers: { "content-type": "application/json", ...(options.headers || {}) } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) throw new Error(data.error || `Request failed (${response.status})`);
+      return data;
+    }
+    function render(items) {
+      $("records").replaceChildren();
+      const card = document.createElement("section"); card.className = "card panel";
+      const h2 = document.createElement("h2"); h2.textContent = `${$("record-type").value.replaceAll("_", " ")} · ${items.length} record${items.length === 1 ? "" : "s"}`;
+      const list = document.createElement("div"); list.className = "data-list";
+      if (!items.length) { const empty = document.createElement("p"); empty.className = "muted"; empty.textContent = "No records are available in this tenant."; list.append(empty); }
+      for (const item of items.slice(0, 200)) {
+        const entry = document.createElement("article"); entry.className = "data-item";
+        const title = document.createElement("strong"); title.textContent = item.name || item.title || item.id || "Record";
+        const data = document.createElement("pre"); data.textContent = JSON.stringify(item, null, 2);
+        entry.append(title, data); list.append(entry);
+      }
+      card.append(h2, list); $("records").append(card);
+    }
+    async function load() {
+      status("Loading records…");
+      try {
+        const type = encodeURIComponent($("record-type").value);
+        const result = await request(`/api/${sector}/records?type=${type}`, { method: "GET", headers: {} });
+        render(result.records || []); status("Records loaded.", "success");
+      } catch (error) { status(error.message, "error"); }
+    }
+    async function init() {
+      try {
+        const session = await request("/api/auth/session", { method: "GET", headers: {} });
+        $("role").textContent = session.user.role;
+        $("scope").textContent = [session.user.schoolId, session.user.institutionId].filter(Boolean).join(" · ") || "No tenant scope";
+        if (sector === "mfi" && $("record-type").value === "report") {
+          $("create-card").classList.add("hidden");
+          $("write-note").textContent = "MFI reports are read-only.";
+        }
+        await load();
+      } catch (error) { status(error.message, "error"); setTimeout(() => location.replace("/"), 700); }
+    }
+    $("load").addEventListener("click", load);
+    $("refresh").addEventListener("click", load);
+    $("record-type").addEventListener("change", () => {
+      const readOnly = sector === "mfi" && $("record-type").value === "report";
+      $("create-card").classList.toggle("hidden", readOnly);
+      $("write-note").textContent = readOnly ? "MFI reports are read-only." : "The server checks your role and tenant before accepting a write.";
+      load();
+    });
+    $("create-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        const record = JSON.parse($("record-json").value);
+        if (!record || typeof record !== "object" || Array.isArray(record)) throw new Error("Enter a JSON object.");
+        await request(`/api/${sector}/records`, { method: "POST", body: JSON.stringify({ recordType: $("record-type").value, ...record }) });
+        status("Record saved.", "success"); await load();
+      } catch (error) { status(error.message, "error"); }
+    });
+    $("logout").addEventListener("click", async () => { try { await request("/api/auth/logout", { method: "POST", body: "{}" }); } finally { location.assign("/"); } });
+    init();
+  </script>
+</body>
+</html>

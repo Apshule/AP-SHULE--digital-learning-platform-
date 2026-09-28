@@ -6,10 +6,13 @@
     "start": "node --enable-source-maps artifacts/api-server/dist/index.mjs",
     "postinstall": "node scripts/render-build.mjs",
     "build": "pnpm --filter @workspace/api-server run build",
+    "build:cloudflare": "node cloudflare/stage-assets.mjs",
     "build:workspace": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "migrate:firebase-to-cloudflare": "node scripts/migrate-firebase-to-cloudflare.mjs",
+    "audit:firebase-full": "node scripts/firebase-full-audit.mjs",
+    "migrate:firebase-full": "node scripts/migrate-firebase-full.mjs",
     "push": "pnpm --filter @workspace/scripts run push-to-github",
     "push:watch": "pnpm --filter @workspace/scripts run push-watch"
   },
