@@ -26,4 +26,3 @@
 - [Authenticated greeting boundary](authenticated-greeting-boundary.md) — Keep public Education preview copy non-authenticated; use the shared localized time-of-day contract in signed-in workspaces.
 - [Firebase PDF viewer behavior](firebase-pdf-viewer.md) — Open Firebase Storage download URLs directly; Google Docs Viewer can return 403 for authorized student PDFs.
 - [Firebase rules deployment boundary](firebase-rules-deployment-boundary.md) — GitHub pushes do not publish Firebase Storage Rules; verify the live bucket after rule changes.
-- [Static feature archival](static-feature-archival.md) — Gate the API and replace/push static entry pages together; static hosting can bypass server-side archive middleware.
