@@ -80,7 +80,6 @@ app.get("/skills-admin.html", vocationalArchiveResponse);
 app.get("/greeting.js", (req, res) => res.sendFile(resolve(__dirname, "../../../greeting.js")));
 app.get("/offline-manager.js", (req, res) => res.sendFile(resolve(__dirname, "../../../offline-manager.js")));
 app.get("/sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../sw.js")));
-app.get("/firebase-messaging-sw.js", (req, res) => res.sendFile(resolve(__dirname, "../../../firebase-messaging-sw.js")));
 app.get("/manifest.json", (req, res) => res.sendFile(resolve(__dirname, "../../../manifest.json")));
 app.use("/icons", express.static(resolve(__dirname, "../../../icons")));
 

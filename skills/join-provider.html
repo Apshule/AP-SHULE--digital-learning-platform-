@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join APSHULE Skills — provider onboarding</title>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="./firebase-config.js"></script>
+  <script src="./api-config.js"></script>
+  <style>
+    :root{--ink:#211d25;--muted:#766c69;--plum:#54284d;--dark:#35172f;--orange:#e86f42;--paper:#f4ede2;--white:#fffaf2;--line:#dcd0c1;--red:#9e3f39;--green:#267249}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}.shell{width:min(980px,calc(100% - 34px));margin:auto}
+    header{background:var(--dark);color:#fff;padding:18px 0}header .shell{display:flex;justify-content:space-between;gap:18px;align-items:center}.brand{font-weight:900}.brand small{display:block;color:#e8c9b7;font-size:11px;font-weight:500}.back{color:#fff;border:1px solid #ffffff55;padding:8px 12px;text-decoration:none;font-size:12px}
+    main{padding:42px 0 70px}.intro{max-width:650px;margin-bottom:26px}.eyebrow{color:var(--orange);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:900}.intro h1{font-size:clamp(38px,6vw,66px);line-height:.95;letter-spacing:-.07em;margin:12px 0}.intro p{color:var(--muted);font-size:17px}.card{background:var(--white);border:1px solid var(--line);padding:24px;box-shadow:10px 10px #e9ddce;margin-top:18px}.card h2{margin:0 0 6px;color:var(--plum);font-size:23px}.hint{color:var(--muted);font-size:13px;margin:0 0 18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:grid;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:900}.field input,.field textarea{width:100%;border:1px solid var(--line);background:#fff;padding:11px;font:inherit;color:var(--ink)}.field textarea{min-height:100px;resize:vertical}.button{border:0;background:var(--plum);color:#fff;padding:12px 16px;font:800 13px inherit;cursor:pointer}.button:disabled{opacity:.5;cursor:wait}.status{margin-top:12px;color:var(--muted);font-size:13px}.status.error{color:var(--red)}.status.success{color:var(--green)}.private-note{border-left:3px solid var(--orange);padding:10px 13px;background:#f7ead8;color:var(--muted);font-size:12px}.auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.auth-grid .button{align-self:end}.hide{display:none!important}@media(max-width:650px){.form-grid,.auth-grid{grid-template-columns:1fr}.field.full{grid-column:auto}header .shell{align-items:flex-start}.back{white-space:nowrap}}
+  </style>
+</head>
+<body>
+  <header><div class="shell"><div class="brand">APSHULE VOCATIONAL TRAINING CENTRE<small>Provider onboarding</small></div><a class="back" href="./">← Skills directory</a></div></header>
+  <main class="shell">
+    <div class="intro"><div class="eyebrow">For training providers</div><h1>Put your institution in the room.</h1><p>Submit your institution for review. We will verify the profile at Namyalo Building, Wakiso before publishing it to learners.</p></div>
+    <section id="authCard" class="card"><h2>Sign in to continue</h2><p class="hint">Use your APSHULE account. Your provider profile will be linked to the signed-in account.</p><form id="authForm" class="auth-grid"><div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email" required></div><div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required></div><button id="signIn" class="button" type="submit">Sign in</button></form><div id="authStatus" class="status" role="status"></div></section>
+    <section id="formCard" class="card hide"><h2>Institution details</h2><p class="hint">Public profile fields are reviewed before approval. The confidential agreement is stored separately from the learner-facing profile.</p><form id="providerForm"><div class="form-grid">
+      <div class="field"><label for="businessName">Business name *</label><input id="businessName" required maxlength="160"></div>
+      <div class="field"><label for="whatTheyTeach">What do you teach? *</label><input id="whatTheyTeach" required maxlength="800" placeholder="Tailoring, baking, welding…"></div>
+      <div class="field"><label for="physicalAddress">Physical address *</label><input id="physicalAddress" required maxlength="240" placeholder="Namyalo Building, Wakiso"></div>
+      <div class="field"><label for="contactPhone">Contact phone *</label><input id="contactPhone" required type="tel" maxlength="80"></div>
+      <div class="field"><label for="contactEmail">Contact email *</label><input id="contactEmail" required type="email" maxlength="160"></div>
+      <div class="field"><label for="logoUrl">Logo URL</label><input id="logoUrl" type="url" maxlength="1000" placeholder="https://…"></div>
+      <div class="field"><label for="badgeUrl">Badge URL</label><input id="badgeUrl" type="url" maxlength="1000" placeholder="https://…"></div>
+      <div class="field"><label for="agreementDoc">Agreement document (PDF)</label><input id="agreementDoc" type="file" accept="application/pdf"></div>
+      <div class="field full"><label for="agreementNote">Agreement note</label><textarea id="agreementNote" maxlength="2000" placeholder="Optional note for the APSHULE review team"></textarea></div>
+      <div class="field full"><div class="private-note">The admission and course split is controlled by APSHULE and is not displayed in this form or in the public provider profile.</div></div>
+    </div><button id="submitProvider" class="button" type="submit">Submit provider profile</button><div id="formStatus" class="status" role="status"></div></form></section>
+  </main>
+  <script>
+    const apiBase=window.APSHULE_API_BASE||"", api=path=>`${apiBase}${path}`, auth=firebase.initializeApp(window.APSHULE_FIREBASE_CONFIG).auth(), storage=firebase.storage();
+    const $=id=>document.getElementById(id), setStatus=(id,message,type="")=>{$(id).textContent=message;$(id).className=`status ${type}`};
+    async function uploadAgreement(file,user){if(!file)return "";if(file.type!=="application/pdf"||file.size>25*1024*1024)throw Error("Agreement document must be a PDF smaller than 25 MB.");const safe=file.name.replace(/[^a-z0-9._-]/gi,"-");const ref=storage.ref(`vocationalAgreements/${user.uid}/${Date.now()}-${safe}`);await ref.put(file,{contentType:"application/pdf"});return ref.getDownloadURL()}
+    $("authForm").onsubmit=async event=>{event.preventDefault();try{$("signIn").disabled=true;setStatus("authStatus","Signing in…");await auth.signInWithEmailAndPassword($("email").value.trim(),$("password").value);setStatus("authStatus","Signed in. Complete the institution profile.","success")}catch(error){setStatus("authStatus",error.message,"error")}finally{$("signIn").disabled=false}};
+    auth.onAuthStateChanged(user=>{if(user){$("authCard").classList.add("hide");$("formCard").classList.remove("hide")}else{$("authCard").classList.remove("hide");$("formCard").classList.add("hide")}});
+    $("providerForm").onsubmit=async event=>{event.preventDefault();const user=auth.currentUser;if(!user){setStatus("formStatus","Sign in before submitting.","error");return}const button=$("submitProvider");try{button.disabled=true;setStatus("formStatus","Uploading the agreement and submitting…");const agreementDocUrl=await uploadAgreement($("agreementDoc").files[0],user);const token=await user.getIdToken();const body={name:$("businessName").value.trim(),whatTheyTeach:$("whatTheyTeach").value.trim(),physicalAddress:$("physicalAddress").value.trim(),contactPhone:$("contactPhone").value.trim(),contactEmail:$("contactEmail").value.trim(),logoUrl:$("logoUrl").value.trim(),badgeUrl:$("badgeUrl").value.trim(),agreementNote:$("agreementNote").value.trim(),agreementDocUrl};const response=await fetch(api("/api/skills/providers/register"),{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify(body)});const data=await response.json().catch(()=>({}));if(!response.ok||!data.ok)throw Error(data.error||"Unable to submit provider profile");event.target.reset();setStatus("formStatus","Profile submitted. We will verify at Namyalo Building, Wakiso.","success")}catch(error){setStatus("formStatus",error.message,"error")}finally{button.disabled=false}};
+  </script>
+</body>
+</html>

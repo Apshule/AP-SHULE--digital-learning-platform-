@@ -41,8 +41,8 @@ name = "apshule-skills-production"
 workers_dev = true
 
 routes = [
-  { pattern = "appshule.com/*", zone_name = "appshule.com" },
-  { pattern = "www.appshule.com/*", zone_name = "appshule.com" },
+  { pattern = "appshule.com/api/*", zone_name = "appshule.com" },
+  { pattern = "www.appshule.com/api/*", zone_name = "appshule.com" },
 ]
 
 [env.production.vars]
