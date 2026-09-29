@@ -122,9 +122,12 @@ async function getUser(env: AuthEnv, uid: string): Promise<AuthUser | null> {
   ).bind(uid).all<Record<string, unknown>>();
   const row = result.results[0];
   if (!row || Number(row.disabled) === 1 || Number(row.active ?? 1) === 0) return null;
+  const storedRole = text(row.role, 80);
+  const normalizedRole = storedRole.trim().toLowerCase().replace(/[ -]+/g, "_");
   return {
     uid: text(row.uid, 200), email: text(row.email, 320), displayName: text(row.display_name, 200),
-    role: text(row.role, 80), schoolId: row.school_id ? text(row.school_id, 200) : null,
+    role: normalizedRole === "super_admin" ? "superadmin" : storedRole,
+    schoolId: row.school_id ? text(row.school_id, 200) : null,
     institutionId: row.institution_id ? text(row.institution_id, 200) : null,
     sessionVersion: Number(row.session_version ?? 1),
   };
