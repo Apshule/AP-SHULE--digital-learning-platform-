@@ -44,11 +44,13 @@ test("Pages bundle includes the public site and all core workspaces", async () =
     "icons/icon-192.png",
     ".well-known/assetlinks.json",
     ".nojekyll",
+    "CNAME",
     "robots.txt",
     "sitemap.xml",
   ]) {
     assert.equal(await isFile(path), true, `Missing Pages asset: ${path}`);
   }
+  assert.equal((await readFile(join(output, "CNAME"), "utf8")).trim(), "appshule.com");
 });
 
 test("Pages bundle retains role aliases with redirects to sector workspaces", async () => {

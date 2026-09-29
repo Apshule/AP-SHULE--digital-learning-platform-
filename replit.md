@@ -4,8 +4,8 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Run & Operate
 
-- Current production is still served by the Cloudflare Worker at `https://appshule.com`; GitHub Pages is not enabled. This recovery does not change live routes, DNS, or deployment settings.
-- The selected release target is a GitHub Pages frontend on `appshule.com` with the Cloudflare Worker handling `/api/*`; use only after a separately approved release and route cutover.
+- Production UI is served by GitHub Pages at `https://appshule.com`; the Cloudflare Worker handles only `appshule.com/api/*` and `www.appshule.com/api/*`.
+- `.github/workflows/deploy-pages.yml` builds and publishes the staged Pages artifact on pushes to `main`.
 - `pnpm run build:cloudflare` or `pnpm run build:pages` — stage the Firebase/Render-free frontend, Pages route aliases, and static assets in ignored `cloudflare/assets/`.
 - `pnpm run preview:cloudflare` — run Wrangler with `wrangler.preview.toml`, local-only D1/KV/R2, and staged static assets. The API Server artifact uses this command for the Replit preview.
 - `pnpm exec wrangler deploy --env production` — deploy the Cloudflare Worker when a production deployment is explicitly requested.
