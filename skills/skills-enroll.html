@@ -1,3 +1,146 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>APSHULE Vocational Skills — Archived</title></head>
-<body><main><h1>Vocational admissions are archived.</h1><p>New admissions and vocational admission payments are disabled. Existing records are preserved for Super Admin recovery.</p><a href="/">Return to APSHULE</a></main></body>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#35172f">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./api-config.js"></script>
+  <title>Apply for a course | APSHULE Skills</title>
+  <style>
+    .enroll-page { max-width: 760px; margin: 0 auto; padding: 56px 22px 90px; }
+    .enroll-card { background: #fff; border: 1px solid #e8dfd9; border-radius: 22px; padding: clamp(24px, 5vw, 48px); box-shadow: 0 20px 60px #35172f12; }
+    .enroll-card h1 { margin: 10px 0 12px; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.04; }
+    .enroll-intro, .enroll-course { color: #61565c; line-height: 1.65; }
+    .enroll-course { margin: 24px 0; padding: 18px 20px; border-left: 4px solid #ef7953; background: #fff7f2; border-radius: 0 14px 14px 0; }
+    .enroll-course strong { display: block; color: #35172f; font-size: 1.1rem; }
+    .enroll-form { display: grid; gap: 17px; margin-top: 28px; }
+    .enroll-form label { display: grid; gap: 7px; color: #35172f; font-weight: 650; }
+    .enroll-form input, .enroll-form textarea { width: 100%; border: 1px solid #d9cfd4; border-radius: 11px; padding: 13px 14px; font: inherit; color: #241c23; background: #fff; }
+    .enroll-form input:focus, .enroll-form textarea:focus { outline: 3px solid #ef795344; border-color: #bb5c41; }
+    .enroll-form textarea { min-height: 105px; resize: vertical; }
+    .enroll-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .enroll-status { min-height: 26px; color: #61565c; line-height: 1.5; }
+    .enroll-status[data-state="error"] { color: #a12d24; }
+    .enroll-status[data-state="success"] { color: #176447; }
+    .enroll-back { display: inline-block; margin-bottom: 24px; color: #5e3158; font-weight: 700; text-decoration: none; }
+    .enroll-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+    @media (max-width: 600px) { .enroll-page { padding-top: 32px; } .enroll-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="skills-app">
+    <div class="skills-topline"><div class="skills-shell topline-inner"><span class="skills-mono">APSHULE Skills / Course application</span><a href="/">Main APSHULE app</a></div></div>
+    <header class="skills-shell skills-nav">
+      <a class="skills-brand" href="./" aria-label="APSHULE Skills home"><span class="brand-mark">A</span><span>APSHULE<small>Skills / Uganda</small></span></a>
+    </header>
+    <main class="enroll-page">
+      <a class="enroll-back" id="backLink" href="./">← Back to courses</a>
+      <section class="enroll-card">
+        <p class="skills-eyebrow">Take the next step</p>
+        <h1>Apply for a course.</h1>
+        <p class="enroll-intro">Send your details to the APSHULE Skills team. They can follow up with the provider about the course and next steps.</p>
+        <div id="courseSummary" class="enroll-course" role="status">Loading course details…</div>
+        <form id="enrollForm" class="enroll-form">
+          <div class="enroll-row">
+            <label for="fullName">Your full name
+              <input id="fullName" name="fullName" autocomplete="name" maxlength="160" required>
+            </label>
+            <label for="phone">Phone number
+              <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40" placeholder="+256…" required>
+            </label>
+          </div>
+          <label for="email">Email address <span>(optional)</span>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="254">
+          </label>
+          <label for="educationLevel">Highest education level <span>(optional)</span>
+            <input id="educationLevel" name="educationLevel" maxlength="120">
+          </label>
+          <label for="previousExperience">Relevant experience <span>(optional)</span>
+            <textarea id="previousExperience" name="previousExperience" maxlength="800"></textarea>
+          </label>
+          <label class="enroll-trap" aria-hidden="true" for="website">Leave this field empty
+            <input id="website" name="website" tabindex="-1" autocomplete="off">
+          </label>
+          <button class="skills-button primary" id="submitButton" type="submit" disabled>Send application</button>
+          <p id="status" class="enroll-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script>
+    const apiBase = window.APSHULE_API_BASE || "";
+    const api = (path) => `${apiBase}${path}`;
+    const params = new URLSearchParams(location.search);
+    const providerId = params.get("providerId") || "";
+    const courseId = params.get("courseId") || "";
+    const referralCode = params.get("referralCode") || "";
+    const status = document.getElementById("status");
+    const submitButton = document.getElementById("submitButton");
+    const courseSummary = document.getElementById("courseSummary");
+    document.getElementById("backLink").href = providerId
+      ? `./provider.html?id=${encodeURIComponent(providerId)}&ref=${encodeURIComponent(referralCode)}`
+      : "./";
+
+    async function loadCourse() {
+      if (!providerId || !courseId || !referralCode) throw new Error("This course link is missing details. Return to the Skills directory and choose a course.");
+      const response = await fetch(api(`/api/skills/providers/${encodeURIComponent(providerId)}`));
+      const data = await response.json();
+      if (!response.ok || !data.ok || !data.provider) throw new Error(data.error || "Course details are unavailable.");
+      const provider = data.provider;
+      const course = (provider.courses || []).find((item) => item.id === courseId);
+      if (!course || provider.referralCode !== referralCode) throw new Error("This course link is no longer active. Return to the Skills directory to choose another course.");
+      courseSummary.innerHTML = `<strong>${escapeHtml(course.title)}</strong><span>${escapeHtml(provider.name)} · ${escapeHtml(course.duration || "Flexible duration")}</span>`;
+      submitButton.disabled = false;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+      }[char]));
+    }
+
+    document.getElementById("enrollForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      status.dataset.state = "";
+      status.textContent = "Sending your application…";
+      submitButton.disabled = true;
+      const fields = new FormData(event.currentTarget);
+      try {
+        const response = await fetch(api("/api/skills/enroll"), {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            providerId,
+            courseId,
+            referralCode,
+            fullName: fields.get("fullName"),
+            phone: fields.get("phone"),
+            email: fields.get("email"),
+            educationLevel: fields.get("educationLevel"),
+            previousExperience: fields.get("previousExperience"),
+            website: fields.get("website"),
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "Your application could not be sent.");
+        status.dataset.state = "success";
+        status.textContent = "Application received. The APSHULE Skills team can now follow up with you.";
+        event.currentTarget.reset();
+      } catch (error) {
+        status.dataset.state = "error";
+        status.textContent = error instanceof Error ? error.message : "Your application could not be sent. Please try again.";
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    loadCourse().catch((error) => {
+      courseSummary.textContent = error instanceof Error ? error.message : "Course details are unavailable.";
+      status.dataset.state = "error";
+      status.textContent = "Choose an active course from the Skills directory before applying.";
+    });
+  </script>
+</body>
+</html>

@@ -216,6 +216,19 @@ function canWrite(request: Request, env: Env): boolean {
   return Boolean(configured && request.headers.get("authorization") === `Bearer ${configured}`);
 }
 
+async function skillsEnrollmentRateLimit(request: Request, env: Env): Promise<"allowed" | "limited" | "unavailable"> {
+  const ipAddress = request.headers.get("cf-connecting-ip");
+  if (!env.CACHE || !ipAddress) return "unavailable";
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ipAddress));
+  const fingerprint = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const key = `skills-enrollment:${fingerprint}`;
+  const stored = await env.CACHE.get(key, "text");
+  const count = Number(stored ?? 0);
+  if (Number.isFinite(count) && count >= 5) return "limited";
+  await env.CACHE.put(key, String((Number.isFinite(count) ? count : 0) + 1), { expirationTtl: 600 });
+  return "allowed";
+}
+
 function publicProvider(row: ProviderRow, courses: Record<string, unknown>[]) {
   return {
     id: row.id,
@@ -242,8 +255,8 @@ async function providerRows(env: Env, providerId = ""): Promise<ProviderRow[]> {
       c.description AS course_description, c.duration AS course_duration,
       c.fee_ugx AS course_fee_ugx, c.category AS course_category,
       c.featured AS course_featured
-    FROM providers p
-    LEFT JOIN courses c ON c.provider_id = p.id AND c.active = 1
+    FROM skills_providers p
+    LEFT JOIN vocational_courses c ON c.provider_id = p.id AND c.active = 1
     ${providerId ? "WHERE p.id = ?" : ""}
     ORDER BY p.created_at DESC, c.title ASC
   `;
@@ -398,7 +411,7 @@ async function api(request: Request, env: Env): Promise<Response> {
       "pending", clean(input.ownerId, 160), timestamp, timestamp,
     ];
     await env.DB.prepare(
-      `INSERT INTO providers (id,name,description,logo_url,badge_url,physical_address,contact_email,contact_phone,referral_code,status,owner_id,created_at,updated_at)
+      `INSERT INTO skills_providers (id,name,description,logo_url,badge_url,physical_address,contact_email,contact_phone,referral_code,status,owner_id,created_at,updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     ).bind(...values).run();
     return json({ ok: true, provider: { id: providerId, referralCode: values[8], status: "pending" } }, 201);
@@ -412,26 +425,52 @@ async function api(request: Request, env: Env): Promise<Response> {
     }, 503);
   }
 
-  if (request.method === "POST" && (url.pathname === "/api/skills/admission" || url.pathname === "/api/skills/admissions")) {
-    if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
+  if (request.method === "POST" && ["/api/skills/enroll", "/api/skills/admission", "/api/skills/admissions"].includes(url.pathname)) {
     const input = await body(request);
+    if (clean(input.website, 200)) return json({ ok: true }, 202);
     const providerId = clean(input.providerId, 120);
     const referralCode = clean(input.referralCode, 120);
     const courseId = clean(input.courseId, 120);
+    const fullName = clean(input.fullName, 160);
+    const phone = clean(input.phone, 40);
+    const email = clean(input.email, 254).toLowerCase();
+    if (!providerId || !referralCode || !courseId || fullName.length < 2) {
+      return json({ ok: false, error: "Choose a course and enter your full name" }, 400);
+    }
+    if (!phone && !email) return json({ ok: false, error: "Enter a phone number or email address" }, 400);
+    if (phone && !/^[+\d().\-\s]{7,40}$/.test(phone)) return json({ ok: false, error: "Enter a valid phone number" }, 400);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, error: "Enter a valid email address" }, 400);
     const provider = (await providerRows(env, providerId)).find((row) => row.status === "active" && row.referral_code === referralCode && row.course_id === courseId);
     if (!provider) return json({ ok: false, error: "That provider course link is no longer active" }, 400);
-    const admissionId = id("admission");
+    const limit = await skillsEnrollmentRateLimit(request, env);
+    if (limit === "unavailable") return json({ ok: false, error: "Enrollment is temporarily unavailable" }, 503);
+    if (limit === "limited") return json({ ok: false, error: "Please wait before submitting another enrollment" }, 429);
+    const enrollmentId = id("enrollment");
     const timestamp = now();
+    const enrollment = {
+      id: enrollmentId,
+      type: "vocational",
+      providerId,
+      courseId,
+      referralCode,
+      studentId: clean(input.studentId, 160),
+      fullName,
+      phone,
+      email,
+      educationLevel: clean(input.educationLevel, 120),
+      previousExperience: clean(input.previousExperience, 800),
+      submittedAt: timestamp,
+    };
     await env.DB.prepare(
-      `INSERT INTO admissions (id,type,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,created_at,updated_at)
-       VALUES (?,'vocational',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO vocational_enrollments
+        (id,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,record_json,is_deleted,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     ).bind(
-      admissionId, providerId, courseId, referralCode, clean(input.studentId, 160),
-      clean(input.fullName, 160), clean(input.phone, 80), clean(input.email, 160),
-      clean(input.educationLevel, 120), clean(input.previousExperience, 800),
-      20000, clean(input.paymentReference, 160), "pending", "pending", timestamp, timestamp,
+      enrollmentId, providerId, courseId, referralCode, enrollment.studentId,
+      fullName, phone, email, enrollment.educationLevel, enrollment.previousExperience,
+      20000, "", "pending", "pending", JSON.stringify(enrollment), 0, timestamp, timestamp,
     ).run();
-    return json({ ok: true, admission: { id: admissionId, status: "pending" } }, 201);
+    return json({ ok: true, enrollment: { id: enrollmentId, status: "pending" } }, 201);
   }
 
   if (request.method === "POST" && url.pathname === "/api/skills/marks") {
@@ -453,8 +492,8 @@ async function api(request: Request, env: Env): Promise<Response> {
       theory, practical, total, grade, passed: grade !== "Fail", createdAt: timestamp, updatedAt: timestamp,
     };
     await env.DB.prepare(
-      `INSERT INTO marks (id,type,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,created_at,updated_at)
-       VALUES (?,'vocational',?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO vocational_marks (id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,created_at,updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     ).bind(markId, mark.admissionId, mark.providerId, mark.studentId, mark.courseId, mark.courseTitle, theory, practical, total, grade, mark.passed ? 1 : 0, "cloudflare-authorized", timestamp, timestamp).run();
     return json({ ok: true, mark }, 201);
   }
@@ -463,7 +502,7 @@ async function api(request: Request, env: Env): Promise<Response> {
     if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
     const input = await body(request);
     const marksId = clean(input.marksId, 160);
-    const result = await env.DB.prepare("SELECT * FROM marks WHERE id = ? AND type = 'vocational' LIMIT 1").bind(marksId).all<Record<string, unknown>>();
+    const result = await env.DB.prepare("SELECT * FROM vocational_marks WHERE id = ? LIMIT 1").bind(marksId).all<Record<string, unknown>>();
     const mark = result.results[0];
     if (!mark) return json({ ok: false, error: "Marks record not found" }, 404);
     if (Number(mark.passed) !== 1) return json({ ok: false, error: "A certificate can only be issued for a passing result" }, 409);

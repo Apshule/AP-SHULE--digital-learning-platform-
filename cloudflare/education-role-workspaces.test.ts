@@ -24,6 +24,7 @@ function educationDatabase() {
   db.exec(readFileSync(new URL("./migrations/0002_skills.sql", import.meta.url), "utf8"));
   db.exec(readFileSync(new URL("./migrations/0014_education_student_teacher.sql", import.meta.url), "utf8"));
   db.exec(readFileSync(new URL("./migrations/0016_shared_admissions_marks.sql", import.meta.url), "utf8"));
+  db.exec(readFileSync(new URL("./migrations/0017_separate_school_and_skills_data.sql", import.meta.url), "utf8"));
   return db;
 }
 
@@ -79,20 +80,20 @@ const request = (path: string, method = "GET", body?: object) => new Request(`ht
 });
 
 describe("Education student and teacher workspaces", () => {
-  it("stores school admissions and marks in typed shared tables without exposing vocational rows", async () => {
+  it("stores school admissions and marks separately from vocational Skills records", async () => {
     const db = educationDatabase();
     try {
       db.prepare(
-        `INSERT INTO admissions (id,type,provider_id,course_id,full_name,created_at,updated_at)
-         VALUES ('voc-admission','vocational','provider-1','course-1','Vocational learner','t','t')`,
+        `INSERT INTO vocational_enrollments (id,provider_id,course_id,full_name,created_at,updated_at)
+         VALUES ('voc-admission','provider-1','course-1','Vocational learner','t','t')`,
       ).run();
       db.prepare(
-        `INSERT INTO marks (id,type,provider_id,theory,practical,total,grade,created_at,updated_at)
-         VALUES ('voc-mark','vocational','provider-1',40,40,80,'Fail','t','t')`,
+        `INSERT INTO vocational_marks (id,provider_id,theory,practical,total,grade,created_at,updated_at)
+         VALUES ('voc-mark','provider-1',40,40,80,'Fail','t','t')`,
       ).run();
       db.prepare(
-        `INSERT INTO admissions (id,type,provider_id,course_id,full_name,is_deleted,created_at,updated_at)
-         VALUES ('admissions/deleted-school','school','','','','1','t','t')`,
+        `INSERT INTO school_admissions (id,institution_id,school_id,record_json,is_deleted,created_at,updated_at)
+         VALUES ('admissions/deleted-school','school-org','school-1','{}',1,'t','t')`,
       ).run();
       addLegacyRecord(db, "admissions", "legacy-vocational", {
         type: "vocational", institutionId: "school-org", fullName: "Vocational legacy row",
@@ -158,8 +159,8 @@ describe("Education student and teacher workspaces", () => {
       expect(edited?.status).toBe(200);
       const removed = await handleDomainRoute(request(`/api/school/academic/marks/${markId}`, "DELETE"), env, admin);
       expect(removed?.status).toBe(200);
-      const stored = db.prepare("SELECT type,is_deleted FROM marks WHERE id=?").get(markId) as { type: string; is_deleted: number };
-      expect(stored).toEqual({ type: "school", is_deleted: 1 });
+      const stored = db.prepare("SELECT is_deleted FROM marks WHERE id=?").get(markId) as { is_deleted: number };
+      expect(stored).toEqual({ is_deleted: 1 });
     } finally {
       db.close();
     }

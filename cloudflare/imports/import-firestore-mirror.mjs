@@ -107,11 +107,10 @@ function statementUpdateAdmissions(record, source, type) {
       studentId, fullName, phone, email, educationLevel, previousExperience,
       schoolId, JSON.stringify(payload), createdAt, updatedAt, id,
     ].map(sql);
-    return `UPDATE admissions SET student_id=${values[0]},full_name=${values[1]},phone=${values[2]},email=${values[3]},education_level=${values[4]},previous_experience=${values[5]},school_id=${values[6]},record_json=${values[7]},created_at=${values[8]},updated_at=${values[9]} WHERE id=${values[10]} AND type='school' AND json_type(record_json,'$.fullName')='object';\n`
-      + `INSERT OR IGNORE INTO admissions (id,type,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,institution_id,school_id,record_json,created_at,updated_at) VALUES (${[
-        id, "school", "", "", "", studentId, fullName, phone, email, educationLevel,
-        previousExperience, 0, "", "not_applicable", "submitted", null, schoolId,
-        JSON.stringify(payload), createdAt, updatedAt,
+    return `UPDATE school_admissions SET student_id=${values[0]},full_name=${values[1]},phone=${values[2]},email=${values[3]},education_level=${values[4]},previous_experience=${values[5]},school_id=${values[6]},record_json=${values[7]},created_at=${values[8]},updated_at=${values[9]} WHERE id=${values[10]} AND json_type(record_json,'$.fullName')='object';\n`
+      + `INSERT OR IGNORE INTO school_admissions (id,student_id,full_name,phone,email,education_level,previous_experience,school_id,record_json,created_by,is_deleted,created_at,updated_at) VALUES (${[
+        id, studentId, fullName, phone, email, educationLevel, previousExperience,
+        schoolId, JSON.stringify(payload), "firestore-import", 0, createdAt, updatedAt,
       ].map(sql).join(",")});`;
   }
 
@@ -128,11 +127,11 @@ function statementUpdateAdmissions(record, source, type) {
     email, Number.isFinite(amount) ? Math.round(amount) : 0, status,
     JSON.stringify(payload), createdAt, updatedAt, id,
   ].map(sql);
-  return `UPDATE admissions SET provider_id=${values[0]},course_id=${values[1]},referral_code=${values[2]},student_id=${values[3]},full_name=${values[4]},email=${values[5]},amount_ugx=${values[6]},status=${values[7]},record_json=${values[8]},created_at=${values[9]},updated_at=${values[10]} WHERE id=${values[11]} AND type='vocational' AND (json_type(record_json,'$.providerId')='object' OR json_type(record_json,'$.studentId')='object');\n`
-    + `INSERT OR IGNORE INTO admissions (id,type,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,record_json,created_at,updated_at) VALUES (${[
-      id, "vocational", providerId, courseId, text(data.referralCode, 120),
+  return `UPDATE vocational_enrollments SET provider_id=${values[0]},course_id=${values[1]},referral_code=${values[2]},student_id=${values[3]},full_name=${values[4]},email=${values[5]},amount_ugx=${values[6]},status=${values[7]},record_json=${values[8]},created_at=${values[9]},updated_at=${values[10]} WHERE id=${values[11]} AND (json_type(record_json,'$.providerId')='object' OR json_type(record_json,'$.studentId')='object');\n`
+    + `INSERT OR IGNORE INTO vocational_enrollments (id,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,record_json,is_deleted,created_at,updated_at) VALUES (${[
+      id, providerId, courseId, text(data.referralCode, 120),
       studentId, fullName, "", email, "", "", Number.isFinite(amount) ? Math.round(amount) : 0,
-      "", "pending", status, JSON.stringify(payload), createdAt, updatedAt,
+      "", "pending", status, JSON.stringify(payload), 0, createdAt, updatedAt,
     ].map(sql).join(",")});`;
 }
 
@@ -163,7 +162,7 @@ const admissionIds = [
   ...(byCollection.get("skills_enrollments") || []),
 ].map((row) => sql(row.document_path)).join(",");
 const existingAdmissions = admissionIds
-  ? query(`SELECT id,school_id,type FROM admissions WHERE id IN (${admissionIds})`)
+  ? query(`SELECT id,school_id,'school' AS type FROM school_admissions WHERE id IN (${admissionIds})`)
   : [];
 const existingById = new Map(existingAdmissions.map((row) => [row.id, row]));
 

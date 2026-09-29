@@ -329,10 +329,10 @@ export async function readRecords(
     .filter((record) => !(sector === "education" && ["admission", "marks"].includes(type) &&
       isVocationalEducationRecord(record)));
   if (sector === "education" && (type === "admission" || type === "marks")) {
-    const table = type === "admission" ? "admissions" : "marks";
+    const table = type === "admission" ? "school_admissions" : "marks";
     const shared = await env.DB.prepare(
       `SELECT id,record_json,created_at,updated_at,school_id,institution_id,is_deleted
-       FROM ${table} WHERE type='school' AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`,
+       FROM ${table} WHERE ${scope.sql} ORDER BY updated_at DESC LIMIT 500`,
     ).bind(...scope.args).all<Row>();
     for (const row of shared.results) {
       const id = clean(row.id, 300);
@@ -386,11 +386,11 @@ async function sharedEducationRecord(
   capability: string,
 ): Promise<Response | null> {
   if (!(await allowed(env, user, "education", capability))) return json({ ok: false, error: "Forbidden" }, 403);
-  const table = type === "admission" ? "admissions" : "marks";
+  const table = type === "admission" ? "school_admissions" : "marks";
   const t = tenant(user);
   const scope = tenantWhere(user);
   const id = recordId || clean(input.id, 160) || makeId(type);
-  const scoped = `type='school' AND id=? AND ${scope.sql}`;
+  const scoped = `id=? AND ${scope.sql}`;
   const existingResult = await env.DB.prepare(
     `SELECT id,record_json,school_id,institution_id,is_deleted,created_at,updated_at
      FROM ${table} WHERE ${scoped} LIMIT 1`,
@@ -425,15 +425,20 @@ async function sharedEducationRecord(
     const collision = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=? LIMIT 1`).bind(id).all<Row>();
     if (collision.results[0]) return json({ ok: false, error: "Record ID is unavailable" }, 409);
     const columns = type === "admission"
-      ? "(id,type,provider_id,course_id,student_id,full_name,phone,email,institution_id,school_id,record_json,is_deleted,created_at,updated_at)"
-      : "(id,type,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,institution_id,school_id,record_json,is_deleted,created_at,updated_at)";
+      ? "(id,student_id,full_name,phone,email,education_level,previous_experience,institution_id,school_id,status,record_json,created_by,is_deleted,created_at,updated_at)"
+      : "(id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,institution_id,school_id,learner_id,class_name,subject,score,term,maximum_score,remarks,record_json,is_deleted,created_at,updated_at)";
     const values = type === "admission"
-      ? [id, "school", "", "", clean(fields.studentId || fields.student_id, 160), clean(fields.fullName || fields.full_name, 160),
-        clean(fields.phone, 80), clean(fields.email, 160), t.institutionId, t.schoolId, JSON.stringify(payload), 0, timestamp, timestamp]
-      : [id, "school", clean(fields.admissionId || fields.admission_id, 160), "", clean(fields.studentId || fields.student_id, 160),
+      ? [id, clean(fields.studentId || fields.student_id, 160), clean(fields.fullName || fields.full_name, 160),
+        clean(fields.phone, 80), clean(fields.email, 160), clean(fields.educationLevel || fields.education_level, 120),
+        clean(fields.previousExperience || fields.previous_experience, 240), t.institutionId, t.schoolId,
+        clean(fields.status, 80) || "submitted", JSON.stringify(payload), user.uid, 0, timestamp, timestamp]
+      : [id, clean(fields.admissionId || fields.admission_id, 160), "", clean(fields.studentId || fields.student_id, 160),
         clean(fields.courseId || fields.course_id, 120), clean(fields.courseTitle || fields.course_title, 160),
-        Number(fields.theory || 0), Number(fields.practical || 0), Number(fields.total || 0), clean(fields.grade, 40),
-        fields.passed ? 1 : 0, user.uid, t.institutionId, t.schoolId, JSON.stringify(payload), 0, timestamp, timestamp];
+        Number(fields.theory || 0), Number(fields.practical || 0), Number(fields.total ?? fields.score ?? 0), clean(fields.grade, 40),
+        fields.passed ? 1 : 0, user.uid, t.institutionId, t.schoolId, clean(fields.learnerId || fields.learner_id, 160),
+        clean(fields.className || fields.class_name, 120), clean(fields.subject, 120), Number(fields.score ?? 0),
+        clean(fields.term, 80), Number(fields.maximumScore ?? fields.maximum_score ?? 0), clean(fields.remarks, 500),
+        JSON.stringify(payload), 0, timestamp, timestamp];
     await env.DB.prepare(`INSERT INTO ${table} ${columns} VALUES (${values.map(() => "?").join(",")})`).bind(...values).run();
   }
   await audit(env, user, request.method === "POST" ? "create" : "update", `education_${type}`, id);
