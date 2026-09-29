@@ -10,6 +10,10 @@ const RESET_CHALLENGE_LOCK_MS = 15 * 60 * 1000;
 const PBKDF2_ITERATIONS = 100_000;
 const RATE_LIMIT_TTL = 60 * 15;
 const RATE_LIMIT_MAX = 8;
+const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
+const LOGIN_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
+const LOGIN_OTP_MAX_FAILURES = 3;
+const LOGIN_OTP_LOCK_MS = 15 * 60 * 1000;
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -171,6 +175,28 @@ async function sendResetCodeEmail(env: AuthEnv, email: string, code: string): Pr
   if (!response.ok) throw new Error(`Password reset email delivery failed (${response.status})`);
 }
 
+async function sendLoginOtpEmail(env: AuthEnv, email: string, code: string): Promise<void> {
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) throw new Error("Email sender is not configured");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: env.RESEND_FROM_EMAIL,
+      to: [email],
+      subject: "Your APSHULE sign-in code",
+      text: `Your APSHULE sign-in code is ${code}.\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.`,
+      html: `<p>Your APSHULE sign-in code is <strong>${code}</strong>.</p><p>This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>`,
+    }),
+  });
+  if (!response.ok) throw new Error(`Login code delivery failed (${response.status})`);
+}
+
+async function createSession(env: AuthEnv, user: AuthUser): Promise<Response> {
+  const token = randomToken();
+  await env.SESSIONS!.put(`${SESSION_PREFIX}${await digest(token)}`, JSON.stringify({ uid: user.uid, sessionVersion: user.sessionVersion }), { expirationTtl: SESSION_TTL });
+  return json({ ok: true, user }, 200, { "set-cookie": cookie(token, SESSION_TTL) });
+}
+
 export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Response | null> {
   const path = new URL(req.url).pathname;
   if (!path.startsWith("/api/auth/")) return null;
@@ -179,26 +205,78 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
   if (!env.SESSIONS) return json({ ok: false, error: "SESSIONS KV is not configured" }, 503);
 
   if (path === "/api/auth/login") {
+    return json({ ok: false, error: "Password login is disabled. Request an email sign-in code." }, 410);
+  }
+
+  if (path === "/api/auth/request-login-otp") {
+    const email = text((await input(req)).email, 320).toLowerCase();
+    const message = "If that email belongs to an active account, a 6-digit sign-in code will be sent. It expires in 10 minutes; wait 60 seconds before requesting another.";
+    if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+      return json({ ok: false, error: "Email sign-in is not configured" }, 503);
+    }
+    if (!email || !await checkRateLimit(env, req, "login-otp-request", email)) return json({ ok: true, message });
+    const row = (await env.DB.prepare(
+      "SELECT uid,email FROM users WHERE lower(email)=? AND active=1 AND disabled=0 LIMIT 1",
+    ).bind(email).all<{ uid: string; email: string }>()).results[0];
+    if (!row) return json({ ok: true, message });
+    const now = Date.now();
+    await env.DB.prepare("DELETE FROM login_otp_challenges WHERE expires_at_ms<=? OR (locked_until_ms>0 AND locked_until_ms<=?)")
+      .bind(now, now).run();
+    const code = randomSixDigitCode();
+    const codeHash = await passwordHash(`${row.uid}:${code}`);
+    const saved = await env.DB.prepare(
+      `INSERT INTO login_otp_challenges (uid,code_hash,expires_at_ms,requested_at_ms,failed_attempts,locked_until_ms,consumed_at_ms)
+       VALUES (?,?,?,?,0,0,NULL)
+       ON CONFLICT(uid) DO UPDATE SET code_hash=excluded.code_hash,expires_at_ms=excluded.expires_at_ms,
+         requested_at_ms=excluded.requested_at_ms,failed_attempts=0,locked_until_ms=0,consumed_at_ms=NULL
+       WHERE login_otp_challenges.locked_until_ms<=?
+         AND login_otp_challenges.requested_at_ms<=?
+         AND login_otp_challenges.consumed_at_ms IS NULL
+       RETURNING uid`,
+    ).bind(row.uid, codeHash, now + LOGIN_OTP_TTL_MS, now, now, now - LOGIN_OTP_RESEND_COOLDOWN_MS)
+      .all<{ uid: string }>();
+    if (!saved.results.length) return json({ ok: true, message });
+    try {
+      await sendLoginOtpEmail(env, row.email, code);
+    } catch {
+      await env.DB.prepare("DELETE FROM login_otp_challenges WHERE uid=? AND code_hash=?").bind(row.uid, codeHash).run();
+    }
+    return json({ ok: true, message });
+  }
+
+  if (path === "/api/auth/verify-login-otp") {
     const body = await input(req);
     const email = text(body.email, 320).toLowerCase();
-    const password = String(body.password ?? "").slice(0, 1000);
-    if (!email || !password || !await checkRateLimit(env, req, "login", email)) {
-      return json({ ok: false, error: "Invalid email or password" }, 401);
+    const code = text(body.code, 12);
+    const invalid = () => json({ ok: false, error: "The sign-in code is invalid or expired. Request a new code and try again." }, 400);
+    if (!email || !/^\d{6}$/.test(code) || !await checkRateLimit(env, req, "login-otp-verify", email)) return invalid();
+    const row = (await env.DB.prepare("SELECT uid FROM users WHERE lower(email)=? AND active=1 AND disabled=0 LIMIT 1")
+      .bind(email).all<{ uid: string }>()).results[0];
+    if (!row) return invalid();
+    const now = Date.now();
+    const challenge = (await env.DB.prepare(
+      "SELECT code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM login_otp_challenges WHERE uid=? AND consumed_at_ms IS NULL LIMIT 1",
+    ).bind(row.uid).all<{ code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>()).results[0];
+    if (!challenge || Number(challenge.expires_at_ms) <= now || Number(challenge.locked_until_ms) > now ||
+      !await verifyPassword(`${row.uid}:${code}`, challenge.code_hash)) {
+      if (challenge && Number(challenge.expires_at_ms) > now && Number(challenge.locked_until_ms) <= now) {
+        await env.DB.prepare(
+          "UPDATE login_otp_challenges SET failed_attempts=failed_attempts+1,locked_until_ms=CASE WHEN failed_attempts+1>=? THEN ? ELSE locked_until_ms END WHERE uid=? AND consumed_at_ms IS NULL AND failed_attempts<? RETURNING failed_attempts",
+        ).bind(LOGIN_OTP_MAX_FAILURES, now + LOGIN_OTP_LOCK_MS, row.uid, LOGIN_OTP_MAX_FAILURES).all<{ failed_attempts: number }>();
+      }
+      return invalid();
     }
-    const result = await env.DB.prepare(
-      "SELECT uid,email,display_name,role,school_id,institution_id,session_version,active,disabled,requires_password_reset,password_hash_v2,hash_algorithm FROM users WHERE lower(email) = ? LIMIT 1",
-    ).bind(email).all<Record<string, unknown>>();
-    const row = result.results[0];
-    if (!row || Number(row.disabled) === 1 || Number(row.active ?? 1) === 0) return json({ ok: false, error: "Invalid email or password" }, 401);
-    if (Number(row.requires_password_reset) === 1 || String(row.hash_algorithm ?? "").toUpperCase() === "SCRYPT" || !row.password_hash_v2) {
-      return json({ ok: false, error: "Password reset required", code: "PASSWORD_RESET_REQUIRED" }, 403);
+    const consumed = await env.DB.prepare(
+      "UPDATE login_otp_challenges SET consumed_at_ms=? WHERE uid=? AND code_hash=? AND consumed_at_ms IS NULL AND expires_at_ms>? AND locked_until_ms<=? RETURNING uid",
+    ).bind(now, row.uid, challenge.code_hash, now, now).all<{ uid: string }>();
+    if (!consumed.results.length) return invalid();
+    const user = await getUser(env, row.uid);
+    if (!user) return invalid();
+    await env.DB.prepare("DELETE FROM login_otp_challenges WHERE uid=?").bind(row.uid).run();
+    if (!user.role) {
+      return json({ ok: false, error: "Your account does not have an assigned workspace role. Contact an administrator." }, 403);
     }
-    if (!await verifyPassword(password, String(row.password_hash_v2))) return json({ ok: false, error: "Invalid email or password" }, 401);
-    const user = await getUser(env, String(row.uid));
-    if (!user) return json({ ok: false, error: "Invalid email or password" }, 401);
-    const token = randomToken();
-    await env.SESSIONS.put(`${SESSION_PREFIX}${await digest(token)}`, JSON.stringify({ uid: user.uid, sessionVersion: user.sessionVersion }), { expirationTtl: SESSION_TTL });
-    return json({ ok: true, user }, 200, { "set-cookie": cookie(token, SESSION_TTL) });
+    return createSession(env, user);
   }
 
   if (path === "/api/auth/logout") {

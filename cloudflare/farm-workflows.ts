@@ -9,7 +9,7 @@ const workerTypes = new Set(["attendance", "egg_collection", "feed_consumption"]
 const types: Record<string, string> = {
   animals: "animal", animal: "animal", movements: "animal_movement", movement: "animal_movement",
   attendance: "attendance", eggs: "egg_collection", egg_collections: "egg_collection",
-  inventory: "inventory", feed: "feed_consumption", "feed-consumption": "feed_consumption",
+  inventory: "inventory", produce: "produce", feed: "feed_consumption", "feed-consumption": "feed_consumption",
   feed_consumption: "feed_consumption",
 };
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), {
@@ -148,6 +148,7 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     result.movements = role === "farm_worker" ? [] : await visibleRecords(env, user, "animal_movement");
     result.attendance = await visibleRecords(env, user, "attendance");
     result.eggs = await visibleRecords(env, user, "egg_collection");
+    result.produce = await visibleRecords(env, user, "produce");
     result.inventory = role === "farm_worker" ? [] : await visibleRecords(env, user, "inventory");
     result.feedEnabled = await feedProtectionReady(env);
     result.feedInventory = result.feedEnabled ? await feedInventory(env, user) : [];
@@ -156,15 +157,15 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   }
   if (area === "reports" && request.method === "GET") {
     if (role === "farm_worker") return json({ ok: false, error: "Farm reports are restricted to supervisors" }, 403);
-    const [animals, movements, attendance, eggs, feed] = await Promise.all([
+    const [animals, movements, attendance, eggs, produce, feed] = await Promise.all([
       records(env, user, "animal"), records(env, user, "animal_movement"),
-      records(env, user, "attendance"), records(env, user, "egg_collection"),
+      records(env, user, "attendance"), records(env, user, "egg_collection"), records(env, user, "produce"),
       records(env, user, "feed_consumption"),
     ]);
     return json({
       ok: true, partial: true,
-      summary: { animals: animals.length, movements: movements.length, attendance: attendance.length, eggCollections: eggs.length, feedEvents: feed.length },
-      note: "Operational Farm report only; produce, sales, expenses, cameras, and biometric data are not enabled in this slice.",
+      summary: { animals: animals.length, movements: movements.length, attendance: attendance.length, eggCollections: eggs.length, produce: produce.length, feedEvents: feed.length },
+      note: "Operational Farm report only; sales, expenses, cameras, and biometric data are not enabled in this slice.",
     });
   }
   const type = types[area];
@@ -245,6 +246,28 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     input.name = name;
     input.quantityInStock = quantityInStock;
     input.unit = clean(input.unit, 40) || "unit";
+  }
+  if (type === "produce") {
+    const recordId = clean(input.id, 300);
+    const name = clean(input.name || input.product, 160);
+    const quantity = Number(input.quantity);
+    const unit = clean(input.unit, 40) || "unit";
+    const unitPrice = Number(input.unitPrice);
+    const notes = clean(input.notes, 500);
+    if (!name || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1_000_000) {
+      return json({ ok: false, error: "Produce name and positive quantity (up to 1,000,000) are required" }, 400);
+    }
+    if (!Number.isFinite(unitPrice) || unitPrice < 0 || unitPrice > 1_000_000_000) {
+      return json({ ok: false, error: "Produce unit price must be a non-negative amount" }, 400);
+    }
+    for (const key of Object.keys(input)) delete input[key];
+    if (recordId) input.id = recordId;
+    if (operationId) input.operationId = operationId;
+    input.name = name;
+    input.quantity = Math.round(quantity * 1000) / 1000;
+    input.unit = unit;
+    input.unitPrice = Math.round(unitPrice * 100) / 100;
+    input.notes = notes;
   }
   if (role === "farm_worker" && ["attendance", "egg_collection"].includes(type) && input.animalId) {
     const animal = (await tenantAnimals(env, user)).find((row) => same(row.id, clean(input.animalId, 300)));

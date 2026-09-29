@@ -21,7 +21,9 @@ function educationDatabase() {
       resource_type TEXT, resource_id TEXT, metadata_json TEXT, created_at TEXT
     );
   `);
+  db.exec(readFileSync(new URL("./migrations/0002_skills.sql", import.meta.url), "utf8"));
   db.exec(readFileSync(new URL("./migrations/0014_education_student_teacher.sql", import.meta.url), "utf8"));
+  db.exec(readFileSync(new URL("./migrations/0016_shared_admissions_marks.sql", import.meta.url), "utf8"));
   return db;
 }
 
@@ -77,6 +79,92 @@ const request = (path: string, method = "GET", body?: object) => new Request(`ht
 });
 
 describe("Education student and teacher workspaces", () => {
+  it("stores school admissions and marks in typed shared tables without exposing vocational rows", async () => {
+    const db = educationDatabase();
+    try {
+      db.prepare(
+        `INSERT INTO admissions (id,type,provider_id,course_id,full_name,created_at,updated_at)
+         VALUES ('voc-admission','vocational','provider-1','course-1','Vocational learner','t','t')`,
+      ).run();
+      db.prepare(
+        `INSERT INTO marks (id,type,provider_id,theory,practical,total,grade,created_at,updated_at)
+         VALUES ('voc-mark','vocational','provider-1',40,40,80,'Fail','t','t')`,
+      ).run();
+      db.prepare(
+        `INSERT INTO admissions (id,type,provider_id,course_id,full_name,is_deleted,created_at,updated_at)
+         VALUES ('admissions/deleted-school','school','','','','1','t','t')`,
+      ).run();
+      addLegacyRecord(db, "admissions", "legacy-vocational", {
+        type: "vocational", institutionId: "school-org", fullName: "Vocational legacy row",
+      });
+      addLegacyRecord(db, "admissions", "legacy-ambiguous", {
+        institutionId: "school-org", fullName: "Ambiguous legacy row",
+      });
+      addLegacyRecord(db, "admissions", "legacy-school", {
+        type: "school", institutionId: "school-org", fullName: "School legacy row",
+      });
+      addLegacyRecord(db, "admissions", "deleted-school", {
+        type: "school", institutionId: "school-org", fullName: "Deleted legacy copy",
+      });
+      addLegacyRecord(db, "school_admissions", "school-specific", {
+        schoolId: "school-1", fullName: "School-specific legacy row",
+      });
+      addLegacyRecord(db, "school_admissions", "school-vocational", {
+        type: "vocational", schoolId: "school-1", fullName: "Vocational school-collection row",
+      });
+      addLegacyRecord(db, "school_marks", "legacy-voc-mark", {
+        type: "vocational", schoolId: "school-1", total: 80,
+      });
+      addLegacyRecord(db, "school_marks", "legacy-school-mark", {
+        schoolId: "school-1", subject: "Mathematics", total: 85,
+      });
+      const env = educationEnv(db);
+      const admin = user("admin-1", "superadmin", "admin@school.test");
+
+      const admission = await handleDomainRoute(request("/api/school/admissions", "POST", {
+        fullName: "School learner", studentId: "S-001", email: "learner@school.test",
+      }), env, admin);
+      expect(admission?.status).toBe(201);
+      const admissionData = await admission!.json() as { record: Record<string, unknown> };
+      const admissionId = String(admissionData.record.id);
+
+      const mark = await handleDomainRoute(request("/api/school/academic/marks", "POST", {
+        admissionId, studentId: "S-001", theory: 70, practical: 60, total: 130, grade: "Credit",
+      }), env, admin);
+      expect(mark?.status).toBe(201);
+      const markData = await mark!.json() as { record: Record<string, unknown> };
+      const markId = String(markData.record.id);
+
+      const admissions = await handleDomainRoute(request("/api/school/admissions"), env, admin);
+      const admissionRows = await admissions!.json() as { records: Array<Record<string, unknown>> };
+      expect(admissionRows.records.map((row) => row.id)).toContain(admissionId);
+      expect(admissionRows.records.map((row) => row.id)).not.toContain("voc-admission");
+      expect(admissionRows.records.map((row) => row.id)).toContain("admissions/legacy-school");
+      expect(admissionRows.records.map((row) => row.id)).not.toContain("admissions/deleted-school");
+      expect(admissionRows.records.map((row) => row.id)).toContain("school_admissions/school-specific");
+      expect(admissionRows.records.map((row) => row.id)).not.toContain("admissions/legacy-vocational");
+      expect(admissionRows.records.map((row) => row.id)).not.toContain("admissions/legacy-ambiguous");
+      expect(admissionRows.records.map((row) => row.id)).not.toContain("school_admissions/school-vocational");
+
+      const marks = await handleDomainRoute(request("/api/school/academic/marks"), env, admin);
+      const markRows = await marks!.json() as { records: Array<Record<string, unknown>> };
+      expect(markRows.records.map((row) => row.id)).not.toContain("voc-mark");
+      expect(markRows.records.map((row) => row.id)).not.toContain("school_marks/legacy-voc-mark");
+      expect(markRows.records.map((row) => row.id)).toContain("school_marks/legacy-school-mark");
+
+      const edited = await handleDomainRoute(request(`/api/school/admissions/${admissionId}`, "PATCH", {
+        fullName: "Edited school learner",
+      }), env, admin);
+      expect(edited?.status).toBe(200);
+      const removed = await handleDomainRoute(request(`/api/school/academic/marks/${markId}`, "DELETE"), env, admin);
+      expect(removed?.status).toBe(200);
+      const stored = db.prepare("SELECT type,is_deleted FROM marks WHERE id=?").get(markId) as { type: string; is_deleted: number };
+      expect(stored).toEqual({ type: "school", is_deleted: 1 });
+    } finally {
+      db.close();
+    }
+  });
+
   it("limits student profile reads to the linked learner and returns only linked school records", async () => {
     const db = educationDatabase();
     try {

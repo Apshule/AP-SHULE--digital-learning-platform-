@@ -98,13 +98,16 @@ const stamp = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 20)}`;
 
 function role(user: AuthUser): string {
-  return clean(user.role, 80).toLowerCase();
+  const value = clean(user.role, 80).toLowerCase().replace(/[ -]+/g, "_");
+  return value === "super_admin" ? "superadmin" : value;
 }
 function effectiveRole(user: AuthUser, sector: string): string {
   const r = role(user);
   if (sector !== "education") return r;
-  if (r === "school" || r === "school_admin") return "headteacher";
+  if (["school", "school_admin", "head_teacher"].includes(r)) return "headteacher";
   if (r === "teacher_staff" || r === "teacher_independent") return "teacher";
+  if (r === "accountant") return "bursar";
+  if (r === "individual") return "student";
   return r;
 }
 function tenant(user: AuthUser): { institutionId: string | null; schoolId: string | null } {
@@ -212,6 +215,20 @@ function recordFields(record: Row): Row {
   return { ...data, ...record };
 }
 
+function educationRecordType(record: Row): string {
+  const fields = recordFields(record);
+  return clean(
+    fields.type || fields.recordType || fields.admissionType || fields.admission_type ||
+      fields.sourceType || fields.source_type,
+    80,
+  ).toLowerCase();
+}
+function isVocationalEducationRecord(record: Row): boolean {
+  const fields = recordFields(record);
+  return [fields.type, fields.recordType, fields.admissionType, fields.admission_type, fields.sourceType, fields.source_type]
+    .some((value) => clean(value, 80).toLowerCase() === "vocational");
+}
+
 function educationStudentIdentity(record: Row, user: AuthUser): boolean {
   record = recordFields(record);
   const ids = [
@@ -308,7 +325,32 @@ export async function readRecords(
       recordType: row.record_type,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-    }));
+    }))
+    .filter((record) => !(sector === "education" && ["admission", "marks"].includes(type) &&
+      isVocationalEducationRecord(record)));
+  if (sector === "education" && (type === "admission" || type === "marks")) {
+    const table = type === "admission" ? "admissions" : "marks";
+    const shared = await env.DB.prepare(
+      `SELECT id,record_json,created_at,updated_at,school_id,institution_id,is_deleted
+       FROM ${table} WHERE type='school' AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`,
+    ).bind(...scope.args).all<Row>();
+    for (const row of shared.results) {
+      const id = clean(row.id, 300);
+      if (Number(row.is_deleted) === 1) {
+        hiddenIds.add(id);
+        continue;
+      }
+      if (hiddenIds.has(id) || records.some((entry) => clean(entry.id, 300) === id)) continue;
+      let data: Row = {};
+      try { data = JSON.parse(String(row.record_json || "{}")) as Row; } catch { continue; }
+      if (ownOnly && !educationStudentIdentity(data, user)) continue;
+      records.push({
+        ...data, id, recordType: type, createdAt: row.created_at, updatedAt: row.updated_at,
+        schoolId: row.school_id, institutionId: row.institution_id,
+      });
+      hiddenIds.add(id);
+    }
+  }
   const collections = legacyCollections(sector, type);
   if (collections.length) {
     const legacy = await env.DB.prepare(
@@ -318,7 +360,13 @@ export async function readRecords(
       let record: Row;
       try { record = safeLegacy(row); } catch { continue; }
       const legacyId = clean(record.id, 300);
-      if (hiddenIds.has(legacyId) || activeRows.some((entry) => clean(entry.id, 300) === legacyId)) continue;
+      if (sector === "education" && ["admission", "marks"].includes(type)) {
+        const collection = legacyId.split("/")[0];
+        if (isVocationalEducationRecord(record)) continue;
+        // Generic admissions rows are ambiguous without an explicit school discriminator.
+        if (type === "admission" && collection === "admissions" && educationRecordType(record) !== "school") continue;
+      }
+      if (hiddenIds.has(legacyId) || records.some((entry) => clean(entry.id, 300) === legacyId)) continue;
       const studentOwnsLegacy = sector === "education" && ["student", "learner"].includes(role(user)) &&
         record.data && typeof record.data === "object" && educationStudentIdentity(record.data as Row, user);
       if (!legacyInTenant(record, user) || ownOnly && !legacyOwner(record, user.uid) && !studentOwnsLegacy) continue;
@@ -326,6 +374,70 @@ export async function readRecords(
     }
   }
   return records;
+}
+
+async function sharedEducationRecord(
+  request: Request,
+  env: AuthEnv,
+  user: AuthUser,
+  type: "admission" | "marks",
+  recordId: string,
+  input: Row,
+  capability: string,
+): Promise<Response | null> {
+  if (!(await allowed(env, user, "education", capability))) return json({ ok: false, error: "Forbidden" }, 403);
+  const table = type === "admission" ? "admissions" : "marks";
+  const t = tenant(user);
+  const scope = tenantWhere(user);
+  const id = recordId || clean(input.id, 160) || makeId(type);
+  const scoped = `type='school' AND id=? AND ${scope.sql}`;
+  const existingResult = await env.DB.prepare(
+    `SELECT id,record_json,school_id,institution_id,is_deleted,created_at,updated_at
+     FROM ${table} WHERE ${scoped} LIMIT 1`,
+  ).bind(id, ...scope.args).all<Row>();
+  const existing = existingResult.results[0];
+  const active = existing && Number(existing.is_deleted) !== 1 ? existing : null;
+  if (request.method === "GET") return null;
+  if (request.method === "POST" && active) return json({ ok: false, error: "Record already exists" }, 409);
+  if (["PATCH", "PUT", "DELETE"].includes(request.method) && !active) {
+    return json({ ok: false, error: "Record not found in this school" }, 404);
+  }
+  if (request.method === "DELETE") {
+    await env.DB.prepare(
+      `UPDATE ${table} SET is_deleted=1,updated_at=? WHERE ${scoped} AND is_deleted=0`,
+    ).bind(stamp(), id, ...scope.args).run();
+    await audit(env, user, "delete", `education_${type}`, id);
+    return json({ ok: true, deleted: true });
+  }
+  const previous = active ? (() => {
+    try { return JSON.parse(String(active.record_json || "{}")) as Row; } catch { return {}; }
+  })() : {};
+  const { id: _id, type: _type, recordType: _recordType, schoolId: _schoolId, institutionId: _institutionId,
+    ...fields } = input;
+  const payload = { ...(request.method === "PATCH" ? previous : {}), ...fields, id, recordType: type,
+    schoolId: t.schoolId, institutionId: t.institutionId };
+  const timestamp = stamp();
+  if (active) {
+    await env.DB.prepare(
+      `UPDATE ${table} SET record_json=?,school_id=?,institution_id=?,updated_at=? WHERE ${scoped} AND is_deleted=0`,
+    ).bind(JSON.stringify(payload), t.schoolId, t.institutionId, timestamp, id, ...scope.args).run();
+  } else {
+    const collision = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=? LIMIT 1`).bind(id).all<Row>();
+    if (collision.results[0]) return json({ ok: false, error: "Record ID is unavailable" }, 409);
+    const columns = type === "admission"
+      ? "(id,type,provider_id,course_id,student_id,full_name,phone,email,institution_id,school_id,record_json,is_deleted,created_at,updated_at)"
+      : "(id,type,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,institution_id,school_id,record_json,is_deleted,created_at,updated_at)";
+    const values = type === "admission"
+      ? [id, "school", "", "", clean(fields.studentId || fields.student_id, 160), clean(fields.fullName || fields.full_name, 160),
+        clean(fields.phone, 80), clean(fields.email, 160), t.institutionId, t.schoolId, JSON.stringify(payload), 0, timestamp, timestamp]
+      : [id, "school", clean(fields.admissionId || fields.admission_id, 160), "", clean(fields.studentId || fields.student_id, 160),
+        clean(fields.courseId || fields.course_id, 120), clean(fields.courseTitle || fields.course_title, 160),
+        Number(fields.theory || 0), Number(fields.practical || 0), Number(fields.total || 0), clean(fields.grade, 40),
+        fields.passed ? 1 : 0, user.uid, t.institutionId, t.schoolId, JSON.stringify(payload), 0, timestamp, timestamp];
+    await env.DB.prepare(`INSERT INTO ${table} ${columns} VALUES (${values.map(() => "?").join(",")})`).bind(...values).run();
+  }
+  await audit(env, user, request.method === "POST" ? "create" : "update", `education_${type}`, id);
+  return json({ ok: true, record: payload }, request.method === "POST" ? 201 : 200);
 }
 
 async function domainRecords(
@@ -348,6 +460,9 @@ async function domainRecords(
   }
   if (sector === "farm" && ["feed", "feed_consumption"].includes(type) && method !== "GET") {
     return json({ ok: false, error: "Use the atomic Farm feed workflow for feed records" }, 405);
+  }
+  if (sector === "farm" && type === "produce" && method !== "GET") {
+    return json({ ok: false, error: "Use the validated Farm produce workflow" }, 405);
   }
   if (role(user) !== "superadmin" && !tenant(user).institutionId && !tenant(user).schoolId) {
     return json({ ok: false, error: "Tenant scope is required" }, 403);
@@ -389,6 +504,9 @@ async function domainRecords(
   const assignments = teacher ? await teacherAssignmentsForUser(env, user) : [];
   if (teacher && method !== "GET" && !await teacherMayWrite(env, user, type, input, assignments)) {
     return json({ ok: false, error: "This action is limited to your assigned classes and subjects" }, 403);
+  }
+  if (sector === "education" && (type === "admission" || type === "marks") && method !== "GET") {
+    return sharedEducationRecord(request, env, user, type, recordId, input, capability);
   }
   const t = tenant(user);
   const scope = tenantWhere(user);
@@ -690,7 +808,7 @@ function publicUser(row: Row) {
   };
 }
 const ALLOWED_ROLES = new Set([
-  "superadmin", "secretary", "headteacher", "bursar", "teacher", "teacher_staff", "teacher_independent", "student", "learner", "school", "school_admin",
+  "superadmin", "secretary", "headteacher", "head_teacher", "bursar", "accountant", "teacher", "teacher_staff", "teacher_independent", "student", "learner", "individual", "school", "school_admin",
   "clinic_admin", "doctor", "nurse", "receptionist", "pharmacist", "patient",
   "farm_admin", "farm_director", "farm_manager", "farm_worker",
   "mfi_admin", "loan_officer", "loan_manager", "loan_director", "borrower",

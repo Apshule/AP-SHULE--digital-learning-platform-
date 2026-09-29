@@ -60,17 +60,24 @@
         <div class="landing-login">
           <p class="landing-eyebrow">Your APSHULE workspace</p>
           <h2 id="signin-title">Welcome back.</h2>
-          <p class="landing-login-copy">Sign in with your authorized account. Your role and institution determine the records and actions available to you.</p>
+          <p class="landing-login-copy">Enter your account email and we’ll send a one-time sign-in code. Your assigned role and institution determine your workspace.</p>
           <form id="login-form" class="form-grid">
             <div>
               <label for="email">Email address</label>
-              <input id="email" name="email" type="email" autocomplete="username" required>
+              <input id="email" name="email" type="email" autocomplete="email" required>
             </div>
+            <button class="landing-button landing-button-primary landing-submit" type="submit">Send sign-in code</button>
+          </form>
+          <form id="verify-form" class="form-grid" hidden>
             <div>
-              <label for="password">Password</label>
-              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <label for="login-code">6-digit sign-in code</label>
+              <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
             </div>
-            <button class="landing-button landing-button-primary landing-submit" type="submit">Continue</button>
+            <button class="landing-button landing-button-primary landing-submit" type="submit">Verify and continue</button>
+            <div class="landing-actions">
+              <button id="resend-code" class="landing-button landing-button-secondary" type="button">Send another code</button>
+              <button id="change-email" class="landing-button landing-button-secondary" type="button">Change email</button>
+            </div>
           </form>
           <div id="push-setup" class="push-setup" hidden>
             <p class="landing-eyebrow">Device alerts</p>
@@ -82,7 +89,7 @@
             </div>
           </div>
           <p id="login-message" class="notice" role="status" aria-live="polite"></p>
-          <a class="landing-forgot" href="/reset-password.html">Forgot password?</a>
+          <p class="landing-forgot">Codes expire after 10 minutes. If your email is not linked to an account, contact your administrator.</p>
         </div>
       </section>
 
@@ -127,7 +134,7 @@
       </section>
 
       <section class="landing-section landing-cta">
-        <div class="landing-shell"><h2>Ready to continue?</h2><p>Sign in to open your authorized APSHULE workspace.</p><a class="landing-button landing-button-primary" href="#account-access">Log in to APSHULE</a></div>
+        <div class="landing-shell"><h2>Ready to continue?</h2><p>Sign in to open the workspace assigned to your account.</p><a class="landing-button landing-button-primary" href="#account-access">Log in to APSHULE</a></div>
       </section>
     </main>
 
@@ -150,13 +157,22 @@
       return data;
     }
     function destination(role = "") {
-      const normalized = String(role).toLowerCase();
-      if (["secretary", "headteacher", "school", "school_admin", "bursar", "teacher", "teacher_staff", "teacher_independent", "student", "learner"].includes(normalized)) return "/education/";
-      if (normalized === "superadmin") return "/admin/";
-       if (normalized.includes("clinic") || ["doctor", "nurse", "receptionist", "pharmacist", "patient"].includes(normalized)) return "/clinic/";
-      if (normalized.includes("farm") || normalized === "farm_worker") return "/farm/";
-      if (normalized.includes("loan") || normalized.includes("mfi") || normalized === "borrower") return "/mfi/";
-      return "/sector.html?sector=clinic";
+      const normalized = String(role).trim().toLowerCase().replace(/[ -]+/g, "_");
+      if (["superadmin", "super_admin"].includes(normalized)) return "/admin/";
+      if (["secretary", "headteacher", "head_teacher", "school", "school_admin", "bursar", "accountant", "teacher", "teacher_staff", "teacher_independent"].includes(normalized)) {
+        const educationRole = normalized === "headteacher" || normalized === "school" || normalized === "school_admin"
+          ? "head_teacher"
+          : ["teacher_staff", "teacher_independent"].includes(normalized)
+            ? "teacher"
+            : normalized === "accountant" ? "bursar" : normalized;
+        return `/workspace/${educationRole}`;
+      }
+      if (["student", "learner", "individual"].includes(normalized)) return "/workspace/student";
+      if (normalized === "parent") return "/workspace/parent";
+      if (["clinic_admin", "doctor", "nurse", "receptionist", "pharmacist", "patient"].includes(normalized)) return "/workspace/clinic";
+      if (["farm_admin", "farm_manager", "farm_worker", "farmworker", "farmer"].includes(normalized)) return "/workspace/farm";
+      if (["mfi_admin", "mfi_director", "loan_officer", "loan_manager", "loan_director", "borrower"].includes(normalized)) return "/workspace/mfi";
+      return "";
     }
 
     let pendingDestination = "/";
@@ -194,8 +210,15 @@
       });
     }
 
-    function finishSignIn(user) {
+    async function finishSignIn(user) {
       const target = destination(user?.role);
+      if (!target) {
+        try { await request("/api/auth/logout", { method: "POST", body: JSON.stringify({}) }); } catch {}
+        $("login-form").hidden = false;
+        $("verify-form").hidden = true;
+        message($("login-message"), "Your account has no recognized workspace role. Contact an administrator.", "error");
+        return;
+      }
       if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
         location.assign(target);
         return;
@@ -235,20 +258,50 @@
       location.assign(pendingDestination);
     });
 
+    async function requestLoginCode() {
+      message($("login-message"), "Checking your account and sending a code if it is active…");
+      try {
+        const result = await request("/api/auth/request-login-otp", {
+          method: "POST",
+          body: JSON.stringify({ email: $("email").value.trim() }),
+        });
+        $("login-form").hidden = true;
+        $("verify-form").hidden = false;
+        $("login-code").focus();
+        message($("login-message"), result.message || "If your account is active, a sign-in code has been sent.");
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    }
+
     $("login-form").addEventListener("submit", async (event) => {
       event.preventDefault();
-      message($("login-message"), "Signing in…");
+      await requestLoginCode();
+    });
+    $("verify-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      message($("login-message"), "Verifying your code…");
       try {
-        const result = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: $("email").value, password: $("password").value }) });
-        finishSignIn(result.user);
+        const result = await request("/api/auth/verify-login-otp", {
+          method: "POST",
+          body: JSON.stringify({ email: $("email").value.trim(), code: $("login-code").value.trim() }),
+        });
+        await finishSignIn(result.user);
       } catch (error) {
         message($("login-message"), error.message, "error");
       }
     });
+    $("resend-code").addEventListener("click", requestLoginCode);
+    $("change-email").addEventListener("click", () => {
+      $("verify-form").hidden = true;
+      $("login-form").hidden = false;
+      $("login-code").value = "";
+      message($("login-message"), "");
+    });
     request("/api/auth/session", { method: "GET", headers: {} })
-      .then((result) => { if (result.user?.role) finishSignIn(result.user); })
+      .then((result) => { if (result.user) finishSignIn(result.user); })
       .catch(() => {});
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v12").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v13").catch(() => {});
   </script>
 </body>
 </html>

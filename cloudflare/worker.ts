@@ -75,6 +75,7 @@ const STATIC_ROUTE_PREFIXES = [
 const STATIC_ROOT_FILES = new Set([
   "/app.css",
   "/landing.css",
+  "/login",
   "/manifest.json",
   "/manifest.webmanifest",
   "/profile.html",
@@ -84,7 +85,20 @@ const STATIC_ROOT_FILES = new Set([
 ]);
 
 const WORKSPACE_PAGE_FALLBACKS = [
-  ["/workspace", "/"],
+  ["/workspace/admin", "/admin/"],
+  ["/workspace/student", "/education/"],
+  ["/workspace/individual", "/education/"],
+  ["/workspace/learner", "/education/"],
+  ["/workspace/teacher", "/education/"],
+  ["/workspace/head_teacher", "/education/"],
+  ["/workspace/headteacher", "/education/"],
+  ["/workspace/secretary", "/education/"],
+  ["/workspace/bursar", "/education/"],
+  ["/workspace/parent", "/education/"],
+  ["/workspace/education", "/education/"],
+  ["/workspace/clinic", "/clinic/"],
+  ["/workspace/farm", "/farm/"],
+  ["/workspace/mfi", "/mfi/"],
   ["/education", "/education/"],
   ["/school", "/education/"],
   ["/student", "/education/"],
@@ -95,6 +109,7 @@ const WORKSPACE_PAGE_FALLBACKS = [
 ] as const;
 
 function workspacePageFallback(pathname: string): string | null {
+  if (pathname === "/login" || pathname === "/workspace" || pathname === "/workspace/") return "/";
   const match = WORKSPACE_PAGE_FALLBACKS.find(([prefix]) =>
     pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
@@ -408,8 +423,8 @@ async function api(request: Request, env: Env): Promise<Response> {
     const admissionId = id("admission");
     const timestamp = now();
     await env.DB.prepare(
-      `INSERT INTO admissions (id,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO admissions (id,type,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,created_at,updated_at)
+       VALUES (?,'vocational',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     ).bind(
       admissionId, providerId, courseId, referralCode, clean(input.studentId, 160),
       clean(input.fullName, 160), clean(input.phone, 80), clean(input.email, 160),
@@ -438,8 +453,8 @@ async function api(request: Request, env: Env): Promise<Response> {
       theory, practical, total, grade, passed: grade !== "Fail", createdAt: timestamp, updatedAt: timestamp,
     };
     await env.DB.prepare(
-      `INSERT INTO marks (id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO marks (id,type,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,created_at,updated_at)
+       VALUES (?,'vocational',?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     ).bind(markId, mark.admissionId, mark.providerId, mark.studentId, mark.courseId, mark.courseTitle, theory, practical, total, grade, mark.passed ? 1 : 0, "cloudflare-authorized", timestamp, timestamp).run();
     return json({ ok: true, mark }, 201);
   }
@@ -448,7 +463,7 @@ async function api(request: Request, env: Env): Promise<Response> {
     if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
     const input = await body(request);
     const marksId = clean(input.marksId, 160);
-    const result = await env.DB.prepare("SELECT * FROM marks WHERE id = ? LIMIT 1").bind(marksId).all<Record<string, unknown>>();
+    const result = await env.DB.prepare("SELECT * FROM marks WHERE id = ? AND type = 'vocational' LIMIT 1").bind(marksId).all<Record<string, unknown>>();
     const mark = result.results[0];
     if (!mark) return json({ ok: false, error: "Marks record not found" }, 404);
     if (Number(mark.passed) !== 1) return json({ ok: false, error: "A certificate can only be issued for a passing result" }, 409);

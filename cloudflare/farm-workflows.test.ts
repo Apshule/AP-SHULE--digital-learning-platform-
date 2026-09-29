@@ -64,6 +64,86 @@ describe("Farm workflow boundaries", () => {
     expect((await handleFarmWorkflowRoute(request("/api/farm/sales"), env, user("farm_admin")))?.status).toBe(404);
     expect((await handleFarmWorkflowRoute(request("/api/farm/faceEmbedding"), env, user("farm_admin")))?.status).toBe(404);
   });
+  it("prevents generic Farm writes from bypassing produce validation", async () => {
+    const response = await handleDomainRoute(
+      request("/api/farm/records?type=produce", "POST", {
+        type: "produce", name: "Milk", quantity: 1, unit: "litres", unitPrice: 2500,
+      }),
+      env,
+      user("farm_admin"),
+    );
+    expect(response?.status).toBe(405);
+  });
+  it("creates and lists tenant-scoped produce for Farm managers", async () => {
+    const db = farmDatabase();
+    try {
+      const d1 = farmEnv(db);
+      const manager = user("farm_manager", "farm-1");
+      const created = await handleFarmWorkflowRoute(
+        request("/api/farm/produce", "POST", {
+          name: "Milk", quantity: 12.5, unit: "litres", unitPrice: 2500,
+          notes: "Morning milking",
+          institutionId: "other-farm", farmId: "other-farm", ownerUid: "other-user",
+          createdBy: "other-user", forgedField: "must not persist",
+        }),
+        d1,
+        manager,
+      );
+      expect(created?.status).toBe(201);
+      const data = await created!.json() as { record: Record<string, unknown> };
+      expect(data.record.name).toBe("Milk");
+      expect(data.record.quantity).toBe(12.5);
+      expect(data.record.unitPrice).toBe(2500);
+      expect(data.record.notes).toBe("Morning milking");
+      expect(data.record.institutionId).toBe("farm-1");
+      expect(data.record).not.toHaveProperty("farmId");
+      expect(data.record).not.toHaveProperty("ownerUid");
+      expect(data.record).not.toHaveProperty("createdBy");
+      expect(data.record).not.toHaveProperty("forgedField");
+      expect(data.record.createdAt).toBeUndefined();
+      expect(db.prepare("SELECT institution_id,record_type,created_by FROM sector_records").get()).toEqual({
+        institution_id: "farm-1", record_type: "produce", created_by: "u1",
+      });
+
+      const listed = await handleFarmWorkflowRoute(request("/api/farm/produce"), d1, manager);
+      expect(listed?.status).toBe(200);
+      expect((await listed!.json() as { records: Array<Record<string, unknown>> }).records).toHaveLength(1);
+
+      const otherTenant = await handleFarmWorkflowRoute(
+        request("/api/farm/produce"),
+        d1,
+        user("farm_manager", "farm-2"),
+      );
+      expect(otherTenant?.status).toBe(200);
+      expect((await otherTenant!.json() as { records: unknown[] }).records).toHaveLength(0);
+    } finally {
+      db.close();
+    }
+  });
+  it("rejects invalid produce values and unauthorized worker writes", async () => {
+    const db = farmDatabase();
+    try {
+      const d1 = farmEnv(db);
+      expect((await handleFarmWorkflowRoute(
+        request("/api/farm/produce", "POST", { name: "Milk", quantity: 0, unit: "litres", unitPrice: 2500 }),
+        d1,
+        user("farm_manager"),
+      ))?.status).toBe(400);
+      expect((await handleFarmWorkflowRoute(
+        request("/api/farm/produce", "POST", { name: "Milk", quantity: 1, unit: "litres", unitPrice: -1 }),
+        d1,
+        user("farm_manager"),
+      ))?.status).toBe(400);
+      expect((await handleFarmWorkflowRoute(
+        request("/api/farm/produce", "POST", { name: "Milk", quantity: 1, unit: "litres", unitPrice: 2500 }),
+        d1,
+        user("farm_worker"),
+      ))?.status).toBe(403);
+      expect(db.prepare("SELECT COUNT(*) AS count FROM sector_records").get()?.count).toBe(0);
+    } finally {
+      db.close();
+    }
+  });
   it("validates registry, inventory, and idempotency inputs before writing", async () => {
     expect((await handleFarmWorkflowRoute(request("/api/farm/animals", "POST", { name: "", animalType: "" }), env, user("farm_admin")))?.status).toBe(400);
     expect((await handleFarmWorkflowRoute(request("/api/farm/inventory", "POST", { name: "feed", quantityInStock: -1 }), env, user("farm_admin")))?.status).toBe(400);

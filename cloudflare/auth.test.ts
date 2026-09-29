@@ -70,6 +70,7 @@ const migrations = [
   new URL("./migrations/0005_password_reset_tokens.sql", import.meta.url),
   new URL("./migrations/0006_password_reset_otp.sql", import.meta.url),
   new URL("./migrations/0007_password_reset_challenge_lock.sql", import.meta.url),
+  new URL("./migrations/0015_auth_login_otp.sql", import.meta.url),
 ];
 
 let rawDatabase: DatabaseSync;
@@ -211,9 +212,7 @@ test("request, verify, and complete a single-use password reset", async () => {
   assert.equal(replayTicket.response.status, 400);
 
   const login = await post("/api/auth/login", { email: "otp-test@example.com", password: newPassword });
-  assert.equal(login.response.status, 200);
-  assert.equal(login.data.ok, true);
-  assert.equal((login.data.user as Record<string, unknown>).sessionVersion, 2);
+  assert.equal(login.response.status, 410);
   assert.equal(sentEmails.length, 1, "only the initial request sends an email");
 });
 
@@ -343,5 +342,68 @@ test("rejects expired codes and does not disclose unknown accounts", async () =>
   const unknown = await post("/api/auth/request-password-reset", { email: "nobody@example.com" });
   assert.equal(unknown.response.status, 200);
   assert.equal(unknown.data.ok, true);
+  assert.equal(sentEmails.length, 1);
+});
+
+test("requests and verifies a one-use login OTP without changing credentials", async () => {
+  const before = rawDatabase.prepare(
+    "SELECT password_hash_v2,requires_password_reset,session_version FROM users WHERE uid=?",
+  ).get("test-user") as Record<string, unknown>;
+  const requested = await post("/api/auth/request-login-otp", { email: "OTP-Test@example.com" });
+  assert.equal(requested.response.status, 200);
+  assert.equal(requested.data.ok, true);
+  assert.equal(sentEmails.length, 1);
+  const email = sentEmails[0];
+  const code = String(email.text).match(/code is (\d{6})/)?.[1];
+  assert.ok(code);
+  assert.match(String(email.text), /expires in 10 minutes/i);
+  const stored = rawDatabase.prepare(
+    "SELECT code_hash,expires_at_ms,failed_attempts FROM login_otp_challenges WHERE uid=?",
+  ).get("test-user") as { code_hash: string; expires_at_ms: number; failed_attempts: number };
+  assert.notEqual(stored.code_hash, code);
+  assert.equal(stored.failed_attempts, 0);
+  assert.ok(stored.expires_at_ms > Date.now());
+  const immediateResend = await post("/api/auth/request-login-otp", { email: "otp-test@example.com" });
+  assert.equal(immediateResend.response.status, 200);
+  assert.equal(sentEmails.length, 1);
+
+  const verified = await post("/api/auth/verify-login-otp", { email: "otp-test@example.com", code });
+  assert.equal(verified.response.status, 200);
+  assert.equal(verified.data.ok, true);
+  assert.match(verified.response.headers.get("set-cookie") || "", /aps_session=.*HttpOnly/);
+  assert.equal(scalar("SELECT COUNT(*) AS value FROM login_otp_challenges"), 0);
+
+  const replay = await post("/api/auth/verify-login-otp", { email: "otp-test@example.com", code });
+  assert.equal(replay.response.status, 400);
+  const after = rawDatabase.prepare(
+    "SELECT password_hash_v2,requires_password_reset,session_version FROM users WHERE uid=?",
+  ).get("test-user") as Record<string, unknown>;
+  assert.deepEqual(after, before);
+});
+
+test("keeps login OTP responses neutral, enforces resend cooldown, and locks after three failures", async () => {
+  const unknown = await post("/api/auth/request-login-otp", { email: "nobody@example.com" });
+  assert.equal(unknown.response.status, 200);
+  assert.match(String(unknown.data.message), /active account/i);
+  assert.equal(sentEmails.length, 0);
+
+  await post("/api/auth/request-login-otp", { email: "otp-test@example.com" });
+  assert.equal(sentEmails.length, 1);
+  const firstCode = String(sentEmails[0].text).match(/code is (\d{6})/)?.[1];
+  assert.ok(firstCode);
+  const wrongCode = firstCode === "123456" ? "654321" : "123456";
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const wrong = await post("/api/auth/verify-login-otp", { email: "otp-test@example.com", code: wrongCode });
+    assert.equal(wrong.response.status, 400);
+    assert.match(String(wrong.data.error), /invalid or expired/i);
+    if (attempt < 3) assert.equal(
+      scalar("SELECT failed_attempts AS value FROM login_otp_challenges WHERE uid=?", "test-user"),
+      attempt,
+    );
+  }
+  assert.equal(scalar("SELECT COUNT(*) AS value FROM login_otp_challenges"), 1);
+
+  const resendLocked = await post("/api/auth/request-login-otp", { email: "otp-test@example.com" });
+  assert.equal(resendLocked.response.status, 200);
   assert.equal(sentEmails.length, 1);
 });
