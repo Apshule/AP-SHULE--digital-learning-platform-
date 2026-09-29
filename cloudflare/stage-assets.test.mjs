@@ -82,6 +82,15 @@ test("Pages bundle excludes archived Firebase and admission clients", async () =
   }
 });
 
+test("Pages bundle includes D1-backed provider onboarding", async () => {
+  const path = "skills/join-provider.html";
+  assert.equal(await isFile(path), true, `Provider onboarding should be staged: ${path}`);
+  const page = await readFile(join(output, path), "utf8");
+  assert.match(page, /api\/auth\/request-login-otp/);
+  assert.match(page, /api\/skills\/providers\/register/);
+  assert.doesNotMatch(page, /firebase|firestore|firebasestorage/i);
+});
+
 test("Pages assets do not require Firebase or Render at runtime", async () => {
   const contents = (await textFiles()).join("\n");
   assert.doesNotMatch(contents, /firebasejs|firebaseio\.com|firebaseapp\.com|firebase\.googleapis\.com|onrender\.com/i);

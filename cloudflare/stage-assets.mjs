@@ -9,7 +9,6 @@ await mkdir(output, { recursive: true });
 
 const excludedSkillsFiles = new Set([
   "firebase-config.js",
-  "join-provider.html",
   "provider-register.html",
   "skills-enroll.html",
 ]);

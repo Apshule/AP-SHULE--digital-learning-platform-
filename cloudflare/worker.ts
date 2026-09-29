@@ -229,6 +229,15 @@ async function skillsEnrollmentRateLimit(request: Request, env: Env): Promise<"a
   return "allowed";
 }
 
+async function skillsProviderRegistrationRateLimit(env: Env, userId: string): Promise<boolean> {
+  if (!env.CACHE) return false;
+  const key = `skills-provider-registration:${userId}`;
+  const count = Number(await env.CACHE.get(key, "text") || 0);
+  if (!Number.isFinite(count) || count >= 5) return false;
+  await env.CACHE.put(key, String(count + 1), { expirationTtl: 600 });
+  return true;
+}
+
 function publicProvider(row: ProviderRow, courses: Record<string, unknown>[]) {
   return {
     id: row.id,
@@ -400,15 +409,40 @@ async function api(request: Request, env: Env): Promise<Response> {
   }
 
   if (request.method === "POST" && (url.pathname === "/api/skills/providers" || url.pathname === "/api/skills/providers/register")) {
-    if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
+    const isRegistration = url.pathname === "/api/skills/providers/register";
+    const authentication = isRegistration ? await authenticate(request, env) : null;
+    const hasWriteAuthorization = canWrite(request, env);
+    if (!isRegistration && !hasWriteAuthorization) {
+      return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
+    }
+    if (isRegistration && !hasWriteAuthorization && authentication?.authenticated !== true) {
+      const status = authentication?.status ?? 401;
+      return json({
+        ok: false,
+        error: status === 503 ? "Provider registration is temporarily unavailable" : "Sign in before submitting a provider profile",
+      }, status);
+    }
     const input = await body(request);
+    const providerName = clean(input.name, 160);
+    const description = clean(input.whatTheyTeach || input.description, 800);
+    const physicalAddress = clean(input.physicalAddress, 300);
+    const contactEmail = clean(input.contactEmail, 160).toLowerCase();
+    const contactPhone = clean(input.contactPhone, 80);
+    if (isRegistration && (!providerName || !description || !physicalAddress || !contactPhone ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail))) {
+      return json({ ok: false, error: "Enter the institution name, training focus, address, valid email, and phone number" }, 400);
+    }
+    if (isRegistration && authentication?.authenticated === true &&
+      !await skillsProviderRegistrationRateLimit(env, authentication.user.uid)) {
+      return json({ ok: false, error: "Provider registration is temporarily unavailable. Please try again later." }, 429);
+    }
     const providerId = id("provider");
     const timestamp = now();
     const values = [
-      providerId, clean(input.name, 160), clean(input.description || input.whatTheyTeach, 800),
+      providerId, providerName, description,
       clean(input.logoUrl, 500), clean(input.badgeUrl, 500), clean(input.physicalAddress, 300),
-      clean(input.contactEmail, 160), clean(input.contactPhone, 80), `PROVIDER-${providerId.slice(-8).toUpperCase()}`,
-      "pending", clean(input.ownerId, 160), timestamp, timestamp,
+      contactEmail, contactPhone, `PROVIDER-${providerId.slice(-8).toUpperCase()}`,
+      "pending", authentication?.authenticated === true ? authentication.user.uid : clean(input.ownerId, 160), timestamp, timestamp,
     ];
     await env.DB.prepare(
       `INSERT INTO skills_providers (id,name,description,logo_url,badge_url,physical_address,contact_email,contact_phone,referral_code,status,owner_id,created_at,updated_at)

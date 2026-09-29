@@ -13,6 +13,7 @@ describe("APSHULE Skills Cloudflare frontend", () => {
     for (const path of [
       "skills/index.html",
       "skills/provider.html",
+      "skills/join-provider.html",
       "cloudflare/static/skills/provider.html",
     ]) {
       expect(read(path), path).not.toMatch(/firebase|firestore|firebasestorage/i);
@@ -53,6 +54,11 @@ describe("APSHULE Skills Cloudflare frontend", () => {
     expect(stage).toContain('"firebase-config.js"');
     expect(stage).toContain('"skills-enroll.html"');
     expect(stage).toContain('"provider-register.html"');
+    expect(stage).not.toContain('"join-provider.html"');
+    const onboarding = read("skills/join-provider.html");
+    expect(onboarding).toContain("/api/auth/request-login-otp");
+    expect(onboarding).toContain("/api/auth/verify-login-otp");
+    expect(onboarding).toContain("/api/skills/providers/register");
     expect(read("skills/styles.css")).toContain("--plum-dark: #35172f");
     expect(read("cloudflare/static/skills/api-config.js")).toContain('window.APSHULE_API_BASE = "";');
   });
