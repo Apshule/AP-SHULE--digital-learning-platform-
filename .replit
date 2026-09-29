@@ -47,3 +47,11 @@ VAPID_PRIVATE_KEY = "0Waaa2AKteejU8aaO5G72mtPJ9RaEkVSjjHAhtPsZ9o"
 
 [nix]
 channel = "stable-25_05"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 80
