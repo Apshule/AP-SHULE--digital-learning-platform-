@@ -9,6 +9,7 @@
 - [GitHub REST commit reconstruction](github-rest-commit-reconstruction.md) — Preserve the terminal commit-message newline when recreating Git objects through the API.
 - [Attached credential history](attached-credential-history.md) — Check all Git refs for attached credentials before GitHub pushes; local backups can make them reachable.
 - [GitHub Pages backend URL](github-pages-backend-url.md) — Static Pages needs a stable public API URL; a local Replit workflow cannot serve production browser requests.
+- [GitHub Pages custom-domain cutovers](github-pages-custom-domain-cutovers.md) — Verify Pages at both origin and proxied edges; keep Cloudflare proxy enabled for Worker `/api/*` routes.
 - [Preview build environment](preview-build-environment.md) — Full workspace builds need explicit PORT and BASE_PATH values for the mockup preview.
 - [MFI reporting boundaries](mfi-reporting-boundaries.md) — Director analytics and offline report snapshots are read-only; approvals, borrower edits, and institution-crossing reads stay rule-gated.
 - [IndexedDB version migrations](indexeddb-version-migrations.md) — New offline stores need an explicit versioned upgrade branch, not only an updated initial store list.
