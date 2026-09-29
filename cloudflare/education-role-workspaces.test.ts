@@ -16,6 +16,11 @@ function educationDatabase() {
     CREATE TABLE firestore_documents (
       document_path TEXT, data_json TEXT, create_time TEXT, update_time TEXT, collection_path TEXT
     );
+    CREATE TABLE payments (
+      id TEXT PRIMARY KEY, institution_id TEXT, school_id TEXT, payer_id TEXT, amount INTEGER,
+      currency TEXT, status TEXT, provider TEXT, provider_reference TEXT, idempotency_key TEXT,
+      metadata_json TEXT, created_at TEXT, updated_at TEXT
+    );
     CREATE TABLE audit (
       id TEXT PRIMARY KEY, institution_id TEXT, school_id TEXT, actor_id TEXT, action TEXT,
       resource_type TEXT, resource_id TEXT, metadata_json TEXT, created_at TEXT
@@ -53,18 +58,40 @@ function user(uid: string, role: string, email: string): AuthUser {
   } as AuthUser;
 }
 
+function unscopedUser(uid: string, role: string, email: string): AuthUser {
+  return { ...user(uid, role, email), institutionId: null, schoolId: null };
+}
+
 function addRecord(
   db: DatabaseSync,
   id: string,
   recordType: string,
   record: Record<string, unknown>,
   ownerUid: string | null = null,
+  schoolId: string | null = "school-1",
+  institutionId: string | null = "school-org",
 ) {
   db.prepare(
     `INSERT INTO sector_records
       (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
-     VALUES (?, 'education', 'school-org', 'school-1', ?, ?, ?, 'school-admin', 0, 't', 't')`,
-  ).run(id, ownerUid, recordType, JSON.stringify({ id, ...record }));
+     VALUES (?, 'education', ?, ?, ?, ?, ?, 'school-admin', 0, 't', 't')`,
+  ).run(id, institutionId, schoolId, ownerUid, recordType, JSON.stringify({ id, ...record }));
+}
+
+function addSharedMark(
+  db: DatabaseSync,
+  id: string,
+  schoolId: string,
+  institutionId: string,
+  record: Record<string, unknown>,
+) {
+  db.prepare(
+    `INSERT INTO marks (id,institution_id,school_id,learner_id,class_name,subject,score,record_json,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+  ).run(
+    id, institutionId, schoolId, record.learnerId || "", record.className || "",
+    record.subject || "", record.score ?? null, JSON.stringify(record), "t", "t",
+  );
 }
 
 function addLegacyRecord(db: DatabaseSync, collection: string, id: string, record: Record<string, unknown>) {
@@ -278,6 +305,154 @@ describe("Education student and teacher workspaces", () => {
       const studentData = await studentWorkspace!.json() as Record<string, any>;
       expect(studentData.student.id).toBe("students/legacy-student");
       expect(studentData.marks.map((row: Record<string, unknown>) => row.id)).toEqual(["school_marks/mark-1"]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("limits unscoped students and teachers to their own or assigned school records", async () => {
+    const db = educationDatabase();
+    try {
+      addRecord(db, "learner-own", "learner", {
+        name: "Student One", studentNumber: "S-001", studentEmail: "student.one@school.test", className: "P5",
+      }, "student-1");
+      addRecord(db, "learner-other", "learner", {
+        name: "Student Two", studentNumber: "S-002", studentEmail: "student.two@school.test", className: "P5",
+      }, "student-2", "school-2", "school-org");
+      addRecord(db, "class-one", "class", { name: "P5" });
+      addRecord(db, "class-other", "class", { name: "P5" }, null, "school-2", "school-org");
+      addRecord(db, "subject-one", "subject", { name: "Mathematics" });
+      addRecord(db, "subject-other", "subject", { name: "Mathematics" }, null, "school-2", "school-org");
+      addRecord(db, "assignment-one", "teacher_assignment", {
+        teacherUid: "teacher-1", className: "P5", subject: "Mathematics",
+      });
+      addRecord(db, "assignment-no-school", "teacher_assignment", {
+        teacherUid: "teacher-2", className: "P5", subject: "Mathematics",
+      }, null, null, "school-org");
+      addSharedMark(db, "mark-own", "school-1", "school-org", {
+        studentId: "student-1", learnerId: "learner-own", className: "P5", subject: "Mathematics", score: 84,
+      });
+      addSharedMark(db, "mark-other", "school-2", "school-org", {
+        studentId: "student-2", learnerId: "learner-other", className: "P5", subject: "Mathematics", score: 96,
+      });
+      const env = educationEnv(db);
+
+      const student = unscopedUser("student-1", "student", "student.one@school.test");
+      const studentWorkspace = await handleDomainRoute(request("/api/school/education-workspace"), env, student);
+      const studentData = await studentWorkspace!.json() as Record<string, any>;
+      expect(studentWorkspace?.status).toBe(200);
+      expect(studentData.student?.id).toBe("learner-own");
+      expect(studentData.marks.map((row: Record<string, unknown>) => row.id)).toEqual(["mark-own"]);
+      expect(studentData.classes.map((row: Record<string, unknown>) => row.id)).toEqual(["class-one"]);
+      const studentWrite = await handleDomainRoute(request("/api/school/academic/marks", "POST", {
+        learnerId: "learner-own", className: "P5", subject: "Mathematics", score: 90,
+      }), env, student);
+      expect(studentWrite?.status).toBe(403);
+
+      const teacher = unscopedUser("teacher-1", "teacher", "teacher@school.test");
+      const teacherWorkspace = await handleDomainRoute(request("/api/school/education-workspace"), env, teacher);
+      const teacherData = await teacherWorkspace!.json() as Record<string, any>;
+      expect(teacherWorkspace?.status).toBe(200);
+      expect(teacherData.students.map((row: Record<string, unknown>) => row.id)).toEqual(["learner-own"]);
+      expect(teacherData.classes.map((row: Record<string, unknown>) => row.id)).toEqual(["class-one"]);
+      expect(teacherData.subjects.map((row: Record<string, unknown>) => row.id)).toEqual(["subject-one"]);
+      expect(teacherData.marks.map((row: Record<string, unknown>) => row.id)).toEqual(["mark-own"]);
+      const teacherWrite = await handleDomainRoute(request("/api/school/academic/marks", "POST", {
+        learnerId: "learner-own", className: "P5", subject: "Mathematics", score: 91,
+      }), env, teacher);
+      expect(teacherWrite?.status).toBe(403);
+
+      const noSchoolAssignmentTeacher = unscopedUser("teacher-2", "teacher", "teacher.two@school.test");
+      const noSchoolAssignmentWorkspace = await handleDomainRoute(
+        request("/api/school/education-workspace"), env, noSchoolAssignmentTeacher,
+      );
+      const noSchoolAssignmentData = await noSchoolAssignmentWorkspace!.json() as Record<string, any>;
+      expect(noSchoolAssignmentData.students).toEqual([]);
+      expect(noSchoolAssignmentData.classes).toEqual([]);
+      expect(noSchoolAssignmentData.marks).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("allows unscoped school staff to read all schools but blocks their writes", async () => {
+    const db = educationDatabase();
+    try {
+      db.prepare("INSERT INTO role_capabilities (role,sector,capability,scope) VALUES (?,?,?,?)")
+        .run("secretary", "education", "admissions.manage", "tenant");
+      db.prepare("INSERT INTO role_capabilities (role,sector,capability,scope) VALUES (?,?,?,?)")
+        .run("bursar", "education", "payments.manage", "tenant");
+      db.prepare("INSERT INTO role_capabilities (role,sector,capability,scope) VALUES (?,?,?,?)")
+        .run("student", "payments", "payments.read", "tenant");
+      db.prepare(
+        `INSERT INTO school_admissions (id,institution_id,school_id,record_json,created_at,updated_at)
+         VALUES ('admission-one','school-org','school-1','{}','t','t'),
+                ('admission-two','school-org','school-2','{}','t','t')`,
+      ).run();
+      db.prepare(
+        `INSERT INTO payments (id,institution_id,school_id,payer_id,amount,currency,status,created_at,updated_at)
+         VALUES ('payment-one','school-org','school-1','student-1',50000,'UGX','pending','t','t'),
+                ('payment-two','school-org','school-2','student-2',60000,'UGX','paid','t','t')`,
+      ).run();
+      const env = educationEnv(db);
+
+      const student = unscopedUser("student-1", "student", "student.one@school.test");
+      const ownPayments = await handleDomainRoute(request("/api/payments"), env, student);
+      const ownPaymentData = await ownPayments!.json() as { payments: Array<Record<string, unknown>> };
+      expect(ownPayments?.status).toBe(200);
+      expect(ownPaymentData.payments.map((row) => row.id)).toEqual(["payment-one"]);
+
+      const secretary = unscopedUser("secretary-1", "secretary", "secretary@school.test");
+      const admissions = await handleDomainRoute(request("/api/school/admissions"), env, secretary);
+      const admissionData = await admissions!.json() as { records: Array<Record<string, unknown>> };
+      expect(admissions?.status).toBe(200);
+      expect(admissionData.records.map((row) => row.id).sort()).toEqual(["admission-one", "admission-two"]);
+      const secretaryWrite = await handleDomainRoute(request("/api/school/admissions", "POST", {
+        fullName: "New student",
+      }), env, secretary);
+      expect(secretaryWrite?.status).toBe(403);
+
+      const bursar = unscopedUser("bursar-1", "bursar", "bursar@school.test");
+      const workspace = await handleDomainRoute(request("/api/school/education-workspace"), env, bursar);
+      const workspaceData = await workspace!.json() as Record<string, any>;
+      expect(workspace?.status).toBe(200);
+      expect(workspaceData.finance.payments.map((row: Record<string, unknown>) => row.id).sort())
+        .toEqual(["payment-one", "payment-two"]);
+      const payments = await handleDomainRoute(request("/api/school/bursar/payments"), env, bursar);
+      const paymentData = await payments!.json() as { payments: Array<Record<string, unknown>> };
+      expect(payments?.status).toBe(200);
+      expect(paymentData.payments.map((row) => row.id).sort()).toEqual(["payment-one", "payment-two"]);
+      const bursarWrite = await handleDomainRoute(request("/api/school/bursar/payments", "POST", {
+        amount: 20000, idempotencyKey: "unscoped-write",
+      }), env, bursar);
+      expect(bursarWrite?.status).toBe(403);
+      const genericPaymentWrite = await handleDomainRoute(request("/api/pay", "POST", {
+        amount: 20000, idempotencyKey: "unscoped-generic-write",
+      }), env, bursar);
+      expect(genericPaymentWrite?.status).toBe(403);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("preserves the original school scope when an unscoped superadmin edits a shared record", async () => {
+    const db = educationDatabase();
+    try {
+      db.prepare(
+        `INSERT INTO school_admissions (id,institution_id,school_id,record_json,created_at,updated_at)
+         VALUES ('admission-preserve','school-org','school-1','{"fullName":"Before"}','t','t')`,
+      ).run();
+      const admin = unscopedUser("root", "superadmin", "admin@school.test");
+      const response = await handleDomainRoute(request("/api/school/admissions/admission-preserve", "PATCH", {
+        fullName: "After",
+      }), educationEnv(db), admin);
+      expect(response?.status).toBe(200);
+      const row = db.prepare(
+        "SELECT school_id,institution_id,record_json FROM school_admissions WHERE id='admission-preserve'",
+      ).get() as { school_id: string; institution_id: string; record_json: string };
+      expect(row.school_id).toBe("school-1");
+      expect(row.institution_id).toBe("school-org");
+      expect(JSON.parse(row.record_json).fullName).toBe("After");
     } finally {
       db.close();
     }

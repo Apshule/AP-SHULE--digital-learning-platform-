@@ -113,11 +113,13 @@ function effectiveRole(user: AuthUser, sector: string): string {
 function tenant(user: AuthUser): { institutionId: string | null; schoolId: string | null } {
   return { institutionId: user.institutionId || null, schoolId: user.schoolId || null };
 }
-function tenantWhere(user: AuthUser, alias = ""): { sql: string; args: string[] } {
+function tenantWhere(user: AuthUser, alias = "", sector = ""): { sql: string; args: string[] } {
   if (role(user) === "superadmin") return { sql: "1=1", args: [] };
   const p = alias ? `${alias}.` : "";
   const t = tenant(user);
-  if (!t.institutionId && !t.schoolId) return { sql: "1=0", args: [] };
+  if (!t.institutionId && !t.schoolId) {
+    return sector === "education" ? { sql: "1=1", args: [] } : { sql: "1=0", args: [] };
+  }
   if (t.schoolId) return { sql: `(${p}school_id = ? OR (${p}school_id IS NULL AND ${p}institution_id = ?))`, args: [t.schoolId, t.institutionId || ""] };
   return { sql: `${p}institution_id = ?`, args: [t.institutionId!] };
 }
@@ -171,7 +173,7 @@ function decodeFirestore(value: unknown): unknown {
 function safeLegacy(row: Row) {
   return { id: row.document_path, data: decodeFirestore(JSON.parse(String(row.data_json || "{}"))), createdAt: row.create_time, updatedAt: row.update_time };
 }
-function legacyInTenant(record: Row, user: AuthUser): boolean {
+function legacyInTenant(record: Row, user: AuthUser, sector: string): boolean {
   if (role(user) === "superadmin") return true;
   const data = record.data && typeof record.data === "object" ? record.data as Row : {};
   const institution = clean(data.institutionId || data.institution_id, 160);
@@ -180,6 +182,7 @@ function legacyInTenant(record: Row, user: AuthUser): boolean {
   const clinic = clean(data.clinicId || data.clinic_id || data.institutionId, 160);
   const mfi = clean(data.mfiId || data.mfi_id || data.institutionId, 160);
   const t = tenant(user);
+  if (sector === "education" && !t.institutionId && !t.schoolId) return true;
   if (t.schoolId) return school === t.schoolId || (!school && Boolean(t.institutionId && institution === t.institutionId));
   return Boolean((t.institutionId && institution === t.institutionId)
     || (t.institutionId && farm === t.institutionId)
@@ -265,24 +268,41 @@ async function teacherAssignmentsForUser(env: AuthEnv, user: AuthUser): Promise<
   return (await readRecords(env, user, "education", "teacher_assignment", false))
     .filter((record) => teacherAssignmentMatchesUser(record, user));
 }
-function teacherRecordMatchesAssignments(record: Row, type: string, assignments: Row[]): boolean {
+function sameEducationScope(record: Row, anchor: Row): boolean {
+  const recordData = recordFields(record);
+  const anchorData = recordFields(anchor);
+  const anchorSchoolId = clean(anchorData.schoolId || anchorData.school_id, 160);
+  const recordSchoolId = clean(recordData.schoolId || recordData.school_id, 160);
+  const anchorInstitutionId = clean(anchorData.institutionId || anchorData.institution_id, 160);
+  const recordInstitutionId = clean(recordData.institutionId || recordData.institution_id, 160);
+  if (anchorSchoolId) {
+    return recordSchoolId === anchorSchoolId ||
+      (!recordSchoolId && Boolean(anchorInstitutionId && recordInstitutionId === anchorInstitutionId));
+  }
+  return Boolean(anchorInstitutionId && !recordSchoolId && recordInstitutionId === anchorInstitutionId);
+}
+
+function teacherRecordMatchesAssignments(
+  record: Row,
+  type: string,
+  assignments: Row[],
+  requireScopedAssignment = false,
+): boolean {
   const className = type === "class" ? teacherClassLabel(record) : teacherName(record);
   const subject = teacherSubject(record);
   if (type === "teacher_assignment") return true;
-  if (type === "learner" || type === "student" || type === "class") {
-    return Boolean(className && assignments.some((assignment) => teacherName(assignment) === className));
-  }
-  if (type === "subject") {
-    return Boolean(subject && assignments.some((assignment) => teacherSubject(assignment) === subject));
-  }
-  if (type === "attendance") {
-    return Boolean(className && assignments.some((assignment) => teacherName(assignment) === className));
-  }
-  if (type === "marks") {
-    return Boolean(className && subject && assignments.some((assignment) =>
-      teacherName(assignment) === className && teacherSubject(assignment) === subject));
-  }
-  return false;
+  return assignments.some((assignment) => {
+    if (requireScopedAssignment && !sameEducationScope(record, assignment)) return false;
+    if (type === "learner" || type === "student" || type === "class" || type === "attendance") {
+      return Boolean(className && teacherName(assignment) === className);
+    }
+    if (type === "subject") return Boolean(subject && teacherSubject(assignment) === subject);
+    if (type === "marks") {
+      return Boolean(className && subject && teacherName(assignment) === className &&
+        teacherSubject(assignment) === subject);
+    }
+    return false;
+  });
 }
 function studentRecordMatchesProfile(record: Row, profile: Row, user: AuthUser): boolean {
   if (educationStudentIdentity(record, user)) return true;
@@ -301,6 +321,17 @@ function studentRecordMatchesProfile(record: Row, profile: Row, user: AuthUser):
   return recordIds.some((id) => profileIds.includes(id));
 }
 
+function studentRecordMatchesOwnProfile(record: Row, profile: Row, user: AuthUser): boolean {
+  if (educationStudentIdentity(record, user)) return true;
+  const profileData = recordFields(profile);
+  const profileHasScope = Boolean(
+    clean(profileData.schoolId || profileData.school_id, 160) ||
+    clean(profileData.institutionId || profileData.institution_id, 160),
+  );
+  return profileHasScope && sameEducationScope(record, profile) &&
+    studentRecordMatchesProfile(record, profile, user);
+}
+
 export async function readRecords(
   env: AuthEnv,
   user: AuthUser,
@@ -308,24 +339,29 @@ export async function readRecords(
   type: string,
   ownOnlyOverride?: boolean,
 ): Promise<Row[]> {
-  const scope = tenantWhere(user);
-  const result = await env.DB.prepare(`SELECT id,record_json,record_type,created_at,updated_at,owner_uid,is_deleted FROM sector_records WHERE sector=? AND record_type=? AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`)
+  const scope = tenantWhere(user, "", sector);
+  const result = await env.DB.prepare(`SELECT id,record_json,record_type,created_at,updated_at,owner_uid,is_deleted,school_id,institution_id FROM sector_records WHERE sector=? AND record_type=? AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`)
     .bind(sector, type, ...scope.args).all<Row>();
   const ownOnly = ownOnlyOverride ?? isSelfRole(user, sector);
   const hiddenIds = new Set(result.results.filter((row) => Number(row.is_deleted) === 1).map((row) => clean(row.id, 300)));
   const activeRows = result.results.filter((row) => Number(row.is_deleted) !== 1);
   const records: Row[] = activeRows
     .filter((row) => !ownOnly || clean(row.owner_uid, 160) === user.uid || (
-      sector === "education" && ["student", "learner"].includes(role(user)) &&
+      sector === "education" && ["student", "learner"].includes(effectiveRole(user, sector)) &&
       educationStudentIdentity(JSON.parse(String(row.record_json || "{}")) as Row, user)
     ))
-    .map((row) => ({
-      id: row.id,
-      ...JSON.parse(String(row.record_json || "{}")),
-      recordType: row.record_type,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    }))
+    .map((row) => {
+      const data = JSON.parse(String(row.record_json || "{}")) as Row;
+      return {
+        id: row.id,
+        ...data,
+        recordType: row.record_type,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        schoolId: row.school_id ?? data.schoolId ?? data.school_id ?? null,
+        institutionId: row.institution_id ?? data.institutionId ?? data.institution_id ?? null,
+      };
+    })
     .filter((record) => !(sector === "education" && ["admission", "marks"].includes(type) &&
       isVocationalEducationRecord(record)));
   if (sector === "education" && (type === "admission" || type === "marks")) {
@@ -346,7 +382,8 @@ export async function readRecords(
       if (ownOnly && !educationStudentIdentity(data, user)) continue;
       records.push({
         ...data, id, recordType: type, createdAt: row.created_at, updatedAt: row.updated_at,
-        schoolId: row.school_id, institutionId: row.institution_id,
+        schoolId: row.school_id ?? data.schoolId ?? data.school_id ?? null,
+        institutionId: row.institution_id ?? data.institutionId ?? data.institution_id ?? null,
       });
       hiddenIds.add(id);
     }
@@ -367,9 +404,9 @@ export async function readRecords(
         if (type === "admission" && collection === "admissions" && educationRecordType(record) !== "school") continue;
       }
       if (hiddenIds.has(legacyId) || records.some((entry) => clean(entry.id, 300) === legacyId)) continue;
-      const studentOwnsLegacy = sector === "education" && ["student", "learner"].includes(role(user)) &&
+      const studentOwnsLegacy = sector === "education" && ["student", "learner"].includes(effectiveRole(user, sector)) &&
         record.data && typeof record.data === "object" && educationStudentIdentity(record.data as Row, user);
-      if (!legacyInTenant(record, user) || ownOnly && !legacyOwner(record, user.uid) && !studentOwnsLegacy) continue;
+      if (!legacyInTenant(record, user, sector) || ownOnly && !legacyOwner(record, user.uid) && !studentOwnsLegacy) continue;
       records.push({ ...record, recordType: type });
     }
   }
@@ -388,7 +425,7 @@ async function sharedEducationRecord(
   if (!(await allowed(env, user, "education", capability))) return json({ ok: false, error: "Forbidden" }, 403);
   const table = type === "admission" ? "school_admissions" : "marks";
   const t = tenant(user);
-  const scope = tenantWhere(user);
+  const scope = tenantWhere(user, "", "education");
   const id = recordId || clean(input.id, 160) || makeId(type);
   const scoped = `id=? AND ${scope.sql}`;
   const existingResult = await env.DB.prepare(
@@ -412,15 +449,21 @@ async function sharedEducationRecord(
   const previous = active ? (() => {
     try { return JSON.parse(String(active.record_json || "{}")) as Row; } catch { return {}; }
   })() : {};
+  const recordTenant = role(user) === "superadmin" && active
+    ? {
+      schoolId: clean(active.school_id, 160) || clean(previous.schoolId || previous.school_id, 160) || null,
+      institutionId: clean(active.institution_id, 160) || clean(previous.institutionId || previous.institution_id, 160) || null,
+    }
+    : t;
   const { id: _id, type: _type, recordType: _recordType, schoolId: _schoolId, institutionId: _institutionId,
     ...fields } = input;
   const payload = { ...(request.method === "PATCH" ? previous : {}), ...fields, id, recordType: type,
-    schoolId: t.schoolId, institutionId: t.institutionId };
+    schoolId: recordTenant.schoolId, institutionId: recordTenant.institutionId };
   const timestamp = stamp();
   if (active) {
     await env.DB.prepare(
       `UPDATE ${table} SET record_json=?,school_id=?,institution_id=?,updated_at=? WHERE ${scoped} AND is_deleted=0`,
-    ).bind(JSON.stringify(payload), t.schoolId, t.institutionId, timestamp, id, ...scope.args).run();
+    ).bind(JSON.stringify(payload), recordTenant.schoolId, recordTenant.institutionId, timestamp, id, ...scope.args).run();
   } else {
     const collision = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=? LIMIT 1`).bind(id).all<Row>();
     if (collision.results[0]) return json({ ok: false, error: "Record ID is unavailable" }, 409);
@@ -469,8 +512,14 @@ async function domainRecords(
   if (sector === "farm" && type === "produce" && method !== "GET") {
     return json({ ok: false, error: "Use the validated Farm produce workflow" }, 405);
   }
-  if (role(user) !== "superadmin" && !tenant(user).institutionId && !tenant(user).schoolId) {
-    return json({ ok: false, error: "Tenant scope is required" }, 403);
+  const noTenantScope = !tenant(user).institutionId && !tenant(user).schoolId;
+  if (role(user) !== "superadmin" && noTenantScope && (sector !== "education" || method !== "GET")) {
+    return json({
+      ok: false,
+      error: sector === "education"
+        ? "Ask a superadmin to assign a school scope before editing records."
+        : "Tenant scope is required",
+    }, 403);
   }
   const own = isSelfRole(user, sector);
   if (sector === "mfi" && type === "report" && method !== "GET") return json({ ok: false, error: "MFI reports are read-only" }, 405);
@@ -507,6 +556,7 @@ async function domainRecords(
   if (!capability || !(await allowed(env, user, sector, capability))) return json({ ok: false, error: "Forbidden" }, 403);
   const teacher = sector === "education" && effectiveRole(user, "education") === "teacher";
   const assignments = teacher ? await teacherAssignmentsForUser(env, user) : [];
+  const requireScopedAssignments = teacher && noTenantScope && role(user) !== "superadmin";
   if (teacher && method !== "GET" && !await teacherMayWrite(env, user, type, input, assignments)) {
     return json({ ok: false, error: "This action is limited to your assigned classes and subjects" }, 403);
   }
@@ -514,13 +564,13 @@ async function domainRecords(
     return sharedEducationRecord(request, env, user, type, recordId, input, capability);
   }
   const t = tenant(user);
-  const scope = tenantWhere(user);
+  const scope = tenantWhere(user, "", sector);
   if (method === "GET") {
     let records = await readRecords(env, user, sector, type);
     if (teacher) {
       records = type === "teacher_assignment"
         ? assignments
-        : records.filter((record) => teacherRecordMatchesAssignments(record, type, assignments));
+        : records.filter((record) => teacherRecordMatchesAssignments(record, type, assignments, requireScopedAssignments));
     }
     if (recordId) records = records.filter((record) => clean(record.id, 300) === recordId || clean(record.id, 300).endsWith(`/${recordId}`));
     return json({ ok: true, records });
@@ -667,7 +717,7 @@ async function educationPayments(request: Request, env: AuthEnv, user: AuthUser)
   const caps = await capabilities(env, user, "education");
   if (request.method === "GET") {
     if (!can(caps, "payments.manage")) return json({ ok: false, error: "Forbidden" }, 403);
-    const scope = tenantWhere(user);
+    const scope = tenantWhere(user, "", "education");
     const rows = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`)
       .bind(...scope.args).all<Row>();
     return json({ ok: true, payments: rows.results });
@@ -690,7 +740,10 @@ async function educationPayments(request: Request, env: AuthEnv, user: AuthUser)
 
 async function education(request: Request, env: AuthEnv, user: AuthUser, pathname: string) {
   const caps = await capabilities(env, user, "education");
-  if (!tenant(user).institutionId && !tenant(user).schoolId && role(user) !== "superadmin") return json({ ok: false, error: "Tenant scope is required" }, 403);
+  const noTenantScope = !tenant(user).institutionId && !tenant(user).schoolId;
+  if (noTenantScope && role(user) !== "superadmin" && request.method !== "GET") {
+    return json({ ok: false, error: "Ask a superadmin to assign a school scope before editing records." }, 403);
+  }
   if (pathname === "/api/school/education-workspace" && request.method === "GET") {
     const currentRole = effectiveRole(user, "education");
     const isSuperadmin = role(user) === "superadmin";
@@ -716,20 +769,19 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
         const studentFields = recordFields(student);
         for (const type of ["marks", "attendance", "fee", "statement"] as const) {
           const matching = (await readRecords(env, user, "education", type, false))
-            .filter((record) => studentRecordMatchesProfile(record, student, user));
+            .filter((record) => studentRecordMatchesOwnProfile(record, student, user));
           result[type === "fee" ? "fees" : type === "statement" ? "statements" : type] = matching;
         }
         const className = teacherName({ className: studentFields.className || studentFields.class_name || studentFields.class });
         if (className) result.classes = (await readRecords(env, user, "education", "class", false))
-          .filter((record) => teacherClassLabel(record) === className);
+          .filter((record) => teacherClassLabel(record) === className && sameEducationScope(record, student));
       }
       return json(result);
     }
     const isTeacher = currentRole === "teacher";
     if (isTeacher) {
       const assignments = await teacherAssignmentsForUser(env, user);
-      const classNames = new Set(assignments.map(teacherName).filter(Boolean));
-      const assignedSubjects = new Set(assignments.map(teacherSubject).filter(Boolean));
+      const requireScopedAssignments = noTenantScope && role(user) !== "superadmin";
       const result: Row = {
         ok: true,
         role: currentRole,
@@ -739,15 +791,15 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
         capabilities: caps.map((item) => item.capability),
         teacherAssignments: assignments,
         classes: (await readRecords(env, user, "education", "class", false))
-          .filter((record) => classNames.has(teacherClassLabel(record))),
+          .filter((record) => teacherRecordMatchesAssignments(record, "class", assignments, requireScopedAssignments)),
         subjects: (await readRecords(env, user, "education", "subject", false))
-          .filter((record) => assignedSubjects.has(teacherSubject(record))),
+          .filter((record) => teacherRecordMatchesAssignments(record, "subject", assignments, requireScopedAssignments)),
         students: (await readRecords(env, user, "education", "learner", false))
-          .filter((record) => classNames.has(teacherName(record))),
+          .filter((record) => teacherRecordMatchesAssignments(record, "learner", assignments, requireScopedAssignments)),
         attendance: (await readRecords(env, user, "education", "attendance", false))
-          .filter((record) => teacherRecordMatchesAssignments(record, "attendance", assignments)),
+          .filter((record) => teacherRecordMatchesAssignments(record, "attendance", assignments, requireScopedAssignments)),
         marks: (await readRecords(env, user, "education", "marks", false))
-          .filter((record) => teacherRecordMatchesAssignments(record, "marks", assignments)),
+          .filter((record) => teacherRecordMatchesAssignments(record, "marks", assignments, requireScopedAssignments)),
       };
       return json(result);
     }
@@ -780,7 +832,7 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
       result.primaryReports = await readRecords(env, user, "education", "report");
     }
     if (finance || isSuperadmin) {
-      const scope = tenantWhere(user);
+      const scope = tenantWhere(user, "", "education");
       const paymentsResult = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`)
         .bind(...scope.args).all<Row>();
       result.finance = {
@@ -878,13 +930,17 @@ async function payments(request: Request, env: AuthEnv, user: AuthUser, pathname
     return json({ ok: false, error: "Payment status can only be changed by a verified provider callback" }, 405);
   }
   const read = request.method === "GET";
+  if (!read && role(user) !== "superadmin" && !tenant(user).institutionId && !tenant(user).schoolId) {
+    return json({ ok: false, error: "Ask a superadmin to assign a school scope before creating a payment." }, 403);
+  }
   if (!(await allowed(env, user, "payments", read ? "payments.read" : "payments.create"))) return json({ ok: false, error: "Payment capability required" }, 403);
   const t = tenant(user);
-  const scope = tenantWhere(user);
+  const educationStudent = ["student", "learner"].includes(effectiveRole(user, "education"));
+  const scope = tenantWhere(user, "", educationStudent ? "education" : "");
   const id = pathname.match(/^\/api\/payments\/([^/]+)$/)?.[1] || "";
   if (read) {
-    const rows = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at FROM payments WHERE ${scope.sql}${id ? " AND id=?" : ""} ORDER BY created_at DESC LIMIT 500`)
-      .bind(...scope.args, ...(id ? [id] : [])).all<Row>();
+    const rows = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at FROM payments WHERE ${scope.sql}${educationStudent ? " AND payer_id=?" : ""}${id ? " AND id=?" : ""} ORDER BY created_at DESC LIMIT 500`)
+      .bind(...scope.args, ...(educationStudent ? [user.uid] : []), ...(id ? [id] : [])).all<Row>();
     return json({ ok: true, payments: rows.results.map((r) => ({ ...r, metadata: r.metadata_json ? JSON.parse(String(r.metadata_json)) : null })) });
   }
   const input = await body(request);

@@ -22,7 +22,7 @@
 - [Teacher material visibility and earnings](teacher-material-visibility-and-earnings.md) — Merge teacher uploads into shared Resources and use stored agreement rates for eligible student-view payouts.
 - [Authenticated Firestore listeners](authenticated-firestore-listeners.md) — Bind listeners after auth and unsubscribe on logout; anonymous permission failures do not reliably recover after login.
 - [Vocational public read boundary](vocational-public-read-boundary.md) — Serve public provider and course reads through the API when browser Firestore permissions vary by environment.
-- [Education and Skills data separation](education-live-account-boundary.md) — Keep root PWA school tables separate from the public `/skills/` vocational marketplace tables.
+- [Education tenant boundaries](education-live-account-boundary.md) — Keep Skills separate; null-scope Education reads stay role-limited, and non-superadmin writes wait for assigned scope.
 - [Authenticated greeting boundary](authenticated-greeting-boundary.md) — Keep public Education preview copy non-authenticated; use the shared localized time-of-day contract in signed-in workspaces.
 - [Firebase PDF viewer behavior](firebase-pdf-viewer.md) — Open Firebase Storage download URLs directly; Google Docs Viewer can return 403 for authorized student PDFs.
 - [Firebase rules deployment boundary](firebase-rules-deployment-boundary.md) — GitHub pushes do not publish Firebase Storage Rules; verify the live bucket after rule changes.
