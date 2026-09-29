@@ -14,6 +14,12 @@ const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
 const LOGIN_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const LOGIN_OTP_MAX_FAILURES = 3;
 const LOGIN_OTP_LOCK_MS = 15 * 60 * 1000;
+const SIGNUP_CODE_TTL_MS = 10 * 60 * 1000;
+const SIGNUP_RESEND_COOLDOWN_MS = 60 * 1000;
+const SIGNUP_MAX_FAILURES = 5;
+const SIGNUP_LOCK_MS = 15 * 60 * 1000;
+const DUMMY_PASSWORD_HASH = "pbkdf2-sha256$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+const SIGNUP_MESSAGE = "If this email can be registered, a verification code has been sent. It expires in 10 minutes; wait 60 seconds before requesting another.";
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -93,16 +99,20 @@ async function passwordHash(password: string): Promise<string> {
 }
 
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  const [algorithm, iterationText, saltText, digestText] = stored.split("$");
-  if (algorithm !== "pbkdf2-sha256" || !iterationText || !saltText || !digestText) return false;
-  const iterations = Number(iterationText);
-  if (!Number.isSafeInteger(iterations) || iterations < 100_000 || iterations > 100_000) return false;
-  const actual = new Uint8Array(await derive(password, decode(saltText), iterations));
-  const expected = decode(digestText);
-  if (actual.length !== expected.length) return false;
-  let difference = 0;
-  for (let index = 0; index < actual.length; index += 1) difference |= actual[index] ^ expected[index];
-  return difference === 0;
+  try {
+    const [algorithm, iterationText, saltText, digestText] = stored.split("$");
+    if (algorithm !== "pbkdf2-sha256" || !iterationText || !saltText || !digestText) return false;
+    const iterations = Number(iterationText);
+    if (!Number.isSafeInteger(iterations) || iterations !== PBKDF2_ITERATIONS) return false;
+    const actual = new Uint8Array(await derive(password, decode(saltText), iterations));
+    const expected = decode(digestText);
+    if (actual.length !== expected.length) return false;
+    let difference = 0;
+    for (let index = 0; index < actual.length; index += 1) difference |= actual[index] ^ expected[index];
+    return difference === 0;
+  } catch {
+    return false;
+  }
 }
 
 function cookie(token: string, maxAge: number): string {
@@ -194,6 +204,22 @@ async function sendLoginOtpEmail(env: AuthEnv, email: string, code: string): Pro
   if (!response.ok) throw new Error(`Login code delivery failed (${response.status})`);
 }
 
+async function sendSignupVerificationEmail(env: AuthEnv, email: string, code: string): Promise<void> {
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) throw new Error("Email sender is not configured");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: env.RESEND_FROM_EMAIL,
+      to: [email],
+      subject: "Verify your APSHULE account",
+      text: `Your APSHULE email verification code is ${code}.\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.`,
+      html: `<p>Your APSHULE email verification code is <strong>${code}</strong>.</p><p>This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>`,
+    }),
+  });
+  if (!response.ok) throw new Error(`Signup verification email delivery failed (${response.status})`);
+}
+
 async function createSession(env: AuthEnv, user: AuthUser): Promise<Response> {
   const token = randomToken();
   await env.SESSIONS!.put(`${SESSION_PREFIX}${await digest(token)}`, JSON.stringify({ uid: user.uid, sessionVersion: user.sessionVersion }), { expirationTtl: SESSION_TTL });
@@ -208,7 +234,148 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
   if (!env.SESSIONS) return json({ ok: false, error: "SESSIONS KV is not configured" }, 503);
 
   if (path === "/api/auth/login") {
-    return json({ ok: false, error: "Password login is disabled. Request an email sign-in code." }, 410);
+    const body = await input(req);
+    const email = text(body.email, 320).toLowerCase();
+    const password = typeof body.password === "string" ? body.password : "";
+    const invalid = () => json({ ok: false, error: "Email or password is incorrect, or the account is not ready to sign in." }, 401);
+    if (!email || !password || password.length > 1000) return invalid();
+    if (!await checkRateLimit(env, req, "password-login", email)) {
+      return json({ ok: false, error: "Too many sign-in attempts. Wait a few minutes and try again." }, 429);
+    }
+    const row = (await env.DB.prepare(
+      "SELECT uid,password_hash_v2,email_verified,requires_password_reset,active,disabled,role FROM users WHERE lower(email)=? LIMIT 1",
+    ).bind(email).all<Record<string, unknown>>()).results[0];
+    const storedHash = typeof row?.password_hash_v2 === "string" ? row.password_hash_v2 : DUMMY_PASSWORD_HASH;
+    const passwordMatches = await verifyPassword(password, storedHash);
+    if (!row || !passwordMatches || Number(row.email_verified) !== 1 ||
+      Number(row.requires_password_reset) === 1 || Number(row.active ?? 1) !== 1 ||
+      Number(row.disabled) === 1 || !text(row.role, 80)) return invalid();
+    const user = await getUser(env, text(row.uid, 200));
+    if (!user || !user.role) return invalid();
+    return createSession(env, user);
+  }
+
+  if (path === "/api/auth/request-signup-verification") {
+    if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+      return json({ ok: false, error: "Email verification is not configured" }, 503);
+    }
+    const body = await input(req);
+    const email = text(body.email, 320).toLowerCase();
+    const displayName = text(body.displayName, 160);
+    const password = typeof body.password === "string" ? body.password : "";
+    const accountType = text(body.accountType, 40);
+    const organizationName = text(body.organizationName, 180);
+    const teachingDetails = text(body.teachingDetails, 1000);
+    const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+    const validType = ["student", "teacher_staff", "teacher_independent"].includes(accountType);
+    if (!validEmail || !displayName || displayName.length > 160 || password.length < 12 || password.length > 1000 ||
+      !validType || (accountType === "teacher_staff" && !organizationName)) {
+      return json({ ok: false, error: "Enter a valid name, email, account type, and password of at least 12 characters. School teaching applications also need a school or organization name." }, 400);
+    }
+    if (!await checkRateLimit(env, req, "signup-request", email)) return json({ ok: true, message: SIGNUP_MESSAGE });
+    const existing = await env.DB.prepare("SELECT uid FROM users WHERE lower(email)=? LIMIT 1").bind(email).all<{ uid: string }>();
+    if (existing.results.length) return json({ ok: true, message: SIGNUP_MESSAGE });
+
+    const now = Date.now();
+    await env.DB.prepare("DELETE FROM signup_challenges WHERE expires_at_ms<=?").bind(now).run();
+    const uid = `signup_${randomToken(20)}`;
+    const code = randomSixDigitCode();
+    const codeHash = await passwordHash(`${uid}:${code}`);
+    const passwordHashValue = await passwordHash(password);
+    const saved = await env.DB.prepare(
+      `INSERT INTO signup_challenges
+         (email,uid,display_name,account_type,organization_name,teaching_details,password_hash,code_hash,
+          expires_at_ms,requested_at_ms,failed_attempts,locked_until_ms,consumed_at_ms)
+       VALUES (?,?,?,?,?,?,?,?,?,?,0,0,NULL)
+       ON CONFLICT(email) DO UPDATE SET uid=excluded.uid,display_name=excluded.display_name,
+         account_type=excluded.account_type,organization_name=excluded.organization_name,
+         teaching_details=excluded.teaching_details,password_hash=excluded.password_hash,
+         code_hash=excluded.code_hash,expires_at_ms=excluded.expires_at_ms,
+         requested_at_ms=excluded.requested_at_ms,failed_attempts=0,locked_until_ms=0,consumed_at_ms=NULL
+       WHERE signup_challenges.requested_at_ms<=?
+         AND signup_challenges.locked_until_ms<=?
+         AND signup_challenges.consumed_at_ms IS NULL
+       RETURNING email`,
+    ).bind(
+      email, uid, displayName, accountType, organizationName || null, teachingDetails || null,
+      passwordHashValue, codeHash, now + SIGNUP_CODE_TTL_MS, now, now - SIGNUP_RESEND_COOLDOWN_MS, now,
+    ).all<{ email: string }>();
+    if (!saved.results.length) return json({ ok: true, message: SIGNUP_MESSAGE });
+    try {
+      await sendSignupVerificationEmail(env, email, code);
+    } catch {
+      await env.DB.prepare("DELETE FROM signup_challenges WHERE email=? AND code_hash=?").bind(email, codeHash).run();
+      return json({ ok: false, error: "Verification email could not be delivered. Try again later." }, 502);
+    }
+    return json({ ok: true, message: SIGNUP_MESSAGE });
+  }
+
+  if (path === "/api/auth/verify-signup") {
+    const body = await input(req);
+    const email = text(body.email, 320).toLowerCase();
+    const code = text(body.code, 12);
+    const invalid = () => json({ ok: false, error: "The verification code is invalid or expired. Request a new code and try again." }, 400);
+    if (!email || !/^\d{6}$/.test(code) || !await checkRateLimit(env, req, "signup-verify", email)) return invalid();
+    const now = Date.now();
+    const challenge = (await env.DB.prepare(
+      "SELECT uid,code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM signup_challenges WHERE email=? AND consumed_at_ms IS NULL LIMIT 1",
+    ).bind(email).all<{ uid: string; code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>()).results[0];
+    if (!challenge || Number(challenge.expires_at_ms) <= now || Number(challenge.locked_until_ms) > now ||
+      !await verifyPassword(`${challenge.uid}:${code}`, challenge.code_hash)) {
+      if (challenge && Number(challenge.expires_at_ms) > now && Number(challenge.locked_until_ms) <= now) {
+        await env.DB.prepare(
+          `UPDATE signup_challenges
+           SET failed_attempts=failed_attempts+1,
+               locked_until_ms=CASE WHEN failed_attempts+1>=? THEN ? ELSE locked_until_ms END
+           WHERE email=? AND consumed_at_ms IS NULL AND failed_attempts<?`,
+        ).bind(SIGNUP_MAX_FAILURES, now + SIGNUP_LOCK_MS, email, SIGNUP_MAX_FAILURES).run();
+      }
+      return invalid();
+    }
+
+    const consumedAt = Date.now();
+    const verifiedAt = new Date(consumedAt).toISOString();
+    const result = await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE signup_challenges SET consumed_at_ms=?
+         WHERE email=? AND uid=? AND code_hash=? AND expires_at_ms>? AND locked_until_ms<=? AND consumed_at_ms IS NULL
+         RETURNING uid`,
+      ).bind(consumedAt, email, challenge.uid, challenge.code_hash, consumedAt, consumedAt),
+      env.DB.prepare(
+        `INSERT INTO users
+           (uid,email,display_name,role,disabled,email_verified,requires_password_reset,raw_json,created_at,imported_at,
+            password_hash_v2,password_salt_v2,hash_algorithm,active,session_version)
+         SELECT uid,email,display_name,CASE WHEN account_type='student' THEN 'student' ELSE '' END,
+           0,1,0,'{}',?,?,password_hash,NULL,'PBKDF2-SHA256',
+           CASE WHEN account_type='student' THEN 1 ELSE 0 END,1
+         FROM signup_challenges
+         WHERE email=? AND uid=? AND consumed_at_ms=? AND NOT EXISTS
+           (SELECT 1 FROM users WHERE lower(email)=?)
+         RETURNING uid,email,display_name,role,school_id,institution_id,session_version`,
+      ).bind(verifiedAt, verifiedAt, email, challenge.uid, consumedAt, email),
+      env.DB.prepare(
+        `INSERT INTO teacher_applications
+           (id,uid,application_type,organization_name,teaching_details,status,submitted_at)
+         SELECT ?,c.uid,c.account_type,c.organization_name,c.teaching_details,'pending',?
+         FROM signup_challenges c JOIN users u ON u.uid=c.uid
+         WHERE c.email=? AND c.uid=? AND c.consumed_at_ms=? AND c.account_type<>'student'
+         RETURNING id`,
+      ).bind(`application_${randomToken(16)}`, verifiedAt, email, challenge.uid, consumedAt),
+      env.DB.prepare("DELETE FROM signup_challenges WHERE email=? AND consumed_at_ms=?").bind(email, consumedAt),
+    ]);
+    const createdUser = result[1]?.results?.[0] as Record<string, unknown> | undefined;
+    if (!result[0]?.results?.length || !createdUser) return invalid();
+    const accountType = text(createdUser.role, 80);
+    if (accountType !== "student") {
+      return json({
+        ok: true,
+        pendingReview: true,
+        message: "Your email is verified. Your teacher application is waiting for Super Admin review.",
+      });
+    }
+    const user = await getUser(env, text(createdUser.uid, 200));
+    if (!user) return json({ ok: false, error: "The account was created but could not be signed in. Please sign in with your email and password." }, 500);
+    return createSession(env, user);
   }
 
   if (path === "/api/auth/request-login-otp") {

@@ -13,7 +13,7 @@
       <div class="button-row"><span class="badge">Super Admin</span><button id="logout" class="button secondary" type="button">Sign out</button></div>
     </header>
     <main>
-      <div class="section-title"><div><p class="eyebrow">Access control</p><h1>Manage accounts and roles</h1><p class="muted">New users must complete a password reset before signing in.</p></div><div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary">Refresh</button></div></div>
+      <div class="section-title"><div><p class="eyebrow">Access control</p><h1>Manage accounts and roles</h1><p class="muted">Admin-created accounts must complete a password reset before signing in.</p></div><div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary">Refresh</button></div></div>
       <section class="card panel">
         <h2>Sector workspaces</h2>
         <p class="muted">Open a sector workspace to review tenant-scoped records and available controls. Sector-specific permissions still apply.</p>
@@ -23,6 +23,10 @@
           <a class="workspace-shortcut" href="/farm/"><strong>Farm</strong><span>Farm operations and inventory</span></a>
           <a class="workspace-shortcut" href="/mfi/"><strong>Microfinance</strong><span>Borrower and loan workflows</span></a>
         </nav>
+      </section>
+      <section class="card panel">
+        <div class="toolbar"><div><h2>Teacher applications</h2><p class="muted">Applicants cannot sign in until approved and assigned any required school or institution scope.</p></div></div>
+        <div id="teacher-applications" class="table-wrap"></div>
       </section>
       <section class="card panel">
         <h2>Create a user</h2>
@@ -65,6 +69,10 @@
     .workspace-shortcut:hover{border-color:#7b5fcf;background:#faf8ff}
     .workspace-shortcut:focus-visible{outline:3px solid #ffb673;outline-offset:2px}
     .workspace-shortcut strong{font-size:14px}.workspace-shortcut span{color:#71677f;font-size:12px}
+    .teacher-review-controls{display:grid;gap:7px;min-width:210px}
+    .teacher-review-controls label{display:grid;gap:3px;color:#625975;font-size:11px}
+    .teacher-review-controls input{min-width:0;padding:7px 9px;border:1px solid #ddd7e9;border-radius:8px}
+    .teacher-review-actions{display:flex;gap:6px;flex-wrap:wrap}
   </style>
   <script>
     const $ = (id) => document.getElementById(id);
@@ -86,19 +94,93 @@
     async function load() {
       $("status").textContent = "Loading administration data…";
       try {
-        const [users, roles, audit] = await Promise.all([
+        const [users, roles, audit, applications] = await Promise.all([
           request("/api/admin/users"), request("/api/admin/roles"), request("/api/admin/audit"),
+          request("/api/admin/teacher-applications"),
         ]);
+        const applicationRows = (applications.applications || []).map((application) => {
+          const controls = document.createElement("div");
+          controls.className = "teacher-review-controls";
+          const schoolLabel = document.createElement("label");
+          schoolLabel.textContent = "School ID (required for school teaching team)";
+          const schoolInput = document.createElement("input");
+          schoolInput.type = "text";
+          schoolInput.maxLength = 160;
+          schoolLabel.append(schoolInput);
+          const institutionLabel = document.createElement("label");
+          institutionLabel.textContent = "Institution ID (optional)";
+          const institutionInput = document.createElement("input");
+          institutionInput.type = "text";
+          institutionInput.maxLength = 160;
+          institutionLabel.append(institutionInput);
+          const actions = document.createElement("div");
+          actions.className = "teacher-review-actions";
+          const approve = document.createElement("button");
+          approve.className = "button";
+          approve.type = "button";
+          approve.textContent = "Approve";
+          approve.addEventListener("click", async () => {
+            approve.disabled = true;
+            try {
+              await request(`/api/admin/teacher-applications/${encodeURIComponent(application.id)}/review`, {
+                method: "POST",
+                body: JSON.stringify({ decision: "approve", schoolId: schoolInput.value, institutionId: institutionInput.value }),
+              });
+              $("status").textContent = "Teacher application approved and account access enabled.";
+              await load();
+            } catch (error) {
+              $("status").textContent = error.message;
+              approve.disabled = false;
+            }
+          });
+          const reject = document.createElement("button");
+          reject.className = "button danger";
+          reject.type = "button";
+          reject.textContent = "Reject";
+          reject.addEventListener("click", async () => {
+            reject.disabled = true;
+            try {
+              await request(`/api/admin/teacher-applications/${encodeURIComponent(application.id)}/review`, {
+                method: "POST",
+                body: JSON.stringify({ decision: "reject" }),
+              });
+              $("status").textContent = "Teacher application rejected. The account remains inactive.";
+              await load();
+            } catch (error) {
+              $("status").textContent = error.message;
+              reject.disabled = false;
+            }
+          });
+          actions.append(approve, reject);
+          controls.append(schoolLabel, institutionLabel, actions);
+          const applicantType = application.application_type === "teacher_staff"
+            ? "School teaching team"
+            : "Independent teacher";
+          return [application.display_name, application.email, applicantType, application.organization_name || "—",
+            application.teaching_details || "—", application.submitted_at, controls];
+        });
+        if (applicationRows.length) {
+          $("teacher-applications").replaceChildren(table(
+            ["Applicant", "Email", "Application", "School / organization", "Teaching details", "Submitted", "Review"],
+            applicationRows,
+          ));
+        } else {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "No teacher applications are waiting for review.";
+          $("teacher-applications").replaceChildren(empty);
+        }
         const userTableRows = (users.users || []).map((user) => {
           const roleSelect = document.createElement("select");
-          ["secretary","headteacher","bursar","teacher","clinic_admin","doctor","nurse","receptionist","pharmacist","patient","farm_admin","farm_director","farm_manager","farm_worker","mfi_admin","loan_officer","loan_manager","loan_director","borrower","superadmin"].forEach((role) => {
-            const option = document.createElement("option"); option.value = role; option.textContent = role; option.selected = role === user.role; roleSelect.append(option);
+          ["","secretary","headteacher","bursar","teacher","teacher_staff","teacher_independent","clinic_admin","doctor","nurse","receptionist","pharmacist","patient","farm_admin","farm_director","farm_manager","farm_worker","mfi_admin","loan_officer","loan_manager","loan_director","borrower","superadmin"].forEach((role) => {
+            const option = document.createElement("option"); option.value = role; option.textContent = role || "Unassigned"; option.selected = role === user.role; roleSelect.append(option);
           });
+          if (!user.role) roleSelect.disabled = true;
           roleSelect.addEventListener("change", async () => {
             try { await request(`/api/admin/users/${encodeURIComponent(user.uid)}`, { method: "PATCH", body: JSON.stringify({ role: roleSelect.value }) }); $("status").textContent = "Role updated; sessions revoked."; }
             catch (error) { $("status").textContent = error.message; await load(); }
           });
-          const statusButton = document.createElement("button"); statusButton.className = `button ${user.active ? "danger" : "secondary"}`; statusButton.textContent = user.active ? "Disable" : "Enable";
+          const statusButton = document.createElement("button"); statusButton.className = `button ${user.active ? "danger" : "secondary"}`; statusButton.textContent = user.active ? "Disable" : "Enable"; statusButton.disabled = !user.role;
           statusButton.addEventListener("click", async () => {
             try { await request(`/api/admin/users/${encodeURIComponent(user.uid)}`, { method: "PATCH", body: JSON.stringify({ active: !user.active }) }); await load(); }
             catch (error) { $("status").textContent = error.message; }

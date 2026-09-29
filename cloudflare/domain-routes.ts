@@ -876,6 +876,87 @@ async function adminRoute(request: Request, env: AuthEnv, user: AuthUser, pathna
     const rows = await env.DB.prepare("SELECT role,sector,capability,scope FROM role_capabilities ORDER BY role,sector,capability").all<Capability & { role: string }>();
     return json({ ok: true, roles: rows.results });
   }
+  if (pathname === "/api/admin/teacher-applications" && request.method === "GET") {
+    const rows = await env.DB.prepare(
+      `SELECT a.id,a.uid,a.application_type,a.organization_name,a.teaching_details,a.status,a.submitted_at,
+              u.email,u.display_name
+       FROM teacher_applications a JOIN users u ON u.uid=a.uid
+       WHERE a.status='pending'
+       ORDER BY a.submitted_at ASC LIMIT 300`,
+    ).all<Row>();
+    return json({ ok: true, applications: rows.results });
+  }
+  const teacherApplicationReview = pathname.match(/^\/api\/admin\/teacher-applications\/([^/]+)\/review$/);
+  if (teacherApplicationReview && request.method === "POST") {
+    let applicationId = "";
+    try { applicationId = decodeURIComponent(teacherApplicationReview[1]); } catch {}
+    if (!applicationId) return json({ ok: false, error: "A valid teacher application is required" }, 400);
+    const application = (await env.DB.prepare(
+      "SELECT uid,application_type,status FROM teacher_applications WHERE id=? LIMIT 1",
+    ).bind(applicationId).all<Row>()).results[0];
+    if (!application || application.status !== "pending") {
+      return json({ ok: false, error: "This teacher application is no longer pending review" }, 409);
+    }
+    const input = await body(request);
+    const decision = clean(input.decision, 20).toLowerCase();
+    if (decision !== "approve" && decision !== "reject") {
+      return json({ ok: false, error: "Choose approve or reject" }, 400);
+    }
+    const schoolId = clean(input.schoolId, 160) || "";
+    const institutionId = clean(input.institutionId, 160) || "";
+    const applicationType = clean(application.application_type, 40);
+    if (decision === "approve" && applicationType === "teacher_staff" && !schoolId && !institutionId) {
+      return json({ ok: false, error: "Assign a school or institution before approving a school teaching application" }, 400);
+    }
+    if (decision === "approve" && !["teacher_staff", "teacher_independent"].includes(applicationType)) {
+      return json({ ok: false, error: "This application has an unsupported teacher type" }, 409);
+    }
+
+    const reviewedAt = stamp();
+    const reviewClaim = makeId("review");
+    if (decision === "approve") {
+      const results = await env.DB.batch([
+        env.DB.prepare(
+          `UPDATE teacher_applications
+           SET status='approved',reviewed_at=?,reviewed_by=?,review_note=?,review_claim=?
+           WHERE id=? AND status='pending'
+             AND EXISTS (SELECT 1 FROM users WHERE users.uid=teacher_applications.uid AND users.disabled=0)
+           RETURNING uid`,
+        ).bind(reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId),
+        env.DB.prepare(
+          `UPDATE users
+           SET role=?,school_id=?,institution_id=?,active=1,session_version=session_version+1
+           WHERE uid=? AND disabled=0
+             AND EXISTS (
+               SELECT 1 FROM teacher_applications
+               WHERE id=? AND uid=? AND status='approved' AND review_claim=?
+             )
+           RETURNING uid`,
+        ).bind(applicationType, schoolId || null, institutionId || null, application.uid, applicationId, application.uid, reviewClaim),
+      ]);
+      if (!results[0]?.results?.length || !results[1]?.results?.length) {
+        return json({ ok: false, error: "This application could not be approved. Refresh the list and try again." }, 409);
+      }
+      await audit(env, user, "admin.teacher_application.approve", "teacher_application", applicationId, {
+        uid: application.uid, role: applicationType, schoolId: schoolId || null, institutionId: institutionId || null,
+      });
+      return json({ ok: true, id: applicationId, status: "approved", sessionVersionRevoked: true });
+    }
+
+    const results = await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE teacher_applications
+         SET status='rejected',reviewed_at=?,reviewed_by=?,review_note=?,review_claim=?
+         WHERE id=? AND status='pending'
+         RETURNING uid`,
+      ).bind(reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId),
+    ]);
+    if (!results[0]?.results?.length) {
+      return json({ ok: false, error: "This application is no longer pending review" }, 409);
+    }
+    await audit(env, user, "admin.teacher_application.reject", "teacher_application", applicationId, { uid: application.uid });
+    return json({ ok: true, id: applicationId, status: "rejected" });
+  }
   const uid = pathname.match(/^\/api\/admin\/users\/([^/]+)$/)?.[1] || "";
   if (pathname === "/api/admin/users" && request.method === "GET") {
     const rows = await env.DB.prepare("SELECT uid,email,display_name,role,school_id,institution_id,active,session_version FROM users ORDER BY email").all<Row>();

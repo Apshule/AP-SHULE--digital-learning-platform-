@@ -199,6 +199,35 @@ body {
   color: var(--landing-purple);
 }
 
+.landing-auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 15px 0 18px;
+  padding: 4px;
+  border: 1px solid #e8e2ef;
+  border-radius: 12px;
+  background: #f6f3fa;
+}
+
+.landing-auth-tab {
+  min-height: 39px;
+  border: 0;
+  border-radius: 9px;
+  color: #6c6478;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.landing-auth-tab[aria-selected="true"] {
+  color: #33234e;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(30 20 54 / 12%);
+}
+
 .landing-login h2 {
   margin: 7px 0 4px;
   font-size: 23px;
@@ -214,6 +243,10 @@ body {
 .landing-login .form-grid {
   display: grid;
   gap: 12px;
+}
+
+.landing-login [hidden] {
+  display: none !important;
 }
 
 .landing-login label {
@@ -237,9 +270,59 @@ body {
   font-size: 14px;
 }
 
+.landing-login select,
+.landing-login textarea {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 10px 12px;
+  border: 1px solid #ddd7e9;
+  border-radius: 10px;
+  color: var(--landing-ink);
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+
+.landing-login textarea {
+  resize: vertical;
+}
+
 .landing-login input:focus {
   border-color: var(--landing-purple);
   outline: 3px solid rgb(75 46 158 / 14%);
+}
+
+.landing-login select:focus,
+.landing-login textarea:focus {
+  border-color: var(--landing-purple);
+  outline: 3px solid rgb(75 46 158 / 14%);
+}
+
+.landing-login .landing-login-email {
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.landing-inline-button {
+  justify-self: start;
+  padding: 2px 0;
+  border: 0;
+  color: var(--landing-purple);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.landing-inline-button:focus-visible,
+.landing-auth-tab:focus-visible {
+  outline: 3px solid #ffb673;
+  outline-offset: 2px;
 }
 
 .landing-login .landing-submit {
@@ -301,6 +384,13 @@ body {
   font-weight: 750;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.landing-auth-note {
+  display: block;
+  color: #746e7d;
+  font-weight: 500;
+  text-decoration: none;
 }
 
 .landing-features {

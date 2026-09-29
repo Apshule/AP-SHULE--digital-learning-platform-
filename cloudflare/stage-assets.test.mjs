@@ -93,6 +93,19 @@ test("Pages bundle includes D1-backed provider onboarding", async () => {
   assert.doesNotMatch(page, /firebase|firestore|firebasestorage/i);
 });
 
+test("Pages bundle includes password sign-in, verified signup, and teacher review", async () => {
+  const page = await readFile(join(output, "index.html"), "utf8");
+  assert.match(page, /id="password-login-form"/);
+  assert.match(page, /api\/auth\/login/);
+  assert.match(page, /api\/auth\/request-signup-verification/);
+  assert.match(page, /api\/auth\/verify-signup/);
+  assert.match(page, /teacher_staff/);
+  const admin = await readFile(join(output, "admin", "index.html"), "utf8");
+  assert.match(admin, /api\/admin\/teacher-applications/);
+  assert.match(admin, /Approve/);
+  assert.match(admin, /Reject/);
+});
+
 test("Pages assets do not require Firebase or Render at runtime", async () => {
   const contents = (await textFiles()).join("\n");
   assert.doesNotMatch(contents, /firebasejs|firebaseio\.com|firebaseapp\.com|firebase\.googleapis\.com|onrender\.com/i);

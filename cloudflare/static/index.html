@@ -59,26 +59,93 @@
       <section id="account-access" class="landing-login-section" aria-labelledby="signin-title">
         <div class="landing-login">
           <p class="landing-eyebrow">Your APSHULE workspace</p>
-          <h2 id="signin-title">Welcome back.</h2>
-          <p class="landing-login-copy">Enter your account email and we’ll send a one-time sign-in code. Your assigned role and institution determine your workspace.</p>
-          <form id="login-form" class="form-grid">
-            <div>
+          <div class="landing-auth-tabs" role="tablist" aria-label="Account access">
+            <button id="signin-tab" class="landing-auth-tab" type="button" role="tab" aria-selected="true" aria-controls="signin-panel">Sign in</button>
+            <button id="signup-tab" class="landing-auth-tab" type="button" role="tab" aria-selected="false" aria-controls="signup-panel">Create account</button>
+          </div>
+          <div id="signin-panel" role="tabpanel" aria-labelledby="signin-tab">
+            <h2 id="signin-title">Welcome back.</h2>
+            <p class="landing-login-copy">Sign in with your password or request a one-time code. Your assigned role and institution determine your workspace.</p>
+            <div class="form-grid landing-login-email">
               <label for="email">Email address</label>
-              <input id="email" name="email" type="email" autocomplete="email" required>
+              <input id="email" name="email" type="email" autocomplete="username" form="password-login-form" required>
             </div>
-            <button class="landing-button landing-button-primary landing-submit" type="submit">Send sign-in code</button>
-          </form>
-          <form id="verify-form" class="form-grid" hidden>
-            <div>
-              <label for="login-code">6-digit sign-in code</label>
-              <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
-            </div>
-            <button class="landing-button landing-button-primary landing-submit" type="submit">Verify and continue</button>
-            <div class="landing-actions">
-              <button id="resend-code" class="landing-button landing-button-secondary" type="button">Send another code</button>
-              <button id="change-email" class="landing-button landing-button-secondary" type="button">Change email</button>
-            </div>
-          </form>
+            <form id="password-login-form" class="form-grid">
+              <div>
+                <label for="login-password">Password</label>
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+              </div>
+              <button class="landing-button landing-button-primary landing-submit" type="submit">Sign in with password</button>
+              <button id="use-code-login" class="landing-inline-button" type="button">Use an email sign-in code instead</button>
+            </form>
+            <form id="login-form" class="form-grid" hidden>
+              <button class="landing-button landing-button-primary landing-submit" type="submit">Send sign-in code</button>
+              <button id="use-password-login" class="landing-inline-button" type="button">Use password instead</button>
+            </form>
+            <form id="verify-form" class="form-grid" hidden>
+              <div>
+                <label for="login-code">6-digit sign-in code</label>
+                <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+              </div>
+              <button class="landing-button landing-button-primary landing-submit" type="submit">Verify and continue</button>
+              <div class="landing-actions">
+                <button id="resend-code" class="landing-button landing-button-secondary" type="button">Send another code</button>
+                <button id="change-email" class="landing-button landing-button-secondary" type="button">Change email</button>
+              </div>
+            </form>
+            <a class="landing-forgot" href="/reset-password.html">Forgot your password?</a>
+          </div>
+          <div id="signup-panel" role="tabpanel" aria-labelledby="signup-tab" hidden>
+            <h2>Create your APSHULE account.</h2>
+            <p class="landing-login-copy">Students can create an account. Teacher applications are reviewed before workspace access is assigned.</p>
+            <form id="signup-form" class="form-grid">
+              <div>
+                <label for="signup-name">Full name</label>
+                <input id="signup-name" name="displayName" type="text" autocomplete="name" maxlength="160" required>
+              </div>
+              <div>
+                <label for="signup-email">Email address</label>
+                <input id="signup-email" name="email" type="email" autocomplete="email" maxlength="320" required>
+              </div>
+              <div>
+                <label for="account-type">I am signing up as</label>
+                <select id="account-type" name="accountType" required>
+                  <option value="student">Student</option>
+                  <option value="teacher_staff">School teaching team applicant</option>
+                  <option value="teacher_independent">Independent teacher applicant</option>
+                </select>
+              </div>
+              <div id="teacher-fields" class="form-grid" hidden>
+                <div>
+                  <label for="organization-name">School or organization</label>
+                  <input id="organization-name" name="organizationName" type="text" maxlength="180" autocomplete="organization">
+                </div>
+                <div>
+                  <label for="teaching-details">Teaching subjects or experience (optional)</label>
+                  <textarea id="teaching-details" name="teachingDetails" rows="3" maxlength="1000"></textarea>
+                </div>
+              </div>
+              <div>
+                <label for="signup-password">Password (at least 12 characters)</label>
+                <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="1000" required>
+              </div>
+              <div>
+                <label for="signup-password-confirm">Confirm password</label>
+                <input id="signup-password-confirm" name="passwordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="1000" required>
+              </div>
+              <button class="landing-button landing-button-primary landing-submit" type="submit">Email me a verification code</button>
+            </form>
+            <form id="signup-verify-form" class="form-grid" hidden>
+              <div>
+                <label for="signup-code">6-digit email verification code</label>
+                <input id="signup-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+              </div>
+              <button class="landing-button landing-button-primary landing-submit" type="submit">Verify email and continue</button>
+              <div class="landing-actions">
+                <button id="resend-signup-code" class="landing-button landing-button-secondary" type="button">Send another code</button>
+              </div>
+            </form>
+          </div>
           <div id="push-setup" class="push-setup" hidden>
             <p class="landing-eyebrow">Device alerts</p>
             <h3>Get important APSHULE alerts</h3>
@@ -89,7 +156,7 @@
             </div>
           </div>
           <p id="login-message" class="notice" role="status" aria-live="polite"></p>
-          <p class="landing-forgot">Codes expire after 10 minutes. If your email is not linked to an account, contact your administrator.</p>
+          <p class="landing-forgot landing-auth-note">Verification and sign-in codes expire after 10 minutes. New passwords must be at least 12 characters.</p>
         </div>
       </section>
 
@@ -178,6 +245,14 @@
     let pendingDestination = "/";
     let pendingDismissKey = "apshule-push-prompt-dismissed:account";
 
+    function setAuthTab(activeTab) {
+      const signingIn = activeTab === "signin";
+      $("signin-tab").setAttribute("aria-selected", String(signingIn));
+      $("signup-tab").setAttribute("aria-selected", String(!signingIn));
+      $("signin-panel").hidden = !signingIn;
+      $("signup-panel").hidden = signingIn;
+    }
+
     function base64UrlToBytes(value) {
       const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
       const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
@@ -214,7 +289,9 @@
       const target = destination(user?.role);
       if (!target) {
         try { await request("/api/auth/logout", { method: "POST", body: JSON.stringify({}) }); } catch {}
-        $("login-form").hidden = false;
+        setAuthTab("signin");
+        $("password-login-form").hidden = false;
+        $("login-form").hidden = true;
         $("verify-form").hidden = true;
         message($("login-message"), "Your account has no recognized workspace role. Contact an administrator.", "error");
         return;
@@ -234,7 +311,8 @@
         return;
       }
       pendingDestination = target;
-      $("login-form").hidden = true;
+      $("signin-panel").hidden = true;
+      $("signup-panel").hidden = true;
       $("push-setup").hidden = false;
       message($("login-message"), "Signed in. Choose whether to enable device alerts.");
     }
@@ -259,7 +337,14 @@
     });
 
     async function requestLoginCode() {
+      if (!$("email").checkValidity()) {
+        $("email").reportValidity();
+        return;
+      }
       message($("login-message"), "Checking your account and sending a code if it is active…");
+      $("password-login-form").hidden = true;
+      $("login-form").hidden = false;
+      $("verify-form").hidden = true;
       try {
         const result = await request("/api/auth/request-login-otp", {
           method: "POST",
@@ -278,6 +363,23 @@
       event.preventDefault();
       await requestLoginCode();
     });
+    $("password-login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!$("email").checkValidity()) {
+        $("email").reportValidity();
+        return;
+      }
+      message($("login-message"), "Signing in…");
+      try {
+        const result = await request("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: $("email").value.trim(), password: $("login-password").value }),
+        });
+        await finishSignIn(result.user);
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    });
     $("verify-form").addEventListener("submit", async (event) => {
       event.preventDefault();
       message($("login-message"), "Verifying your code…");
@@ -292,12 +394,95 @@
       }
     });
     $("resend-code").addEventListener("click", requestLoginCode);
+    $("use-code-login").addEventListener("click", () => {
+      $("password-login-form").hidden = true;
+      $("login-form").hidden = false;
+      $("verify-form").hidden = true;
+      message($("login-message"), "");
+    });
+    $("use-password-login").addEventListener("click", () => {
+      $("password-login-form").hidden = false;
+      $("login-form").hidden = true;
+      $("verify-form").hidden = true;
+      $("login-code").value = "";
+      message($("login-message"), "");
+    });
     $("change-email").addEventListener("click", () => {
       $("verify-form").hidden = true;
       $("login-form").hidden = false;
       $("login-code").value = "";
       message($("login-message"), "");
     });
+    $("signin-tab").addEventListener("click", () => setAuthTab("signin"));
+    $("signup-tab").addEventListener("click", () => setAuthTab("signup"));
+    $("account-type").addEventListener("change", () => {
+      const isTeacher = $("account-type").value !== "student";
+      const needsOrganization = $("account-type").value === "teacher_staff";
+      $("teacher-fields").hidden = !isTeacher;
+      $("organization-name").required = needsOrganization;
+    });
+    $("signup-password-confirm").addEventListener("input", () => {
+      $("signup-password-confirm").setCustomValidity(
+        $("signup-password-confirm").value === $("signup-password").value ? "" : "Passwords do not match.",
+      );
+    });
+    $("signup-password").addEventListener("input", () => {
+      $("signup-password-confirm").setCustomValidity(
+        $("signup-password-confirm").value === $("signup-password").value ? "" : "Passwords do not match.",
+      );
+    });
+    async function requestSignupCode() {
+      const values = Object.fromEntries(new FormData($("signup-form")).entries());
+      message($("login-message"), "Sending an email verification code if this address can be registered…");
+      try {
+        const result = await request("/api/auth/request-signup-verification", {
+          method: "POST",
+          body: JSON.stringify({
+            email: values.email,
+            displayName: values.displayName,
+            accountType: values.accountType,
+            organizationName: values.organizationName,
+            teachingDetails: values.teachingDetails,
+            password: values.password,
+          }),
+        });
+        $("signup-form").hidden = true;
+        $("signup-verify-form").hidden = false;
+        $("signup-code").focus();
+        message($("login-message"), result.message || "If this email can be registered, a verification code has been sent.");
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    }
+    $("signup-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await requestSignupCode();
+    });
+    $("signup-verify-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      message($("login-message"), "Verifying your email…");
+      try {
+        const result = await request("/api/auth/verify-signup", {
+          method: "POST",
+          body: JSON.stringify({
+            email: $("signup-email").value.trim(),
+            code: $("signup-code").value.trim(),
+          }),
+        });
+        $("signup-verify-form").hidden = true;
+        if (result.pendingReview) {
+          message($("login-message"), result.message || "Your teacher application is waiting for Super Admin review.");
+          return;
+        }
+        $("email").value = $("signup-email").value.trim();
+        $("login-password").value = $("signup-password").value;
+        setAuthTab("signin");
+        await finishSignIn(result.user);
+      } catch (error) {
+        message($("login-message"), error.message, "error");
+      }
+    });
+    $("resend-signup-code").addEventListener("click", requestSignupCode);
     request("/api/auth/session", { method: "GET", headers: {} })
       .then((result) => { if (result.user) finishSignIn(result.user); })
       .catch(() => {});
