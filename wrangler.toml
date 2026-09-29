@@ -34,6 +34,7 @@ id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
 [assets]
 directory = "cloudflare/assets"
 binding = "STATIC"
+not_found_handling = "none"
 
 [env.production]
 name = "apshule-skills-production"
@@ -74,3 +75,4 @@ id = "34d456d8a0cf46c3aadb1b0892bb3c1a"
 [env.production.assets]
 directory = "cloudflare/assets"
 binding = "STATIC"
+not_found_handling = "none"

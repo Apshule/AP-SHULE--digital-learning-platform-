@@ -248,7 +248,7 @@
     request("/api/auth/session", { method: "GET", headers: {} })
       .then((result) => { if (result.user?.role) finishSignIn(result.user); })
       .catch(() => {});
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v11").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v12").catch(() => {});
   </script>
 </body>
 </html>

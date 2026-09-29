@@ -1,5 +1,5 @@
-const CACHE_NAME = "apshule-cloudflare-shell-v11";
-const APP_SHELL = ["/", "/education/", "/admin/", "/clinic/", "/farm/", "/mfi/", "/skills/", "/tech/", "/app.css", "/landing.css", "/profile.html", "/reset-password.html", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512-maskable.png"];
+const CACHE_NAME = "apshule-cloudflare-shell-v12";
+const APP_SHELL = ["/", "/workspace/", "/education/", "/school/", "/student/", "/teacher/", "/admin/", "/clinic/", "/farm/", "/mfi/", "/skills/", "/tech/", "/app.css", "/landing.css", "/profile.html", "/reset-password.html", "/manifest.json", "/icons/icon-192.png", "/icons/icon-512-maskable.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

@@ -7,6 +7,8 @@ const routes = readFileSync(resolve(root, "cloudflare/domain-routes.ts"), "utf8"
 const capabilities = readFileSync(resolve(root, "cloudflare/migrations/0004_cloudflare_backend.sql"), "utf8");
 const workspace = readFileSync(resolve(root, "cloudflare/static/education/index.html"), "utf8");
 const landing = readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8");
+const worker = readFileSync(resolve(root, "cloudflare/worker.ts"), "utf8");
+const wrangler = readFileSync(resolve(root, "wrangler.toml"), "utf8");
 const staticApiFiles = [
   "index.html",
   "education/index.html",
@@ -49,7 +51,26 @@ describe("Cloudflare Education learner creation permissions", () => {
     expect(landing).toContain('id="landingHow"');
     expect(landing).toContain("Command Center");
     expect(landing).toContain('"teacher_independent", "student", "learner"');
-    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v11');
+    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v12');
+  });
+
+  it("routes legacy workspace URLs to the matching Cloudflare page", () => {
+    for (const route of [
+      '["/workspace", "/"]',
+      '["/education", "/education/"]',
+      '["/school", "/education/"]',
+      '["/student", "/education/"]',
+      '["/teacher", "/education/"]',
+      '["/mfi", "/mfi/"]',
+      '["/clinic", "/clinic/"]',
+      '["/farm", "/farm/"]',
+    ]) {
+      expect(worker).toContain(route);
+    }
+    expect(wrangler.match(/not_found_handling = "none"/g)).toHaveLength(2);
+    for (const prefix of ["/education/", "/mfi/", "/clinic/", "/farm/"]) {
+      expect(worker).toContain(`"${prefix}"`);
+    }
   });
 
   it("keeps staged API calls on the current origin and out of Firebase/Render", () => {
@@ -61,10 +82,13 @@ describe("Cloudflare Education learner creation permissions", () => {
   });
 
   it("versions the single root worker and precaches both role workspaces", () => {
-    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v11"');
+    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v12"');
     expect(serviceWorker).toContain('"/education/"');
     expect(serviceWorker).toContain('"/admin/"');
+    for (const route of ["/workspace/", "/school/", "/student/", "/teacher/"]) {
+      expect(serviceWorker).toContain(`"${route}"`);
+    }
     expect(readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8"))
-      .toContain('/sw.js?rev=cloudflare-shell-v11');
+      .toContain('/sw.js?rev=cloudflare-shell-v12');
   });
 });

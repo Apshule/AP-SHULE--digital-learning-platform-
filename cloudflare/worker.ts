@@ -83,10 +83,29 @@ const STATIC_ROOT_FILES = new Set([
   "/sw.js",
 ]);
 
+const WORKSPACE_PAGE_FALLBACKS = [
+  ["/workspace", "/"],
+  ["/education", "/education/"],
+  ["/school", "/education/"],
+  ["/student", "/education/"],
+  ["/teacher", "/education/"],
+  ["/mfi", "/mfi/"],
+  ["/clinic", "/clinic/"],
+  ["/farm", "/farm/"],
+] as const;
+
+function workspacePageFallback(pathname: string): string | null {
+  const match = WORKSPACE_PAGE_FALLBACKS.find(([prefix]) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  return match?.[1] || null;
+}
+
 function isExplicitStaticRoute(pathname: string): boolean {
   return pathname === "/"
     || STATIC_ROOT_FILES.has(pathname)
-    || STATIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    || STATIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    || Boolean(workspacePageFallback(pathname));
 }
 
 function redirectDirectoryRoot(pathname: string, search: string): Response | null {
@@ -460,7 +479,15 @@ export default {
       }
       const directoryRedirect = redirectDirectoryRoot(url.pathname, url.search);
       if (directoryRedirect) return directoryRedirect;
-      if (env.STATIC && isExplicitStaticRoute(url.pathname)) return env.STATIC.fetch(request);
+      if (env.STATIC && isExplicitStaticRoute(url.pathname)) {
+        const fallbackPath = workspacePageFallback(url.pathname);
+        if (fallbackPath && (request.method === "GET" || request.method === "HEAD")) {
+          const assetUrl = new URL(request.url);
+          assetUrl.pathname = fallbackPath;
+          return env.STATIC.fetch(new Request(assetUrl, request));
+        }
+        return env.STATIC.fetch(request);
+      }
       return json({ ok: false, error: "not found" }, 404);
     } catch (error) {
       return withCors(request, json({ ok: false, error: error instanceof Error ? error.message : "Worker request failed" }, 500));
