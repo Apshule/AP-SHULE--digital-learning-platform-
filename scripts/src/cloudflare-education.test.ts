@@ -45,18 +45,35 @@ describe("Cloudflare Education learner creation permissions", () => {
     expect(workspace).toContain('if (cap("statements.manage"))');
   });
 
+  it("shows a useful signed-out state and does not request school data before authentication", () => {
+    expect(workspace).toContain('const session = await request("/api/auth/session"');
+    expect(workspace).toContain('const data = await request("/api/school/education-workspace"');
+    expect(workspace).toContain("/authentication|\\b401\\b/i.test(message)");
+    expect(workspace).toContain('link.href = "/#account-access"');
+    expect(workspace).toContain('link.textContent = "Go to APSHULE sign-in"');
+    expect(workspace).toContain('$("logout").classList.add("hidden")');
+    expect(workspace).toContain('$("profile-link").classList.add("hidden")');
+  });
+
   it("restores the multi-sector landing and routes student and teacher accounts to Education", () => {
     expect(landing).toContain('id="landingSectors"');
     expect(landing).toContain('id="landingFeatures"');
     expect(landing).toContain('id="landingHow"');
     expect(landing).toContain("Command Center");
-    expect(landing).toContain('"teacher_independent", "student", "learner"');
-    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v12');
+    expect(landing).toContain('"teacher_independent"');
+    expect(landing).toContain('["student", "learner", "individual"]');
+    expect(landing).toContain('return "/workspace/student";');
+    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v13');
   });
 
   it("routes legacy workspace URLs to the matching Cloudflare page", () => {
     for (const route of [
-      '["/workspace", "/"]',
+      '["/workspace/admin", "/admin/"]',
+      '["/workspace/student", "/education/"]',
+      '["/workspace/teacher", "/education/"]',
+      '["/workspace/clinic", "/clinic/"]',
+      '["/workspace/farm", "/farm/"]',
+      '["/workspace/mfi", "/mfi/"]',
       '["/education", "/education/"]',
       '["/school", "/education/"]',
       '["/student", "/education/"]',
@@ -67,6 +84,7 @@ describe("Cloudflare Education learner creation permissions", () => {
     ]) {
       expect(worker).toContain(route);
     }
+    expect(worker).toContain('pathname === "/workspace" || pathname === "/workspace/"');
     expect(wrangler.match(/not_found_handling = "none"/g)).toHaveLength(2);
     for (const prefix of ["/education/", "/mfi/", "/clinic/", "/farm/"]) {
       expect(worker).toContain(`"${prefix}"`);
@@ -82,13 +100,13 @@ describe("Cloudflare Education learner creation permissions", () => {
   });
 
   it("versions the single root worker and precaches both role workspaces", () => {
-    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v12"');
+    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v13"');
     expect(serviceWorker).toContain('"/education/"');
     expect(serviceWorker).toContain('"/admin/"');
-    for (const route of ["/workspace/", "/school/", "/student/", "/teacher/"]) {
+    for (const route of ["/workspace/student", "/workspace/teacher", "/workspace/head_teacher", "/school/", "/student/", "/teacher/"]) {
       expect(serviceWorker).toContain(`"${route}"`);
     }
     expect(readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8"))
-      .toContain('/sw.js?rev=cloudflare-shell-v12');
+      .toContain('/sw.js?rev=cloudflare-shell-v13');
   });
 });

@@ -15,7 +15,7 @@
     <main>
         <div class="section-title">
          <div><p class="eyebrow">School workspace</p><h1 id="title">Loading your workspace…</h1><p id="scope" class="muted"></p></div>
-         <div class="button-row"><a class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary" type="button">Refresh</button></div>
+         <div class="button-row"><a id="profile-link" class="button secondary" href="/profile.html">Profile</a><button id="refresh" class="button secondary" type="button">Refresh</button></div>
       </div>
       <section class="card panel">
         <h2>Access for this role</h2>
@@ -216,11 +216,10 @@
     async function loadWorkspace() {
       showStatus("Loading records…");
       try {
-        const [session, data] = await Promise.all([
-          request("/api/auth/session", { method: "GET", headers: {} }),
-          request("/api/school/education-workspace", { method: "GET", headers: {} }),
-        ]);
-        activeUser = session.user; workspace = data;
+        const session = await request("/api/auth/session", { method: "GET", headers: {} });
+        activeUser = session.user;
+        const data = await request("/api/school/education-workspace", { method: "GET", headers: {} });
+        workspace = data;
         const labels = { secretary: "Secretary", headteacher: "Head Teacher", bursar: "Bursar", teacher: "Teacher", student: "Student", learner: "Student", superadmin: "Super Admin" };
         const label = labels[String(data.role).toLowerCase()] || String(data.role || "Education");
         $("role-badge").textContent = label;
@@ -261,7 +260,31 @@
           showStatus("Workspace is up to date.", "success");
         }
       } catch (error) {
-        if (error.message.includes("Authentication")) { location.replace("/"); return; }
+        const message = String(error?.message || error);
+        if (/authentication|\b401\b/i.test(message)) {
+          $("role-badge").textContent = "Signed out";
+          $("title").textContent = "Sign in to your workspace";
+          $("scope").textContent = "Your role and school scope are applied after sign-in.";
+          $("capabilities").replaceChildren();
+          $("actions").replaceChildren();
+          $("records").replaceChildren();
+          $("logout").classList.add("hidden");
+          $("profile-link").classList.add("hidden");
+          $("refresh").classList.add("hidden");
+          const card = document.createElement("section");
+          card.className = "card panel";
+          const note = document.createElement("p");
+          note.className = "muted";
+          note.textContent = "Sign in with your APSHULE account to see school records and role-specific actions.";
+          const link = document.createElement("a");
+          link.className = "button";
+          link.href = "/#account-access";
+          link.textContent = "Go to APSHULE sign-in";
+          card.append(note, link);
+          $("records").append(card);
+          showStatus("Sign in is required to open this Education workspace.");
+          return;
+        }
         showStatus(error.message, "error");
       }
     }

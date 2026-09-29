@@ -109,7 +109,7 @@ const WORKSPACE_PAGE_FALLBACKS = [
 ] as const;
 
 function workspacePageFallback(pathname: string): string | null {
-  if (pathname === "/login" || pathname === "/workspace" || pathname === "/workspace/") return "/";
+  if (pathname === "/login" || pathname === "/login/" || pathname === "/workspace" || pathname === "/workspace/") return "/";
   const match = WORKSPACE_PAGE_FALLBACKS.find(([prefix]) =>
     pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

@@ -64,3 +64,4 @@ artifacts/api-server/data/push-history.json
 /backup/
 /archive/
 /cloudflare/assets/
+/.wrangler/

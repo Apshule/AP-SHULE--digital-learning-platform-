@@ -4,11 +4,13 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Run & Operate
 
-- Cloudflare Worker at `https://appshule.com` is the only production host; GitHub `main` is a source-code backup and GitHub Pages is disabled.
-- `pnpm run build:cloudflare` — stage the Worker’s static assets in ignored `cloudflare/assets/`.
+- Current production is still served by the Cloudflare Worker at `https://appshule.com`; GitHub Pages is not enabled. This recovery does not change live routes, DNS, or deployment settings.
+- The selected release target is a GitHub Pages frontend on `appshule.com` with the Cloudflare Worker handling `/api/*`; use only after a separately approved release and route cutover.
+- `pnpm run build:cloudflare` or `pnpm run build:pages` — stage the Firebase/Render-free frontend, Pages route aliases, and static assets in ignored `cloudflare/assets/`.
+- `pnpm run preview:cloudflare` — run Wrangler with `wrangler.preview.toml`, local-only D1/KV/R2, and staged static assets. The API Server artifact uses this command for the Replit preview.
 - `pnpm exec wrangler deploy --env production` — deploy the Cloudflare Worker when a production deployment is explicitly requested.
 - `pnpm run push` and `pnpm run push:watch` are legacy site-sync tools. Do not use them for releases: the watcher force-pushes only a partial file list.
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the legacy Node API server directly; do not use it as the APSHULE app preview.
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -30,8 +32,8 @@ _Populate as you build — short repo map plus pointers to the source-of-truth f
 
 ## Architecture decisions
 
-- The current production frontend source is `cloudflare/static/`; its API helpers resolve requests to `https://appshule.com/api/...`.
-- `cloudflare/stage-assets.mjs` assembles the Worker’s static asset tree; do not publish the legacy root Pages frontend.
+- `cloudflare/static/` is the Pages/Worker frontend source; browser API requests use same-origin `/api/...` paths.
+- `cloudflare/stage-assets.mjs` stages that source for Pages and the local Worker preview. The legacy root `index.html` remains Firebase-era and is not used by the Cloudflare preview.
 - Do not add Firebase/Google or Render API calls to the Cloudflare frontend. Keep payment-provider initiation on hold until credentials and approval are provided.
 
 ## Product

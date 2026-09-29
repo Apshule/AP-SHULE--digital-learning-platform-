@@ -111,7 +111,7 @@
         $("status").textContent = `${users.users?.length || 0} accounts loaded.`;
       } catch (error) {
         $("status").textContent = error.message;
-        if (error.message.includes("Authentication") || error.message.includes("Superadmin")) setTimeout(() => location.replace("/"), 700);
+        if (error.message.includes("Authentication") || error.message.includes("Superadmin") || /\b401\b/.test(error.message)) setTimeout(() => location.replace("/"), 700);
       }
     }
     $("create-user").addEventListener("submit", async (event) => {

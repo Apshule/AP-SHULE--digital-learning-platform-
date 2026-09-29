@@ -8,7 +8,7 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("APSHULE Skills Cloudflare frontend", () => {
   it("uses the Cloudflare API config and ships no Firebase config", () => {
     expect(existsSync(resolve(root, "skills/firebase-config.js"))).toBe(false);
-    expect(read("skills/api-config.js")).toContain("https://appshule.com");
+    expect(read("skills/api-config.js")).toContain('global.APSHULE_API_BASE = "";');
     expect(read("skills/api-config.js")).not.toMatch(/firebase/i);
     for (const path of [
       "skills/index.html",
