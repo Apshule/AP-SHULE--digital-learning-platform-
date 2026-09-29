@@ -102,7 +102,10 @@ function role(user: AuthUser): string {
 }
 function effectiveRole(user: AuthUser, sector: string): string {
   const r = role(user);
-  return sector === "education" && (r === "school" || r === "school_admin") ? "headteacher" : r;
+  if (sector !== "education") return r;
+  if (r === "school" || r === "school_admin") return "headteacher";
+  if (r === "teacher_staff" || r === "teacher_independent") return "teacher";
+  return r;
 }
 function tenant(user: AuthUser): { institutionId: string | null; schoolId: string | null } {
   return { institutionId: user.institutionId || null, schoolId: user.schoolId || null };
@@ -183,7 +186,8 @@ function legacyInTenant(record: Row, user: AuthUser): boolean {
 function isSelfRole(user: AuthUser, sector: string) {
   const r = role(user);
   return (sector === "clinic" && r === "patient") || (sector === "mfi" && r === "borrower") ||
-    (sector === "farm" && r === "farm_worker");
+    (sector === "farm" && r === "farm_worker") ||
+    (sector === "education" && ["student", "learner"].includes(effectiveRole(user, sector)));
 }
 
 function legacyCollections(sector: string, type: string): string[] {
@@ -199,18 +203,105 @@ function legacyOwner(record: Row, uid: string): boolean {
 function legacyOwnerUid(record: Row): string {
   const data = record.data && typeof record.data === "object" ? record.data as Row : {};
   return clean(data.uid || data.userId || data.user_id || data.ownerUid || data.owner_uid || data.ownerId
+    || data.studentUid || data.student_uid || data.studentId || data.student_id
     || data.patientUid || data.patientId || data.borrowerUid || data.borrowerId || data.workerUid, 160);
 }
 
-export async function readRecords(env: AuthEnv, user: AuthUser, sector: string, type: string): Promise<Row[]> {
+function recordFields(record: Row): Row {
+  const data = record.data && typeof record.data === "object" ? record.data as Row : {};
+  return { ...data, ...record };
+}
+
+function educationStudentIdentity(record: Row, user: AuthUser): boolean {
+  record = recordFields(record);
+  const ids = [
+    record.uid, record.userId, record.user_id, record.ownerUid, record.owner_uid,
+    record.studentUid, record.student_uid, record.studentId, record.student_id,
+    record.learnerUid, record.learner_uid, record.learnerId, record.learner_id,
+  ].map((value) => clean(value, 160));
+  if (ids.includes(user.uid)) return true;
+  const email = clean(user.email, 200).toLowerCase();
+  if (!email) return false;
+  return [record.email, record.studentEmail, record.student_email, record.learnerEmail, record.learner_email]
+    .some((value) => clean(value, 200).toLowerCase() === email);
+}
+
+function teacherName(record: Row): string {
+  const fields = recordFields(record);
+  return clean(fields.className || fields.class_name || fields.class, 100).toLowerCase();
+}
+function teacherClassLabel(record: Row): string {
+  const fields = recordFields(record);
+  return teacherName(fields) || clean(fields.name, 100).toLowerCase();
+}
+function teacherSubject(record: Row): string {
+  const fields = recordFields(record);
+  return clean(fields.subject || fields.subjectName || fields.subject_name || fields.name, 120).toLowerCase();
+}
+function teacherAssignmentMatchesUser(record: Row, user: AuthUser): boolean {
+  const fields = recordFields(record);
+  const uid = clean(fields.teacherUid || fields.teacher_uid || fields.teacherId || fields.teacher_id, 160);
+  const email = clean(fields.teacherEmail || fields.teacher_email, 200).toLowerCase();
+  return uid === user.uid || Boolean(email && email === clean(user.email, 200).toLowerCase());
+}
+async function teacherAssignmentsForUser(env: AuthEnv, user: AuthUser): Promise<Row[]> {
+  return (await readRecords(env, user, "education", "teacher_assignment", false))
+    .filter((record) => teacherAssignmentMatchesUser(record, user));
+}
+function teacherRecordMatchesAssignments(record: Row, type: string, assignments: Row[]): boolean {
+  const className = type === "class" ? teacherClassLabel(record) : teacherName(record);
+  const subject = teacherSubject(record);
+  if (type === "teacher_assignment") return true;
+  if (type === "learner" || type === "student" || type === "class") {
+    return Boolean(className && assignments.some((assignment) => teacherName(assignment) === className));
+  }
+  if (type === "subject") {
+    return Boolean(subject && assignments.some((assignment) => teacherSubject(assignment) === subject));
+  }
+  if (type === "attendance") {
+    return Boolean(className && assignments.some((assignment) => teacherName(assignment) === className));
+  }
+  if (type === "marks") {
+    return Boolean(className && subject && assignments.some((assignment) =>
+      teacherName(assignment) === className && teacherSubject(assignment) === subject));
+  }
+  return false;
+}
+function studentRecordMatchesProfile(record: Row, profile: Row, user: AuthUser): boolean {
+  if (educationStudentIdentity(record, user)) return true;
+  record = recordFields(record);
+  profile = recordFields(profile);
+  const profileIds = [
+    profile.id, profile.studentNumber, profile.student_number, profile.admissionNumber,
+    profile.admission_number, profile.studentId, profile.student_id,
+  ].map((value) => clean(value, 300)).filter(Boolean);
+  const finalId = clean(profile.id, 300).split("/").pop() || "";
+  if (finalId) profileIds.push(finalId);
+  const recordIds = [
+    record.learnerId, record.learner_id, record.studentId, record.student_id,
+    record.learnerNumber, record.studentNumber, record.student_number,
+  ].map((value) => clean(value, 300)).filter(Boolean);
+  return recordIds.some((id) => profileIds.includes(id));
+}
+
+export async function readRecords(
+  env: AuthEnv,
+  user: AuthUser,
+  sector: string,
+  type: string,
+  ownOnlyOverride?: boolean,
+): Promise<Row[]> {
   const scope = tenantWhere(user);
   const result = await env.DB.prepare(`SELECT id,record_json,record_type,created_at,updated_at,owner_uid,is_deleted FROM sector_records WHERE sector=? AND record_type=? AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`)
     .bind(sector, type, ...scope.args).all<Row>();
-  const ownOnly = isSelfRole(user, sector);
+  const ownOnly = ownOnlyOverride ?? isSelfRole(user, sector);
   const hiddenIds = new Set(result.results.filter((row) => Number(row.is_deleted) === 1).map((row) => clean(row.id, 300)));
   const activeRows = result.results.filter((row) => Number(row.is_deleted) !== 1);
   const records: Row[] = activeRows
-    .filter((row) => !ownOnly || clean(row.owner_uid, 160) === user.uid)
+    .filter((row) => !ownOnly || clean(row.owner_uid, 160) === user.uid || (
+      sector === "education" && ["student", "learner"].includes(role(user)) &&
+      educationStudentIdentity(JSON.parse(String(row.record_json || "{}")) as Row, user)
+    ))
     .map((row) => ({
       id: row.id,
       ...JSON.parse(String(row.record_json || "{}")),
@@ -228,7 +319,9 @@ export async function readRecords(env: AuthEnv, user: AuthUser, sector: string, 
       try { record = safeLegacy(row); } catch { continue; }
       const legacyId = clean(record.id, 300);
       if (hiddenIds.has(legacyId) || activeRows.some((entry) => clean(entry.id, 300) === legacyId)) continue;
-      if (!legacyInTenant(record, user) || ownOnly && !legacyOwner(record, user.uid)) continue;
+      const studentOwnsLegacy = sector === "education" && ["student", "learner"].includes(role(user)) &&
+        record.data && typeof record.data === "object" && educationStudentIdentity(record.data as Row, user);
+      if (!legacyInTenant(record, user) || ownOnly && !legacyOwner(record, user.uid) && !studentOwnsLegacy) continue;
       records.push({ ...record, recordType: type });
     }
   }
@@ -272,6 +365,9 @@ async function domainRecords(
   } else if (own && sector === "farm") {
     readCapability = "records.own.read";
     writeCapability = "records.own.manage";
+  } else if (own && sector === "education") {
+    readCapability = "records.own.read";
+    writeCapability = "";
   } else if (sector === "clinic" && role(user) === "receptionist") {
     readCapability = type === "patient" ? "patients.read" : "appointments.manage";
     writeCapability = type === "appointment" ? "appointments.manage" : "";
@@ -289,10 +385,20 @@ async function domainRecords(
   }
   const capability = method === "GET" ? readCapability : writeCapability;
   if (!capability || !(await allowed(env, user, sector, capability))) return json({ ok: false, error: "Forbidden" }, 403);
+  const teacher = sector === "education" && effectiveRole(user, "education") === "teacher";
+  const assignments = teacher ? await teacherAssignmentsForUser(env, user) : [];
+  if (teacher && method !== "GET" && !await teacherMayWrite(env, user, type, input, assignments)) {
+    return json({ ok: false, error: "This action is limited to your assigned classes and subjects" }, 403);
+  }
   const t = tenant(user);
   const scope = tenantWhere(user);
   if (method === "GET") {
     let records = await readRecords(env, user, sector, type);
+    if (teacher) {
+      records = type === "teacher_assignment"
+        ? assignments
+        : records.filter((record) => teacherRecordMatchesAssignments(record, type, assignments));
+    }
     if (recordId) records = records.filter((record) => clean(record.id, 300) === recordId || clean(record.id, 300).endsWith(`/${recordId}`));
     return json({ ok: true, records });
   }
@@ -357,6 +463,32 @@ async function domainRecords(
   return json({ ok: true, record: { ...payload, id } }, method === "POST" ? 201 : 200);
 }
 
+async function teacherMayWrite(
+  env: AuthEnv,
+  user: AuthUser,
+  type: string,
+  input: Row,
+  assignments: Row[],
+): Promise<boolean> {
+  if (!["marks", "attendance"].includes(type) || !assignments.length || input.id) return false;
+  const learnerId = clean(input.learnerId || input.studentId, 300);
+  if (!learnerId) return false;
+  const learners = await readRecords(env, user, "education", "learner", false);
+  const learner = learners.find((record) => {
+    const fields = recordFields(record);
+    return clean(record.id, 300) === learnerId ||
+      clean(fields.studentNumber || fields.student_number || fields.studentId || fields.student_id, 300) === learnerId;
+  });
+  if (!learner) return false;
+  const learnerFields = recordFields(learner);
+  const className = teacherName({ className: learnerFields.className || learnerFields.class_name || learnerFields.class });
+  const requestedClass = clean(input.className || input.class_name, 100).toLowerCase();
+  if (!className || requestedClass && requestedClass !== className) return false;
+  const subject = clean(input.subject, 120).toLowerCase();
+  return assignments.some((assignment) => teacherName(assignment) === className &&
+    (type === "attendance" || Boolean(subject && teacherSubject(assignment) === subject)));
+}
+
 function educationRoute(pathname: string): { type: string; recordId: string } | null {
   const routes: Array<[RegExp, string]> = [
     [/^\/api\/school\/(?:learners|students)(?:\/([^/]+))?$/, "learner"],
@@ -382,6 +514,10 @@ function educationRoute(pathname: string): { type: string; recordId: string } | 
 
 function educationCapabilitiesFor(type: string, user: AuthUser): { read: string; write: string } {
   const currentRole = effectiveRole(user, "education");
+  if (["student", "learner"].includes(currentRole)) return { read: "records.own.read", write: "" };
+  if (currentRole === "teacher" && ["learner", "student", "class", "subject", "teacher_assignment"].includes(type)) {
+    return { read: "teacher_assignments.read", write: "" };
+  }
   if (["learner", "student"].includes(type)) {
     return { read: "students.read", write: currentRole === "headteacher" ? "students.secondary.manage" : "students.manage" };
   }
@@ -435,6 +571,63 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
   if (pathname === "/api/school/education-workspace" && request.method === "GET") {
     const currentRole = effectiveRole(user, "education");
     const isSuperadmin = role(user) === "superadmin";
+    const isStudent = ["student", "learner"].includes(currentRole);
+    if (isStudent) {
+      if (!can(caps, "records.own.read")) return json({ ok: false, error: "Student read access is not enabled" }, 403);
+      const profiles = await readRecords(env, user, "education", "learner");
+      const student = profiles.length === 1 ? profiles[0] : null;
+      const result: Row = {
+        ok: true,
+        role: currentRole,
+        workspace: "student",
+        schoolId: user.schoolId,
+        institutionId: user.institutionId,
+        capabilities: caps.map((item) => item.capability),
+        student,
+        marks: [],
+        attendance: [],
+        fees: [],
+        statements: [],
+      };
+      if (student) {
+        const studentFields = recordFields(student);
+        for (const type of ["marks", "attendance", "fee", "statement"] as const) {
+          const matching = (await readRecords(env, user, "education", type, false))
+            .filter((record) => studentRecordMatchesProfile(record, student, user));
+          result[type === "fee" ? "fees" : type === "statement" ? "statements" : type] = matching;
+        }
+        const className = teacherName({ className: studentFields.className || studentFields.class_name || studentFields.class });
+        if (className) result.classes = (await readRecords(env, user, "education", "class", false))
+          .filter((record) => teacherClassLabel(record) === className);
+      }
+      return json(result);
+    }
+    const isTeacher = currentRole === "teacher";
+    if (isTeacher) {
+      const assignments = await teacherAssignmentsForUser(env, user);
+      const classNames = new Set(assignments.map(teacherName).filter(Boolean));
+      const assignedSubjects = new Set(assignments.map(teacherSubject).filter(Boolean));
+      const result: Row = {
+        ok: true,
+        role: currentRole,
+        workspace: "teacher",
+        schoolId: user.schoolId,
+        institutionId: user.institutionId,
+        capabilities: caps.map((item) => item.capability),
+        teacherAssignments: assignments,
+        classes: (await readRecords(env, user, "education", "class", false))
+          .filter((record) => classNames.has(teacherClassLabel(record))),
+        subjects: (await readRecords(env, user, "education", "subject", false))
+          .filter((record) => assignedSubjects.has(teacherSubject(record))),
+        students: (await readRecords(env, user, "education", "learner", false))
+          .filter((record) => classNames.has(teacherName(record))),
+        attendance: (await readRecords(env, user, "education", "attendance", false))
+          .filter((record) => teacherRecordMatchesAssignments(record, "attendance", assignments)),
+        marks: (await readRecords(env, user, "education", "marks", false))
+          .filter((record) => teacherRecordMatchesAssignments(record, "marks", assignments)),
+      };
+      return json(result);
+    }
     const primary = isSuperadmin || currentRole === "secretary";
     const secondary = isSuperadmin || currentRole === "headteacher";
     const finance = isSuperadmin || currentRole === "bursar";
@@ -479,6 +672,11 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
   if (pathname === "/api/school/bursar/payments") return educationPayments(request, env, user);
   const match = educationRoute(pathname);
   if (!match) return json({ ok: false, error: "Unknown Education route" }, 404);
+  const currentRole = effectiveRole(user, "education");
+  if (["student", "learner"].includes(currentRole) &&
+    !["learner", "student", "marks", "attendance", "fee", "statement"].includes(match.type)) {
+    return json({ ok: false, error: "Students can only access their own school records" }, 403);
+  }
   const capabilitiesForType = educationCapabilitiesFor(match.type, user);
   const fakeMatch = ["", "education", match.recordId] as unknown as RegExpMatchArray;
   return domainRecords(request, env, user, fakeMatch, match.type, capabilitiesForType);
@@ -492,7 +690,7 @@ function publicUser(row: Row) {
   };
 }
 const ALLOWED_ROLES = new Set([
-  "superadmin", "secretary", "headteacher", "bursar", "teacher", "school", "school_admin",
+  "superadmin", "secretary", "headteacher", "bursar", "teacher", "teacher_staff", "teacher_independent", "student", "learner", "school", "school_admin",
   "clinic_admin", "doctor", "nurse", "receptionist", "pharmacist", "patient",
   "farm_admin", "farm_director", "farm_manager", "farm_worker",
   "mfi_admin", "loan_officer", "loan_manager", "loan_director", "borrower",

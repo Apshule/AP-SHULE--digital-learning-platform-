@@ -6,6 +6,7 @@ const root = resolve(import.meta.dirname, "../..");
 const routes = readFileSync(resolve(root, "cloudflare/domain-routes.ts"), "utf8");
 const capabilities = readFileSync(resolve(root, "cloudflare/migrations/0004_cloudflare_backend.sql"), "utf8");
 const workspace = readFileSync(resolve(root, "cloudflare/static/education/index.html"), "utf8");
+const landing = readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8");
 const staticApiFiles = [
   "index.html",
   "education/index.html",
@@ -42,6 +43,15 @@ describe("Cloudflare Education learner creation permissions", () => {
     expect(workspace).toContain('if (cap("statements.manage"))');
   });
 
+  it("restores the multi-sector landing and routes student and teacher accounts to Education", () => {
+    expect(landing).toContain('id="landingSectors"');
+    expect(landing).toContain('id="landingFeatures"');
+    expect(landing).toContain('id="landingHow"');
+    expect(landing).toContain("Command Center");
+    expect(landing).toContain('"teacher_independent", "student", "learner"');
+    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v11');
+  });
+
   it("keeps staged API calls on the current origin and out of Firebase/Render", () => {
     for (const file of staticApiFiles) {
       expect(file.source, file.path).not.toMatch(/fetch\([\s\S]{0,160}https:\/\/appshule\.com\/api/);
@@ -51,10 +61,10 @@ describe("Cloudflare Education learner creation permissions", () => {
   });
 
   it("versions the single root worker and precaches both role workspaces", () => {
-    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v10"');
+    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v11"');
     expect(serviceWorker).toContain('"/education/"');
     expect(serviceWorker).toContain('"/admin/"');
     expect(readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8"))
-      .toContain('/sw.js?rev=cloudflare-shell-v10');
+      .toContain('/sw.js?rev=cloudflare-shell-v11');
   });
 });

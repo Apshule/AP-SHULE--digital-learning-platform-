@@ -4,114 +4,140 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#4b2e9e">
-  <meta name="description" content="APSHULE connects role-based tools for education, clinics and pharmacies, farms, microfinance, and authorized administrators in Uganda.">
+  <meta name="description" content="APSHULE connects students, teachers, schools, clinics and pharmacies, farms, microfinance teams, and authorized administrators in Uganda.">
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/app.css">
   <link rel="stylesheet" href="/landing.css">
-  <title>APSHULE — Learning and Workspaces</title>
+  <title>APSHULE — One Platform. Four Sectors.</title>
 </head>
 <body>
   <div class="landing-page">
     <header class="landing-header">
-      <a class="landing-brand" href="/" aria-label="APSHULE home">
-        <img src="/icons/icon-192.png" alt="" width="44" height="44">
-        <span><strong>APSHULE</strong><small>Learn with ease</small></span>
-      </a>
-      <nav class="landing-nav" aria-label="Explore APSHULE">
-        <a href="#sectors">Workspaces</a>
-        <a href="/skills/">Vocational Skills</a>
-        <a href="/tech/">Shule-Tech</a>
-        <a class="landing-header-cta" href="#account-access">Sign in</a>
-      </nav>
+      <div class="landing-header-inner">
+        <a class="landing-brand" href="/" aria-label="APSHULE home">
+          <img src="/icons/icon-192.png" alt="" width="44" height="44">
+          <span><strong>APSHULE</strong><small>Learning and workspaces</small></span>
+        </a>
+        <nav class="landing-nav" aria-label="Explore APSHULE">
+          <a href="#landingSectors">Workspaces</a>
+          <a href="#landingFeatures">Features</a>
+          <a href="#landingHow">How it works</a>
+          <a href="/skills/">Vocational skills</a>
+          <a href="/tech/">Shule-Tech</a>
+          <a class="landing-header-cta" href="#account-access">Sign in</a>
+        </nav>
+      </div>
     </header>
 
     <main class="landing-main">
-      <section class="landing-hero" aria-labelledby="landing-title">
-        <div class="landing-hero-copy">
-          <p class="landing-eyebrow"><span aria-hidden="true">✦</span> Learn anywhere, work with clarity</p>
-          <h1 id="landing-title">One platform.<br><span>More ways forward.</span></h1>
-          <p class="landing-intro">APSHULE brings learning and practical digital workspaces together for schools, clinics, farms, and microfinance teams across Uganda.</p>
-          <div class="landing-actions">
-            <a class="landing-button landing-button-primary" href="#account-access">Log in to APSHULE</a>
-            <a class="landing-button landing-button-secondary" href="#sectors">Explore workspaces</a>
+      <section class="landing-hero" id="landingHero" aria-labelledby="landing-title">
+        <div class="landing-shell landing-hero-grid">
+          <div class="landing-hero-copy">
+            <p class="landing-eyebrow"><span aria-hidden="true">✦</span> Built for everyday work in Uganda</p>
+            <h1 id="landing-title">One platform.<br><span>Four sectors.</span><br>More ways forward.</h1>
+            <p class="landing-intro">APSHULE brings education, microfinance, clinic and pharmacy, and farm workspaces together. Students, teachers, staff, and authorized administrators sign in to the workspace assigned to their role.</p>
+            <div class="landing-actions">
+              <a class="landing-button landing-button-primary" href="#account-access">Log in to APSHULE</a>
+              <a class="landing-button landing-button-secondary" href="#landingSectors">Explore workspaces</a>
+            </div>
+            <div class="landing-trust" aria-label="APSHULE platform qualities">
+              <span>Role-based access</span><span>Institution-scoped records</span><span>Phone and desktop ready</span>
+            </div>
           </div>
-          <div class="landing-trust" aria-label="APSHULE platform qualities">
-            <span>Role-based access</span><span>Institution-scoped records</span><span>Web and mobile ready</span>
+          <aside class="landing-hero-panel" aria-label="Connected APSHULE workspaces">
+            <div class="landing-hero-panel-head"><span class="landing-hero-mark" aria-hidden="true">A</span><div><strong>APSHULE</strong><small>One connected platform</small></div></div>
+            <div class="landing-hero-item"><span>01</span><strong>Education</strong><small>Students · teachers · schools</small></div>
+            <div class="landing-hero-item"><span>02</span><strong>Clinic &amp; pharmacy</strong><small>Patients · care · stock</small></div>
+            <div class="landing-hero-item"><span>03</span><strong>Farm operations</strong><small>Animals · workers · inventory</small></div>
+            <div class="landing-hero-item"><span>04</span><strong>Microfinance</strong><small>Borrowers · loans · approvals</small></div>
+            <div class="landing-hero-item"><span>05</span><strong>Command Center</strong><small>Accounts · roles · audit</small></div>
+            <div class="landing-hero-panel-foot"><span class="landing-status-dot" aria-hidden="true"></span> Access follows your role and institution</div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="account-access" class="landing-login-section" aria-labelledby="signin-title">
+        <div class="landing-login">
+          <p class="landing-eyebrow">Your APSHULE workspace</p>
+          <h2 id="signin-title">Welcome back.</h2>
+          <p class="landing-login-copy">Sign in with your authorized account. Your role and institution determine the records and actions available to you.</p>
+          <form id="login-form" class="form-grid">
+            <div>
+              <label for="email">Email address</label>
+              <input id="email" name="email" type="email" autocomplete="username" required>
+            </div>
+            <div>
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button class="landing-button landing-button-primary landing-submit" type="submit">Continue</button>
+          </form>
+          <div id="push-setup" class="push-setup" hidden>
+            <p class="landing-eyebrow">Device alerts</p>
+            <h3>Get important APSHULE alerts</h3>
+            <p>Enable browser notifications on this device. You can continue without them.</p>
+            <div class="landing-actions">
+              <button id="enable-push" class="landing-button landing-button-primary" type="button">Enable alerts</button>
+              <button id="continue-without-push" class="landing-button landing-button-secondary" type="button">Continue without alerts</button>
+            </div>
+          </div>
+          <p id="login-message" class="notice" role="status" aria-live="polite"></p>
+          <a class="landing-forgot" href="/reset-password.html">Forgot password?</a>
+        </div>
+      </section>
+
+      <section class="landing-section" id="landingSectors" aria-labelledby="sectors-title">
+        <div class="landing-shell">
+          <div class="landing-section-head"><p class="landing-eyebrow">APSHULE workspaces</p><h2 id="sectors-title">Choose your sector.</h2><p>Each workspace provides tools for a defined role and keeps operational records within the assigned institution.</p></div>
+          <div class="landing-sector-grid">
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🏫</div><h3>Education</h3><p>For students, teachers, school leaders, and bursars.</p><ul class="landing-list"><li>Classes and learner records</li><li>Attendance and academic marks</li><li>Admissions and teacher assignments</li><li>School fee and statement records</li></ul><a class="landing-link" href="#account-access">Sign in to Education →</a></article>
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🏦</div><h3>Microfinance</h3><p>For borrowers and authorized MFI teams.</p><ul class="landing-list"><li>Borrower and collateral records</li><li>Loan application workflows</li><li>Role-based approval records</li><li>Read-only reports and audit history</li></ul><a class="landing-link" href="#account-access">Sign in to Microfinance →</a></article>
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🏥</div><h3>Clinic &amp; pharmacy</h3><p>For care teams, dispensaries, and patient accounts.</p><ul class="landing-list"><li>Patient records and appointments</li><li>Visits and prescriptions</li><li>Inventory and pharmacy checkout</li><li>Billing, claims, and reports</li></ul><a class="landing-link" href="#account-access">Sign in to Clinic →</a></article>
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🌱</div><h3>Farm operations</h3><p>For farm administrators, managers, and workers.</p><ul class="landing-list"><li>Animal records and movements</li><li>Worker attendance and egg collection</li><li>Inventory and feed use</li><li>Operational summaries</li></ul><a class="landing-link" href="#account-access">Sign in to Farm →</a></article>
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🛠️</div><h3>Vocational skills</h3><p>Browse vocational providers and practical training courses.</p><ul class="landing-list"><li>Provider and course directory</li><li>Course details and applications</li><li>Accessible on mobile devices</li><li>Separate from institution workspaces</li></ul><a class="landing-link" href="/skills/">Explore skills →</a></article>
+            <article class="landing-sector-card"><div class="landing-sector-icon" aria-hidden="true">🔐</div><h3>Command Center</h3><p>For authorized APSHULE super administrators.</p><ul class="landing-list"><li>Create and manage accounts</li><li>Assign roles and institution scope</li><li>Review role capabilities</li><li>Inspect administrator audit events</li></ul><a class="landing-link" href="#account-access">Super Admin sign in →</a></article>
           </div>
         </div>
-        <aside class="landing-hero-panel" aria-label="Connected APSHULE workspaces">
-          <div class="landing-hero-panel-head"><span class="landing-hero-mark" aria-hidden="true">A</span><div><strong>APSHULE</strong><small>One connected platform</small></div></div>
-          <div class="landing-hero-item"><span>01</span><strong>Education</strong><small>Teach · learn · manage</small></div>
-          <div class="landing-hero-item"><span>02</span><strong>Clinic & pharmacy</strong><small>Coordinate patient care</small></div>
-          <div class="landing-hero-item"><span>03</span><strong>Farm operations</strong><small>Track everyday activity</small></div>
-          <div class="landing-hero-item"><span>04</span><strong>Microfinance</strong><small>Manage borrower workflows</small></div>
-          <div class="landing-hero-panel-foot"><span class="landing-status-dot" aria-hidden="true"></span> Tools shaped around your role</div>
-        </aside>
       </section>
 
-      <section id="account-access" class="landing-login" aria-labelledby="signin-title">
-        <p class="landing-eyebrow">Your learning workspace</p>
-        <h2 id="signin-title">Welcome back.</h2>
-        <p class="landing-login-copy">Sign in to your authorized workspace. Your account role and institution determine the records and actions available to you.</p>
-        <form id="login-form" class="form-grid">
-          <div>
-            <label for="email">Email address</label>
-            <input id="email" name="email" type="email" autocomplete="username" required>
-          </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required>
-          </div>
-          <button class="landing-button landing-button-primary landing-submit" type="submit">Continue</button>
-        </form>
-        <div id="push-setup" class="push-setup" hidden>
-          <p class="landing-eyebrow">Device alerts</p>
-          <h3>Get important APSHULE alerts</h3>
-          <p>Enable browser notifications on this device. You can continue without them.</p>
-          <div class="landing-actions">
-            <button id="enable-push" class="landing-button landing-button-primary" type="button">Enable alerts</button>
-            <button id="continue-without-push" class="landing-button landing-button-secondary" type="button">Continue without alerts</button>
+      <section class="landing-section alt" id="landingFeatures" aria-labelledby="features-title">
+        <div class="landing-shell">
+          <div class="landing-section-head"><p class="landing-eyebrow">Made for real teams</p><h2 id="features-title">Practical workflows, with clear access boundaries.</h2><p>People see the records and actions their role is authorized to use.</p></div>
+          <div class="landing-feature-grid">
+            <article class="landing-feature-card"><strong>🎓 Student and teacher access</strong><p>Students see linked academic records. Teachers work with classes and subjects assigned to their account.</p></article>
+            <article class="landing-feature-card"><strong>🏫 School operations</strong><p>Authorized school staff manage admissions, learners, attendance, marks, and bursar records.</p></article>
+            <article class="landing-feature-card"><strong>🏥 Care and pharmacy</strong><p>Clinic teams coordinate appointments, visits, prescriptions, stock, checkout, billing, and claims.</p></article>
+            <article class="landing-feature-card"><strong>🌱 Farm records</strong><p>Farm teams record animals, movements, attendance, eggs, inventory, and online feed use.</p></article>
+            <article class="landing-feature-card"><strong>🏦 Lending workflows</strong><p>MFI teams handle borrower, collateral, loan application, and approval records within their scope.</p></article>
+            <article class="landing-feature-card"><strong>🛡️ Super Admin controls</strong><p>Authorized administrators manage user roles and scopes and review platform audit activity.</p></article>
           </div>
         </div>
-        <p id="login-message" class="notice" role="status" aria-live="polite"></p>
-        <a class="landing-forgot" href="/reset-password.html">Forgot password?</a>
       </section>
 
-      <section id="sectors" class="landing-features" aria-labelledby="features-title">
-        <div class="landing-section-heading"><p class="landing-eyebrow">APSHULE workspaces</p><h2 id="features-title">Practical tools for the work you do.</h2><p>Each workspace is role-aware and keeps access scoped to the right institution.</p></div>
-        <article class="landing-feature">
-          <span class="landing-feature-icon" aria-hidden="true">01</span>
-          <div><h3>Education</h3><p>School records for learners, classes, attendance, academic results, admissions, and bursar workflows.</p><a href="#account-access">Sign in to your school workspace</a></div>
-        </article>
-        <article class="landing-feature">
-          <span class="landing-feature-icon" aria-hidden="true">02</span>
-          <div><h3>Clinic & pharmacy</h3><p>Coordinate patient registration, appointments, clinical visits, prescriptions, stock, and billing.</p><a href="#account-access">Sign in to your clinic workspace</a></div>
-        </article>
-        <article class="landing-feature">
-          <span class="landing-feature-icon" aria-hidden="true">03</span>
-          <div><h3>Farm operations</h3><p>Record animal movements, worker attendance, egg collection, inventory, and feed use.</p><a href="#account-access">Sign in to your farm workspace</a></div>
-        </article>
-        <article class="landing-feature">
-          <span class="landing-feature-icon" aria-hidden="true">04</span>
-          <div><h3>Microfinance</h3><p>Support borrower onboarding, loan applications, repayment previews, and approval records.</p><a href="#account-access">Sign in to your finance workspace</a></div>
-        </article>
-        <article class="landing-feature">
-          <span class="landing-feature-icon" aria-hidden="true">05</span>
-          <div><h3>Core administration</h3><p>Authorized administrators can manage accounts, role access, and review audit activity.</p><a href="#account-access">Administrator sign in</a></div>
-        </article>
+      <section class="landing-section" id="landingHow" aria-labelledby="how-title">
+        <div class="landing-shell">
+          <div class="landing-section-head"><p class="landing-eyebrow">How it works</p><h2 id="how-title">Start with the workspace assigned to you.</h2></div>
+          <div class="landing-steps">
+            <article class="landing-step"><div class="landing-step-number">1</div><h3>Sign in</h3><p>Use your APSHULE account credentials.</p></article>
+            <article class="landing-step"><div class="landing-step-number">2</div><h3>Open your workspace</h3><p>Your account role selects the correct sector.</p></article>
+            <article class="landing-step"><div class="landing-step-number">3</div><h3>Work within your scope</h3><p>Records stay within your assigned school or institution.</p></article>
+            <article class="landing-step"><div class="landing-step-number">4</div><h3>Refresh current records</h3><p>Use your workspace refresh controls to load the latest data.</p></article>
+          </div>
+        </div>
       </section>
 
-      <section class="landing-about" aria-labelledby="about-title">
-        <p class="landing-eyebrow">About APSHULE</p>
-        <h2 id="about-title">A simpler way to learn and work.</h2>
-        <p>APSHULE gives people a secure place to carry out everyday work, with access shaped by account role and institution. Sign in to continue to the workspace assigned to you.</p>
+      <section class="landing-section landing-cta">
+        <div class="landing-shell"><h2>Ready to continue?</h2><p>Sign in to open your authorized APSHULE workspace.</p><a class="landing-button landing-button-primary" href="#account-access">Log in to APSHULE</a></div>
       </section>
     </main>
 
-    <footer class="landing-footer">
-      <span>© 2026 APSHULE</span>
-      <a href="/skills/">Skills marketplace</a>
-      <a href="/tech/">Shule-Tech Softwares</a>
+    <footer class="landing-footer" id="landingFooter">
+      <div class="landing-shell landing-footer-grid">
+        <div><div class="landing-footer-brand"><img src="/icons/icon-192.png" alt="" width="38" height="38"><strong>APSHULE</strong></div><p>Learning and workspaces for schools, clinics, pharmacies, farms, and microfinance teams.</p></div>
+        <div><h3>Workspaces</h3><a href="#landingSectors">Education</a><a href="#landingSectors">Microfinance</a><a href="#landingSectors">Clinic &amp; pharmacy</a><a href="#landingSectors">Farm operations</a><a href="#account-access">Command Center</a></div>
+        <div><h3>Explore</h3><a href="/skills/">Vocational skills</a><a href="/tech/">Shule-Tech</a><a href="#landingHow">How it works</a><a href="/reset-password.html">Reset password</a></div>
+        <p class="landing-footer-bottom">Made with care in Uganda · © 2026 APSHULE</p>
+      </div>
     </footer>
   </div>
   <script>
@@ -125,7 +151,7 @@
     }
     function destination(role = "") {
       const normalized = String(role).toLowerCase();
-      if (["secretary", "headteacher", "school", "school_admin", "bursar", "teacher"].includes(normalized)) return "/education/";
+      if (["secretary", "headteacher", "school", "school_admin", "bursar", "teacher", "teacher_staff", "teacher_independent", "student", "learner"].includes(normalized)) return "/education/";
       if (normalized === "superadmin") return "/admin/";
        if (normalized.includes("clinic") || ["doctor", "nurse", "receptionist", "pharmacist", "patient"].includes(normalized)) return "/clinic/";
       if (normalized.includes("farm") || normalized === "farm_worker") return "/farm/";
@@ -222,7 +248,7 @@
     request("/api/auth/session", { method: "GET", headers: {} })
       .then((result) => { if (result.user?.role) finishSignIn(result.user); })
       .catch(() => {});
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v10").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v11").catch(() => {});
   </script>
 </body>
 </html>

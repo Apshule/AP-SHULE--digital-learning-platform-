@@ -110,11 +110,25 @@
     }
     function renderActions() {
       $("actions").replaceChildren();
+      const isTeacher = String(workspace?.role || "").toLowerCase() === "teacher";
+      const assignments = Array.isArray(workspace?.teacherAssignments) ? workspace.teacherAssignments : [];
+      const classNames = [...new Set(assignments.map((item) => String(item.className || item.class_name || "").trim()).filter(Boolean))];
+      const subjects = [...new Set(assignments.map((item) => String(item.subject || item.subjectName || "").trim()).filter(Boolean))];
+      const classOptions = [{ value: "", label: "Choose an assigned class" }, ...classNames.map((value) => ({ value, label: value }))];
+      const subjectOptions = [{ value: "", label: "Choose an assigned subject" }, ...subjects.map((value) => ({ value, label: value }))];
+      if (isTeacher && !assignments.length) {
+        const note = document.createElement("section"); note.className = "card panel";
+        const heading = document.createElement("h2"); heading.textContent = "Teaching assignments";
+        const text = document.createElement("p"); text.className = "muted"; text.textContent = "No class or subject is linked to this account yet. Ask your school administrator to add your teacher assignment.";
+        note.append(heading, text); $("actions").append(note);
+        return;
+      }
       if (cap("students.manage") || cap("students.secondary.manage")) {
         addForm("Add learner", [
           { name: "name", label: "Learner name", maxLength: 160 }, { name: "studentNumber", label: "Student number", maxLength: 80 },
           { name: "className", label: "Class", required: false, maxLength: 100 },
-        ], "/api/school/learners", (v) => ({ name: v.name, studentNumber: v.studentNumber, className: v.className }));
+          { name: "studentEmail", label: "Student account email (optional)", type: "email", required: false, maxLength: 200 },
+        ], "/api/school/learners", (v) => ({ name: v.name, studentNumber: v.studentNumber, className: v.className, studentEmail: v.studentEmail }));
       }
       if (cap("classes.manage") || String(workspace?.role).toLowerCase() === "secretary") {
         addForm("Add class", [
@@ -136,16 +150,19 @@
       }
       if (cap("attendance.manage")) {
         addForm("Record attendance", [
-          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "className", label: "Class", maxLength: 100 },
+          { name: "learnerId", label: "Learner ID or student number", maxLength: 160 },
+          isTeacher ? { name: "className", label: "Assigned class", options: classOptions } : { name: "className", label: "Class", maxLength: 100 },
           { name: "date", label: "Date", type: "date" },
           { name: "status", label: "Status", options: [{ value: "present", label: "Present" }, { value: "absent", label: "Absent" }, { value: "late", label: "Late" }, { value: "excused", label: "Excused" }] },
         ], "/api/school/attendance");
       }
       if (cap("marks.manage")) {
         addForm("Record a mark", [
-          { name: "learnerId", label: "Learner ID", maxLength: 160 }, { name: "subject", label: "Subject", maxLength: 120 },
+          { name: "learnerId", label: "Learner ID or student number", maxLength: 160 },
+          isTeacher ? { name: "className", label: "Assigned class", options: classOptions } : { name: "className", label: "Class", required: false, maxLength: 100 },
+          isTeacher ? { name: "subject", label: "Assigned subject", options: subjectOptions } : { name: "subject", label: "Subject", maxLength: 120 },
           { name: "score", label: "Score (%)", type: "number", min: 0, max: 100, step: "0.01" }, { name: "term", label: "Term", required: false, maxLength: 80 },
-        ], "/api/school/academic/marks", (v) => ({ learnerId: v.learnerId, subject: v.subject, score: Number(v.score), term: v.term }));
+        ], "/api/school/academic/marks", (v) => ({ learnerId: v.learnerId, className: v.className, subject: v.subject, score: Number(v.score), term: v.term }));
       }
       if (cap("grading.manage")) {
         addForm("Set a grading band", [
@@ -204,7 +221,7 @@
           request("/api/school/education-workspace", { method: "GET", headers: {} }),
         ]);
         activeUser = session.user; workspace = data;
-        const labels = { secretary: "Secretary", headteacher: "Head Teacher", bursar: "Bursar", superadmin: "Super Admin" };
+        const labels = { secretary: "Secretary", headteacher: "Head Teacher", bursar: "Bursar", teacher: "Teacher", student: "Student", learner: "Student", superadmin: "Super Admin" };
         const label = labels[String(data.role).toLowerCase()] || String(data.role || "Education");
         $("role-badge").textContent = label;
         $("title").textContent = `${label} workspace`;
@@ -212,6 +229,21 @@
         $("capabilities").replaceChildren(...(data.capabilities || []).map((value) => { const tag = document.createElement("span"); tag.textContent = value; return tag; }));
         renderActions();
         $("records").replaceChildren();
+        if (["student", "learner"].includes(String(data.role || "").toLowerCase())) {
+          if (data.student) renderRecords("My school record", [data.student]);
+          else {
+            const card = document.createElement("section"); card.className = "card panel";
+            const heading = document.createElement("h2"); heading.textContent = "Student account link needed";
+            const note = document.createElement("p"); note.className = "muted"; note.textContent = "This account is not linked to a learner record yet. Ask your school administrator to add this account email to your learner record.";
+            card.append(heading, note); $("records").append(card);
+          }
+          renderRecords("My marks", data.marks || []);
+          renderRecords("My attendance", data.attendance || []);
+          renderRecords("My fee records", data.fees || []);
+          renderRecords("My statements", data.statements || []);
+          showStatus(data.student ? "Your linked school records are up to date." : "Your account needs a learner-record link before school records can appear.");
+          return;
+        }
         const hiddenKeys = new Set(["ok", "role", "workspace", "schoolId", "institutionId", "capabilities"]);
         for (const [key, value] of Object.entries(data)) {
           if (hiddenKeys.has(key)) continue;
@@ -223,7 +255,11 @@
             }
           }
         }
-        showStatus("Workspace is up to date.", "success");
+        if (data.workspace === "teacher" && !(data.teacherAssignments || []).length) {
+          showStatus("No teaching assignment is linked to this account yet.");
+        } else {
+          showStatus("Workspace is up to date.", "success");
+        }
       } catch (error) {
         if (error.message.includes("Authentication")) { location.replace("/"); return; }
         showStatus(error.message, "error");
