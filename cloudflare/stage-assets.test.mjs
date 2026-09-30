@@ -53,29 +53,52 @@ test("Pages bundle includes the public site and all core workspaces", async () =
   assert.equal((await readFile(join(output, "CNAME"), "utf8")).trim(), "appshule.com");
 });
 
-test("Pages bundle retains role aliases with redirects to sector workspaces", async () => {
+test("Pages bundle routes role aliases to their distinct workspaces", async () => {
   const aliases = new Map([
     ["login", "/"],
     ["workspace", "/"],
     ["workspace/admin", "/admin/"],
-    ["workspace/student", "/education/"],
-    ["workspace/teacher", "/education/"],
-    ["workspace/head_teacher", "/education/"],
-    ["workspace/secretary", "/education/"],
-    ["workspace/bursar", "/education/"],
-    ["workspace/parent", "/education/"],
+    ["workspace/student", "/student/"],
+    ["workspace/individual", "/student/"],
+    ["workspace/learner", "/student/"],
+    ["workspace/teacher", "/teacher/"],
+    ["workspace/head_teacher", "/secretary/"],
+    ["workspace/headteacher", "/secretary/"],
+    ["workspace/secretary", "/secretary/"],
+    ["workspace/bursar", "/bursar/"],
+    ["workspace/parent", "/parent/"],
     ["workspace/clinic", "/clinic/"],
     ["workspace/farm", "/farm/"],
     ["workspace/mfi", "/mfi/"],
-    ["school", "/education/"],
-    ["student", "/education/"],
-    ["teacher", "/education/"],
+    ["school", "/secretary/"],
   ]);
 
   for (const [alias, target] of aliases) {
     const page = await readFile(join(output, alias, "index.html"), "utf8");
     assert.match(page, new RegExp(`location\\.replace\\("${target.replaceAll("/", "\\/")}"`), `Incorrect redirect for /${alias}`);
   }
+});
+
+test("Pages bundle keeps each role dashboard as a real page, not an alias redirect", async () => {
+  for (const [role, path] of [
+    ["student", "student/index.html"],
+    ["teacher", "teacher/index.html"],
+    ["secretary", "secretary/index.html"],
+    ["bursar", "bursar/index.html"],
+    ["parent", "parent/index.html"],
+  ]) {
+    const page = await readFile(join(output, path), "utf8");
+    assert.match(page, new RegExp(`data-role="${role}"`), `Missing ${role} workspace`);
+    assert.match(page, /role-workspace\.css/);
+    assert.match(page, /role-workspace\.js/);
+  }
+  const studentPage = await readFile(join(output, "student/index.html"), "utf8");
+  const workspaceScript = await readFile(join(output, "role-workspace.js"), "utf8");
+  assert.match(studentPage, /Sync Now/);
+  assert.match(studentPage, /Online · Not synced yet/);
+  assert.match(workspaceScript, /My subjects/);
+  assert.match(workspaceScript, /WEAK/);
+  assert.match(workspaceScript, /YouTube Lesson/);
 });
 
 test("Pages bundle excludes archived Firebase and admission clients", async () => {

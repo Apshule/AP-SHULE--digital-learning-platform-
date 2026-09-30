@@ -30,6 +30,11 @@ describe("APSHULE Worker routing", () => {
       "/farm/",
       "/mfi/",
       "/admin/",
+      "/student/",
+      "/teacher/",
+      "/secretary/",
+      "/bursar/",
+      "/parent/",
       "/skills/",
       "/tech/",
       "/profile.html",
@@ -53,10 +58,16 @@ describe("APSHULE Worker routing", () => {
       ["/login/", "/"],
       ["/workspace", "/"],
       ["/workspace/", "/"],
-      ["/workspace/student", "/education/"],
-      ["/workspace/student/", "/education/"],
-      ["/workspace/teacher", "/education/"],
-      ["/workspace/teacher/", "/education/"],
+      ["/workspace/student", "/student/"],
+      ["/workspace/student/", "/student/"],
+      ["/workspace/teacher", "/teacher/"],
+      ["/workspace/teacher/", "/teacher/"],
+      ["/workspace/secretary", "/secretary/"],
+      ["/workspace/secretary/", "/secretary/"],
+      ["/workspace/bursar", "/bursar/"],
+      ["/workspace/bursar/", "/bursar/"],
+      ["/workspace/parent", "/parent/"],
+      ["/workspace/parent/", "/parent/"],
       ["/workspace/admin", "/admin/"],
       ["/workspace/admin/", "/admin/"],
       ["/workspace/clinic", "/clinic/"],
@@ -81,6 +92,16 @@ describe("APSHULE Worker routing", () => {
 
     expect(response.status).toBe(308);
     expect(response.headers.get("location")).toBe("/education/?from=workspace");
+    expect(staticFetch).not.toHaveBeenCalled();
+  });
+
+  it("normalizes the restored role dashboard URLs", async () => {
+    const { env, staticFetch } = previewEnv();
+    for (const path of ["/student", "/teacher", "/secretary", "/bursar", "/parent"]) {
+      const response = await worker.fetch(new Request(`https://appshule.com${path}?from=login`), env);
+      expect(response.status, path).toBe(308);
+      expect(response.headers.get("location"), path).toBe(`${path}/?from=login`);
+    }
     expect(staticFetch).not.toHaveBeenCalled();
   });
 

@@ -10,3 +10,9 @@ For Education accounts without a source-backed school or institution scope, allo
 **Why:** The root PWA manages institution users and private operations; `/skills/` is a public course and provider directory. Shared admissions/marks tables previously mixed those distinct trust boundaries. The Firestore mirror has incomplete account scopes, so guessing tenant IDs or matching teachers by class and subject names alone could disclose or alter another school's data.
 
 **How to apply:** Scope normal root PWA reads and writes by the authenticated school/institution and role capabilities; apply the null-scope exception only to safe Education reads with ownership/assignment filters. Keep `/api/skills/enroll` public but validated and rate-limited, and write only to `vocational_enrollments`. Preserve legacy rows during table moves; never infer or rewrite user roles/scopes from domain data.
+
+Parent access to Education records requires an explicit, active staff-managed parent-to-learner link. The link's institution and school IDs must match the learner and every lesson/file read; revocation must stop access immediately. Never infer guardianship from names, class membership, or shared contact details.
+
+**Why:** A parent role or shared learner details do not prove guardianship. Explicit links provide auditable consent and prevent cross-school disclosure, including for PDFs attached to lessons.
+
+**How to apply:** Enforce the active link and exact tenant match in parent dashboards, lesson lists, and file endpoints. Treat link creation and revocation as scoped staff actions.

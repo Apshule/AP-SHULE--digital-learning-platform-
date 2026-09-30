@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4b2e9e">
+  <link rel="stylesheet" href="/role-workspace.css">
+  <title>Teacher workspace | APSHULE</title>
+</head>
+<body data-role="teacher">
+  <div class="rw-app">
+    <header class="rw-topbar">
+      <a class="rw-brand" href="/" aria-label="APSHULE home"><span class="rw-mark" aria-hidden="true">A</span><span class="rw-brand-copy"><strong>APSHULE</strong><small>Teaching and class records</small></span></a>
+      <div class="rw-top-actions"><span id="role-badge" class="rw-badge">Teacher</span><button id="sign-out" class="rw-button secondary" type="button">Sign out</button></div>
+    </header>
+    <main class="rw-main">
+      <section class="rw-intro" aria-labelledby="workspace-title">
+        <div><p class="rw-kicker">School teaching workspace</p><h1 id="workspace-title">Loading your teacher workspace</h1><p>See your assigned classes and subjects, create class lessons, and share PDF learning resources.</p></div>
+        <div class="rw-intro-side"><span id="workspace-school" class="rw-school">Checking school access</span><span id="workspace-scope" class="rw-scope">Assignments are limited to your account</span><button id="sync-now" class="rw-sync" type="button"><span class="rw-sync-dot" aria-hidden="true"></span><span class="rw-sync-action">Sync Now</span><span class="rw-sync-label">Online · Not synced yet</span></button></div>
+      </section>
+      <div class="rw-status-line"><p id="workspace-status" role="status" aria-live="polite">Checking your session…</p><span>Use Sync Now to refresh your session and records.</span></div>
+      <div id="workspace-content" aria-live="polite"><div class="rw-skeleton short"></div></div>
+      <footer class="rw-footer">APSHULE · Teaching and school operations</footer>
+    </main>
+  </div>
+  <script src="/role-workspace.js" defer></script>
+</body>
+</html>

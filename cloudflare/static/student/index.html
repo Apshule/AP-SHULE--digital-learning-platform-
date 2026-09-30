@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4b2e9e">
+  <link rel="stylesheet" href="/role-workspace.css">
+  <title>Student workspace | APSHULE</title>
+</head>
+<body data-role="student">
+  <div class="rw-app">
+    <header class="rw-topbar">
+      <a class="rw-brand" href="/" aria-label="APSHULE home">
+        <span class="rw-mark" aria-hidden="true">A</span>
+        <span class="rw-brand-copy"><strong>APSHULE</strong><small>Learning and school records</small></span>
+      </a>
+      <div class="rw-top-actions">
+        <span id="role-badge" class="rw-badge">Student</span>
+        <button id="sign-out" class="rw-button secondary" type="button">Sign out</button>
+      </div>
+    </header>
+    <main class="rw-main">
+      <section class="rw-intro" aria-labelledby="workspace-title">
+        <div><p class="rw-kicker">Your learning space</p><h1 id="workspace-title">Loading your student workspace</h1><p>Follow your class learning, academic progress, attendance and school account from one place.</p></div>
+        <div class="rw-intro-side"><span id="workspace-school" class="rw-school">Checking school access</span><span id="workspace-scope" class="rw-scope">Records follow your assigned school</span><button id="sync-now" class="rw-sync" type="button"><span class="rw-sync-dot" aria-hidden="true"></span><span class="rw-sync-action">Sync Now</span><span class="rw-sync-label">Online · Not synced yet</span></button></div>
+      </section>
+      <div class="rw-status-line"><p id="workspace-status" role="status" aria-live="polite">Checking your session…</p><span>Records shown are from your school workspace.</span></div>
+      <div id="workspace-content" aria-live="polite"><div class="rw-skeleton short"></div></div>
+      <footer class="rw-footer">APSHULE · School learning and operations</footer>
+    </main>
+  </div>
+  <script src="/role-workspace.js" defer></script>
+</body>
+</html>

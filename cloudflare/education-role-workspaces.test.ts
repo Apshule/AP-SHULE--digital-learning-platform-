@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { handleDomainRoute } from "./domain-routes";
+import { handleEducationFileRoute } from "./education-files";
+import type { EducationFileEnv } from "./education-files";
 import type { AuthEnv, AuthUser } from "./backend-types";
 
 function educationDatabase() {
@@ -21,6 +23,9 @@ function educationDatabase() {
       currency TEXT, status TEXT, provider TEXT, provider_reference TEXT, idempotency_key TEXT,
       metadata_json TEXT, created_at TEXT, updated_at TEXT
     );
+    CREATE TABLE IF NOT EXISTS users (
+      uid TEXT PRIMARY KEY, email TEXT, role TEXT, active INTEGER DEFAULT 1, disabled INTEGER DEFAULT 0
+    );
     CREATE TABLE audit (
       id TEXT PRIMARY KEY, institution_id TEXT, school_id TEXT, actor_id TEXT, action TEXT,
       resource_type TEXT, resource_id TEXT, metadata_json TEXT, created_at TEXT
@@ -30,6 +35,7 @@ function educationDatabase() {
   db.exec(readFileSync(new URL("./migrations/0014_education_student_teacher.sql", import.meta.url), "utf8"));
   db.exec(readFileSync(new URL("./migrations/0016_shared_admissions_marks.sql", import.meta.url), "utf8"));
   db.exec(readFileSync(new URL("./migrations/0017_separate_school_and_skills_data.sql", import.meta.url), "utf8"));
+  db.exec(readFileSync(new URL("./migrations/0020_education_native_workspace.sql", import.meta.url), "utf8"));
   return db;
 }
 
@@ -98,6 +104,76 @@ function addLegacyRecord(db: DatabaseSync, collection: string, id: string, recor
   db.prepare(
     "INSERT INTO firestore_documents (document_path,data_json,create_time,update_time,collection_path) VALUES (?,?,?,?,?)",
   ).run(`${collection}/${id}`, JSON.stringify(record), "t", "t", collection);
+}
+
+function addAccount(db: DatabaseSync, uid: string, email: string, role: string) {
+  db.prepare("INSERT INTO users (uid,email,role,active,disabled) VALUES (?,?,?,1,0)").run(uid, email, role);
+}
+
+function addLesson(
+  db: DatabaseSync,
+  id: string,
+  schoolId: string,
+  institutionId: string,
+  ownerUid: string,
+  className: string,
+  subject: string,
+  published = 1,
+) {
+  db.prepare(
+    `INSERT INTO education_lessons
+      (id,institution_id,school_id,owner_uid,title,description,class_name,subject,youtube_url,published,created_at,updated_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+  ).run(id, institutionId, schoolId, ownerUid, `Lesson ${id}`, "", className, subject, "", published, "t", "t");
+}
+
+function addParentLink(
+  db: DatabaseSync,
+  id: string,
+  parentUid: string,
+  learnerId: string,
+  schoolId: string,
+  institutionId: string,
+  active = 1,
+) {
+  db.prepare(
+    `INSERT INTO parent_links
+      (id,institution_id,school_id,parent_uid,learner_id,relationship,active,created_by,created_at)
+     VALUES (?,?,?,?,?,'parent',?,'school-admin','t')`,
+  ).run(id, institutionId, schoolId, parentUid, learnerId, active);
+}
+
+function memoryR2() {
+  const objects = new Map<string, Uint8Array>();
+  return {
+    objects,
+    bucket: {
+      put: async (key: string, value: ArrayBuffer) => { objects.set(key, new Uint8Array(value)); },
+      get: async (key: string) => {
+        const value = objects.get(key);
+        return value ? { body: new Response(value.slice()).body! } : null;
+      },
+      delete: async (key: string) => { objects.delete(key); },
+    },
+  };
+}
+
+function addStoredFile(
+  db: DatabaseSync,
+  objects: Map<string, Uint8Array>,
+  lessonId: string,
+  fileId: string,
+  key: string,
+  schoolId: string,
+  institutionId: string,
+  content = "%PDF-1.4\nstored test pdf",
+) {
+  db.prepare(
+    `INSERT INTO education_files
+      (id,lesson_id,institution_id,school_id,object_key,filename,content_type,size_bytes,sha256,created_by,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+  ).run(fileId, lessonId, institutionId, schoolId, key, "lesson.pdf", "application/pdf", content.length, "test-sha", "teacher-1", "t");
+  objects.set(key, new TextEncoder().encode(content));
 }
 
 const request = (path: string, method = "GET", body?: object) => new Request(`https://apshule.test${path}`, {
@@ -453,6 +529,226 @@ describe("Education student and teacher workspaces", () => {
       expect(row.school_id).toBe("school-1");
       expect(row.institution_id).toBe("school-org");
       expect(JSON.parse(row.record_json).fullName).toBe("After");
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("Education native lessons and parent links", () => {
+  it("allows assigned teachers to create lessons without video and rejects non-YouTube URLs", async () => {
+    const db = educationDatabase();
+    try {
+      addRecord(db, "assignment-teacher", "teacher_assignment", {
+        teacherUid: "teacher-1", className: "P5", subject: "Mathematics",
+      });
+      const env = educationEnv(db);
+      const teacher = user("teacher-1", "teacher", "teacher@school.test");
+
+      const withoutVideo = await handleDomainRoute(request("/api/school/lessons", "POST", {
+        title: "Fractions", className: "P5", subject: "Mathematics",
+      }), env, teacher);
+      expect(withoutVideo?.status).toBe(201);
+      const saved = await withoutVideo!.json() as { lesson: Record<string, unknown> };
+      expect(saved.lesson.youtubeUrl).toBe("");
+
+      const invalidVideo = await handleDomainRoute(request("/api/school/lessons", "POST", {
+        title: "Fractions", className: "P5", subject: "Mathematics", youtubeUrl: "http://example.com/video",
+      }), env, teacher);
+      expect(invalidVideo?.status).toBe(400);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("stores superadmin parent links in the learner school and rejects wrong-role or cross-school linking", async () => {
+    const db = educationDatabase();
+    try {
+      addAccount(db, "parent-1", "parent@school.test", "parent");
+      addAccount(db, "not-parent", "student@school.test", "student");
+      addRecord(db, "learner-school-1", "learner", { name: "Malaika", className: "P5" }, "student-1", "school-1", "school-org");
+      addRecord(db, "learner-school-2", "learner", { name: "Malaika", className: "P5" }, "student-2", "school-2", "school-org");
+      const env = educationEnv(db);
+      const superadmin = unscopedUser("root", "superadmin", "root@school.test");
+
+      const created = await handleDomainRoute(request("/api/school/parent-links", "POST", {
+        parentEmail: "parent@school.test", learnerId: "learner-school-1",
+      }), env, superadmin);
+      expect(created?.status).toBe(201);
+      const stored = db.prepare("SELECT institution_id,school_id FROM parent_links WHERE learner_id='learner-school-1'").get() as {
+        institution_id: string; school_id: string;
+      };
+      expect(stored).toEqual({ institution_id: "school-org", school_id: "school-1" });
+
+      const secretary = user("secretary-1", "secretary", "secretary@school.test");
+      const wrongRole = await handleDomainRoute(request("/api/school/parent-links", "POST", {
+        parentEmail: "student@school.test", learnerId: "learner-school-1",
+      }), env, secretary);
+      expect(wrongRole?.status).toBe(400);
+      const otherSchool = await handleDomainRoute(request("/api/school/parent-links", "POST", {
+        parentEmail: "parent@school.test", learnerId: "learner-school-2",
+      }), env, secretary);
+      expect(otherSchool?.status).toBe(404);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("limits parent workspace records and lessons to the explicitly linked child school", async () => {
+    const db = educationDatabase();
+    try {
+      addAccount(db, "parent-1", "parent@school.test", "parent");
+      addRecord(db, "learner-linked", "learner", {
+        uid: "student-linked", name: "Malaika", className: "P5", studentNumber: "SHARED-NO",
+      }, "student-linked", "school-1", "school-org");
+      addRecord(db, "learner-other-school", "learner", {
+        uid: "student-other", name: "Malaika", className: "P5", studentNumber: "SHARED-NO",
+      }, "student-other", "school-2", "school-org");
+      addParentLink(db, "link-parent-child", "parent-1", "learner-linked", "school-1", "school-org");
+      addSharedMark(db, "mark-linked", "school-1", "school-org", {
+        studentId: "SHARED-NO", className: "P5", subject: "Mathematics", score: 84,
+      });
+      addSharedMark(db, "mark-other-school", "school-2", "school-org", {
+        studentId: "SHARED-NO", className: "P5", subject: "Mathematics", score: 21,
+      });
+      addLesson(db, "lesson-linked", "school-1", "school-org", "teacher-1", "P5", "Mathematics");
+      addLesson(db, "lesson-other-school", "school-2", "school-org", "teacher-2", "P5", "Mathematics");
+      const r2 = memoryR2();
+      addStoredFile(db, r2.objects, "lesson-linked", "file-linked", "lesson-files/linked.pdf", "school-1", "school-org");
+      const env = { ...educationEnv(db), FILES: r2.bucket } as unknown as EducationFileEnv;
+      const parent = unscopedUser("parent-1", "parent", "parent@school.test");
+
+      const response = await handleDomainRoute(request("/api/school/education-workspace"), env, parent);
+      expect(response?.status).toBe(200);
+      const data = await response!.json() as { children: Array<Record<string, any>> };
+      expect(data.children).toHaveLength(1);
+      expect(data.children[0].id).toBe("learner-linked");
+      expect(data.children[0].marks.map((row: Record<string, unknown>) => row.id)).toEqual(["mark-linked"]);
+      expect(data.children[0].lessons.map((row: Record<string, unknown>) => row.id)).toEqual(["lesson-linked"]);
+      expect(data.children[0].lessons[0].files[0]).toMatchObject({ id: "file-linked", filename: "lesson.pdf" });
+      expect(data.children[0].lessons[0].files[0].object_key).toBeUndefined();
+
+      const lessonList = await handleDomainRoute(request("/api/school/lessons"), env, parent);
+      const lessonData = await lessonList!.json() as { lessons: Array<Record<string, unknown>> };
+      expect(lessonData.lessons.map((row) => row.id)).toEqual(["lesson-linked"]);
+
+      db.prepare("UPDATE parent_links SET active=0,revoked_at='now' WHERE id='link-parent-child'").run();
+      const revoked = await handleDomainRoute(request("/api/school/education-workspace"), env, parent);
+      const revokedData = await revoked!.json() as { children: Array<Record<string, unknown>> };
+      expect(revokedData.children).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("Education lesson PDF storage authorization", () => {
+  it("allows the linked parent and student only in the matching school, and denies revoked or unrelated accounts", async () => {
+    const db = educationDatabase();
+    try {
+      addAccount(db, "parent-1", "parent@school.test", "parent");
+      addRecord(db, "learner-file-owner", "learner", {
+        uid: "student-1", name: "Amina", className: "P4",
+      }, "student-1", "school-1", "school-org");
+      addParentLink(db, "file-parent-link", "parent-1", "learner-file-owner", "school-1", "school-org");
+      addLesson(db, "lesson-school-1", "school-1", "school-org", "teacher-1", "P4", "Science");
+      addLesson(db, "lesson-school-2", "school-2", "school-org", "teacher-2", "P4", "Science");
+      const r2 = memoryR2();
+      addStoredFile(db, r2.objects, "lesson-school-1", "pdf-school-1", "lesson-files/s1.pdf", "school-1", "school-org");
+      addStoredFile(db, r2.objects, "lesson-school-2", "pdf-school-2", "lesson-files/s2.pdf", "school-2", "school-org");
+      const env = { ...educationEnv(db), FILES: r2.bucket } as unknown as EducationFileEnv;
+      const filePath = (lessonId: string, fileId: string) =>
+        `/api/school/lessons/${lessonId}/files/${fileId}`;
+
+      const parent = unscopedUser("parent-1", "parent", "parent@school.test");
+      const parentOwnFile = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-1", "pdf-school-1")}`),
+        env, parent, filePath("lesson-school-1", "pdf-school-1"),
+      );
+      expect(parentOwnFile.status).toBe(200);
+      expect(await parentOwnFile.text()).toContain("%PDF-1.4");
+
+      const parentOtherSchool = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-2", "pdf-school-2")}`),
+        env, parent, filePath("lesson-school-2", "pdf-school-2"),
+      );
+      expect(parentOtherSchool.status).toBe(403);
+      const otherParent = unscopedUser("parent-unlinked", "parent", "other@school.test");
+      const unlinked = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-1", "pdf-school-1")}`),
+        env, otherParent, filePath("lesson-school-1", "pdf-school-1"),
+      );
+      expect(unlinked.status).toBe(403);
+
+      const student = user("student-1", "student", "student@school.test");
+      const studentOwnFile = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-1", "pdf-school-1")}`),
+        env, student, filePath("lesson-school-1", "pdf-school-1"),
+      );
+      expect(studentOwnFile.status).toBe(200);
+      const studentOtherSchool = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-2", "pdf-school-2")}`),
+        env, student, filePath("lesson-school-2", "pdf-school-2"),
+      );
+      expect(studentOtherSchool.status).toBe(403);
+
+      db.prepare("UPDATE parent_links SET active=0 WHERE id='file-parent-link'").run();
+      const revokedParentFile = await handleEducationFileRoute(
+        new Request(`https://apshule.test${filePath("lesson-school-1", "pdf-school-1")}`),
+        env, parent, filePath("lesson-school-1", "pdf-school-1"),
+      );
+      expect(revokedParentFile.status).toBe(403);
+    } finally {
+      db.close();
+    }
+  });
+
+  it("requires an assigned teacher and validates PDF origin, size, signature, and storage cleanup", async () => {
+    const db = educationDatabase();
+    try {
+      addRecord(db, "assignment-teacher-files", "teacher_assignment", {
+        teacherUid: "teacher-1", className: "P4", subject: "Science",
+      });
+      addLesson(db, "lesson-teacher", "school-1", "school-org", "teacher-1", "P4", "Science");
+      addLesson(db, "lesson-wrong-subject", "school-1", "school-org", "teacher-1", "P4", "Mathematics");
+      addLesson(db, "lesson-wrong-school", "school-2", "school-org", "teacher-1", "P4", "Science");
+      const r2 = memoryR2();
+      const env = { ...educationEnv(db), FILES: r2.bucket } as unknown as EducationFileEnv;
+      const teacher = user("teacher-1", "teacher", "teacher@school.test");
+      const upload = async (lessonId: string, file: File, origin = "https://apshule.test") => {
+        const form = new FormData();
+        form.append("file", file);
+        const path = `/api/school/lessons/${lessonId}/files`;
+        return handleEducationFileRoute(
+          new Request(`https://apshule.test${path}`, { method: "POST", body: form, headers: { origin } }),
+          env, teacher, path,
+        );
+      };
+
+      const validFile = () => new File(["%PDF-1.4\nvalid"], "science.pdf", { type: "application/pdf" });
+      expect((await upload("lesson-wrong-subject", validFile())).status).toBe(403);
+      expect((await upload("lesson-wrong-school", validFile())).status).toBe(403);
+      expect((await upload("lesson-teacher", validFile(), "https://evil.example")).status).toBe(403);
+      expect((await upload("lesson-teacher", new File(["not pdf"], "bad.pdf", { type: "application/pdf" }))).status).toBe(415);
+      const large = new File([new Uint8Array(8 * 1024 * 1024 + 1)], "large.pdf", { type: "application/pdf" });
+      expect((await upload("lesson-teacher", large)).status).toBe(413);
+
+      const uploaded = await upload("lesson-teacher", validFile());
+      expect(uploaded.status).toBe(201);
+      const metadata = await uploaded.json() as { file: { id: string } };
+      expect(r2.objects.size).toBe(1);
+      const getPath = `/api/school/lessons/lesson-teacher/files/${metadata.file.id}`;
+      const opened = await handleEducationFileRoute(new Request(`https://apshule.test${getPath}`), env, teacher, getPath);
+      expect(opened.status).toBe(200);
+      expect(await opened.text()).toContain("%PDF-1.4");
+
+      db.exec(`CREATE TRIGGER reject_education_file_metadata
+        BEFORE INSERT ON education_files BEGIN SELECT RAISE(FAIL, 'metadata unavailable'); END;`);
+      const failedInsert = await upload("lesson-teacher", validFile());
+      expect(failedInsert.status).toBe(502);
+      expect(r2.objects.size).toBe(1);
+      const savedKey = db.prepare("SELECT object_key FROM education_files WHERE id=?").get(metadata.file.id) as { object_key: string };
+      expect(r2.objects.has(savedKey.object_key)).toBe(true);
     } finally {
       db.close();
     }

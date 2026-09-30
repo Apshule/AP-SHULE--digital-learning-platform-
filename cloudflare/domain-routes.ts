@@ -1,4 +1,5 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
+import { handleEducationFileRoute } from "./education-files";
 
 type MaybeUser = AuthUser | null | undefined;
 type Row = Record<string, unknown>;
@@ -235,14 +236,14 @@ function isVocationalEducationRecord(record: Row): boolean {
 function educationStudentIdentity(record: Row, user: AuthUser): boolean {
   record = recordFields(record);
   const ids = [
-    record.uid, record.userId, record.user_id, record.ownerUid, record.owner_uid,
+    record.id, record.uid, record.userId, record.user_id, record.ownerUid, record.owner_uid,
     record.studentUid, record.student_uid, record.studentId, record.student_id,
     record.learnerUid, record.learner_uid, record.learnerId, record.learner_id,
   ].map((value) => clean(value, 160));
-  if (ids.includes(user.uid)) return true;
+  if (user.uid && ids.includes(user.uid)) return true;
   const email = clean(user.email, 200).toLowerCase();
   if (!email) return false;
-  return [record.email, record.studentEmail, record.student_email, record.learnerEmail, record.learner_email]
+  return Boolean(email) && [record.email, record.studentEmail, record.student_email, record.learnerEmail, record.learner_email]
     .some((value) => clean(value, 200).toLowerCase() === email);
 }
 
@@ -265,8 +266,10 @@ function teacherAssignmentMatchesUser(record: Row, user: AuthUser): boolean {
   return uid === user.uid || Boolean(email && email === clean(user.email, 200).toLowerCase());
 }
 async function teacherAssignmentsForUser(env: AuthEnv, user: AuthUser): Promise<Row[]> {
-  return (await readRecords(env, user, "education", "teacher_assignment", false))
+  const records = (await readRecords(env, user, "education", "teacher_assignment", false))
     .filter((record) => teacherAssignmentMatchesUser(record, user));
+  if (tenant(user).schoolId || tenant(user).institutionId) return records;
+  return records.filter((record) => Boolean(clean(record.schoolId || record.school_id, 160) || clean(record.institutionId || record.institution_id, 160)));
 }
 function sameEducationScope(record: Row, anchor: Row): boolean {
   const recordData = recordFields(record);
@@ -738,12 +741,135 @@ async function educationPayments(request: Request, env: AuthEnv, user: AuthUser)
   return json({ ok: true, payment: { id: paymentId, amount, currency: clean(input.currency, 8) || "UGX", status: "pending", manual: true }, message: "Payment recorded as pending; no payment gateway is configured." }, 201);
 }
 
+async function educationLessons(env: AuthEnv, user: AuthUser, write = false): Promise<Row[]> {
+  const r = effectiveRole(user, "education");
+  let scopedUser = user;
+  if ((r === "student" || r === "learner") && !user.schoolId && !user.institutionId) {
+    const own = await readRecords(env, user, "education", "learner", false);
+    const matches = own.filter((x) => educationStudentIdentity(x, user));
+    const scopes = matches.map((x) => ({ schoolId: clean(x.schoolId || x.school_id, 160) || null, institutionId: clean(x.institutionId || x.institution_id, 160) || null }));
+    if (scopes.length !== 1 || (!scopes[0].schoolId && !scopes[0].institutionId)) return [];
+    scopedUser = { ...user, schoolId: scopes[0].schoolId, institutionId: scopes[0].institutionId };
+  }
+  if (r !== "student" && r !== "learner" && r !== "parent" && role(user) !== "superadmin" &&
+      !tenant(user).schoolId && !tenant(user).institutionId) return [];
+  const scope = tenantWhere(scopedUser, "", "education");
+  let rows: Row[] = [];
+  rows = (await env.DB.prepare(`SELECT * FROM education_lessons WHERE ${scope.sql} ORDER BY updated_at DESC LIMIT 500`).bind(...scope.args).all<Row>()).results;
+  const files = await env.DB.prepare(
+    `SELECT lesson_id,id,filename,content_type,size_bytes FROM education_files WHERE lesson_id IN (${rows.map(() => "?").join(",") || "NULL"}) ORDER BY created_at`,
+  ).bind(...rows.map((x) => x.id)).all<Row>();
+  const filesByLesson = new Map<string, Row[]>();
+  for (const file of files.results) {
+    const list = filesByLesson.get(clean(file.lesson_id)) || [];
+    list.push({ id: file.id, filename: file.filename, fileName: file.filename, contentType: file.content_type, sizeBytes: file.size_bytes });
+    filesByLesson.set(clean(file.lesson_id), list);
+  }
+  rows = rows.map((lesson) => ({ ...lesson, files: filesByLesson.get(clean(lesson.id)) || [] }));
+  if (role(user) === "superadmin") return rows;
+  if (write && r === "teacher") return rows.filter((x) => clean(x.owner_uid) === user.uid);
+  if (r === "teacher") return rows.filter((x) => clean(x.owner_uid) === user.uid);
+  if (["secretary", "headteacher", "bursar"].includes(r)) return rows;
+  if (r === "student" || r === "learner") {
+    const learners = await readRecords(env, user, "education", "learner", false);
+    const own = learners.find((x) => educationStudentIdentity(x, user));
+    const cls = own ? teacherName(recordFields(own)) : "";
+    return cls ? rows.filter((x) => Number(x.published) === 1 && clean(x.class_name).toLowerCase() === cls) : [];
+  }
+  if (r === "parent") {
+    const links = await env.DB.prepare(
+      "SELECT p.learner_id,p.institution_id,p.school_id,s.record_json FROM parent_links p " +
+      "JOIN sector_records s ON s.id=p.learner_id AND s.sector='education' AND s.record_type IN ('learner','student') " +
+      "WHERE p.parent_uid=? AND p.active=1 AND s.institution_id IS p.institution_id AND s.school_id IS p.school_id",
+    ).bind(user.uid).all<Row>();
+    const visible = new Set<string>();
+    for (const link of links.results) {
+      let data: Row;
+      try { data = JSON.parse(String(link.record_json || "{}")) as Row; } catch { continue; }
+      const className = clean(data.className || data.class_name).toLowerCase();
+      for (const lesson of rows) {
+        if (Number(lesson.published) === 1 &&
+            clean(lesson.institution_id) === clean(link.institution_id) &&
+            clean(lesson.school_id) === clean(link.school_id) &&
+            clean(lesson.class_name).toLowerCase() === className) visible.add(clean(lesson.id));
+      }
+    }
+    return rows.filter((x) => visible.has(clean(x.id)));
+  }
+  return [];
+}
+
+async function educationLessonRoute(request: Request, env: AuthEnv, user: AuthUser) {
+  const input = await body(request);
+  if (request.method === "GET") {
+    const current = effectiveRole(user, "education");
+    if (!(await allowed(env, user, "education", "lessons.read")) &&
+        !(await allowed(env, user, "education", "lessons.manage"))) return json({ ok: false, error: "Forbidden" }, 403);
+    return json({ ok: true, lessons: await educationLessons(env, user) });
+  }
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
+  const current = effectiveRole(user, "education");
+  if (!["teacher", "secretary", "headteacher"].includes(current) || !(await allowed(env, user, "education", "lessons.manage"))) {
+    return json({ ok: false, error: "Forbidden" }, 403);
+  }
+  const title = clean(input.title, 200), className = clean(input.className || input.class_name, 120);
+  const subject = clean(input.subject, 120), description = clean(input.description, 2000), youtubeUrl = clean(input.youtubeUrl || input.youtube_url, 500);
+  if (!title || !className || !subject) return json({ ok: false, error: "Title, className, and subject are required" }, 400);
+  let parsed: URL | null = null;
+  if (youtubeUrl) {
+    try { parsed = new URL(youtubeUrl); } catch { return json({ ok: false, error: "A valid YouTube URL is required" }, 400); }
+    if (parsed.protocol !== "https:" || !["youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be"].includes(parsed.hostname.toLowerCase()) ||
+        (!parsed.pathname.startsWith("/watch") && !parsed.hostname.includes("youtu.be"))) return json({ ok: false, error: "Only HTTPS YouTube URLs are accepted" }, 400);
+  }
+  const assignments = current === "teacher" ? await teacherAssignmentsForUser(env, user) : [];
+  if (current === "teacher" && !assignments.some((x) => teacherName(x) === className.toLowerCase() && teacherSubject(x) === subject.toLowerCase())) {
+    return json({ ok: false, error: "This lesson is limited to your assigned class and subject" }, 403);
+  }
+  const t = tenant(user), id = makeId("lesson"), ts = stamp();
+  try {
+    await env.DB.prepare("INSERT INTO education_lessons(id,institution_id,school_id,owner_uid,title,description,class_name,subject,youtube_url,published,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .bind(id, t.institutionId, t.schoolId, user.uid, title, description, className, subject, parsed?.toString() || "", 1, ts, ts).run();
+  } catch { return json({ ok: false, error: "Lesson could not be saved" }, 500); }
+  await audit(env, user, "create", "education_lesson", id);
+  return json({ ok: true, lesson: { id, institutionId: t.institutionId, schoolId: t.schoolId, ownerUid: user.uid, title, description, className, subject, youtubeUrl: parsed?.toString() || "", published: 1 } }, 201);
+}
+
+async function educationParentLinks(request: Request, env: AuthEnv, user: AuthUser, linkId = "") {
+  const current = effectiveRole(user, "education");
+  if (!(await allowed(env, user, "education", "parent_links.manage")) || !["secretary", "headteacher"].includes(current) && role(user) !== "superadmin") return json({ ok: false, error: "Forbidden" }, 403);
+  const sc = tenantWhere(user, "", "education");
+  if (request.method === "DELETE") {
+    if (!linkId) return json({ ok: false, error: "Link ID is required" }, 400);
+    const result = await env.DB.prepare(`UPDATE parent_links SET active=0,revoked_at=? WHERE id=? AND ${sc.sql} AND active=1`).bind(stamp(), linkId, ...sc.args).run();
+    await audit(env, user, "revoke", "parent_link", linkId);
+    return json({ ok: true, revoked: true, changed: Number((result as Row)?.meta?.changes || 0) });
+  }
+  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
+  const input = await body(request), parentEmail = clean(input.parentEmail, 240).toLowerCase(), learnerId = clean(input.learnerId, 300), relationship = clean(input.relationship, 80) || "parent";
+  if (!parentEmail || !learnerId) return json({ ok: false, error: "parentEmail and learnerId are required" }, 400);
+  const learner = (await env.DB.prepare(`SELECT id,institution_id,school_id FROM sector_records WHERE id=? AND sector='education' AND record_type IN ('learner','student') AND ${sc.sql} AND is_deleted=0 LIMIT 1`).bind(learnerId, ...sc.args).all<Row>()).results[0];
+  if (!learner) return json({ ok: false, error: "Learner is outside this school" }, 404);
+  const parent = (await env.DB.prepare("SELECT uid,role,active,disabled FROM users WHERE lower(email)=? LIMIT 1").bind(parentEmail).all<Row>()).results[0];
+  if (!parent || Number(parent.active ?? 0) !== 1 || Number(parent.disabled ?? 0) === 1 || clean(parent.role).toLowerCase() !== "parent") return json({ ok: false, error: "An active parent account is required" }, 400);
+  const learnerTenant = { institutionId: clean(learner.institution_id, 160) || null, schoolId: clean(learner.school_id, 160) || null };
+  const id = makeId("plink");
+  try {
+    await env.DB.prepare("INSERT INTO parent_links(id,institution_id,school_id,parent_uid,learner_id,relationship,active,created_by,created_at) VALUES (?,?,?,?,?,?,1,?,?)")
+      .bind(id, learnerTenant.institutionId, learnerTenant.schoolId, parent.uid, learnerId, relationship, user.uid, stamp()).run();
+  } catch { return json({ ok: false, error: "Parent link already exists or could not be saved" }, 409); }
+  await audit(env, user, "create", "parent_link", id, { parentUid: parent.uid, learnerId });
+  return json({ ok: true, link: { id, parentUid: parent.uid, learnerId, relationship, active: true, ...learnerTenant } }, 201);
+}
+
 async function education(request: Request, env: AuthEnv, user: AuthUser, pathname: string) {
   const caps = await capabilities(env, user, "education");
   const noTenantScope = !tenant(user).institutionId && !tenant(user).schoolId;
   if (noTenantScope && role(user) !== "superadmin" && request.method !== "GET") {
     return json({ ok: false, error: "Ask a superadmin to assign a school scope before editing records." }, 403);
   }
+  if (pathname === "/api/school/lessons") return educationLessonRoute(request, env, user);
+  const parentLink = pathname.match(/^\/api\/school\/parent-links(?:\/([^/]+))?$/);
+  if (parentLink) return educationParentLinks(request, env, user, parentLink[1] || "");
   if (pathname === "/api/school/education-workspace" && request.method === "GET") {
     const currentRole = effectiveRole(user, "education");
     const isSuperadmin = role(user) === "superadmin";
@@ -764,6 +890,8 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
         attendance: [],
         fees: [],
         statements: [],
+        subjects: [],
+        lessons: [],
       };
       if (student) {
         const studentFields = recordFields(student);
@@ -775,6 +903,9 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
         const className = teacherName({ className: studentFields.className || studentFields.class_name || studentFields.class });
         if (className) result.classes = (await readRecords(env, user, "education", "class", false))
           .filter((record) => teacherClassLabel(record) === className && sameEducationScope(record, student));
+         result.subjects = (await readRecords(env, user, "education", "subject", false))
+           .filter((record) => sameEducationScope(record, student));
+         result.lessons = await educationLessons(env, user);
       }
       return json(result);
     }
@@ -800,8 +931,38 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
           .filter((record) => teacherRecordMatchesAssignments(record, "attendance", assignments, requireScopedAssignments)),
         marks: (await readRecords(env, user, "education", "marks", false))
           .filter((record) => teacherRecordMatchesAssignments(record, "marks", assignments, requireScopedAssignments)),
+         lessons: (await educationLessons(env, user)).filter((lesson) => assignments.some((a) =>
+           teacherName(a) === clean(lesson.class_name).toLowerCase() &&
+           teacherSubject(a) === clean(lesson.subject).toLowerCase())),
       };
       return json(result);
+    }
+    if (currentRole === "parent") {
+      if (!can(caps, "lessons.read")) return json({ ok: false, error: "Parent lesson access is not enabled" }, 403);
+      const parentScope = tenantWhere(user, "", "education");
+      const links = await env.DB.prepare(`SELECT learner_id,institution_id,school_id FROM parent_links WHERE parent_uid=? AND active=1 AND ${parentScope.sql}`)
+        .bind(user.uid, ...parentScope.args).all<Row>();
+      const children = [];
+      for (const link of links.results) {
+        const learnerRow = (await env.DB.prepare(
+          `SELECT id,record_json,institution_id,school_id FROM sector_records WHERE id=? AND sector='education' AND record_type IN ('learner','student') AND institution_id IS ? AND school_id IS ? AND is_deleted=0 LIMIT 1`,
+        ).bind(link.learner_id, link.institution_id, link.school_id).all<Row>()).results[0];
+        if (!learnerRow) continue;
+        let learnerData: Row = {};
+        try { learnerData = JSON.parse(String(learnerRow.record_json || "{}")) as Row; } catch { continue; }
+        const learner = { ...learnerData, id: learnerRow.id, institutionId: learnerRow.institution_id, schoolId: learnerRow.school_id };
+        if (!learner) continue;
+        const child: Row = { ...learner, marks: [], attendance: [], fees: [], statements: [] };
+        const childViewer = { ...user, uid: clean(learnerData.uid || learnerData.userId || learnerData.studentUid || learnerRow.id),
+          email: clean(learnerData.email || learnerData.studentEmail), schoolId: clean(link.school_id) || null, institutionId: clean(link.institution_id) || null, role: "student" };
+        for (const type of ["marks", "attendance", "fee", "statement"] as const) child[type === "fee" ? "fees" : type === "statement" ? "statements" : type] =
+          (await readRecords(env, childViewer, "education", type, false)).filter((x) => studentRecordMatchesOwnProfile(x, learner, childViewer));
+        const learnerFields = recordFields(learner);
+        child.lessons = (await educationLessons(env, childViewer)).filter((x) =>
+          clean(x.class_name).toLowerCase() === teacherName(recordFields(learner)));
+        children.push(child);
+      }
+      return json({ ok: true, role: "parent", workspace: "parent", schoolId: user.schoolId, institutionId: user.institutionId, capabilities: caps.map((x) => x.capability), children });
     }
     const primary = isSuperadmin || currentRole === "secretary";
     const secondary = isSuperadmin || currentRole === "headteacher";
@@ -815,6 +976,10 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
       institutionId: user.institutionId,
       capabilities: caps.map((item) => item.capability),
     };
+    if ((primary || secondary || isSuperadmin) && can(caps, "parent_links.manage")) {
+      const linkScope = tenantWhere(user, "", "education");
+      result.parentLinks = (await env.DB.prepare(`SELECT p.id,p.institution_id,p.school_id,p.parent_uid,u.email AS parentEmail,p.learner_id,p.relationship,p.active,p.created_at,p.revoked_at FROM parent_links p LEFT JOIN users u ON u.uid=p.parent_uid WHERE ${linkScope.sql.replaceAll("institution_id", "p.institution_id").replaceAll("school_id", "p.school_id")} ORDER BY p.created_at DESC LIMIT 500`).bind(...linkScope.args).all<Row>()).results;
+    }
     if (primary || secondary || isSuperadmin) {
       if (hasStudents) result.students = await readRecords(env, user, "education", "learner");
       result.classes = await readRecords(env, user, "education", "class");
@@ -865,7 +1030,7 @@ function publicUser(row: Row) {
   };
 }
 const ALLOWED_ROLES = new Set([
-  "superadmin", "secretary", "headteacher", "head_teacher", "bursar", "accountant", "teacher", "teacher_staff", "teacher_independent", "student", "learner", "individual", "school", "school_admin",
+  "superadmin", "secretary", "headteacher", "head_teacher", "bursar", "accountant", "teacher", "teacher_staff", "teacher_independent", "student", "learner", "parent", "individual", "school", "school_admin",
   "clinic_admin", "doctor", "nurse", "receptionist", "pharmacist", "patient",
   "farm_admin", "farm_director", "farm_manager", "farm_worker",
   "mfi_admin", "loan_officer", "loan_manager", "loan_director", "borrower",
@@ -1049,6 +1214,9 @@ export async function handleDomainRoute(request: Request, env: AuthEnv, user: Au
   if (!protectedRoute) return null;
   if (!user) return json({ ok: false, error: "Authentication required" }, 401);
   if (url.pathname.startsWith("/api/admin/")) return adminRoute(request, env, user, url.pathname);
+  if (url.pathname.startsWith("/api/school/lessons/") && url.pathname.includes("/files")) {
+    return handleEducationFileRoute(request, env, user, url.pathname);
+  }
   if (url.pathname.startsWith("/api/school/")) return education(request, env, user, url.pathname);
   if (url.pathname === "/api/pay" || url.pathname.startsWith("/api/payments")) return payments(request, env, user, url.pathname);
   const match = url.pathname.match(/^\/api\/(clinic|farm|mfi)\/records(?:\/([^/]+))?$/);
