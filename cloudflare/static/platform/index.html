@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4b2e9e">
+  <meta name="description" content="Explore APSHULE classes, lessons, learning materials, seminars and subscription plans.">
+  <link rel="stylesheet" href="/platform/platform.css">
+  <title>Learning platform | APSHULE</title>
+</head>
+<body>
+  <div class="platform-app">
+    <header class="platform-header">
+      <a class="platform-brand" href="/platform/" aria-label="APSHULE learning platform home">
+        <span class="platform-brand-mark" id="platform-brand-mark">A</span>
+        <span class="platform-brand-copy"><strong>APSHULE</strong><small>Learn with ease, from anywhere</small></span>
+      </a>
+      <div class="platform-header-meta">
+        <span id="platform-state" class="platform-state" role="status" aria-live="polite">Loading platform…</span>
+        <button id="platform-refresh" class="platform-refresh" type="button">Refresh</button>
+      </div>
+    </header>
+    <main class="platform-main">
+      <section class="platform-hero" aria-labelledby="platform-title">
+        <div>
+          <p class="platform-eyebrow">Your learning space</p>
+          <h1 id="platform-title">Welcome to APSHULE</h1>
+          <p>Choose a class, find a subject, then continue with a lesson or its learning materials. Seminars, events and current platform updates are here too.</p>
+        </div>
+        <aside class="platform-hero-aside" aria-label="Platform overview">
+          <span>Learn from anywhere</span>
+          <strong id="platform-hero-count">Classes and lessons</strong>
+        </aside>
+      </section>
+      <p id="platform-status" class="platform-status" role="status" aria-live="polite">Loading learning platform content…</p>
+      <div id="platform-loading" class="platform-loading" aria-label="Loading content">
+        <div class="platform-skeleton wide"></div><div class="platform-skeleton"></div><div class="platform-skeleton"></div>
+      </div>
+      <div id="platform-error" class="platform-empty" hidden role="alert"></div>
+
+      <section id="view-home" class="platform-view" aria-labelledby="class-heading">
+        <section class="platform-section" id="classes-section">
+          <div class="platform-section-head">
+            <div><h2 id="class-heading">Choose your class</h2><p>Pick a class to see its available subjects and lessons.</p></div>
+          </div>
+          <div id="platform-classes"></div>
+          <div id="platform-subjects" class="platform-subjects" aria-label="Subjects" hidden></div>
+          <div id="platform-learning-results" class="platform-results"></div>
+        </section>
+
+        <section class="platform-section" aria-labelledby="home-events-title">
+          <div class="platform-section-head"><div><h2 id="home-events-title">Upcoming seminars and events</h2><p>Keep track of learning dates and activities.</p></div><span id="home-events-count" class="platform-count"></span></div>
+          <div id="platform-home-events"></div>
+        </section>
+
+        <section class="platform-section" aria-labelledby="resources-heading">
+          <div class="platform-section-head"><div><h2 id="resources-heading">Learning materials</h2><p>Open available PDF materials by class and subject.</p></div><span id="resources-count" class="platform-count"></span></div>
+          <div id="platform-resources"></div>
+        </section>
+
+        <section class="platform-section" aria-labelledby="plans-heading">
+          <div class="platform-section-head"><div><h2 id="plans-heading">Subscription plans</h2><p>Choose the plan duration that suits your learning.</p></div></div>
+          <div id="platform-plans" class="platform-plan-grid"></div>
+          <p class="platform-notice">Subscriptions are not connected to checkout yet. Subscribe is unavailable and no payment can be made through this page.</p>
+        </section>
+
+        <section class="platform-section" aria-labelledby="live-heading">
+          <div class="platform-section-head"><div><h2 id="live-heading">Live lessons</h2><p>Live lesson rooms shared by APSHULE.</p></div></div>
+          <p class="platform-live-warning">Live lessons open a public Jitsi room. Anyone with the room link can join; the room is not admission-controlled.</p>
+          <div id="platform-live-lessons"></div>
+        </section>
+      </section>
+
+      <section id="view-list" class="platform-view" aria-labelledby="list-heading" hidden>
+        <section class="platform-section">
+          <div class="platform-section-head"><div><h2 id="list-heading">My List</h2><p>Saved lessons stay on this device.</p></div></div>
+          <div id="platform-saved-list"></div>
+        </section>
+      </section>
+
+      <section id="view-alerts" class="platform-view" aria-labelledby="alerts-heading" hidden>
+        <section class="platform-section">
+          <div class="platform-section-head"><div><h2 id="alerts-heading">Alerts and events</h2><p>Upcoming seminars and event information.</p></div></div>
+          <div id="platform-alert-events"></div>
+        </section>
+      </section>
+
+      <section id="view-account" class="platform-view" aria-labelledby="account-heading" hidden>
+        <section class="platform-section">
+          <div class="platform-section-head"><div><h2 id="account-heading">Account</h2><p>Feedback is available to signed-in APSHULE accounts.</p></div></div>
+          <div class="platform-card">
+            <div id="platform-auth-state" class="platform-account"></div>
+            <form id="platform-feedback-form" class="platform-feedback" hidden>
+              <label for="platform-feedback-message">Share feedback with APSHULE</label>
+              <textarea id="platform-feedback-message" name="message" maxlength="3000" required placeholder="What would make learning better for you?"></textarea>
+              <button type="submit">Send feedback</button>
+              <p id="platform-feedback-status" class="platform-status" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-about" class="platform-view" aria-labelledby="about-heading" hidden>
+        <section class="platform-section">
+          <div class="platform-section-head"><div><h2 id="about-heading">About APSHULE</h2><p>About this learning platform.</p></div></div>
+          <article class="platform-card">
+            <h3 id="platform-about-title">APSHULE</h3>
+            <p id="platform-about-body" class="platform-about">About information is not available yet.</p>
+          </article>
+        </section>
+      </section>
+      <footer class="platform-section platform-count">APSHULE · Learning and school communities</footer>
+    </main>
+    <nav class="platform-bottom-nav" aria-label="Main navigation">
+      <button class="platform-nav-item" type="button" data-view-target="home" aria-current="page">
+        <span class="platform-nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.6 12 3l9 7.6v9.1a1.3 1.3 0 0 1-1.3 1.3h-5.1v-6.2H9.4V21H4.3A1.3 1.3 0 0 1 3 19.7z"/></svg></span><span>Home</span>
+      </button>
+      <button class="platform-nav-item" type="button" data-view-target="list">
+        <span class="platform-nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-8.5-5.1-8.5-11.2A4.7 4.7 0 0 1 12 7.2a4.7 4.7 0 0 1 8.5 2.6C20.5 15.9 12 21 12 21z"/></svg></span><span>My List</span>
+      </button>
+      <button class="platform-nav-item" type="button" data-view-target="alerts">
+        <span class="platform-nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9zm-8 12h4a2 2 0 0 1-4 0z"/></svg></span><span>Alerts</span>
+      </button>
+      <button class="platform-nav-item" type="button" data-view-target="account">
+        <span class="platform-nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z"/></svg></span><span>Account</span>
+      </button>
+      <button class="platform-nav-item" type="button" data-view-target="about">
+        <span class="platform-nav-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2zm-1-8.2a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg></span><span>About</span>
+      </button>
+    </nav>
+  </div>
+  <script src="/platform/platform.js" defer></script>
+</body>
+</html>

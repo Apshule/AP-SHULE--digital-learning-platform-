@@ -34,6 +34,7 @@ test("Pages bundle includes the public site and all core workspaces", async () =
     "farm/index.html",
     "mfi/index.html",
     "admin/index.html",
+    "platform/index.html",
     "skills/index.html",
     "tech/index.html",
     "profile.html",

@@ -66,6 +66,7 @@ const STATIC_ROUTE_PREFIXES = [
   "/education/",
   "/farm/",
   "/mfi/",
+  "/platform/",
   "/student/",
   "/teacher/",
   "/secretary/",
@@ -132,7 +133,7 @@ function isExplicitStaticRoute(pathname: string): boolean {
 }
 
 function redirectDirectoryRoot(pathname: string, search: string): Response | null {
-  if (!["/admin", "/bursar", "/clinic", "/education", "/farm", "/mfi", "/parent", "/secretary", "/skills", "/student", "/teacher", "/tech"].includes(pathname)) return null;
+  if (!["/admin", "/bursar", "/clinic", "/education", "/farm", "/mfi", "/parent", "/platform", "/secretary", "/skills", "/student", "/teacher", "/tech"].includes(pathname)) return null;
   return new Response(null, {
     status: 308,
     headers: { location: `${pathname}/${search}` },

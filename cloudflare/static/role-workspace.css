@@ -160,6 +160,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .rw-section [data-empty-block] { color: var(--muted); font-size: 12px; }
 @media (max-width: 760px) {
   .rw-topbar { position: relative; padding: 11px 18px; }
+  .rw-top-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .rw-top-actions .rw-button { min-height: 35px; padding: 7px 10px; font-size: 11px; }
   .rw-brand-copy small { display: none; }
   .rw-main { width: calc(100% - 30px); padding-top: 20px; }
   .rw-intro { grid-template-columns: 1fr; align-items: start; padding: 25px 22px; gap: 18px; }
@@ -171,6 +173,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .rw-form { grid-template-columns: 1fr; }
   .rw-field.full, .rw-form-actions { grid-column: auto; }
   .rw-status-line { align-items: start; flex-direction: column; }
+}
+@media (max-width: 400px) {
+  .rw-topbar { flex-wrap: wrap; }
+  .rw-top-actions { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }

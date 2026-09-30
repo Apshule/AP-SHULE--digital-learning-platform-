@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/admin/platform-admin.css">
   <title>Super Admin | APSHULE</title>
 </head>
 <body>
@@ -23,6 +24,16 @@
           <a class="workspace-shortcut" href="/farm/"><strong>Farm</strong><span>Farm operations and inventory</span></a>
           <a class="workspace-shortcut" href="/mfi/"><strong>Microfinance</strong><span>Borrower and loan workflows</span></a>
         </nav>
+      </section>
+      <section class="card panel admin-platform" aria-labelledby="platform-admin-heading">
+        <div class="toolbar">
+          <div><p class="eyebrow">APSHULE learning platform</p><h2 id="platform-admin-heading">Platform content and tools</h2><p class="muted">Manage school registry, learning content, events, feedback and public live-room links.</p></div>
+          <div class="button-row"><a class="button secondary" href="/platform/">Open learning platform</a><button id="platform-admin-refresh" class="button secondary" type="button">Refresh platform data</button></div>
+        </div>
+        <p id="platform-admin-status" class="platform-admin-notice" role="status" aria-live="polite">Loading platform administration…</p>
+        <div id="platform-admin-content" class="platform-admin-grid" aria-live="polite">
+          <div class="platform-admin-card wide"><p>Loading platform administration data…</p></div>
+        </div>
       </section>
       <section class="card panel">
         <div class="toolbar"><div><h2>Teacher applications</h2><p class="muted">Applicants cannot sign in until approved and assigned any required school or institution scope.</p></div></div>
@@ -74,6 +85,7 @@
     .teacher-review-controls input{min-width:0;padding:7px 9px;border:1px solid #ddd7e9;border-radius:8px}
     .teacher-review-actions{display:flex;gap:6px;flex-wrap:wrap}
   </style>
+  <script src="/admin/platform-admin.js" defer></script>
   <script>
     const $ = (id) => document.getElementById(id);
     async function request(path, options = {}) {

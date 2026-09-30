@@ -30,6 +30,7 @@ describe("APSHULE Worker routing", () => {
       "/farm/",
       "/mfi/",
       "/admin/",
+      "/platform/",
       "/student/",
       "/teacher/",
       "/secretary/",

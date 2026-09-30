@@ -1,5 +1,6 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
 import { handleEducationFileRoute } from "./education-files";
+import { handleEducationPlatformRoute } from "./education-platform";
 
 type MaybeUser = AuthUser | null | undefined;
 type Row = Record<string, unknown>;
@@ -1213,6 +1214,9 @@ export async function handleDomainRoute(request: Request, env: AuthEnv, user: Au
     url.pathname.startsWith("/api/admin/") || url.pathname === "/api/pay" || url.pathname.startsWith("/api/payments");
   if (!protectedRoute) return null;
   if (!user) return json({ ok: false, error: "Authentication required" }, 401);
+  if (url.pathname.startsWith("/api/school/platform-") || url.pathname.startsWith("/api/admin/platform")) {
+    return handleEducationPlatformRoute(request, env, user, url.pathname);
+  }
   if (url.pathname.startsWith("/api/admin/")) return adminRoute(request, env, user, url.pathname);
   if (url.pathname.startsWith("/api/school/lessons/") && url.pathname.includes("/files")) {
     return handleEducationFileRoute(request, env, user, url.pathname);
