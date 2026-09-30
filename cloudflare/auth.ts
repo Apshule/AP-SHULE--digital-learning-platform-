@@ -14,12 +14,12 @@ const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
 const LOGIN_OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 const LOGIN_OTP_MAX_FAILURES = 3;
 const LOGIN_OTP_LOCK_MS = 15 * 60 * 1000;
-const SIGNUP_CODE_TTL_MS = 10 * 60 * 1000;
+const SIGNUP_CODE_TTL_MS = 5 * 60 * 1000;
 const SIGNUP_RESEND_COOLDOWN_MS = 60 * 1000;
 const SIGNUP_MAX_FAILURES = 5;
 const SIGNUP_LOCK_MS = 15 * 60 * 1000;
 const DUMMY_PASSWORD_HASH = "pbkdf2-sha256$100000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-const SIGNUP_MESSAGE = "If this email can be registered, a verification code has been sent. It expires in 10 minutes; wait 60 seconds before requesting another.";
+const SIGNUP_MESSAGE = "If this email can be registered, a verification code has been sent. It expires in 5 minutes; wait 60 seconds before requesting another.";
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -213,8 +213,8 @@ async function sendSignupVerificationEmail(env: AuthEnv, email: string, code: st
       from: env.RESEND_FROM_EMAIL,
       to: [email],
       subject: "Verify your APSHULE account",
-      text: `Your APSHULE email verification code is ${code}.\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.`,
-      html: `<p>Your APSHULE email verification code is <strong>${code}</strong>.</p><p>This code expires in 10 minutes. If you did not request it, you can ignore this email.</p>`,
+      text: `Your APSHULE email verification code is ${code}.\n\nThis code expires in 5 minutes. If you did not request it, you can ignore this email.`,
+      html: `<p>Your APSHULE email verification code is <strong>${code}</strong>.</p><p>This code expires in 5 minutes. If you did not request it, you can ignore this email.</p>`,
     }),
   });
   if (!response.ok) throw new Error(`Signup verification email delivery failed (${response.status})`);
@@ -257,6 +257,10 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
 
   if (path === "/api/auth/request-signup-verification") {
     if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+      console.error("[auth] signup verification sender is not configured", {
+        apiKeyConfigured: Boolean(env.RESEND_API_KEY),
+        fromAddressConfigured: Boolean(env.RESEND_FROM_EMAIL),
+      });
       return json({ ok: false, error: "Email verification is not configured" }, 503);
     }
     const body = await input(req);
@@ -268,9 +272,10 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const teachingDetails = text(body.teachingDetails, 1000);
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
     const validType = ["student", "teacher_staff", "teacher_independent"].includes(accountType);
-    if (!validEmail || !displayName || displayName.length > 160 || password.length < 12 || password.length > 1000 ||
+    const minPasswordLength = accountType === "student" ? 6 : 12;
+    if (!validEmail || !displayName || displayName.length > 160 || password.length < minPasswordLength || password.length > 1000 ||
       !validType || (accountType === "teacher_staff" && !organizationName)) {
-      return json({ ok: false, error: "Enter a valid name, email, account type, and password of at least 12 characters. School teaching applications also need a school or organization name." }, 400);
+      return json({ ok: false, error: `Enter a valid name, email, account type, and password of at least ${minPasswordLength} characters. School teaching applications also need a school or organization name.` }, 400);
     }
     if (!await checkRateLimit(env, req, "signup-request", email)) return json({ ok: true, message: SIGNUP_MESSAGE });
     const existing = await env.DB.prepare("SELECT uid FROM users WHERE lower(email)=? LIMIT 1").bind(email).all<{ uid: string }>();
@@ -303,7 +308,11 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     if (!saved.results.length) return json({ ok: true, message: SIGNUP_MESSAGE });
     try {
       await sendSignupVerificationEmail(env, email, code);
-    } catch {
+    } catch (error) {
+      console.error(
+        "[auth] signup verification email delivery failed",
+        error instanceof Error ? error.message : "unknown provider failure",
+      );
       await env.DB.prepare("DELETE FROM signup_challenges WHERE email=? AND code_hash=?").bind(email, codeHash).run();
       return json({ ok: false, error: "Verification email could not be delivered. Try again later." }, 502);
     }

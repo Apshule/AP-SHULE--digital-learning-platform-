@@ -123,6 +123,14 @@ test("Pages bundle includes password sign-in, verified signup, and teacher revie
   assert.match(page, /api\/auth\/login/);
   assert.match(page, /api\/auth\/request-signup-verification/);
   assert.match(page, /api\/auth\/verify-signup/);
+  assert.match(page, /id="resend-signup-code"/);
+  assert.match(page, /Resend in \$\{remaining\}s/);
+  assert.match(page, /Student verification codes expire after 5 minutes/);
+  assert.match(page, /minlength="6"/);
+  assert.match(page, /minLength = \$\("account-type"\)\.value === "student" \? 6 : 12/);
+  const styles = await readFile(join(output, "landing.css"), "utf8");
+  assert.match(styles, /\.landing-login #resend-signup-code/);
+  assert.match(styles, /background: var\(--landing-purple\)/);
   assert.match(page, /teacher_staff/);
   const admin = await readFile(join(output, "admin", "index.html"), "utf8");
   assert.match(admin, /api\/admin\/teacher-applications/);

@@ -127,12 +127,12 @@
                 </div>
               </div>
               <div>
-                <label for="signup-password">Password (at least 12 characters)</label>
-                <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="1000" required>
+                <label id="signup-password-label" for="signup-password">Password (at least 6 characters)</label>
+                <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="1000" required>
               </div>
               <div>
                 <label for="signup-password-confirm">Confirm password</label>
-                <input id="signup-password-confirm" name="passwordConfirm" type="password" autocomplete="new-password" minlength="12" maxlength="1000" required>
+                <input id="signup-password-confirm" name="passwordConfirm" type="password" autocomplete="new-password" minlength="6" maxlength="1000" required>
               </div>
               <button class="landing-button landing-button-primary landing-submit" type="submit">Email me a verification code</button>
             </form>
@@ -143,7 +143,7 @@
               </div>
               <button class="landing-button landing-button-primary landing-submit" type="submit">Verify email and continue</button>
               <div class="landing-actions">
-                <button id="resend-signup-code" class="landing-button landing-button-secondary" type="button">Send another code</button>
+                <button id="resend-signup-code" class="landing-button landing-button-secondary" type="button" aria-live="off" disabled>Resend in 60s</button>
               </div>
             </form>
           </div>
@@ -157,7 +157,7 @@
             </div>
           </div>
           <p id="login-message" class="notice" role="status" aria-live="polite"></p>
-          <p class="landing-forgot landing-auth-note">Verification and sign-in codes expire after 10 minutes. New passwords must be at least 12 characters.</p>
+          <p class="landing-forgot landing-auth-note">Student verification codes expire after 5 minutes. Sign-in and password reset codes expire after 10 minutes. Student passwords need at least 6 characters; teacher applicant passwords need at least 12.</p>
         </div>
       </section>
 
@@ -416,12 +416,20 @@
     });
     $("signin-tab").addEventListener("click", () => setAuthTab("signin"));
     $("signup-tab").addEventListener("click", () => setAuthTab("signup"));
+    function updateSignupPasswordPolicy() {
+      const minLength = $("account-type").value === "student" ? 6 : 12;
+      $("signup-password").minLength = minLength;
+      $("signup-password-confirm").minLength = minLength;
+      $("signup-password-label").textContent = `Password (at least ${minLength} characters)`;
+    }
     $("account-type").addEventListener("change", () => {
       const isTeacher = $("account-type").value !== "student";
       const needsOrganization = $("account-type").value === "teacher_staff";
       $("teacher-fields").hidden = !isTeacher;
       $("organization-name").required = needsOrganization;
+      updateSignupPasswordPolicy();
     });
+    updateSignupPasswordPolicy();
     $("signup-password-confirm").addEventListener("input", () => {
       $("signup-password-confirm").setCustomValidity(
         $("signup-password-confirm").value === $("signup-password").value ? "" : "Passwords do not match.",
@@ -432,7 +440,31 @@
         $("signup-password-confirm").value === $("signup-password").value ? "" : "Passwords do not match.",
       );
     });
+    let signupResendTimer = 0;
+    let signupResendAvailableAt = 0;
+    function updateSignupResendButton() {
+      const button = $("resend-signup-code");
+      const remaining = Math.max(0, Math.ceil((signupResendAvailableAt - Date.now()) / 1000));
+      button.disabled = remaining > 0;
+      button.textContent = remaining > 0 ? `Resend in ${remaining}s` : "Send another code";
+      if (remaining === 0 && signupResendTimer) {
+        window.clearInterval(signupResendTimer);
+        signupResendTimer = 0;
+      }
+    }
+    function startSignupResendCooldown() {
+      if (signupResendTimer) window.clearInterval(signupResendTimer);
+      signupResendAvailableAt = Date.now() + 60 * 1000;
+      updateSignupResendButton();
+      signupResendTimer = window.setInterval(updateSignupResendButton, 1000);
+    }
     async function requestSignupCode() {
+      const resending = !$("signup-verify-form").hidden;
+      const resendButton = $("resend-signup-code");
+      const submitButton = $("signup-form").querySelector('button[type="submit"]');
+      if (resending && resendButton.disabled) return;
+      if (resending) resendButton.disabled = true;
+      else submitButton.disabled = true;
       const values = Object.fromEntries(new FormData($("signup-form")).entries());
       message($("login-message"), "Sending an email verification code if this address can be registered…");
       try {
@@ -450,9 +482,16 @@
         $("signup-form").hidden = true;
         $("signup-verify-form").hidden = false;
         $("signup-code").focus();
+        startSignupResendCooldown();
         message($("login-message"), result.message || "If this email can be registered, a verification code has been sent.");
       } catch (error) {
+        if (resending) {
+          resendButton.disabled = false;
+          resendButton.textContent = "Send another code";
+        }
         message($("login-message"), error.message, "error");
+      } finally {
+        if (!resending) submitButton.disabled = false;
       }
     }
     $("signup-form").addEventListener("submit", async (event) => {
@@ -487,7 +526,7 @@
     request("/api/auth/session", { method: "GET", headers: {} })
       .then((result) => { if (result.user) finishSignIn(result.user); })
       .catch(() => {});
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v13").catch(() => {});
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js?rev=cloudflare-shell-v14").catch(() => {});
   </script>
 </body>
 </html>

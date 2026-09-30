@@ -241,6 +241,7 @@ test("request, verify, and complete a single-use password reset", async () => {
 });
 
 test("creates a student account only after a one-use email verification code", async () => {
+  const startedAt = Date.now();
   const password = "Student-signup-password-2026";
   const requested = await post("/api/auth/request-signup-verification", {
     email: "new-student@example.com",
@@ -251,6 +252,8 @@ test("creates a student account only after a one-use email verification code", a
   assert.equal(requested.response.status, 200);
   assert.equal(requested.data.ok, true);
   assert.equal(sentEmails.length, 1);
+  assert.match(String(sentEmails[0].text), /expires in 5 minutes/i);
+  assert.match(String(sentEmails[0].html), /expires in 5 minutes/i);
   const code = String(sentEmails[0].text).match(/code is (\d{6})/)?.[1];
   assert.ok(code);
   const challenge = rawDatabase.prepare(
@@ -259,7 +262,8 @@ test("creates a student account only after a one-use email verification code", a
   assert.match(challenge.password_hash, /^pbkdf2-sha256\$100000\$/);
   assert.match(challenge.code_hash, /^pbkdf2-sha256\$100000\$/);
   assert.notEqual(challenge.code_hash, code);
-  assert.ok(challenge.expires_at_ms > Date.now());
+  assert.ok(challenge.expires_at_ms >= startedAt + 5 * 60 * 1000 - 2_000);
+  assert.ok(challenge.expires_at_ms <= startedAt + 5 * 60 * 1000 + 2_000);
   assert.equal(scalar("SELECT COUNT(*) AS value FROM users WHERE lower(email)=?", "new-student@example.com"), 0);
   await post("/api/auth/request-signup-verification", {
     email: "new-student@example.com",
@@ -279,6 +283,45 @@ test("creates a student account only after a one-use email verification code", a
   assert.equal(scalar("SELECT COUNT(*) AS value FROM teacher_applications"), 0);
   const replay = await post("/api/auth/verify-signup", { email: "new-student@example.com", code });
   assert.equal(replay.response.status, 400);
+});
+
+test("allows six-character student passwords and keeps teacher applicants at twelve", async () => {
+  const tooShortStudent = await post("/api/auth/request-signup-verification", {
+    email: "short-student@example.com",
+    displayName: "Short Student",
+    password: "abc12",
+    accountType: "student",
+  });
+  assert.equal(tooShortStudent.response.status, 400);
+
+  const student = await post("/api/auth/request-signup-verification", {
+    email: "six-char-student@example.com",
+    displayName: "Six Character Student",
+    password: "abc123",
+    accountType: "student",
+  });
+  assert.equal(student.response.status, 200);
+  assert.equal(student.data.ok, true);
+  assert.equal(sentEmails.length, 1);
+
+  const shortTeacher = await post("/api/auth/request-signup-verification", {
+    email: "short-teacher@example.com",
+    displayName: "Short Teacher",
+    password: "teacher123",
+    accountType: "teacher_independent",
+  });
+  assert.equal(shortTeacher.response.status, 400);
+  assert.equal(sentEmails.length, 1);
+
+  const teacher = await post("/api/auth/request-signup-verification", {
+    email: "long-teacher@example.com",
+    displayName: "Long Teacher",
+    password: "Teacher-signup-password-2026",
+    accountType: "teacher_independent",
+  });
+  assert.equal(teacher.response.status, 200);
+  assert.equal(teacher.data.ok, true);
+  assert.equal(sentEmails.length, 2);
 });
 
 test("holds teacher accounts inactive until a Super Admin approves and scopes them", async () => {

@@ -362,6 +362,23 @@ body {
   background: #fff;
 }
 
+.landing-login #resend-signup-code {
+  color: #fff;
+  border-color: var(--landing-purple);
+  background: var(--landing-purple);
+}
+
+.landing-login #resend-signup-code:hover:not(:disabled) {
+  background: var(--landing-purple-dark);
+}
+
+.landing-login #resend-signup-code:disabled {
+  color: var(--landing-ink);
+  border-color: #d8cfe9;
+  background: #f3f0f8;
+  cursor: not-allowed;
+}
+
 .landing-login .notice {
   margin: 10px 0 0;
   color: #51466b;
