@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { AuthUser } from "./backend-types";
+import type { AuthEnv, AuthUser } from "./backend-types";
 import { handleProfileFileRoute } from "./profile-files";
 
 type ProfileRow = { active_key: string; content_type: string } | null;
@@ -34,6 +34,24 @@ class MemoryDatabase {
 
   async batch() {
     return [];
+  }
+
+  async query<T = Record<string, unknown>>(sql: string, values: unknown[] = []): Promise<{ rows: T[] }> {
+    if (sql.includes("SELECT active_key")) {
+      return { rows: this.photo ? [this.photo as unknown as T] : [] };
+    }
+    if (sql.includes("FROM public.storage_migration_manifest")) {
+      return {
+        rows: [{
+          object_key: this.placeholderKey,
+          content_type: "image/jpeg",
+        } as unknown as T],
+      };
+    }
+    if (sql.includes("INSERT INTO profile_photos")) {
+      this.photo = { active_key: String(values[1]), content_type: String(values[2]) };
+    }
+    return { rows: [] };
   }
 
   private async all<T>(sql: string, values: unknown[]): Promise<{ results: T[] }> {
@@ -96,7 +114,13 @@ const user: AuthUser = {
 function environment(db = new MemoryDatabase(), files = new MemoryFiles()) {
   const placeholderBytes = new Uint8Array([0xff, 0xd8, 0xff, 0x01]);
   files.objects.set(db.placeholderKey, { bytes: placeholderBytes, contentType: "image/jpeg" });
-  return { DB: db, FILES: files, PUBLIC_SITE_URL: "https://appshule.com", placeholderBytes };
+  return {
+    DB: db,
+    PG: { query: db.query.bind(db) } as unknown as NonNullable<AuthEnv["PG"]>,
+    FILES: files,
+    PUBLIC_SITE_URL: "https://appshule.com",
+    placeholderBytes,
+  };
 }
 
 test("serves a manifest placeholder until the user has a profile photo", async () => {

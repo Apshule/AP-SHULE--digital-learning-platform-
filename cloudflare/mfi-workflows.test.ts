@@ -18,7 +18,20 @@ function env(
     },
     async run() { return {}; },
   });
-  return { DB: { prepare(sql: string) { return statement(sql, []); }, async batch() { return []; } }, PUBLIC_SITE_URL: "" };
+  const pg = {
+    async query<T = Record<string, unknown>>(sql: string): Promise<{ rows: T[] }> {
+      if (sql.includes("role_capabilities")) return { rows: roleCapabilities as T[] };
+      if (sql.includes("sector_records") && sql.trimStart().toLowerCase().startsWith("select")) {
+        return { rows: rows as T[] };
+      }
+      return { rows: [] as T[] };
+    },
+  };
+  return {
+    DB: { prepare(sql: string) { return statement(sql, []); }, async batch() { return []; } },
+    PG: pg as AuthEnv["PG"],
+    PUBLIC_SITE_URL: "",
+  };
 }
 
 describe("safe first MFI workflow slice", () => {

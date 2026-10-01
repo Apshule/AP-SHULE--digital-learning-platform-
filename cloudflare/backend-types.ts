@@ -1,19 +1,4 @@
-export interface D1Statement {
-  bind(...values: unknown[]): D1Statement;
-  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
-  run(): Promise<unknown>;
-}
-
-export interface D1BatchResult<T = Record<string, unknown>> {
-  results?: T[];
-  success?: boolean;
-  meta?: { changes?: number };
-}
-
-export interface D1Database {
-  prepare(query: string): D1Statement;
-  batch(statements: D1Statement[]): Promise<D1BatchResult[]>;
-}
+import type { NeonClient } from "./neon-db";
 
 export interface SessionsKV {
   get(key: string, type?: "text" | "json"): Promise<unknown>;
@@ -23,7 +8,8 @@ export interface SessionsKV {
 
 /** Bindings used by the Cloudflare-native authentication module. */
 export interface AuthEnv {
-  DB: D1Database;
+  NEON_DATABASE_URL?: string;
+  PG?: NeonClient;
   SESSIONS?: SessionsKV;
   PUBLIC_SITE_URL: string;
   RESEND_API_KEY?: string;

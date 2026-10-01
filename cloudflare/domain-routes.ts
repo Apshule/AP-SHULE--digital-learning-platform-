@@ -1,6 +1,7 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
 import { handleEducationFileRoute } from "./education-files";
 import { handleEducationPlatformRoute } from "./education-platform";
+import { inNeonTransaction } from "./neon-db";
 
 type MaybeUser = AuthUser | null | undefined;
 type Row = Record<string, unknown>;
@@ -115,23 +116,28 @@ function effectiveRole(user: AuthUser, sector: string): string {
 function tenant(user: AuthUser): { institutionId: string | null; schoolId: string | null } {
   return { institutionId: user.institutionId || null, schoolId: user.schoolId || null };
 }
-function tenantWhere(user: AuthUser, alias = "", sector = ""): { sql: string; args: string[] } {
-  if (role(user) === "superadmin") return { sql: "1=1", args: [] };
+function tenantWhere(user: AuthUser, alias = "", sector = "", firstParameter = 1): { sql: string; args: string[] } {
+  if (role(user) === "superadmin") return { sql: "TRUE", args: [] };
   const p = alias ? `${alias}.` : "";
   const t = tenant(user);
   if (!t.institutionId && !t.schoolId) {
-    return sector === "education" ? { sql: "1=1", args: [] } : { sql: "1=0", args: [] };
+    return sector === "education" ? { sql: "TRUE", args: [] } : { sql: "FALSE", args: [] };
   }
-  if (t.schoolId) return { sql: `(${p}school_id = ? OR (${p}school_id IS NULL AND ${p}institution_id = ?))`, args: [t.schoolId, t.institutionId || ""] };
-  return { sql: `${p}institution_id = ?`, args: [t.institutionId!] };
+  if (t.schoolId) return {
+    sql: `(${p}school_id = $${firstParameter} OR (${p}school_id IS NULL AND ${p}institution_id = $${firstParameter + 1}))`,
+    args: [t.schoolId, t.institutionId || ""],
+  };
+  return { sql: `${p}institution_id = $${firstParameter}`, args: [t.institutionId!] };
 }
 async function capabilities(env: AuthEnv, user: AuthUser, sector: string): Promise<Capability[]> {
   if (role(user) === "superadmin") return [{ capability: "*", scope: "tenant", sector: "*" }];
   const r = effectiveRole(user, sector);
-  const result = await env.DB.prepare(
-    "SELECT capability, scope, sector FROM role_capabilities WHERE lower(role)=? AND (sector=? OR sector='*')",
-  ).bind(r, sector).all<Capability>();
-  return result.results;
+  if (!env.PG) throw new Error("PostgreSQL persistence is unavailable");
+  const result = await env.PG.query<Capability>(
+    "SELECT capability, scope, sector FROM role_capabilities WHERE lower(role)=$1 AND (sector=$2 OR sector='*')",
+    [r, sector],
+  );
+  return result.rows;
 }
 function can(caps: Capability[], capability: string): boolean {
   if (caps.some((c) => c.capability === "*" || c.capability === capability)) return true;
@@ -145,9 +151,11 @@ export async function allowed(env: AuthEnv, user: AuthUser, sector: string, capa
 }
 async function audit(env: AuthEnv, user: AuthUser, action: string, resourceType: string, resourceId: string, metadata: unknown = {}) {
   const t = tenant(user);
-  await env.DB.prepare(
-    "INSERT INTO audit (id,institution_id,school_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-  ).bind(makeId("audit"), t.institutionId, t.schoolId, user.uid, action, resourceType, resourceId, JSON.stringify(metadata), stamp()).run();
+  if (!env.PG) throw new Error("PostgreSQL persistence is unavailable");
+  await env.PG.query(
+    "INSERT INTO audit (id,institution_id,school_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+    [makeId("audit"), t.institutionId, t.schoolId, user.uid, action, resourceType, resourceId, JSON.stringify(metadata), stamp()],
+  );
 }
 async function body(request: Request): Promise<Row> {
   try { const value = await request.json(); return value && typeof value === "object" ? value as Row : {}; } catch { return {}; }
@@ -344,11 +352,14 @@ export async function readRecords(
   ownOnlyOverride?: boolean,
 ): Promise<Row[]> {
   const scope = tenantWhere(user, "", sector);
-  const result = await env.DB.prepare(`SELECT id,record_json,record_type,created_at,updated_at,owner_uid,is_deleted,school_id,institution_id FROM sector_records WHERE sector=? AND record_type=? AND ${scope.sql} ORDER BY updated_at DESC LIMIT 500`)
-    .bind(sector, type, ...scope.args).all<Row>();
+  if (!env.PG) throw new Error("PostgreSQL persistence is unavailable");
+  const result = await env.PG.query<Row>(
+    `SELECT id,record_json,record_type,created_at,updated_at,owner_uid,is_deleted,school_id,institution_id FROM sector_records WHERE sector=$1 AND record_type=$2 AND ${tenantWhere(user, "", sector, 3).sql} ORDER BY updated_at DESC LIMIT 500`,
+    [sector, type, ...scope.args],
+  );
   const ownOnly = ownOnlyOverride ?? isSelfRole(user, sector);
-  const hiddenIds = new Set(result.results.filter((row) => Number(row.is_deleted) === 1).map((row) => clean(row.id, 300)));
-  const activeRows = result.results.filter((row) => Number(row.is_deleted) !== 1);
+  const hiddenIds = new Set(result.rows.filter((row) => Number(row.is_deleted) === 1).map((row) => clean(row.id, 300)));
+  const activeRows = result.rows.filter((row) => Number(row.is_deleted) !== 1);
   const records: Row[] = activeRows
     .filter((row) => !ownOnly || clean(row.owner_uid, 160) === user.uid || (
       sector === "education" && ["student", "learner"].includes(effectiveRole(user, sector)) &&
@@ -370,11 +381,13 @@ export async function readRecords(
       isVocationalEducationRecord(record)));
   if (sector === "education" && (type === "admission" || type === "marks")) {
     const table = type === "admission" ? "school_admissions" : "marks";
-    const shared = await env.DB.prepare(
+    const sharedScope = tenantWhere(user, "", "education", 1);
+    const shared = await env.PG.query<Row>(
       `SELECT id,record_json,created_at,updated_at,school_id,institution_id,is_deleted
-       FROM ${table} WHERE ${scope.sql} ORDER BY updated_at DESC LIMIT 500`,
-    ).bind(...scope.args).all<Row>();
-    for (const row of shared.results) {
+       FROM ${table} WHERE ${sharedScope.sql} ORDER BY updated_at DESC LIMIT 500`,
+      sharedScope.args,
+    );
+    for (const row of shared.rows) {
       const id = clean(row.id, 300);
       if (Number(row.is_deleted) === 1) {
         hiddenIds.add(id);
@@ -394,10 +407,11 @@ export async function readRecords(
   }
   const collections = legacyCollections(sector, type);
   if (collections.length) {
-    const legacy = await env.DB.prepare(
-      `SELECT document_path,data_json,create_time,update_time FROM firestore_documents WHERE collection_path IN (${collections.map(() => "?").join(",")}) LIMIT 500`,
-    ).bind(...collections).all<Row>();
-    for (const row of legacy.results) {
+    const legacy = await env.PG.query<Row>(
+      `SELECT document_path,data_json,create_time,update_time FROM firestore_documents WHERE collection_path IN (${collections.map((_, index) => `$${index + 1}`).join(",")}) LIMIT 500`,
+      collections,
+    );
+    for (const row of legacy.rows) {
       let record: Row;
       try { record = safeLegacy(row); } catch { continue; }
       const legacyId = clean(record.id, 300);
@@ -429,14 +443,16 @@ async function sharedEducationRecord(
   if (!(await allowed(env, user, "education", capability))) return json({ ok: false, error: "Forbidden" }, 403);
   const table = type === "admission" ? "school_admissions" : "marks";
   const t = tenant(user);
-  const scope = tenantWhere(user, "", "education");
+  const scope = tenantWhere(user, "", "education", 2);
   const id = recordId || clean(input.id, 160) || makeId(type);
-  const scoped = `id=? AND ${scope.sql}`;
-  const existingResult = await env.DB.prepare(
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
+  const scoped = `id=$1 AND ${scope.sql}`;
+  const existingResult = await env.PG.query<Row>(
     `SELECT id,record_json,school_id,institution_id,is_deleted,created_at,updated_at
      FROM ${table} WHERE ${scoped} LIMIT 1`,
-  ).bind(id, ...scope.args).all<Row>();
-  const existing = existingResult.results[0];
+    [id, ...scope.args],
+  );
+  const existing = existingResult.rows[0];
   const active = existing && Number(existing.is_deleted) !== 1 ? existing : null;
   if (request.method === "GET") return null;
   if (request.method === "POST" && active) return json({ ok: false, error: "Record already exists" }, 409);
@@ -444,10 +460,13 @@ async function sharedEducationRecord(
     return json({ ok: false, error: "Record not found in this school" }, 404);
   }
   if (request.method === "DELETE") {
-    await env.DB.prepare(
-      `UPDATE ${table} SET is_deleted=1,updated_at=? WHERE ${scoped} AND is_deleted=0`,
-    ).bind(stamp(), id, ...scope.args).run();
-    await audit(env, user, "delete", `education_${type}`, id);
+    await inNeonTransaction(env.PG, async () => {
+      await env.PG!.query(
+        `UPDATE ${table} SET is_deleted=1,updated_at=$1 WHERE id=$2 AND ${tenantWhere(user, "", "education", 3).sql} AND is_deleted=0`,
+        [stamp(), id, ...tenantWhere(user, "", "education", 3).args],
+      );
+      await audit(env, user, "delete", `education_${type}`, id);
+    });
     return json({ ok: true, deleted: true });
   }
   const previous = active ? (() => {
@@ -464,31 +483,42 @@ async function sharedEducationRecord(
   const payload = { ...(request.method === "PATCH" ? previous : {}), ...fields, id, recordType: type,
     schoolId: recordTenant.schoolId, institutionId: recordTenant.institutionId };
   const timestamp = stamp();
-  if (active) {
-    await env.DB.prepare(
-      `UPDATE ${table} SET record_json=?,school_id=?,institution_id=?,updated_at=? WHERE ${scoped} AND is_deleted=0`,
-    ).bind(JSON.stringify(payload), recordTenant.schoolId, recordTenant.institutionId, timestamp, id, ...scope.args).run();
-  } else {
-    const collision = await env.DB.prepare(`SELECT id FROM ${table} WHERE id=? LIMIT 1`).bind(id).all<Row>();
-    if (collision.results[0]) return json({ ok: false, error: "Record ID is unavailable" }, 409);
-    const columns = type === "admission"
-      ? "(id,student_id,full_name,phone,email,education_level,previous_experience,institution_id,school_id,status,record_json,created_by,is_deleted,created_at,updated_at)"
-      : "(id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,institution_id,school_id,learner_id,class_name,subject,score,term,maximum_score,remarks,record_json,is_deleted,created_at,updated_at)";
-    const values = type === "admission"
-      ? [id, clean(fields.studentId || fields.student_id, 160), clean(fields.fullName || fields.full_name, 160),
-        clean(fields.phone, 80), clean(fields.email, 160), clean(fields.educationLevel || fields.education_level, 120),
-        clean(fields.previousExperience || fields.previous_experience, 240), t.institutionId, t.schoolId,
-        clean(fields.status, 80) || "submitted", JSON.stringify(payload), user.uid, 0, timestamp, timestamp]
-      : [id, clean(fields.admissionId || fields.admission_id, 160), "", clean(fields.studentId || fields.student_id, 160),
-        clean(fields.courseId || fields.course_id, 120), clean(fields.courseTitle || fields.course_title, 160),
-        Number(fields.theory || 0), Number(fields.practical || 0), Number(fields.total ?? fields.score ?? 0), clean(fields.grade, 40),
-        fields.passed ? 1 : 0, user.uid, t.institutionId, t.schoolId, clean(fields.learnerId || fields.learner_id, 160),
-        clean(fields.className || fields.class_name, 120), clean(fields.subject, 120), Number(fields.score ?? 0),
-        clean(fields.term, 80), Number(fields.maximumScore ?? fields.maximum_score ?? 0), clean(fields.remarks, 500),
-        JSON.stringify(payload), 0, timestamp, timestamp];
-    await env.DB.prepare(`INSERT INTO ${table} ${columns} VALUES (${values.map(() => "?").join(",")})`).bind(...values).run();
+  const columns = type === "admission"
+    ? "(id,student_id,full_name,phone,email,education_level,previous_experience,institution_id,school_id,status,record_json,created_by,is_deleted,created_at,updated_at)"
+    : "(id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,institution_id,school_id,learner_id,class_name,subject,score,term,maximum_score,remarks,record_json,is_deleted,created_at,updated_at)";
+  const values = type === "admission"
+    ? [id, clean(fields.studentId || fields.student_id, 160), clean(fields.fullName || fields.full_name, 160),
+      clean(fields.phone, 80), clean(fields.email, 160), clean(fields.educationLevel || fields.education_level, 120),
+      clean(fields.previousExperience || fields.previous_experience, 240), t.institutionId, t.schoolId,
+      clean(fields.status, 80) || "submitted", JSON.stringify(payload), user.uid, 0, timestamp, timestamp]
+    : [id, clean(fields.admissionId || fields.admission_id, 160), "", clean(fields.studentId || fields.student_id, 160),
+      clean(fields.courseId || fields.course_id, 120), clean(fields.courseTitle || fields.course_title, 160),
+      Number(fields.theory || 0), Number(fields.practical || 0), Number(fields.total ?? fields.score ?? 0), clean(fields.grade, 40),
+      fields.passed ? 1 : 0, user.uid, t.institutionId, t.schoolId, clean(fields.learnerId || fields.learner_id, 160),
+      clean(fields.className || fields.class_name, 120), clean(fields.subject, 120), Number(fields.score ?? 0),
+      clean(fields.term, 80), Number(fields.maximumScore ?? fields.maximum_score ?? 0), clean(fields.remarks, 500),
+      JSON.stringify(payload), 0, timestamp, timestamp];
+  try {
+    await inNeonTransaction(env.PG, async () => {
+      if (active) {
+        const updateScope = tenantWhere(user, "", "education", 6);
+        await env.PG!.query(
+          `UPDATE ${table} SET record_json=$1,school_id=$2,institution_id=$3,updated_at=$4 WHERE id=$5 AND ${updateScope.sql} AND is_deleted=0`,
+          [JSON.stringify(payload), recordTenant.schoolId, recordTenant.institutionId, timestamp, id, ...updateScope.args],
+        );
+      } else {
+        const inserted = await env.PG!.query<Row>(
+          `INSERT INTO ${table} ${columns} VALUES (${values.map((_, index) => `$${index + 1}`).join(",")} ) ON CONFLICT (id) DO NOTHING RETURNING id`,
+          values,
+        );
+        if (!inserted.rows.length) throw new Error("DOMAIN_RECORD_COLLISION");
+      }
+      await audit(env, user, request.method === "POST" ? "create" : "update", `education_${type}`, id);
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "DOMAIN_RECORD_COLLISION") return json({ ok: false, error: "Record ID is unavailable" }, 409);
+    throw error;
   }
-  await audit(env, user, request.method === "POST" ? "create" : "update", `education_${type}`, id);
   return json({ ok: true, record: payload }, request.method === "POST" ? 201 : 200);
 }
 
@@ -568,7 +598,7 @@ async function domainRecords(
     return sharedEducationRecord(request, env, user, type, recordId, input, capability);
   }
   const t = tenant(user);
-  const scope = tenantWhere(user, "", sector);
+  const scope = tenantWhere(user, "", sector, 3);
   if (method === "GET") {
     let records = await readRecords(env, user, sector, type);
     if (teacher) {
@@ -581,9 +611,12 @@ async function domainRecords(
   }
   const id = recordId || clean(input.id, 160) || makeId(type);
   if (method === "DELETE" && !recordId) return json({ ok: false, error: "Record ID is required" }, 400);
-  const priorResult = await env.DB.prepare(`SELECT id,record_json,owner_uid,is_deleted FROM sector_records WHERE id=? AND sector=? AND ${scope.sql} LIMIT 1`)
-    .bind(id, sector, ...scope.args).all<Row>();
-  const prior = priorResult.results[0] && Number(priorResult.results[0].is_deleted) !== 1 ? priorResult.results[0] : null;
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
+  const priorResult = await env.PG.query<Row>(
+    `SELECT id,record_json,owner_uid,is_deleted FROM sector_records WHERE id=$1 AND sector=$2 AND ${scope.sql} LIMIT 1`,
+    [id, sector, ...scope.args],
+  );
+  const prior = priorResult.rows[0] && Number(priorResult.rows[0].is_deleted) !== 1 ? priorResult.rows[0] : null;
   let legacyRecord: Row | null = null;
   if (!prior && (method === "PATCH" || method === "PUT" || method === "DELETE" || method === "POST" && Boolean(input.id))) {
     const legacy = await readRecords(env, user, sector, type);
@@ -599,16 +632,27 @@ async function domainRecords(
   if (method === "DELETE") {
     const timestamp = stamp();
     const tombstone = JSON.stringify({ id, recordType: type, schoolId: t.schoolId, institutionId: t.institutionId, deleted: true });
-    if (prior) {
-      await env.DB.prepare(`UPDATE sector_records SET is_deleted=1,record_json=?,updated_at=? WHERE id=? AND sector=? AND ${scope.sql}${own ? " AND owner_uid=?" : ""}`)
-        .bind(tombstone, timestamp, id, sector, ...scope.args, ...(own ? [user.uid] : [])).run();
-    } else {
-      const collision = await env.DB.prepare("SELECT id FROM sector_records WHERE id=? LIMIT 1").bind(id).all<Row>();
-      if (collision.results[0]) return json({ ok: false, error: "Record is outside this tenant" }, 404);
-      await env.DB.prepare("INSERT INTO sector_records (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,1,?,?)")
-        .bind(id, sector, t.institutionId, t.schoolId, own ? user.uid : legacyOwnerUid(legacyRecord!), type, tombstone, user.uid, timestamp, timestamp).run();
+    try {
+      await inNeonTransaction(env.PG, async () => {
+        if (prior) {
+          const deleteScope = tenantWhere(user, "", sector, 5);
+          await env.PG!.query(
+            `UPDATE sector_records SET is_deleted=1,record_json=$1,updated_at=$2 WHERE id=$3 AND sector=$4 AND ${deleteScope.sql}${own ? ` AND owner_uid=$${5 + deleteScope.args.length}` : ""}`,
+            [tombstone, timestamp, id, sector, ...deleteScope.args, ...(own ? [user.uid] : [])],
+          );
+        } else {
+          const inserted = await env.PG!.query<Row>(
+            "INSERT INTO sector_records (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1,$9,$10) ON CONFLICT (id) DO NOTHING RETURNING id",
+            [id, sector, t.institutionId, t.schoolId, own ? user.uid : legacyOwnerUid(legacyRecord!), type, tombstone, user.uid, timestamp, timestamp],
+          );
+          if (!inserted.rows.length) throw new Error("DOMAIN_RECORD_OUTSIDE_TENANT");
+        }
+        await audit(env, user, "delete", `${sector}_record`, id);
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === "DOMAIN_RECORD_OUTSIDE_TENANT") return json({ ok: false, error: "Record is outside this tenant" }, 404);
+      throw error;
     }
-    await audit(env, user, "delete", `${sector}_record`, id);
     return json({ ok: true, deleted: true });
   }
   const previous = prior
@@ -620,23 +664,36 @@ async function domainRecords(
     id: _requestedId, recordType: _recordType, type: _type, ...fields } = input;
   let ownerUid = own ? user.uid : clean(prior?.owner_uid, 160) || (legacyRecord ? legacyOwnerUid(legacyRecord) : "") || null;
   if (!own && requestedOwner) {
-    const targetScope = await env.DB.prepare("SELECT uid FROM users WHERE uid=? AND active=1 AND disabled=0 AND ((school_id=? AND ?<>'') OR (institution_id=? AND ?<>'')) LIMIT 1")
-      .bind(clean(requestedOwner, 160), t.schoolId || "", t.schoolId || "", t.institutionId || "", t.institutionId || "").all<Row>();
-    if (!targetScope.results[0]) return json({ ok: false, error: "Owner is outside this tenant" }, 400);
+    const targetScope = await env.PG.query<Row>(
+      "SELECT uid FROM users WHERE uid=$1 AND active=TRUE AND disabled=FALSE AND ((school_id=$2 AND $3<>'') OR (institution_id=$4 AND $5<>'')) LIMIT 1",
+      [clean(requestedOwner, 160), t.schoolId || "", t.schoolId || "", t.institutionId || "", t.institutionId || ""],
+    );
+    if (!targetScope.rows[0]) return json({ ok: false, error: "Owner is outside this tenant" }, 400);
     ownerUid = clean(requestedOwner, 160);
   }
   const payload = { ...(method === "PATCH" ? previous : {}), ...fields, id, recordType: type, schoolId: t.schoolId, institutionId: t.institutionId };
   const timestamp = stamp();
-  if ((method === "PATCH" || method === "PUT") && prior) {
-    await env.DB.prepare(`UPDATE sector_records SET record_json=?,owner_uid=?,updated_at=? WHERE id=? AND sector=? AND ${scope.sql}${own ? " AND owner_uid=?" : ""}`)
-      .bind(JSON.stringify(payload), ownerUid, timestamp, id, sector, ...scope.args, ...(own ? [user.uid] : [])).run();
-  } else {
-    const collision = await env.DB.prepare("SELECT id FROM sector_records WHERE id=? LIMIT 1").bind(id).all<Row>();
-    if (collision.results[0]) return json({ ok: false, error: "Record ID is unavailable" }, 409);
-    await env.DB.prepare("INSERT INTO sector_records (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,0,?,?)")
-      .bind(id, sector, t.institutionId, t.schoolId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp).run();
+  try {
+    await inNeonTransaction(env.PG, async () => {
+      if ((method === "PATCH" || method === "PUT") && prior) {
+        const updateScope = tenantWhere(user, "", sector, 6);
+        await env.PG!.query(
+          `UPDATE sector_records SET record_json=$1,owner_uid=$2,updated_at=$3 WHERE id=$4 AND sector=$5 AND ${updateScope.sql}${own ? ` AND owner_uid=$${6 + updateScope.args.length}` : ""}`,
+          [JSON.stringify(payload), ownerUid, timestamp, id, sector, ...updateScope.args, ...(own ? [user.uid] : [])],
+        );
+      } else {
+        const inserted = await env.PG!.query<Row>(
+          "INSERT INTO sector_records (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0,$9,$10) ON CONFLICT (id) DO NOTHING RETURNING id",
+          [id, sector, t.institutionId, t.schoolId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp],
+        );
+        if (!inserted.rows.length) throw new Error("DOMAIN_RECORD_COLLISION");
+      }
+      await audit(env, user, method === "POST" ? "create" : "update", `${sector}_record`, id);
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "DOMAIN_RECORD_COLLISION") return json({ ok: false, error: "Record ID is unavailable" }, 409);
+    throw error;
   }
-  await audit(env, user, method === "POST" ? "create" : "update", `${sector}_record`, id);
   return json({ ok: true, record: { ...payload, id } }, method === "POST" ? 201 : 200);
 }
 
@@ -722,23 +779,46 @@ async function educationPayments(request: Request, env: AuthEnv, user: AuthUser)
   if (request.method === "GET") {
     if (!can(caps, "payments.manage")) return json({ ok: false, error: "Forbidden" }, 403);
     const scope = tenantWhere(user, "", "education");
-    const rows = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`)
-      .bind(...scope.args).all<Row>();
-    return json({ ok: true, payments: rows.results });
+    if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
+    const rows = await env.PG.query<Row>(
+      `SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`,
+      scope.args,
+    );
+    return json({ ok: true, payments: rows.rows });
   }
   if (request.method !== "POST" || !can(caps, "payments.manage")) return json({ ok: false, error: "Forbidden" }, request.method === "POST" ? 403 : 405);
   const input = await body(request);
   const amount = Number(input.amount);
   const key = clean(input.idempotencyKey || request.headers.get("idempotency-key"), 200);
   if (!Number.isSafeInteger(amount) || amount <= 0 || !key) return json({ ok: false, error: "A positive integer amount and idempotency key are required" }, 400);
-  const prior = await env.DB.prepare("SELECT id,status FROM payments WHERE idempotency_key=? LIMIT 1").bind(key).all<Row>();
-  if (prior.results[0]) return json({ ok: true, payment: prior.results[0], idempotent: true });
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
   const t = tenant(user);
   const paymentId = makeId("payment");
   const ts = stamp();
-  await env.DB.prepare("INSERT INTO payments (id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(paymentId, t.institutionId, t.schoolId, user.uid, amount, clean(input.currency, 8) || "UGX", "pending", null, null, key, JSON.stringify(input.metadata || {}), ts, ts).run();
-  await audit(env, user, "payment.create", "payment", paymentId);
+  const scope = tenantWhere(user, "", "education", 2);
+  const prior = await env.PG.query<Row>(
+    `SELECT id,status FROM payments WHERE idempotency_key=$1 AND ${scope.sql} LIMIT 1`,
+    [key, ...scope.args],
+  );
+  if (prior.rows[0]) return json({ ok: true, payment: prior.rows[0], idempotent: true });
+  const collision = await env.PG.query<Row>("SELECT id FROM payments WHERE idempotency_key=$1 LIMIT 1", [key]);
+  if (collision.rows[0]) return json({ ok: false, error: "Idempotency key is already used" }, 409);
+  const insert = await inNeonTransaction(env.PG, async () => {
+    const result = await env.PG!.query<Row>(
+      "INSERT INTO payments (id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT (idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING RETURNING id,status",
+      [paymentId, t.institutionId, t.schoolId, user.uid, amount, clean(input.currency, 8) || "UGX", "pending", null, null, key, JSON.stringify(input.metadata || {}), ts, ts],
+    );
+    if (result.rows[0]) await audit(env, user, "payment.create", "payment", paymentId);
+    return result.rows[0] || null;
+  });
+  if (!insert) {
+    const existing = await env.PG.query<Row>(
+      `SELECT id,status FROM payments WHERE idempotency_key=$1 AND ${scope.sql} LIMIT 1`,
+      [key, ...scope.args],
+    );
+    if (existing.rows[0]) return json({ ok: true, payment: existing.rows[0], idempotent: true });
+    return json({ ok: false, error: "Idempotency key is already used" }, 409);
+  }
   return json({ ok: true, payment: { id: paymentId, amount, currency: clean(input.currency, 8) || "UGX", status: "pending", manual: true }, message: "Payment recorded as pending; no payment gateway is configured." }, 201);
 }
 
@@ -755,13 +835,18 @@ async function educationLessons(env: AuthEnv, user: AuthUser, write = false): Pr
   if (r !== "student" && r !== "learner" && r !== "parent" && role(user) !== "superadmin" &&
       !tenant(user).schoolId && !tenant(user).institutionId) return [];
   const scope = tenantWhere(scopedUser, "", "education");
+  if (!env.PG) throw new Error("PostgreSQL persistence is unavailable");
   let rows: Row[] = [];
-  rows = (await env.DB.prepare(`SELECT * FROM education_lessons WHERE ${scope.sql} ORDER BY updated_at DESC LIMIT 500`).bind(...scope.args).all<Row>()).results;
-  const files = await env.DB.prepare(
-    `SELECT lesson_id,id,filename,content_type,size_bytes FROM education_files WHERE lesson_id IN (${rows.map(() => "?").join(",") || "NULL"}) ORDER BY created_at`,
-  ).bind(...rows.map((x) => x.id)).all<Row>();
+  rows = (await env.PG.query<Row>(
+    `SELECT * FROM education_lessons WHERE ${scope.sql} ORDER BY updated_at DESC LIMIT 500`,
+    scope.args,
+  )).rows;
+  const files = await env.PG.query<Row>(
+    `SELECT lesson_id,id,filename,content_type,size_bytes FROM education_files WHERE lesson_id IN (${rows.map((_, index) => `$${index + 1}`).join(",") || "NULL"}) ORDER BY created_at`,
+    rows.map((x) => x.id),
+  );
   const filesByLesson = new Map<string, Row[]>();
-  for (const file of files.results) {
+  for (const file of files.rows) {
     const list = filesByLesson.get(clean(file.lesson_id)) || [];
     list.push({ id: file.id, filename: file.filename, fileName: file.filename, contentType: file.content_type, sizeBytes: file.size_bytes });
     filesByLesson.set(clean(file.lesson_id), list);
@@ -778,13 +863,14 @@ async function educationLessons(env: AuthEnv, user: AuthUser, write = false): Pr
     return cls ? rows.filter((x) => Number(x.published) === 1 && clean(x.class_name).toLowerCase() === cls) : [];
   }
   if (r === "parent") {
-    const links = await env.DB.prepare(
+    const links = await env.PG.query<Row>(
       "SELECT p.learner_id,p.institution_id,p.school_id,s.record_json FROM parent_links p " +
       "JOIN sector_records s ON s.id=p.learner_id AND s.sector='education' AND s.record_type IN ('learner','student') " +
-      "WHERE p.parent_uid=? AND p.active=1 AND s.institution_id IS p.institution_id AND s.school_id IS p.school_id",
-    ).bind(user.uid).all<Row>();
+      "WHERE p.parent_uid=$1 AND p.active=1 AND s.institution_id IS NOT DISTINCT FROM p.institution_id AND s.school_id IS NOT DISTINCT FROM p.school_id",
+      [user.uid],
+    );
     const visible = new Set<string>();
-    for (const link of links.results) {
+    for (const link of links.rows) {
       let data: Row;
       try { data = JSON.parse(String(link.record_json || "{}")) as Row; } catch { continue; }
       const className = clean(data.className || data.class_name).toLowerCase();
@@ -828,37 +914,57 @@ async function educationLessonRoute(request: Request, env: AuthEnv, user: AuthUs
   }
   const t = tenant(user), id = makeId("lesson"), ts = stamp();
   try {
-    await env.DB.prepare("INSERT INTO education_lessons(id,institution_id,school_id,owner_uid,title,description,class_name,subject,youtube_url,published,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-      .bind(id, t.institutionId, t.schoolId, user.uid, title, description, className, subject, parsed?.toString() || "", 1, ts, ts).run();
+    if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
+    await inNeonTransaction(env.PG, async () => {
+      await env.PG!.query(
+        "INSERT INTO education_lessons(id,institution_id,school_id,owner_uid,title,description,class_name,subject,youtube_url,published,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
+        [id, t.institutionId, t.schoolId, user.uid, title, description, className, subject, parsed?.toString() || "", 1, ts, ts],
+      );
+      await audit(env, user, "create", "education_lesson", id);
+    });
   } catch { return json({ ok: false, error: "Lesson could not be saved" }, 500); }
-  await audit(env, user, "create", "education_lesson", id);
   return json({ ok: true, lesson: { id, institutionId: t.institutionId, schoolId: t.schoolId, ownerUid: user.uid, title, description, className, subject, youtubeUrl: parsed?.toString() || "", published: 1 } }, 201);
 }
 
 async function educationParentLinks(request: Request, env: AuthEnv, user: AuthUser, linkId = "") {
   const current = effectiveRole(user, "education");
   if (!(await allowed(env, user, "education", "parent_links.manage")) || !["secretary", "headteacher"].includes(current) && role(user) !== "superadmin") return json({ ok: false, error: "Forbidden" }, 403);
-  const sc = tenantWhere(user, "", "education");
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
   if (request.method === "DELETE") {
     if (!linkId) return json({ ok: false, error: "Link ID is required" }, 400);
-    const result = await env.DB.prepare(`UPDATE parent_links SET active=0,revoked_at=? WHERE id=? AND ${sc.sql} AND active=1`).bind(stamp(), linkId, ...sc.args).run();
-    await audit(env, user, "revoke", "parent_link", linkId);
-    return json({ ok: true, revoked: true, changed: Number((result as Row)?.meta?.changes || 0) });
+    const sc = tenantWhere(user, "", "education", 3);
+    const result = await inNeonTransaction(env.PG, async () => {
+      const update = await env.PG!.query<Row>(
+        `UPDATE parent_links SET active=0,revoked_at=$1 WHERE id=$2 AND ${sc.sql} AND active=1 RETURNING id`,
+        [stamp(), linkId, ...sc.args],
+      );
+      await audit(env, user, "revoke", "parent_link", linkId);
+      return update.rows.length;
+    });
+    return json({ ok: true, revoked: true, changed: result });
   }
   if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
   const input = await body(request), parentEmail = clean(input.parentEmail, 240).toLowerCase(), learnerId = clean(input.learnerId, 300), relationship = clean(input.relationship, 80) || "parent";
   if (!parentEmail || !learnerId) return json({ ok: false, error: "parentEmail and learnerId are required" }, 400);
-  const learner = (await env.DB.prepare(`SELECT id,institution_id,school_id FROM sector_records WHERE id=? AND sector='education' AND record_type IN ('learner','student') AND ${sc.sql} AND is_deleted=0 LIMIT 1`).bind(learnerId, ...sc.args).all<Row>()).results[0];
+  const sc = tenantWhere(user, "", "education", 2);
+  const learner = (await env.PG.query<Row>(
+    `SELECT id,institution_id,school_id FROM sector_records WHERE id=$1 AND sector='education' AND record_type IN ('learner','student') AND ${sc.sql} AND is_deleted=0 LIMIT 1`,
+    [learnerId, ...sc.args],
+  )).rows[0];
   if (!learner) return json({ ok: false, error: "Learner is outside this school" }, 404);
-  const parent = (await env.DB.prepare("SELECT uid,role,active,disabled FROM users WHERE lower(email)=? LIMIT 1").bind(parentEmail).all<Row>()).results[0];
-  if (!parent || Number(parent.active ?? 0) !== 1 || Number(parent.disabled ?? 0) === 1 || clean(parent.role).toLowerCase() !== "parent") return json({ ok: false, error: "An active parent account is required" }, 400);
+  const parent = (await env.PG.query<Row>("SELECT uid,role,active,disabled FROM users WHERE lower(email)=$1 LIMIT 1", [parentEmail])).rows[0];
+  if (!parent || parent.active !== true || parent.disabled === true || clean(parent.role).toLowerCase() !== "parent") return json({ ok: false, error: "An active parent account is required" }, 400);
   const learnerTenant = { institutionId: clean(learner.institution_id, 160) || null, schoolId: clean(learner.school_id, 160) || null };
   const id = makeId("plink");
   try {
-    await env.DB.prepare("INSERT INTO parent_links(id,institution_id,school_id,parent_uid,learner_id,relationship,active,created_by,created_at) VALUES (?,?,?,?,?,?,1,?,?)")
-      .bind(id, learnerTenant.institutionId, learnerTenant.schoolId, parent.uid, learnerId, relationship, user.uid, stamp()).run();
+    await inNeonTransaction(env.PG, async () => {
+      await env.PG!.query(
+        "INSERT INTO parent_links(id,institution_id,school_id,parent_uid,learner_id,relationship,active,created_by,created_at) VALUES ($1,$2,$3,$4,$5,$6,1,$7,$8)",
+        [id, learnerTenant.institutionId, learnerTenant.schoolId, parent.uid, learnerId, relationship, user.uid, stamp()],
+      );
+      await audit(env, user, "create", "parent_link", id, { parentUid: parent.uid, learnerId });
+    });
   } catch { return json({ ok: false, error: "Parent link already exists or could not be saved" }, 409); }
-  await audit(env, user, "create", "parent_link", id, { parentUid: parent.uid, learnerId });
   return json({ ok: true, link: { id, parentUid: parent.uid, learnerId, relationship, active: true, ...learnerTenant } }, 201);
 }
 
@@ -940,14 +1046,17 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
     }
     if (currentRole === "parent") {
       if (!can(caps, "lessons.read")) return json({ ok: false, error: "Parent lesson access is not enabled" }, 403);
-      const parentScope = tenantWhere(user, "", "education");
-      const links = await env.DB.prepare(`SELECT learner_id,institution_id,school_id FROM parent_links WHERE parent_uid=? AND active=1 AND ${parentScope.sql}`)
-        .bind(user.uid, ...parentScope.args).all<Row>();
+      const parentScope = tenantWhere(user, "", "education", 2);
+      const links = await env.PG!.query<Row>(
+        `SELECT learner_id,institution_id,school_id FROM parent_links WHERE parent_uid=$1 AND active=1 AND ${parentScope.sql}`,
+        [user.uid, ...parentScope.args],
+      );
       const children = [];
-      for (const link of links.results) {
-        const learnerRow = (await env.DB.prepare(
-          `SELECT id,record_json,institution_id,school_id FROM sector_records WHERE id=? AND sector='education' AND record_type IN ('learner','student') AND institution_id IS ? AND school_id IS ? AND is_deleted=0 LIMIT 1`,
-        ).bind(link.learner_id, link.institution_id, link.school_id).all<Row>()).results[0];
+      for (const link of links.rows) {
+        const learnerRow = (await env.PG!.query<Row>(
+          "SELECT id,record_json,institution_id,school_id FROM sector_records WHERE id=$1 AND sector='education' AND record_type IN ('learner','student') AND institution_id IS NOT DISTINCT FROM $2 AND school_id IS NOT DISTINCT FROM $3 AND is_deleted=0 LIMIT 1",
+          [link.learner_id, link.institution_id, link.school_id],
+        )).rows[0];
         if (!learnerRow) continue;
         let learnerData: Row = {};
         try { learnerData = JSON.parse(String(learnerRow.record_json || "{}")) as Row; } catch { continue; }
@@ -978,8 +1087,11 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
       capabilities: caps.map((item) => item.capability),
     };
     if ((primary || secondary || isSuperadmin) && can(caps, "parent_links.manage")) {
-      const linkScope = tenantWhere(user, "", "education");
-      result.parentLinks = (await env.DB.prepare(`SELECT p.id,p.institution_id,p.school_id,p.parent_uid,u.email AS parentEmail,p.learner_id,p.relationship,p.active,p.created_at,p.revoked_at FROM parent_links p LEFT JOIN users u ON u.uid=p.parent_uid WHERE ${linkScope.sql.replaceAll("institution_id", "p.institution_id").replaceAll("school_id", "p.school_id")} ORDER BY p.created_at DESC LIMIT 500`).bind(...linkScope.args).all<Row>()).results;
+      const linkScope = tenantWhere(user, "p", "education");
+      result.parentLinks = (await env.PG!.query<Row>(
+        `SELECT p.id,p.institution_id,p.school_id,p.parent_uid,u.email AS parentEmail,p.learner_id,p.relationship,p.active,p.created_at,p.revoked_at FROM parent_links p LEFT JOIN users u ON u.uid=p.parent_uid WHERE ${linkScope.sql} ORDER BY p.created_at DESC LIMIT 500`,
+        linkScope.args,
+      )).rows;
     }
     if (primary || secondary || isSuperadmin) {
       if (hasStudents) result.students = await readRecords(env, user, "education", "learner");
@@ -999,11 +1111,13 @@ async function education(request: Request, env: AuthEnv, user: AuthUser, pathnam
     }
     if (finance || isSuperadmin) {
       const scope = tenantWhere(user, "", "education");
-      const paymentsResult = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`)
-        .bind(...scope.args).all<Row>();
+      const paymentsResult = await env.PG!.query<Row>(
+        `SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,created_at,updated_at FROM payments WHERE ${scope.sql} ORDER BY created_at DESC LIMIT 500`,
+        scope.args,
+      );
       result.finance = {
         fees: await readRecords(env, user, "education", "fee"),
-        payments: paymentsResult.results,
+        payments: paymentsResult.rows,
         reconciliations: await readRecords(env, user, "education", "reconciliation"),
         statements: await readRecords(env, user, "education", "statement"),
       };
@@ -1038,28 +1152,30 @@ const ALLOWED_ROLES = new Set([
 ]);
 async function adminRoute(request: Request, env: AuthEnv, user: AuthUser, pathname: string) {
   if (role(user) !== "superadmin") return json({ ok: false, error: "Superadmin access required" }, 403);
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
   if (pathname === "/api/admin/roles" && request.method === "GET") {
-    const rows = await env.DB.prepare("SELECT role,sector,capability,scope FROM role_capabilities ORDER BY role,sector,capability").all<Capability & { role: string }>();
-    return json({ ok: true, roles: rows.results });
+    const rows = await env.PG.query<Capability & { role: string }>("SELECT role,sector,capability,scope FROM role_capabilities ORDER BY role,sector,capability");
+    return json({ ok: true, roles: rows.rows });
   }
   if (pathname === "/api/admin/teacher-applications" && request.method === "GET") {
-    const rows = await env.DB.prepare(
+    const rows = await env.PG.query<Row>(
       `SELECT a.id,a.uid,a.application_type,a.organization_name,a.teaching_details,a.status,a.submitted_at,
               u.email,u.display_name
        FROM teacher_applications a JOIN users u ON u.uid=a.uid
        WHERE a.status='pending'
        ORDER BY a.submitted_at ASC LIMIT 300`,
-    ).all<Row>();
-    return json({ ok: true, applications: rows.results });
+    );
+    return json({ ok: true, applications: rows.rows });
   }
   const teacherApplicationReview = pathname.match(/^\/api\/admin\/teacher-applications\/([^/]+)\/review$/);
   if (teacherApplicationReview && request.method === "POST") {
     let applicationId = "";
     try { applicationId = decodeURIComponent(teacherApplicationReview[1]); } catch {}
     if (!applicationId) return json({ ok: false, error: "A valid teacher application is required" }, 400);
-    const application = (await env.DB.prepare(
-      "SELECT uid,application_type,status FROM teacher_applications WHERE id=? LIMIT 1",
-    ).bind(applicationId).all<Row>()).results[0];
+    const application = (await env.PG.query<Row>(
+      "SELECT uid,application_type,status FROM teacher_applications WHERE id=$1 LIMIT 1",
+      [applicationId],
+    )).rows[0];
     if (!application || application.status !== "pending") {
       return json({ ok: false, error: "This teacher application is no longer pending review" }, 409);
     }
@@ -1081,52 +1197,62 @@ async function adminRoute(request: Request, env: AuthEnv, user: AuthUser, pathna
     const reviewedAt = stamp();
     const reviewClaim = makeId("review");
     if (decision === "approve") {
-      const results = await env.DB.batch([
-        env.DB.prepare(
-          `UPDATE teacher_applications
-           SET status='approved',reviewed_at=?,reviewed_by=?,review_note=?,review_claim=?
-           WHERE id=? AND status='pending'
-             AND EXISTS (SELECT 1 FROM users WHERE users.uid=teacher_applications.uid AND users.disabled=0)
-           RETURNING uid`,
-        ).bind(reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId),
-        env.DB.prepare(
-          `UPDATE users
-           SET role=?,school_id=?,institution_id=?,active=1,session_version=session_version+1
-           WHERE uid=? AND disabled=0
-             AND EXISTS (
-               SELECT 1 FROM teacher_applications
-               WHERE id=? AND uid=? AND status='approved' AND review_claim=?
-             )
-           RETURNING uid`,
-        ).bind(applicationType, schoolId || null, institutionId || null, application.uid, applicationId, application.uid, reviewClaim),
-      ]);
-      if (!results[0]?.results?.length || !results[1]?.results?.length) {
+      try {
+        await inNeonTransaction(env.PG, async () => {
+          const claimed = await env.PG!.query<Row>(
+            `UPDATE teacher_applications
+             SET status='approved',reviewed_at=$1,reviewed_by=$2,review_note=$3,review_claim=$4
+             WHERE id=$5 AND status='pending'
+               AND EXISTS (SELECT 1 FROM users WHERE users.uid=teacher_applications.uid AND users.disabled=FALSE)
+             RETURNING uid`,
+            [reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId],
+          );
+          if (!claimed.rows.length) throw new Error("TEACHER_APPLICATION_REVIEW_CONFLICT");
+          const updatedUser = await env.PG!.query<Row>(
+            `UPDATE users
+             SET role=$1,school_id=$2,institution_id=$3,active=TRUE,session_version=session_version+1
+             WHERE uid=$4 AND disabled=FALSE
+               AND EXISTS (
+                 SELECT 1 FROM teacher_applications
+                 WHERE id=$5 AND uid=$6 AND status='approved' AND review_claim=$7
+               )
+             RETURNING uid`,
+            [applicationType, schoolId || null, institutionId || null, application.uid, applicationId, application.uid, reviewClaim],
+          );
+          if (!updatedUser.rows.length) throw new Error("TEACHER_APPLICATION_REVIEW_CONFLICT");
+          await audit(env, user, "admin.teacher_application.approve", "teacher_application", applicationId, {
+            uid: application.uid, role: applicationType, schoolId: schoolId || null, institutionId: institutionId || null,
+          });
+        });
+      } catch (error) {
+        if (!(error instanceof Error) || error.message !== "TEACHER_APPLICATION_REVIEW_CONFLICT") throw error;
         return json({ ok: false, error: "This application could not be approved. Refresh the list and try again." }, 409);
       }
-      await audit(env, user, "admin.teacher_application.approve", "teacher_application", applicationId, {
-        uid: application.uid, role: applicationType, schoolId: schoolId || null, institutionId: institutionId || null,
-      });
       return json({ ok: true, id: applicationId, status: "approved", sessionVersionRevoked: true });
     }
 
-    const results = await env.DB.batch([
-      env.DB.prepare(
-        `UPDATE teacher_applications
-         SET status='rejected',reviewed_at=?,reviewed_by=?,review_note=?,review_claim=?
-         WHERE id=? AND status='pending'
-         RETURNING uid`,
-      ).bind(reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId),
-    ]);
-    if (!results[0]?.results?.length) {
+    try {
+      await inNeonTransaction(env.PG, async () => {
+        const rejected = await env.PG!.query<Row>(
+          `UPDATE teacher_applications
+           SET status='rejected',reviewed_at=$1,reviewed_by=$2,review_note=$3,review_claim=$4
+           WHERE id=$5 AND status='pending'
+           RETURNING uid`,
+          [reviewedAt, user.uid, clean(input.note, 500) || null, reviewClaim, applicationId],
+        );
+        if (!rejected.rows.length) throw new Error("TEACHER_APPLICATION_REVIEW_CONFLICT");
+        await audit(env, user, "admin.teacher_application.reject", "teacher_application", applicationId, { uid: application.uid });
+      });
+    } catch (error) {
+      if (!(error instanceof Error) || error.message !== "TEACHER_APPLICATION_REVIEW_CONFLICT") throw error;
       return json({ ok: false, error: "This application is no longer pending review" }, 409);
     }
-    await audit(env, user, "admin.teacher_application.reject", "teacher_application", applicationId, { uid: application.uid });
     return json({ ok: true, id: applicationId, status: "rejected" });
   }
   const uid = pathname.match(/^\/api\/admin\/users\/([^/]+)$/)?.[1] || "";
   if (pathname === "/api/admin/users" && request.method === "GET") {
-    const rows = await env.DB.prepare("SELECT uid,email,display_name,role,school_id,institution_id,active,session_version FROM users ORDER BY email").all<Row>();
-    return json({ ok: true, users: rows.results.map(publicUser) });
+    const rows = await env.PG.query<Row>("SELECT uid,email,display_name,role,school_id,institution_id,active,session_version FROM users ORDER BY email");
+    return json({ ok: true, users: rows.rows.map(publicUser) });
   }
   if (pathname === "/api/admin/users" && request.method === "POST") {
     const input = await body(request);
@@ -1137,9 +1263,13 @@ async function adminRoute(request: Request, env: AuthEnv, user: AuthUser, pathna
     const institutionId = clean(input.institutionId, 160) || "";
     if (assignedRole !== "superadmin" && !schoolId && !institutionId) return json({ ok: false, error: "A school or institution scope is required for this role" }, 400);
     const newUid = makeId("user");
-    await env.DB.prepare("INSERT INTO users (uid,email,display_name,role,school_id,institution_id,active,session_version,requires_password_reset) VALUES (?,?,?,?,?,?,?,?,1)")
-      .bind(newUid, email, clean(input.displayName, 160), assignedRole, schoolId || null, institutionId || null, 1, 1).run();
-    await audit(env, user, "admin.user.create", "user", newUid, { email });
+    await inNeonTransaction(env.PG, async () => {
+      await env.PG!.query(
+        "INSERT INTO users (uid,email,display_name,role,school_id,institution_id,active,session_version,requires_password_reset,raw_json,imported_at) VALUES ($1,$2,$3,$4,$5,$6,TRUE,1,TRUE,'{}',$7)",
+        [newUid, email, clean(input.displayName, 160), assignedRole, schoolId || null, institutionId || null, stamp()],
+      );
+      await audit(env, user, "admin.user.create", "user", newUid, { email });
+    });
     return json({ ok: true, user: { uid: newUid, email, requiresPasswordReset: true } }, 201);
   }
   if (uid && request.method === "PATCH") {
@@ -1148,20 +1278,22 @@ async function adminRoute(request: Request, env: AuthEnv, user: AuthUser, pathna
     if (input.role !== undefined) {
       const nextRole = clean(input.role, 80).toLowerCase();
       if (!ALLOWED_ROLES.has(nextRole)) return json({ ok: false, error: "Unsupported role" }, 400);
-      sets.push("role=?"); args.push(nextRole);
+      sets.push(`role=$${args.length + 1}`); args.push(nextRole);
     }
-    if (input.schoolId !== undefined) { sets.push("school_id=?"); args.push(clean(input.schoolId, 160) || null); }
-    if (input.institutionId !== undefined) { sets.push("institution_id=?"); args.push(clean(input.institutionId, 160) || null); }
-    if (input.active !== undefined) { sets.push("active=?"); args.push(input.active ? 1 : 0); }
+    if (input.schoolId !== undefined) { sets.push(`school_id=$${args.length + 1}`); args.push(clean(input.schoolId, 160) || null); }
+    if (input.institutionId !== undefined) { sets.push(`institution_id=$${args.length + 1}`); args.push(clean(input.institutionId, 160) || null); }
+    if (input.active !== undefined) { sets.push(`active=$${args.length + 1}`); args.push(Boolean(input.active)); }
     if (!sets.length) return json({ ok: false, error: "No allowed changes" }, 400);
     sets.push("session_version=session_version+1"); args.push(uid);
-    await env.DB.prepare(`UPDATE users SET ${sets.join(",")} WHERE uid=?`).bind(...args).run();
-    await audit(env, user, "admin.user.update", "user", uid, { changed: sets.map((x) => x.split("=")[0]) });
+    await inNeonTransaction(env.PG, async () => {
+      await env.PG!.query(`UPDATE users SET ${sets.join(",")} WHERE uid=$${args.length}`, args);
+      await audit(env, user, "admin.user.update", "user", uid, { changed: sets.map((x) => x.split("=")[0]) });
+    });
     return json({ ok: true, uid, sessionVersionRevoked: true });
   }
   if (pathname === "/api/admin/audit" && request.method === "GET") {
-    const rows = await env.DB.prepare("SELECT id,institution_id,school_id,actor_id,action,resource_type,resource_id,metadata_json,created_at FROM audit ORDER BY created_at DESC LIMIT 500").all<Row>();
-    return json({ ok: true, audit: rows.results.map((row) => ({
+    const rows = await env.PG.query<Row>("SELECT id,institution_id,school_id,actor_id,action,resource_type,resource_id,metadata_json,created_at FROM audit ORDER BY created_at DESC LIMIT 500");
+    return json({ ok: true, audit: rows.rows.map((row) => ({
       ...row,
       metadata: row.metadata_json ? JSON.parse(String(row.metadata_json)) : null,
       metadata_json: undefined,
@@ -1185,24 +1317,66 @@ async function payments(request: Request, env: AuthEnv, user: AuthUser, pathname
   const educationStudent = ["student", "learner"].includes(effectiveRole(user, "education"));
   const scope = tenantWhere(user, "", educationStudent ? "education" : "");
   const id = pathname.match(/^\/api\/payments\/([^/]+)$/)?.[1] || "";
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
   if (read) {
-    const rows = await env.DB.prepare(`SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at FROM payments WHERE ${scope.sql}${educationStudent ? " AND payer_id=?" : ""}${id ? " AND id=?" : ""} ORDER BY created_at DESC LIMIT 500`)
-      .bind(...scope.args, ...(educationStudent ? [user.uid] : []), ...(id ? [id] : [])).all<Row>();
-    return json({ ok: true, payments: rows.results.map((r) => ({ ...r, metadata: r.metadata_json ? JSON.parse(String(r.metadata_json)) : null })) });
+    const args: unknown[] = [...scope.args];
+    let filters = scope.sql;
+    if (educationStudent) {
+      args.push(user.uid);
+      filters += ` AND payer_id=$${args.length}`;
+    }
+    if (id) {
+      args.push(id);
+      filters += ` AND id=$${args.length}`;
+    }
+    const rows = await env.PG.query<Row>(
+      `SELECT id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at FROM payments WHERE ${filters} ORDER BY created_at DESC LIMIT 500`,
+      args,
+    );
+    return json({ ok: true, payments: rows.rows.map((r) => ({ ...r, metadata: r.metadata_json ? JSON.parse(String(r.metadata_json)) : null })) });
   }
   const input = await body(request);
   const key = clean(input.idempotencyKey || request.headers.get("idempotency-key"), 200);
   if (!key) return json({ ok: false, error: "Idempotency-Key is required" }, 400);
   const amount = Number(input.amount);
   if (!Number.isSafeInteger(amount) || amount <= 0) return json({ ok: false, error: "Amount must be a positive integer" }, 400);
-  const prior = await env.DB.prepare(`SELECT id,status FROM payments WHERE idempotency_key=? AND ${scope.sql} LIMIT 1`).bind(key, ...scope.args).all<Row>();
-  if (prior.results[0]) return json({ ok: true, payment: prior.results[0], idempotent: true }, 200);
-  const collision = await env.DB.prepare("SELECT id FROM payments WHERE idempotency_key=? LIMIT 1").bind(key).all<Row>();
-  if (collision.results[0]) return json({ ok: false, error: "Idempotency key is already used" }, 409);
+  const idempotencyScope = tenantWhere(user, "", educationStudent ? "education" : "", 2);
+  const priorArgs: unknown[] = [key, ...idempotencyScope.args];
+  let priorScopeSql = idempotencyScope.sql;
+  if (educationStudent) {
+    priorArgs.push(user.uid);
+    priorScopeSql += ` AND payer_id=$${priorArgs.length}`;
+  }
+  const prior = await env.PG.query<Row>(
+    `SELECT id,status FROM payments WHERE idempotency_key=$1 AND ${priorScopeSql} LIMIT 1`,
+    priorArgs,
+  );
+  if (prior.rows[0]) return json({ ok: true, payment: prior.rows[0], idempotent: true }, 200);
+  const collision = await env.PG.query<Row>("SELECT id FROM payments WHERE idempotency_key=$1 LIMIT 1", [key]);
+  if (collision.rows[0]) return json({ ok: false, error: "Idempotency key is already used" }, 409);
   const paymentId = makeId("payment"); const ts = stamp();
-  await env.DB.prepare("INSERT INTO payments (id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(paymentId, t.institutionId, t.schoolId, user.uid, amount, clean(input.currency, 8) || "UGX", "pending", null, null, key, JSON.stringify(input.metadata || {}), ts, ts).run();
-  await audit(env, user, "payment.create", "payment", paymentId);
+  const inserted = await inNeonTransaction(env.PG, async () => {
+    const result = await env.PG!.query<Row>(
+      "INSERT INTO payments (id,institution_id,school_id,payer_id,amount,currency,status,provider,provider_reference,idempotency_key,metadata_json,created_at,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT (idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING RETURNING id",
+      [paymentId, t.institutionId, t.schoolId, user.uid, amount, clean(input.currency, 8) || "UGX", "pending", null, null, key, JSON.stringify(input.metadata || {}), ts, ts],
+    );
+    if (result.rows[0]) await audit(env, user, "payment.create", "payment", paymentId);
+    return result.rows.length > 0;
+  });
+  if (!inserted) {
+    const existingArgs: unknown[] = [key, ...idempotencyScope.args];
+    let existingScopeSql = idempotencyScope.sql;
+    if (educationStudent) {
+      existingArgs.push(user.uid);
+      existingScopeSql += ` AND payer_id=$${existingArgs.length}`;
+    }
+    const existing = await env.PG.query<Row>(
+      `SELECT id,status FROM payments WHERE idempotency_key=$1 AND ${existingScopeSql} LIMIT 1`,
+      existingArgs,
+    );
+    if (existing.rows[0]) return json({ ok: true, payment: existing.rows[0], idempotent: true }, 200);
+    return json({ ok: false, error: "Idempotency key is already used" }, 409);
+  }
   return json({ ok: true, payment: { id: paymentId, status: "pending", provider: null, manual: true }, message: "Payment recorded as pending; no payment gateway is configured." }, 201);
 }
 
@@ -1214,6 +1388,7 @@ export async function handleDomainRoute(request: Request, env: AuthEnv, user: Au
     url.pathname.startsWith("/api/admin/") || url.pathname === "/api/pay" || url.pathname.startsWith("/api/payments");
   if (!protectedRoute) return null;
   if (!user) return json({ ok: false, error: "Authentication required" }, 401);
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
   if (url.pathname.startsWith("/api/school/platform-") || url.pathname.startsWith("/api/admin/platform")) {
     return handleEducationPlatformRoute(request, env, user, url.pathname);
   }

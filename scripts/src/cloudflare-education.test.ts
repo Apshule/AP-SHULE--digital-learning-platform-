@@ -26,7 +26,8 @@ const staticApiFiles = [
   path,
   source: readFileSync(resolve(root, "cloudflare/static", path), "utf8"),
 }));
-const serviceWorker = readFileSync(resolve(root, "cloudflare/static/sw.js"), "utf8");
+const serviceWorker = readFileSync(resolve(root, "cloudflare/static/pwa-push-handlers.js"), "utf8");
+const pagesBuild = readFileSync(resolve(root, "cloudflare/stage-assets.mjs"), "utf8");
 
 describe("Cloudflare Education learner creation permissions", () => {
   it("uses the headteacher secondary-student capability on learner writes", () => {
@@ -63,21 +64,21 @@ describe("Cloudflare Education learner creation permissions", () => {
     expect(landing).toContain('"teacher_independent"');
     expect(landing).toContain('["student", "learner", "individual"]');
     expect(landing).toContain('return "/workspace/student";');
-    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v13');
+    expect(landing).toContain('/sw.js?rev=cloudflare-shell-v15');
   });
 
   it("routes legacy workspace URLs to the matching Cloudflare page", () => {
     for (const route of [
       '["/workspace/admin", "/admin/"]',
-      '["/workspace/student", "/education/"]',
-      '["/workspace/teacher", "/education/"]',
+      '["/workspace/student", "/student/"]',
+      '["/workspace/teacher", "/teacher/"]',
       '["/workspace/clinic", "/clinic/"]',
       '["/workspace/farm", "/farm/"]',
       '["/workspace/mfi", "/mfi/"]',
       '["/education", "/education/"]',
-      '["/school", "/education/"]',
-      '["/student", "/education/"]',
-      '["/teacher", "/education/"]',
+      '["/school", "/secretary/"]',
+      '["/student", "/student/"]',
+      '["/teacher", "/teacher/"]',
       '["/mfi", "/mfi/"]',
       '["/clinic", "/clinic/"]',
       '["/farm", "/farm/"]',
@@ -99,14 +100,14 @@ describe("Cloudflare Education learner creation permissions", () => {
     }
   });
 
-  it("versions the single root worker and precaches both role workspaces", () => {
-    expect(serviceWorker).toContain('CACHE_NAME = "apshule-cloudflare-shell-v13"');
-    expect(serviceWorker).toContain('"/education/"');
-    expect(serviceWorker).toContain('"/admin/"');
-    for (const route of ["/workspace/student", "/workspace/teacher", "/workspace/head_teacher", "/school/", "/student/", "/teacher/"]) {
-      expect(serviceWorker).toContain(`"${route}"`);
-    }
+  it("generates one versioned Workbox worker with push and offline role-page support", () => {
+    expect(serviceWorker).toContain('const PAGES_CACHE_PREFIX = "apshule-cloudflare-shell-"');
+    expect(serviceWorker).toContain('addEventListener("push"');
+    expect(serviceWorker).toContain('addEventListener("notificationclick"');
+    expect(pagesBuild).toContain('generateSW({');
+    expect(pagesBuild).toContain('cacheId: `apshule-cloudflare-shell-${RELEASE}`');
+    expect(pagesBuild).toContain('globPatterns: ["**/*.{html,css,js,json,webmanifest,png,svg,ico,woff2}"]');
     expect(readFileSync(resolve(root, "cloudflare/static/index.html"), "utf8"))
-      .toContain('/sw.js?rev=cloudflare-shell-v13');
+      .toContain('/sw.js?rev=cloudflare-shell-v15');
   });
 });

@@ -13,9 +13,13 @@ const clean = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 const json = (v: unknown, status = 200) => new Response(JSON.stringify(v), {
   status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
 });
-const scope = (u: AuthUser) => u.schoolId
-  ? { sql: "(school_id=? OR (school_id IS NULL AND institution_id=?))", args: [u.schoolId, u.institutionId || ""] }
-  : { sql: "institution_id=?", args: [u.institutionId || ""] };
+const scope = (u: AuthUser, firstParameter = 1) => u.schoolId
+  ? { sql: `(school_id=$${firstParameter} OR (school_id IS NULL AND institution_id=$${firstParameter + 1}))`, args: [u.schoolId, u.institutionId || ""] }
+  : { sql: `institution_id=$${firstParameter}`, args: [u.institutionId || ""] };
+function database(env: EducationFileEnv) {
+  if (!env.PG) throw new Error("PostgreSQL persistence is unavailable");
+  return env.PG;
+}
 const role = (u: AuthUser) => {
   const value = clean(u.role, 80).toLowerCase().replace(/[ -]+/g, "_");
   if (value === "super_admin") return "superadmin";
@@ -28,17 +32,20 @@ const role = (u: AuthUser) => {
 };
 async function caps(env: EducationFileEnv, u: AuthUser) {
   if (role(u) === "superadmin") return true;
-  const rows = await env.DB.prepare("SELECT capability FROM role_capabilities WHERE lower(role)=? AND sector='education'")
-    .bind(role(u)).all<{ capability: string }>();
-  return rows.results.some((r) => r.capability === "lessons.manage" || r.capability === "*");
+  const rows = await database(env).query<{ capability: string }>(
+    "SELECT capability FROM public.role_capabilities WHERE lower(role)=$1 AND sector='education'",
+    [role(u)],
+  );
+  return rows.rows.some((r) => r.capability === "lessons.manage" || r.capability === "*");
 }
 async function teacherAssigned(env: EducationFileEnv, u: AuthUser, lesson: Row) {
   if (role(u) === "superadmin") return true;
   const sc = scope(u);
-  const rows = await env.DB.prepare(
-    "SELECT record_json FROM sector_records WHERE sector='education' AND record_type='teacher_assignment' AND " + sc.sql + " LIMIT 500",
-  ).bind(...sc.args).all<Row>();
-  return rows.results.some((r) => {
+  const rows = await database(env).query<Row>(
+    "SELECT record_json FROM public.sector_records WHERE sector='education' AND record_type='teacher_assignment' AND " + sc.sql + " LIMIT 500",
+    sc.args,
+  );
+  return rows.rows.some((r) => {
     try {
       const raw = JSON.parse(String(r.record_json)) as Row;
       const x = raw.data && typeof raw.data === "object" ? { ...raw.data as Row, ...raw } : raw;
@@ -75,10 +82,11 @@ async function canLesson(env: EducationFileEnv, u: AuthUser, lesson: Row, write 
     if (Number(lesson.published) !== 1) return false;
     const userHasScope = Boolean(u.schoolId || u.institutionId);
     const scopeFilter = userHasScope ? ` AND ${sc.sql}` : "";
-    const learners = await env.DB.prepare(
-      "SELECT id,record_json,owner_uid,school_id,institution_id FROM sector_records WHERE sector='education' AND record_type IN ('learner','student') AND is_deleted=0" + scopeFilter,
-    ).bind(...(userHasScope ? sc.args : [])).all<Row>();
-    const matches = learners.results.filter((x) => {
+    const learners = await database(env).query<Row>(
+      "SELECT id,record_json,owner_uid,school_id,institution_id FROM public.sector_records WHERE sector='education' AND record_type IN ('learner','student') AND is_deleted=0" + scopeFilter,
+      userHasScope ? sc.args : [],
+    );
+    const matches = learners.rows.filter((x) => {
       try {
         const raw = JSON.parse(String(x.record_json)) as Row;
         const d = raw.data && typeof raw.data === "object" ? { ...raw.data as Row, ...raw } : raw;
@@ -105,13 +113,14 @@ async function canLesson(env: EducationFileEnv, u: AuthUser, lesson: Row, write 
       })());
   }
   if (r === "parent") {
-    const learners = await env.DB.prepare(
-      "SELECT s.id,s.record_json FROM sector_records s JOIN parent_links p ON p.learner_id=s.id " +
+    const learners = await database(env).query<Row>(
+      "SELECT s.id,s.record_json FROM public.sector_records s JOIN public.parent_links p ON p.learner_id=s.id " +
       "WHERE s.sector='education' AND s.record_type IN ('learner','student') AND s.is_deleted=0 " +
-      "AND p.parent_uid=? AND p.active=1 AND p.institution_id IS s.institution_id AND p.school_id IS s.school_id " +
-      "AND p.institution_id IS ? AND p.school_id IS ?",
-    ).bind(u.uid, lesson.institution_id ?? null, lesson.school_id ?? null).all<Row>();
-    return learners.results.some((x) => {
+      "AND p.parent_uid=$1 AND p.active=1 AND p.institution_id IS NOT DISTINCT FROM s.institution_id AND p.school_id IS NOT DISTINCT FROM s.school_id " +
+      "AND p.institution_id IS NOT DISTINCT FROM $2 AND p.school_id IS NOT DISTINCT FROM $3",
+      [u.uid, lesson.institution_id ?? null, lesson.school_id ?? null],
+    );
+    return learners.rows.some((x) => {
       try {
         const raw = JSON.parse(String(x.record_json)) as Row;
         const d = raw.data && typeof raw.data === "object" ? { ...raw.data as Row, ...raw } : raw;
@@ -136,12 +145,19 @@ export async function handleEducationFileRoute(request: Request, env: EducationF
   } catch {
     return json({ ok: false, error: "Invalid education file route" }, 400);
   }
-  const lesson = (await env.DB.prepare("SELECT * FROM education_lessons WHERE id=? LIMIT 1").bind(lessonId).all<Row>()).results[0];
+  if (!env.PG) return json({ ok: false, error: "PostgreSQL persistence is unavailable" }, 503);
+  const lesson = (await database(env).query<Row>(
+    "SELECT * FROM public.education_lessons WHERE id=$1 LIMIT 1",
+    [lessonId],
+  )).rows[0];
   if (!lesson) return json({ ok: false, error: "Lesson not found" }, 404);
   const write = request.method !== "GET";
   if (!await canLesson(env, user, lesson, write)) return json({ ok: false, error: "Forbidden" }, 403);
   if (request.method === "GET") {
-    const file = (await env.DB.prepare("SELECT * FROM education_files WHERE id=? AND lesson_id=? LIMIT 1").bind(fileId, lessonId).all<Row>()).results[0];
+    const file = (await database(env).query<Row>(
+      "SELECT * FROM public.education_files WHERE id=$1 AND lesson_id=$2 LIMIT 1",
+      [fileId, lessonId],
+    )).rows[0];
     if (!file || !env.FILES) return json({ ok: false, error: "File not found" }, 404);
     const object = await env.FILES.get(clean(file.object_key)); if (!object?.body) return json({ ok: false, error: "Stored file is unavailable" }, 404);
     return new Response(object.body, { headers: { "content-type": "application/pdf", "content-disposition": `inline; filename="${safeFilename(clean(file.filename))}"`, "cache-control": "no-store" } });
@@ -149,11 +165,14 @@ export async function handleEducationFileRoute(request: Request, env: EducationF
   if (request.method === "DELETE") {
     if (!fileId) return json({ ok: false, error: "File ID is required" }, 400);
     if (!env.FILES) return json({ ok: false, error: "File storage is unavailable" }, 503);
-    const file = (await env.DB.prepare("SELECT object_key FROM education_files WHERE id=? AND lesson_id=?").bind(fileId, lessonId).all<Row>()).results[0];
+    const file = (await database(env).query<Row>(
+      "SELECT object_key FROM public.education_files WHERE id=$1 AND lesson_id=$2",
+      [fileId, lessonId],
+    )).rows[0];
     if (!file) return json({ ok: false, error: "File not found" }, 404);
     try {
       await env.FILES.delete(clean(file.object_key));
-      await env.DB.prepare("DELETE FROM education_files WHERE id=? AND lesson_id=?").bind(fileId, lessonId).run();
+      await database(env).query("DELETE FROM public.education_files WHERE id=$1 AND lesson_id=$2", [fileId, lessonId]);
     } catch { return json({ ok: false, error: "File deletion failed" }, 502); }
     return json({ ok: true, deleted: true });
   }
@@ -171,8 +190,10 @@ export async function handleEducationFileRoute(request: Request, env: EducationF
   const ts = new Date().toISOString();
   try {
     await env.FILES.put(key, raw, { httpMetadata: { contentType: "application/pdf" } });
-    await env.DB.prepare("INSERT INTO education_files(id,lesson_id,institution_id,school_id,object_key,filename,content_type,size_bytes,sha256,created_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
-      .bind(id, lessonId, lesson.institution_id, lesson.school_id, key, safeFilename(file.name), "application/pdf", raw.byteLength, sha, user.uid, ts).run();
+    await database(env).query(
+      "INSERT INTO public.education_files(id,lesson_id,institution_id,school_id,object_key,filename,content_type,size_bytes,sha256,created_by,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+      [id, lessonId, lesson.institution_id, lesson.school_id, key, safeFilename(file.name), "application/pdf", raw.byteLength, sha, user.uid, ts],
+    );
   } catch {
     try { if (env.FILES.delete) await env.FILES.delete(key); } catch { /* preserve the explicit upload failure */ }
     return json({ ok: false, error: "File upload metadata could not be saved" }, 502);

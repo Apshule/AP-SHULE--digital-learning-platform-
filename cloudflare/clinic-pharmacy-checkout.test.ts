@@ -64,12 +64,16 @@ function createClinicDb() {
 }
 
 function clinicEnv(db: DatabaseSync, beforeBatch?: () => void): AuthEnv {
+  let beforeBatchCalled = false;
   const DB = {
     prepare(sql: string) {
       return new LocalD1Statement(db, sql);
     },
     async batch(statements: LocalD1Statement[]) {
-      beforeBatch?.();
+      if (!beforeBatchCalled) {
+        beforeBatch?.();
+        beforeBatchCalled = true;
+      }
       db.exec("BEGIN");
       try {
         const results = [];
@@ -82,7 +86,102 @@ function clinicEnv(db: DatabaseSync, beforeBatch?: () => void): AuthEnv {
       }
     },
   };
-  return { DB } as unknown as AuthEnv;
+  const PG = {
+    async query<T = Record<string, unknown>>(sql: string, values: unknown[] = []): Promise<{ rows: T[] }> {
+      const normalizedSql = sql.trim();
+      const command = normalizedSql.toUpperCase();
+      if (command === "BEGIN") {
+        if (!beforeBatchCalled) {
+          beforeBatch?.();
+          beforeBatchCalled = true;
+        }
+        db.exec("BEGIN");
+        return { rows: [] };
+      }
+      if (command === "COMMIT" || command === "ROLLBACK") {
+        db.exec(command);
+        return { rows: [] };
+      }
+
+      if (normalizedSql.includes("json_agg(json_build_object(")) {
+        const institutionId = String(values[0] ?? "");
+        const saleId = values[1] === undefined ? null : String(values[1]);
+        const sales = db.prepare(
+          `SELECT id, bill_record_id, patient_id, patient_name, total_amount, created_by, created_at
+             FROM clinic_pharmacy_sales
+            WHERE institution_id=? AND (? IS NULL OR id=?)
+            ORDER BY created_at DESC
+            LIMIT ?`,
+        ).all(institutionId, saleId, saleId, saleId ? 1 : 100) as Array<Record<string, unknown>>;
+        const rows = sales.map((sale) => {
+          const bill = db.prepare(
+            `SELECT record_json FROM sector_records
+              WHERE id=? AND sector='clinic' AND institution_id=?
+                AND record_type IN ('billing', 'clinic_billing') AND is_deleted=0`,
+          ).get(sale.bill_record_id, institutionId) as { record_json?: string } | undefined;
+          const billData = bill?.record_json ? JSON.parse(bill.record_json) as Record<string, unknown> : {};
+          const items = db.prepare(
+            `SELECT inventory_record_id, item_name, quantity, unit_price, line_total
+               FROM clinic_pharmacy_sale_items
+              WHERE sale_id=? AND institution_id=?
+              ORDER BY item_name`,
+          ).all(sale.id, institutionId) as Array<Record<string, unknown>>;
+          const totalAmount = Number(sale.total_amount);
+          return {
+            id: sale.id,
+            billId: sale.bill_record_id,
+            patientId: sale.patient_id,
+            patientName: sale.patient_name,
+            totalAmount,
+            createdBy: sale.created_by,
+            createdAt: sale.created_at,
+            invoiceNumber: billData.invoiceNumber ?? null,
+            billStatus: billData.status ?? "missing",
+            balanceRemaining: Number(billData.balanceRemaining ?? billData.totalAmount ?? totalAmount),
+            items: items.map((item) => ({
+              inventoryId: item.inventory_record_id,
+              name: item.item_name,
+              quantity: Number(item.quantity),
+              unitPrice: Number(item.unit_price),
+              lineTotal: Number(item.line_total),
+            })),
+          };
+        });
+        return { rows: rows as T[] };
+      }
+
+      if (/^UPDATE\s+sector_records\b/i.test(normalizedSql)
+        && normalizedSql.includes("jsonb_build_object('unitPrice'")) {
+        const [unitPrice, timestamp, recordId, institutionId] = values;
+        const record = db.prepare(
+          `SELECT record_json, record_type, is_deleted
+             FROM sector_records
+            WHERE id=? AND sector='clinic' AND institution_id=?`,
+        ).get(recordId, institutionId) as {
+          record_json?: string;
+          record_type?: string;
+          is_deleted?: number;
+        } | undefined;
+        if (!record || !["pharmacy_inventory", "clinic_pharmacy_inventory"].includes(String(record.record_type))
+          || Number(record.is_deleted) !== 0) return { rows: [] };
+        const data = JSON.parse(String(record.record_json || "{}")) as Record<string, unknown>;
+        if (String(data.status ?? "active").toLowerCase() === "discontinued") return { rows: [] };
+        data.unitPrice = Number(unitPrice);
+        data.updatedAt = timestamp;
+        db.prepare("UPDATE sector_records SET record_json=?, updated_at=? WHERE id=?")
+          .run(JSON.stringify(data), timestamp, recordId);
+        return { rows: [{ id: recordId } as T] };
+      }
+
+      const sqliteSql = normalizedSql.replace(/\$(\d+)/g, "?");
+      if (/^(SELECT|WITH)\b/i.test(sqliteSql)) {
+        return { rows: db.prepare(sqliteSql).all(...values as never[]) as T[] };
+      }
+      db.prepare(sqliteSql).run(...values as never[]);
+      return { rows: [] };
+    },
+  };
+  return { DB, PG } as unknown as AuthEnv;
 }
 
 function insertRecord(

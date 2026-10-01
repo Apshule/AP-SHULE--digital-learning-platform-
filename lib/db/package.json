@@ -9,7 +9,12 @@
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "migrate:d1-users": "node ./scripts/migrate-d1-users.mjs",
+    "migrate:neon-schema": "node ./scripts/apply-neon-migrations.mjs",
+    "migrate:neon-schema:apply": "node ./scripts/apply-neon-migrations.mjs --apply",
+    "migrate:d1-operational-data": "node ./scripts/migrate-d1-operational-data.mjs",
+    "migrate:d1-operational-data:apply": "node ./scripts/migrate-d1-operational-data.mjs --apply"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

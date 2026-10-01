@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const output = resolve(fileURLToPath(new URL("./assets/", import.meta.url)));
+const root = resolve(fileURLToPath(new URL("../", import.meta.url)));
 
 async function isFile(relativePath) {
   try {
@@ -37,14 +38,18 @@ test("Pages bundle includes the public site and all core workspaces", async () =
     "platform/index.html",
     "skills/index.html",
     "tech/index.html",
+    "learn/index.html",
+    "my-account/index.html",
     "profile.html",
     "reset-password.html",
     "manifest.json",
     "manifest.webmanifest",
     "sw.js",
+    "pwa-push-handlers.js",
     "icons/icon-192.png",
     ".well-known/assetlinks.json",
     ".nojekyll",
+    "_nojekyll",
     "CNAME",
     "robots.txt",
     "sitemap.xml",
@@ -54,10 +59,32 @@ test("Pages bundle includes the public site and all core workspaces", async () =
   assert.equal((await readFile(join(output, "CNAME"), "utf8")).trim(), "appshule.com");
 });
 
+test("Pages staging emits one versioned Workbox worker and preserves both nojekyll markers", async () => {
+  const worker = await readFile(join(output, "sw.js"), "utf8");
+  const pushHandlers = await readFile(join(output, "pwa-push-handlers.js"), "utf8");
+  const rootWorker = await readFile(join(root, "sw.js"), "utf8");
+
+  assert.match(worker, /precache-v2/);
+  assert.match(worker, /apshule-cloudflare-shell-v15/);
+  assert.match(worker, /pwa-push-handlers\.js/);
+  assert.doesNotMatch(worker, /firebase-messaging-sw\.js/);
+  assert.match(pushHandlers, /addEventListener\("push"/);
+  assert.match(pushHandlers, /addEventListener\("notificationclick"/);
+  assert.match(rootWorker, /precache-v2/);
+  assert.match(rootWorker, /appshule-offline-v15/);
+
+  for (const marker of [".nojekyll", "_nojekyll"]) {
+    assert.equal(await isFile(marker), true, `Missing staged marker: ${marker}`);
+    assert.equal((await stat(join(root, marker))).isFile(), true, `Missing root marker: ${marker}`);
+  }
+});
+
 test("Pages bundle routes role aliases to their distinct workspaces", async () => {
   const aliases = new Map([
     ["login", "/"],
     ["workspace", "/"],
+    ["learn", "/student/"],
+    ["my-account", "/profile.html"],
     ["workspace/admin", "/admin/"],
     ["workspace/student", "/student/"],
     ["workspace/individual", "/student/"],

@@ -20,3 +20,9 @@ The helper only invokes `git push` after it finds allowlisted working-tree chang
 **Why:** Education changes were committed before the helper ran, so the helper staged nothing and skipped its push even though the remote was behind.
 
 **How to apply:** After a manual commit, compare local `HEAD` with `origin/main`; if local is ahead, use the helper's authenticated push environment to send `HEAD:main`, then confirm both hashes match.
+
+The authenticated push path can target the repository URL directly without refreshing the local `origin/main` tracking ref. Treat the actual remote `main` SHA as authoritative; do not push local `HEAD` wholesale when it contains unpublished uploads or notes.
+
+**Why:** A successful release push left `origin/main` stale, while local-only commits also contained attached media and instructions that were not part of the release.
+
+**How to apply:** Query remote `main` through the authenticated path before release. If the local branch has unrelated commits, create a release containing only intended changes on top of the remote commit.

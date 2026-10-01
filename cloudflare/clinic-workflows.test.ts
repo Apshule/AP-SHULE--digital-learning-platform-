@@ -5,7 +5,13 @@ import { handleClinicWorkflowRoute } from "./clinic-workflows";
 import { handleDomainRoute } from "./domain-routes";
 import type { AuthEnv, AuthUser } from "./backend-types";
 
-const env = {} as AuthEnv;
+const env = {
+  PG: {
+    async query() {
+      throw new Error("Authorization-only Clinic tests must not query PostgreSQL");
+    },
+  },
+} as unknown as AuthEnv;
 const user = (role: string, institutionId = "clinic-1") => ({
   uid: "user-1",
   role,

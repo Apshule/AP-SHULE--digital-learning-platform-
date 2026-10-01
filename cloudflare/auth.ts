@@ -1,4 +1,5 @@
 import type { AuthEnv, AuthUser, AuthenticationResult } from "./backend-types";
+import { inNeonTransaction } from "./neon-db";
 
 const SESSION_PREFIX = "auth:session:v2:";
 const SESSION_TTL = 60 * 60 * 24 * 14;
@@ -127,10 +128,12 @@ function requestToken(request: Request): string {
 }
 
 async function getUser(env: AuthEnv, uid: string): Promise<AuthUser | null> {
-  const result = await env.DB.prepare(
-    "SELECT uid,email,display_name,role,school_id,institution_id,session_version,active,disabled FROM users WHERE uid = ? LIMIT 1",
-  ).bind(uid).all<Record<string, unknown>>();
-  const row = result.results[0];
+  if (!env.PG) return null;
+  const result = await env.PG.query<Record<string, unknown>>(
+    "SELECT uid,email,display_name,role,school_id,institution_id,session_version,active,disabled FROM users WHERE uid = $1 LIMIT 1",
+    [uid],
+  );
+  const row = result.rows[0];
   if (!row || Number(row.disabled) === 1 || Number(row.active ?? 1) === 0) return null;
   const storedRole = text(row.role, 80);
   const normalizedRole = storedRole.trim().toLowerCase().replace(/[ -]+/g, "_");
@@ -152,6 +155,7 @@ export async function authenticate(req: Request, env: AuthEnv): Promise<Authenti
   try {
     const session = JSON.parse(raw) as { uid?: string; sessionVersion?: number };
     if (!session.uid) return { authenticated: false, reason: "invalid", status: 401 };
+    if (!env.PG) return { authenticated: false, reason: "unavailable", status: 503 };
     const user = await getUser(env, session.uid);
     if (!user) return { authenticated: false, reason: "disabled", status: 401 };
     if (user.sessionVersion !== Number(session.sessionVersion)) return { authenticated: false, reason: "invalid", status: 401 };
@@ -234,6 +238,7 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
   if (!env.SESSIONS) return json({ ok: false, error: "SESSIONS KV is not configured" }, 503);
 
   if (path === "/api/auth/login") {
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
     const body = await input(req);
     const email = text(body.email, 320).toLowerCase();
     const password = typeof body.password === "string" ? body.password : "";
@@ -242,9 +247,10 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     if (!await checkRateLimit(env, req, "password-login", email)) {
       return json({ ok: false, error: "Too many sign-in attempts. Wait a few minutes and try again." }, 429);
     }
-    const row = (await env.DB.prepare(
-      "SELECT uid,password_hash_v2,email_verified,requires_password_reset,active,disabled,role FROM users WHERE lower(email)=? LIMIT 1",
-    ).bind(email).all<Record<string, unknown>>()).results[0];
+    const row = (await env.PG.query<Record<string, unknown>>(
+      "SELECT uid,password_hash_v2,email_verified,requires_password_reset,active,disabled,role FROM users WHERE lower(email)=$1 LIMIT 1",
+      [email],
+    )).rows[0];
     const storedHash = typeof row?.password_hash_v2 === "string" ? row.password_hash_v2 : DUMMY_PASSWORD_HASH;
     const passwordMatches = await verifyPassword(password, storedHash);
     if (!row || !passwordMatches || Number(row.email_verified) !== 1 ||
@@ -278,34 +284,39 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
       return json({ ok: false, error: `Enter a valid name, email, account type, and password of at least ${minPasswordLength} characters. School teaching applications also need a school or organization name.` }, 400);
     }
     if (!await checkRateLimit(env, req, "signup-request", email)) return json({ ok: true, message: SIGNUP_MESSAGE });
-    const existing = await env.DB.prepare("SELECT uid FROM users WHERE lower(email)=? LIMIT 1").bind(email).all<{ uid: string }>();
-    if (existing.results.length) return json({ ok: true, message: SIGNUP_MESSAGE });
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const existing = await env.PG.query<{ uid: string }>(
+      "SELECT uid FROM users WHERE lower(email)=$1 LIMIT 1",
+      [email],
+    );
+    if (existing.rows.length) return json({ ok: true, message: SIGNUP_MESSAGE });
 
     const now = Date.now();
-    await env.DB.prepare("DELETE FROM signup_challenges WHERE expires_at_ms<=?").bind(now).run();
+    await env.PG.query("DELETE FROM signup_challenges WHERE expires_at_ms<=$1", [now]);
     const uid = `signup_${randomToken(20)}`;
     const code = randomSixDigitCode();
     const codeHash = await passwordHash(`${uid}:${code}`);
     const passwordHashValue = await passwordHash(password);
-    const saved = await env.DB.prepare(
+    const saved = await env.PG.query<{ email: string }>(
       `INSERT INTO signup_challenges
          (email,uid,display_name,account_type,organization_name,teaching_details,password_hash,code_hash,
           expires_at_ms,requested_at_ms,failed_attempts,locked_until_ms,consumed_at_ms)
-       VALUES (?,?,?,?,?,?,?,?,?,?,0,0,NULL)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,0,NULL)
        ON CONFLICT(email) DO UPDATE SET uid=excluded.uid,display_name=excluded.display_name,
          account_type=excluded.account_type,organization_name=excluded.organization_name,
          teaching_details=excluded.teaching_details,password_hash=excluded.password_hash,
          code_hash=excluded.code_hash,expires_at_ms=excluded.expires_at_ms,
          requested_at_ms=excluded.requested_at_ms,failed_attempts=0,locked_until_ms=0,consumed_at_ms=NULL
-       WHERE signup_challenges.requested_at_ms<=?
-         AND signup_challenges.locked_until_ms<=?
+        WHERE signup_challenges.requested_at_ms<=$11
+          AND signup_challenges.locked_until_ms<=$12
          AND signup_challenges.consumed_at_ms IS NULL
        RETURNING email`,
-    ).bind(
-      email, uid, displayName, accountType, organizationName || null, teachingDetails || null,
-      passwordHashValue, codeHash, now + SIGNUP_CODE_TTL_MS, now, now - SIGNUP_RESEND_COOLDOWN_MS, now,
-    ).all<{ email: string }>();
-    if (!saved.results.length) return json({ ok: true, message: SIGNUP_MESSAGE });
+      [
+        email, uid, displayName, accountType, organizationName || null, teachingDetails || null,
+        passwordHashValue, codeHash, now + SIGNUP_CODE_TTL_MS, now, now - SIGNUP_RESEND_COOLDOWN_MS, now,
+      ],
+    );
+    if (!saved.rows.length) return json({ ok: true, message: SIGNUP_MESSAGE });
     try {
       await sendSignupVerificationEmail(env, email, code);
     } catch (error) {
@@ -313,7 +324,7 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
         "[auth] signup verification email delivery failed",
         error instanceof Error ? error.message : "unknown provider failure",
       );
-      await env.DB.prepare("DELETE FROM signup_challenges WHERE email=? AND code_hash=?").bind(email, codeHash).run();
+      await env.PG.query("DELETE FROM signup_challenges WHERE email=$1 AND code_hash=$2", [email, codeHash]);
       return json({ ok: false, error: "Verification email could not be delivered. Try again later." }, 502);
     }
     return json({ ok: true, message: SIGNUP_MESSAGE });
@@ -325,55 +336,79 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const code = text(body.code, 12);
     const invalid = () => json({ ok: false, error: "The verification code is invalid or expired. Request a new code and try again." }, 400);
     if (!email || !/^\d{6}$/.test(code) || !await checkRateLimit(env, req, "signup-verify", email)) return invalid();
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
     const now = Date.now();
-    const challenge = (await env.DB.prepare(
-      "SELECT uid,code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM signup_challenges WHERE email=? AND consumed_at_ms IS NULL LIMIT 1",
-    ).bind(email).all<{ uid: string; code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>()).results[0];
+    const challenge = (await env.PG.query<{ uid: string; code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>(
+      "SELECT uid,code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM signup_challenges WHERE email=$1 AND consumed_at_ms IS NULL LIMIT 1",
+      [email],
+    )).rows[0];
     if (!challenge || Number(challenge.expires_at_ms) <= now || Number(challenge.locked_until_ms) > now ||
       !await verifyPassword(`${challenge.uid}:${code}`, challenge.code_hash)) {
       if (challenge && Number(challenge.expires_at_ms) > now && Number(challenge.locked_until_ms) <= now) {
-        await env.DB.prepare(
+        await env.PG.query(
           `UPDATE signup_challenges
            SET failed_attempts=failed_attempts+1,
-               locked_until_ms=CASE WHEN failed_attempts+1>=? THEN ? ELSE locked_until_ms END
-           WHERE email=? AND consumed_at_ms IS NULL AND failed_attempts<?`,
-        ).bind(SIGNUP_MAX_FAILURES, now + SIGNUP_LOCK_MS, email, SIGNUP_MAX_FAILURES).run();
+               locked_until_ms=CASE WHEN failed_attempts+1>=$1 THEN $2 ELSE locked_until_ms END
+           WHERE email=$3 AND consumed_at_ms IS NULL AND failed_attempts<$4`,
+          [SIGNUP_MAX_FAILURES, now + SIGNUP_LOCK_MS, email, SIGNUP_MAX_FAILURES],
+        );
       }
       return invalid();
     }
 
     const consumedAt = Date.now();
     const verifiedAt = new Date(consumedAt).toISOString();
-    const result = await env.DB.batch([
-      env.DB.prepare(
-        `UPDATE signup_challenges SET consumed_at_ms=?
-         WHERE email=? AND uid=? AND code_hash=? AND expires_at_ms>? AND locked_until_ms<=? AND consumed_at_ms IS NULL
+    const pg = env.PG;
+    const createdUser = await inNeonTransaction(pg, async () => {
+      await pg.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [email]);
+      const consumed = await pg.query<{ uid: string }>(
+        `UPDATE signup_challenges SET consumed_at_ms=$1
+         WHERE email=$2 AND uid=$3 AND code_hash=$4 AND expires_at_ms>$1 AND locked_until_ms<=$1 AND consumed_at_ms IS NULL
          RETURNING uid`,
-      ).bind(consumedAt, email, challenge.uid, challenge.code_hash, consumedAt, consumedAt),
-      env.DB.prepare(
+        [consumedAt, email, challenge.uid, challenge.code_hash],
+      );
+      if (!consumed.rows.length) return null;
+
+      const inserted = await pg.query<Record<string, unknown>>(
         `INSERT INTO users
            (uid,email,display_name,role,disabled,email_verified,requires_password_reset,raw_json,created_at,imported_at,
             password_hash_v2,password_salt_v2,hash_algorithm,active,session_version)
          SELECT uid,email,display_name,CASE WHEN account_type='student' THEN 'student' ELSE '' END,
-           0,1,0,'{}',?,?,password_hash,NULL,'PBKDF2-SHA256',
-           CASE WHEN account_type='student' THEN 1 ELSE 0 END,1
+           FALSE,TRUE,FALSE,'{}',$1,$2,password_hash,NULL,'PBKDF2-SHA256',
+           account_type='student',1
          FROM signup_challenges
-         WHERE email=? AND uid=? AND consumed_at_ms=? AND NOT EXISTS
-           (SELECT 1 FROM users WHERE lower(email)=?)
+         WHERE email=$3 AND uid=$4 AND consumed_at_ms=$5 AND NOT EXISTS
+           (SELECT 1 FROM users WHERE lower(email)=$6)
          RETURNING uid,email,display_name,role,school_id,institution_id,session_version`,
-      ).bind(verifiedAt, verifiedAt, email, challenge.uid, consumedAt, email),
-      env.DB.prepare(
-        `INSERT INTO teacher_applications
+        [verifiedAt, verifiedAt, email, challenge.uid, consumedAt, email],
+      );
+      const user = inserted.rows[0];
+      if (!user) {
+        await pg.query(
+          "DELETE FROM signup_challenges WHERE email=$1 AND consumed_at_ms=$2",
+          [email, consumedAt],
+        );
+        return null;
+      }
+
+      if (text(user.role, 80) !== "student") {
+        await pg.query(
+          `INSERT INTO teacher_applications
            (id,uid,application_type,organization_name,teaching_details,status,submitted_at)
-         SELECT ?,c.uid,c.account_type,c.organization_name,c.teaching_details,'pending',?
-         FROM signup_challenges c JOIN users u ON u.uid=c.uid
-         WHERE c.email=? AND c.uid=? AND c.consumed_at_ms=? AND c.account_type<>'student'
-         RETURNING id`,
-      ).bind(`application_${randomToken(16)}`, verifiedAt, email, challenge.uid, consumedAt),
-      env.DB.prepare("DELETE FROM signup_challenges WHERE email=? AND consumed_at_ms=?").bind(email, consumedAt),
-    ]);
-    const createdUser = result[1]?.results?.[0] as Record<string, unknown> | undefined;
-    if (!result[0]?.results?.length || !createdUser) return invalid();
+           SELECT $1,c.uid,c.account_type,c.organization_name,c.teaching_details,'pending',$2
+           FROM signup_challenges c JOIN users u ON u.uid=c.uid
+           WHERE c.email=$3 AND c.uid=$4 AND c.consumed_at_ms=$5 AND c.account_type<>'student'
+           RETURNING id`,
+          [`application_${randomToken(16)}`, verifiedAt, email, challenge.uid, consumedAt],
+        );
+      }
+      await pg.query(
+        "DELETE FROM signup_challenges WHERE email=$1 AND consumed_at_ms=$2",
+        [email, consumedAt],
+      );
+      return user;
+    });
+    if (!createdUser) return invalid();
     const accountType = text(createdUser.role, 80);
     if (accountType !== "student") {
       return json({
@@ -394,31 +429,35 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
       return json({ ok: false, error: "Email sign-in is not configured" }, 503);
     }
     if (!email || !await checkRateLimit(env, req, "login-otp-request", email)) return json({ ok: true, message });
-    const row = (await env.DB.prepare(
-      "SELECT uid,email FROM users WHERE lower(email)=? AND active=1 AND disabled=0 LIMIT 1",
-    ).bind(email).all<{ uid: string; email: string }>()).results[0];
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const row = (await env.PG.query<{ uid: string; email: string }>(
+      "SELECT uid,email FROM users WHERE lower(email)=$1 AND active=TRUE AND disabled=FALSE LIMIT 1",
+      [email],
+    )).rows[0];
     if (!row) return json({ ok: true, message });
     const now = Date.now();
-    await env.DB.prepare("DELETE FROM login_otp_challenges WHERE expires_at_ms<=? OR (locked_until_ms>0 AND locked_until_ms<=?)")
-      .bind(now, now).run();
+    await env.PG.query(
+      "DELETE FROM login_otp_challenges WHERE expires_at_ms<=$1 OR (locked_until_ms>0 AND locked_until_ms<=$1)",
+      [now],
+    );
     const code = randomSixDigitCode();
     const codeHash = await passwordHash(`${row.uid}:${code}`);
-    const saved = await env.DB.prepare(
+    const saved = await env.PG.query<{ uid: string }>(
       `INSERT INTO login_otp_challenges (uid,code_hash,expires_at_ms,requested_at_ms,failed_attempts,locked_until_ms,consumed_at_ms)
-       VALUES (?,?,?,?,0,0,NULL)
+       VALUES ($1,$2,$3,$4,0,0,NULL)
        ON CONFLICT(uid) DO UPDATE SET code_hash=excluded.code_hash,expires_at_ms=excluded.expires_at_ms,
          requested_at_ms=excluded.requested_at_ms,failed_attempts=0,locked_until_ms=0,consumed_at_ms=NULL
-       WHERE login_otp_challenges.locked_until_ms<=?
-         AND login_otp_challenges.requested_at_ms<=?
+       WHERE login_otp_challenges.locked_until_ms<=$5
+          AND login_otp_challenges.requested_at_ms<=$6
          AND login_otp_challenges.consumed_at_ms IS NULL
        RETURNING uid`,
-    ).bind(row.uid, codeHash, now + LOGIN_OTP_TTL_MS, now, now, now - LOGIN_OTP_RESEND_COOLDOWN_MS)
-      .all<{ uid: string }>();
-    if (!saved.results.length) return json({ ok: true, message });
+      [row.uid, codeHash, now + LOGIN_OTP_TTL_MS, now, now, now - LOGIN_OTP_RESEND_COOLDOWN_MS],
+    );
+    if (!saved.rows.length) return json({ ok: true, message });
     try {
       await sendLoginOtpEmail(env, row.email, code);
     } catch {
-      await env.DB.prepare("DELETE FROM login_otp_challenges WHERE uid=? AND code_hash=?").bind(row.uid, codeHash).run();
+      await env.PG.query("DELETE FROM login_otp_challenges WHERE uid=$1 AND code_hash=$2", [row.uid, codeHash]);
     }
     return json({ ok: true, message });
   }
@@ -429,29 +468,35 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const code = text(body.code, 12);
     const invalid = () => json({ ok: false, error: "The sign-in code is invalid or expired. Request a new code and try again." }, 400);
     if (!email || !/^\d{6}$/.test(code) || !await checkRateLimit(env, req, "login-otp-verify", email)) return invalid();
-    const row = (await env.DB.prepare("SELECT uid FROM users WHERE lower(email)=? AND active=1 AND disabled=0 LIMIT 1")
-      .bind(email).all<{ uid: string }>()).results[0];
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const row = (await env.PG.query<{ uid: string }>(
+      "SELECT uid FROM users WHERE lower(email)=$1 AND active=TRUE AND disabled=FALSE LIMIT 1",
+      [email],
+    )).rows[0];
     if (!row) return invalid();
     const now = Date.now();
-    const challenge = (await env.DB.prepare(
-      "SELECT code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM login_otp_challenges WHERE uid=? AND consumed_at_ms IS NULL LIMIT 1",
-    ).bind(row.uid).all<{ code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>()).results[0];
+    const challenge = (await env.PG.query<{ code_hash: string; expires_at_ms: number; failed_attempts: number; locked_until_ms: number }>(
+      "SELECT code_hash,expires_at_ms,failed_attempts,locked_until_ms FROM login_otp_challenges WHERE uid=$1 AND consumed_at_ms IS NULL LIMIT 1",
+      [row.uid],
+    )).rows[0];
     if (!challenge || Number(challenge.expires_at_ms) <= now || Number(challenge.locked_until_ms) > now ||
       !await verifyPassword(`${row.uid}:${code}`, challenge.code_hash)) {
       if (challenge && Number(challenge.expires_at_ms) > now && Number(challenge.locked_until_ms) <= now) {
-        await env.DB.prepare(
-          "UPDATE login_otp_challenges SET failed_attempts=failed_attempts+1,locked_until_ms=CASE WHEN failed_attempts+1>=? THEN ? ELSE locked_until_ms END WHERE uid=? AND consumed_at_ms IS NULL AND failed_attempts<? RETURNING failed_attempts",
-        ).bind(LOGIN_OTP_MAX_FAILURES, now + LOGIN_OTP_LOCK_MS, row.uid, LOGIN_OTP_MAX_FAILURES).all<{ failed_attempts: number }>();
+        await env.PG.query<{ failed_attempts: number }>(
+          "UPDATE login_otp_challenges SET failed_attempts=failed_attempts+1,locked_until_ms=CASE WHEN failed_attempts+1>=$1 THEN $2 ELSE locked_until_ms END WHERE uid=$3 AND consumed_at_ms IS NULL AND failed_attempts<$4 RETURNING failed_attempts",
+          [LOGIN_OTP_MAX_FAILURES, now + LOGIN_OTP_LOCK_MS, row.uid, LOGIN_OTP_MAX_FAILURES],
+        );
       }
       return invalid();
     }
-    const consumed = await env.DB.prepare(
-      "UPDATE login_otp_challenges SET consumed_at_ms=? WHERE uid=? AND code_hash=? AND consumed_at_ms IS NULL AND expires_at_ms>? AND locked_until_ms<=? RETURNING uid",
-    ).bind(now, row.uid, challenge.code_hash, now, now).all<{ uid: string }>();
-    if (!consumed.results.length) return invalid();
+    const consumed = await env.PG.query<{ uid: string }>(
+      "UPDATE login_otp_challenges SET consumed_at_ms=$1 WHERE uid=$2 AND code_hash=$3 AND consumed_at_ms IS NULL AND expires_at_ms>$1 AND locked_until_ms<=$1 RETURNING uid",
+      [now, row.uid, challenge.code_hash],
+    );
+    if (!consumed.rows.length) return invalid();
     const user = await getUser(env, row.uid);
     if (!user) return invalid();
-    await env.DB.prepare("DELETE FROM login_otp_challenges WHERE uid=?").bind(row.uid).run();
+    await env.PG.query("DELETE FROM login_otp_challenges WHERE uid=$1", [row.uid]);
     if (!user.role) {
       return json({ ok: false, error: "Your account does not have an assigned workspace role. Contact an administrator." }, 403);
     }
@@ -477,51 +522,60 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     if (!email || !await checkRateLimit(env, req, "reset", email)) {
       return json({ ok: true, message });
     }
-    const result = await env.DB.prepare(
-      "SELECT uid,email FROM users WHERE lower(email) = ? AND disabled = 0 AND active = 1 LIMIT 1",
-    ).bind(email).all<{ uid: string; email: string }>();
-    const user = result.results[0];
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const pg = env.PG;
+    const result = await pg.query<{ uid: string; email: string }>(
+      "SELECT uid,email FROM users WHERE lower(email)=$1 AND disabled=FALSE AND active=TRUE LIMIT 1",
+      [email],
+    );
+    const user = result.rows[0];
     if (user) {
       const uid = text(user.uid, 200);
       const now = Date.now();
-      await env.DB.batch([
-        env.DB.prepare("DELETE FROM password_reset_codes WHERE expires_at_ms <= ?").bind(now),
-        env.DB.prepare("DELETE FROM password_reset_tickets WHERE expires_at_ms <= ?").bind(now),
-        env.DB.prepare(
+      await inNeonTransaction(pg, async () => {
+        await pg.query("DELETE FROM password_reset_codes WHERE expires_at_ms<=$1", [now]);
+        await pg.query("DELETE FROM password_reset_tickets WHERE expires_at_ms<=$1", [now]);
+        await pg.query(
           `DELETE FROM password_reset_challenge_locks
-           WHERE (locked_until_ms > 0 AND locked_until_ms <= ?)
-              OR (locked_until_ms = 0 AND window_started_at_ms <= ?)`,
-        ).bind(now, now - RESET_CHALLENGE_LOCK_MS),
-        env.DB.prepare("DELETE FROM password_reset_request_cooldowns WHERE requested_at_ms < ?").bind(now - 24 * 60 * 60 * 1000),
-      ]);
-      const challengeLock = await env.DB.prepare(
-        "SELECT locked_until_ms FROM password_reset_challenge_locks WHERE uid=? AND locked_until_ms>? LIMIT 1",
-      ).bind(uid, now).all<{ locked_until_ms: number }>();
-      if (challengeLock.results.length) return json({ ok: true, message });
-      const cooldown = await env.DB.prepare(
-        `INSERT INTO password_reset_request_cooldowns (uid,requested_at_ms) VALUES (?,?)
+           WHERE (locked_until_ms > 0 AND locked_until_ms <= $1)
+              OR (locked_until_ms = 0 AND window_started_at_ms <= $2)`,
+          [now, now - RESET_CHALLENGE_LOCK_MS],
+        );
+        await pg.query(
+          "DELETE FROM password_reset_request_cooldowns WHERE requested_at_ms<$1",
+          [now - 24 * 60 * 60 * 1000],
+        );
+      });
+      const challengeLock = await pg.query<{ locked_until_ms: number }>(
+        "SELECT locked_until_ms FROM password_reset_challenge_locks WHERE uid=$1 AND locked_until_ms>$2 LIMIT 1",
+        [uid, now],
+      );
+      if (challengeLock.rows.length) return json({ ok: true, message });
+      const cooldown = await pg.query<{ uid: string }>(
+        `INSERT INTO password_reset_request_cooldowns (uid,requested_at_ms) VALUES ($1,$2)
          ON CONFLICT(uid) DO UPDATE SET requested_at_ms=excluded.requested_at_ms
-         WHERE password_reset_request_cooldowns.requested_at_ms <= ?
+         WHERE password_reset_request_cooldowns.requested_at_ms <= $3
          RETURNING uid`,
-      ).bind(uid, now, now - RESET_REQUEST_COOLDOWN_MS).all<{ uid: string }>();
-      if (!cooldown.results.length) return json({ ok: true, message });
+        [uid, now, now - RESET_REQUEST_COOLDOWN_MS],
+      );
+      if (!cooldown.rows.length) return json({ ok: true, message });
 
       const code = randomSixDigitCode();
       const codeHash = await passwordHash(`${uid}:${code}`);
       const createdAt = new Date().toISOString();
       const expiresAt = now + RESET_CODE_TTL_MS;
-      await env.DB.batch([
-        env.DB.prepare("DELETE FROM password_reset_codes WHERE uid=?").bind(uid),
-        env.DB.prepare("DELETE FROM password_reset_tickets WHERE uid=?").bind(uid),
-        env.DB.prepare(
-          "INSERT INTO password_reset_codes (uid,code_hash,expires_at_ms,created_at) VALUES (?,?,?,?)",
-        ).bind(uid, codeHash, expiresAt, createdAt),
-      ]);
+      await inNeonTransaction(pg, async () => {
+        await pg.query("DELETE FROM password_reset_codes WHERE uid=$1", [uid]);
+        await pg.query("DELETE FROM password_reset_tickets WHERE uid=$1", [uid]);
+        await pg.query(
+          "INSERT INTO password_reset_codes (uid,code_hash,expires_at_ms,created_at) VALUES ($1,$2,$3,$4)",
+          [uid, codeHash, expiresAt, createdAt],
+        );
+      });
       try {
         await sendResetCodeEmail(env, user.email, code);
       } catch {
-        await env.DB.prepare("DELETE FROM password_reset_codes WHERE uid=? AND code_hash=?")
-          .bind(uid, codeHash).run();
+        await pg.query("DELETE FROM password_reset_codes WHERE uid=$1 AND code_hash=$2", [uid, codeHash]);
         return json({ ok: false, error: "Password reset email could not be delivered" }, 502);
       }
     }
@@ -534,63 +588,70 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const code = text(body.code, 12);
     const invalid = () => json({ ok: false, error: "The code is invalid or expired. Request a new code and try again." }, 400);
     if (!email || !/^\d{6}$/.test(code) || !await checkRateLimit(env, req, "reset-verify", email)) return invalid();
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const pg = env.PG;
 
-    const userResult = await env.DB.prepare(
-      "SELECT uid FROM users WHERE lower(email)=? AND active=1 AND disabled=0 LIMIT 1",
-    ).bind(email).all<{ uid: string }>();
-    const uid = text(userResult.results[0]?.uid, 200);
+    const userResult = await pg.query<{ uid: string }>(
+      "SELECT uid FROM users WHERE lower(email)=$1 AND active=TRUE AND disabled=FALSE LIMIT 1",
+      [email],
+    );
+    const uid = text(userResult.rows[0]?.uid, 200);
     if (!uid) return invalid();
 
     const now = Date.now();
-    const challengeLock = await env.DB.prepare(
-      "SELECT locked_until_ms FROM password_reset_challenge_locks WHERE uid=? AND locked_until_ms>? LIMIT 1",
-    ).bind(uid, now).all<{ locked_until_ms: number }>();
-    if (challengeLock.results.length) return invalid();
-    const codeResult = await env.DB.prepare(
-      "SELECT code_hash FROM password_reset_codes WHERE uid=? AND expires_at_ms>? AND claim_id IS NULL LIMIT 1",
-    ).bind(uid, now).all<{ code_hash: string }>();
-    const codeHash = codeResult.results[0]?.code_hash;
+    const challengeLock = await pg.query<{ locked_until_ms: number }>(
+      "SELECT locked_until_ms FROM password_reset_challenge_locks WHERE uid=$1 AND locked_until_ms>$2 LIMIT 1",
+      [uid, now],
+    );
+    if (challengeLock.rows.length) return invalid();
+    const codeResult = await pg.query<{ code_hash: string }>(
+      "SELECT code_hash FROM password_reset_codes WHERE uid=$1 AND expires_at_ms>$2 AND claim_id IS NULL LIMIT 1",
+      [uid, now],
+    );
+    const codeHash = codeResult.rows[0]?.code_hash;
     if (!codeHash || !await verifyPassword(`${uid}:${code}`, String(codeHash))) {
       if (codeHash) {
         const cutoff = now - RESET_CHALLENGE_LOCK_MS;
-        const attempts = await env.DB.prepare(
+        const attempts = await pg.query<{ failed_attempts: number; locked_until_ms: number }>(
           `INSERT INTO password_reset_challenge_locks
              (uid,failed_attempts,window_started_at_ms,locked_until_ms,updated_at)
-           VALUES (?,1,?,0,?)
+           VALUES ($1,1,$2,0,$3)
            ON CONFLICT(uid) DO UPDATE SET
-             failed_attempts=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=? THEN 1
+             failed_attempts=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=$4 THEN 1
                                   ELSE password_reset_challenge_locks.failed_attempts+1 END,
-             window_started_at_ms=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=?
+             window_started_at_ms=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=$5
                                        THEN excluded.window_started_at_ms
                                        ELSE password_reset_challenge_locks.window_started_at_ms END,
-             locked_until_ms=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=? THEN 0
-                                  WHEN password_reset_challenge_locks.failed_attempts+1>=? THEN ?
+             locked_until_ms=CASE WHEN password_reset_challenge_locks.window_started_at_ms<=$6 THEN 0
+                                  WHEN password_reset_challenge_locks.failed_attempts+1>=$7 THEN $8
                                   ELSE password_reset_challenge_locks.locked_until_ms END,
              updated_at=excluded.updated_at
-           WHERE password_reset_challenge_locks.locked_until_ms<=?
+           WHERE password_reset_challenge_locks.locked_until_ms<=$9
              AND EXISTS (
                SELECT 1 FROM password_reset_codes
-               WHERE uid=? AND code_hash=? AND expires_at_ms>? AND claim_id IS NULL
+               WHERE uid=$10 AND code_hash=$11 AND expires_at_ms>$12 AND claim_id IS NULL
              )
            RETURNING failed_attempts,locked_until_ms`,
-        ).bind(
-          uid,
-          now,
-          new Date(now).toISOString(),
-          cutoff,
-          cutoff,
-          cutoff,
-          RESET_CHALLENGE_MAX_FAILURES,
-          now + RESET_CHALLENGE_LOCK_MS,
-          now,
-          uid,
-          codeHash,
-          now,
-        ).all<{ failed_attempts: number; locked_until_ms: number }>();
-        if (Number(attempts.results[0]?.failed_attempts ?? 0) >= RESET_CHALLENGE_MAX_FAILURES) {
-          await env.DB.prepare(
-            "DELETE FROM password_reset_codes WHERE uid=? AND code_hash=? AND claim_id IS NULL",
-          ).bind(uid, codeHash).run();
+          [
+            uid,
+            now,
+            new Date(now).toISOString(),
+            cutoff,
+            cutoff,
+            cutoff,
+            RESET_CHALLENGE_MAX_FAILURES,
+            now + RESET_CHALLENGE_LOCK_MS,
+            now,
+            uid,
+            codeHash,
+            now,
+          ],
+        );
+        if (Number(attempts.rows[0]?.failed_attempts ?? 0) >= RESET_CHALLENGE_MAX_FAILURES) {
+          await pg.query(
+            "DELETE FROM password_reset_codes WHERE uid=$1 AND code_hash=$2 AND claim_id IS NULL",
+            [uid, codeHash],
+          );
         }
       }
       return invalid();
@@ -602,25 +663,39 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const ticketExpiry = verifiedAt + RESET_TICKET_TTL_MS;
     const createdAt = new Date().toISOString();
     const claimId = randomToken(16);
-    const results = await env.DB.batch([
-      env.DB.prepare(
-        "UPDATE password_reset_codes SET claim_id=? WHERE uid=? AND code_hash=? AND expires_at_ms>? AND claim_id IS NULL RETURNING uid",
-      ).bind(claimId, uid, codeHash, verifiedAt),
-      env.DB.prepare(
-        `INSERT INTO password_reset_tickets (ticket_hash,uid,expires_at_ms,created_at,claim_id)
-         SELECT ?,uid,?,?,NULL FROM password_reset_codes
-         WHERE uid=? AND code_hash=? AND claim_id=?
-         RETURNING ticket_hash`,
-      ).bind(ticketHash, ticketExpiry, createdAt, uid, codeHash, claimId),
-      env.DB.prepare(
-        "DELETE FROM password_reset_codes WHERE uid=? AND code_hash=? AND claim_id=? RETURNING uid",
-      ).bind(uid, codeHash, claimId),
-      env.DB.prepare(
-        `DELETE FROM password_reset_challenge_locks WHERE uid=?
-         AND EXISTS (SELECT 1 FROM password_reset_tickets WHERE ticket_hash=? AND uid=? AND claim_id IS NULL)`,
-      ).bind(uid, ticketHash, uid),
-    ]);
-    if (!results[1]?.results?.length || !results[2]?.results?.length) return invalid();
+    const claimConflict = new Error("RESET_CLAIM_CONFLICT");
+    let ticketCreated = false;
+    try {
+      ticketCreated = await inNeonTransaction(pg, async () => {
+        const claimed = await pg.query<{ uid: string }>(
+          "UPDATE password_reset_codes SET claim_id=$1 WHERE uid=$2 AND code_hash=$3 AND expires_at_ms>$4 AND claim_id IS NULL RETURNING uid",
+          [claimId, uid, codeHash, verifiedAt],
+        );
+        if (!claimed.rows.length) throw claimConflict;
+        const ticket = await pg.query<{ ticket_hash: string }>(
+          `INSERT INTO password_reset_tickets (ticket_hash,uid,expires_at_ms,created_at,claim_id)
+           SELECT $1,uid,$2,$3,NULL FROM password_reset_codes
+           WHERE uid=$4 AND code_hash=$5 AND claim_id=$6
+           RETURNING ticket_hash`,
+          [ticketHash, ticketExpiry, createdAt, uid, codeHash, claimId],
+        );
+        if (!ticket.rows.length) throw claimConflict;
+        const deletedCode = await pg.query<{ uid: string }>(
+          "DELETE FROM password_reset_codes WHERE uid=$1 AND code_hash=$2 AND claim_id=$3 RETURNING uid",
+          [uid, codeHash, claimId],
+        );
+        if (!deletedCode.rows.length) throw claimConflict;
+        await pg.query(
+          `DELETE FROM password_reset_challenge_locks WHERE uid=$1
+           AND EXISTS (SELECT 1 FROM password_reset_tickets WHERE ticket_hash=$2 AND uid=$3 AND claim_id IS NULL)`,
+          [uid, ticketHash, uid],
+        );
+        return true;
+      });
+    } catch (error) {
+      if (error !== claimConflict) throw error;
+    }
+    if (!ticketCreated) return invalid();
     return json({ ok: true, resetTicket });
   }
 
@@ -629,32 +704,38 @@ export async function handleAuthRoute(req: Request, env: AuthEnv): Promise<Respo
     const ticket = text(body.ticket, 200);
     const password = String(body.password ?? "").slice(0, 1000);
     if (!ticket || password.length < 12) return json({ ok: false, error: "A valid reset session and password of at least 12 characters are required" }, 400);
+    if (!env.PG) return json({ ok: false, error: "Authentication database is not available" }, 503);
+    const pg = env.PG;
     const ticketHash = await digest(ticket);
     const currentTime = Date.now();
-    const ticketResult = await env.DB.prepare(
-      "SELECT uid FROM password_reset_tickets WHERE ticket_hash=? AND claim_id IS NULL AND expires_at_ms>? LIMIT 1",
-    ).bind(ticketHash, currentTime).all<{ uid: string }>();
-    const uid = text(ticketResult.results[0]?.uid, 200);
+    const ticketResult = await pg.query<{ uid: string }>(
+      "SELECT uid FROM password_reset_tickets WHERE ticket_hash=$1 AND claim_id IS NULL AND expires_at_ms>$2 LIMIT 1",
+      [ticketHash, currentTime],
+    );
+    const uid = text(ticketResult.rows[0]?.uid, 200);
     if (!uid) return json({ ok: false, error: "Reset verification has expired. Request a new code." }, 400);
     const hash = await passwordHash(password);
     const claimId = randomToken(16);
     const claimTime = Date.now();
-    const results = await env.DB.batch([
-      env.DB.prepare(
-        "UPDATE password_reset_tickets SET claim_id=? WHERE ticket_hash=? AND uid=? AND claim_id IS NULL AND expires_at_ms>? RETURNING uid",
-      ).bind(claimId, ticketHash, uid, claimTime),
-      env.DB.prepare(
+    const passwordChanged = await inNeonTransaction(pg, async () => {
+      await pg.query(
+        "UPDATE password_reset_tickets SET claim_id=$1 WHERE ticket_hash=$2 AND uid=$3 AND claim_id IS NULL AND expires_at_ms>$4 RETURNING uid",
+        [claimId, ticketHash, uid, claimTime],
+      );
+      const updated = await pg.query<{ uid: string }>(
         `UPDATE users
-         SET password_hash_v2=?,password_salt_v2=NULL,hash_algorithm='PBKDF2-SHA256',
-             requires_password_reset=0,session_version=session_version+1
-         WHERE uid=? AND active=1 AND disabled=0
-            AND EXISTS (SELECT 1 FROM password_reset_tickets WHERE ticket_hash=? AND claim_id=?)
+         SET password_hash_v2=$1,password_salt_v2=NULL,hash_algorithm='PBKDF2-SHA256',
+             requires_password_reset=FALSE,session_version=session_version+1
+         WHERE uid=$2 AND active=TRUE AND disabled=FALSE
+            AND EXISTS (SELECT 1 FROM password_reset_tickets WHERE ticket_hash=$3 AND claim_id=$4)
          RETURNING uid`,
-      ).bind(hash, uid, ticketHash, claimId),
-      env.DB.prepare("DELETE FROM password_reset_codes WHERE uid=?").bind(uid),
-      env.DB.prepare("DELETE FROM password_reset_tickets WHERE uid=?").bind(uid),
-    ]);
-    if (!results[1]?.results?.length) return json({ ok: false, error: "Reset token is invalid or expired" }, 400);
+        [hash, uid, ticketHash, claimId],
+      );
+      await pg.query("DELETE FROM password_reset_codes WHERE uid=$1", [uid]);
+      await pg.query("DELETE FROM password_reset_tickets WHERE uid=$1", [uid]);
+      return updated.rows.length > 0;
+    });
+    if (!passwordChanged) return json({ ok: false, error: "Reset token is invalid or expired" }, 400);
     return json({ ok: true, message: "Password updated successfully" });
   }
 

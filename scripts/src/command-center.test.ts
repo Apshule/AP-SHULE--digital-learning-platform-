@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
 const indexSource = readFileSync(resolve(root, "index.html"), "utf8");
-const serviceWorkerSource = readFileSync(resolve(root, "sw.js"), "utf8");
+const rootPwaBuild = readFileSync(resolve(root, "cloudflare/stage-assets.mjs"), "utf8");
 const offlineSource = readFileSync(resolve(root, "offline-manager.js"), "utf8");
 const rulesSource = readFileSync(resolve(root, "firestore.rules"), "utf8");
 const indexes = JSON.parse(readFileSync(resolve(root, "firestore.indexes.json"), "utf8")) as {
@@ -118,8 +118,8 @@ describe("Task 9 Step 1 command center contracts", () => {
   });
 
   it("forces installed phones to refresh the released app shell", () => {
-    expect(serviceWorkerSource).toContain("appshule-offline-v13");
-    expect(indexSource).toContain('register("/sw.js?v=20260919-13"');
+    expect(rootPwaBuild).toContain('cacheId: `appshule-offline-${RELEASE}`');
+    expect(indexSource).toContain('register("/sw.js?v=20261001-15"');
     expect(indexSource).toContain("window._apshuleAuthenticated");
     expect(indexSource).toContain("Dashboard bootstrap failed");
     expect(indexSource).toContain("scope: \"/\"");

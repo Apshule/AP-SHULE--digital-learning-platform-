@@ -23,3 +23,4 @@ export * from "./ca-records";
 export * from "./projects";
 export * from "./curriculum-links";
 export * from "./teacher-retooling-progress";
+export * from "./users";

@@ -1,8 +1,9 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
-import { readRecords } from "./domain-routes";
+import { inNeonTransaction } from "./neon-db";
 
 type RecordData = Record<string, unknown>;
 type ClinicRole = "clinic_admin" | "doctor" | "nurse" | "receptionist" | "pharmacist" | "patient";
+type QueryResult<T> = { rows: T[]; rowCount?: number | null };
 
 const clinicRoles = new Set<ClinicRole>(["clinic_admin", "doctor", "nurse", "receptionist", "pharmacist", "patient"]);
 const clinicalRoles = new Set(["clinic_admin", "doctor", "nurse"]);
@@ -17,6 +18,26 @@ function json(data: unknown, status = 200): Response {
 
 function clean(value: unknown, limit = 240): string {
   return String(value ?? "").replace(/\0/g, "").trim().slice(0, limit);
+}
+
+async function query<T extends RecordData = RecordData>(
+  env: AuthEnv,
+  sql: string,
+  values: unknown[] = [],
+): Promise<T[]> {
+  if (!env.PG) throw new Error("Clinic workflows require the PostgreSQL database");
+  const result = await env.PG.query(sql, values) as QueryResult<T>;
+  return result.rows;
+}
+
+function decodeRecord(value: unknown): RecordData {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as RecordData;
+  try {
+    const parsed: unknown = JSON.parse(String(value || "{}"));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as RecordData : {};
+  } catch {
+    return {};
+  }
 }
 
 function makeId(prefix: string): string {
@@ -41,7 +62,29 @@ async function parseBody(request: Request): Promise<RecordData | null> {
 }
 
 async function list(env: AuthEnv, user: AuthUser, type: string): Promise<RecordData[]> {
-  return readRecords(env, user, "clinic", type);
+  const ownOnly = clean(user.role, 80).toLowerCase() === "patient";
+  const rows = await query(env,
+    `SELECT id, record_json, record_type, created_at, updated_at, owner_uid,
+            school_id, institution_id
+       FROM sector_records
+      WHERE sector = 'clinic' AND record_type = $1 AND institution_id = $2
+        AND is_deleted = 0${ownOnly ? " AND owner_uid = $3" : ""}
+      ORDER BY updated_at DESC
+      LIMIT 500`,
+    ownOnly ? [type, user.institutionId, user.uid] : [type, user.institutionId],
+  );
+  return rows.map((row) => {
+    const data = decodeRecord(row.record_json);
+    return {
+      id: row.id,
+      ...data,
+      recordType: row.record_type,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      schoolId: row.school_id ?? data.schoolId ?? data.school_id ?? null,
+      institutionId: row.institution_id ?? data.institutionId ?? data.institution_id ?? null,
+    };
+  });
 }
 
 async function save(
@@ -55,15 +98,17 @@ async function save(
   const timestamp = new Date().toISOString();
   const institutionId = clean(user.institutionId, 160);
   const payload = { ...record, id, recordType: type, institutionId, updatedAt: timestamp };
-  await env.DB.prepare(
+  await inNeonTransaction(env.PG!, async () => {
+    await query(env,
     `INSERT INTO sector_records (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
-     VALUES (?,?,?,NULL,?,?,?, ?,0,?,?)
+     VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,0,$8,$9)
      ON CONFLICT(id) DO UPDATE SET record_json=excluded.record_json,owner_uid=excluded.owner_uid,updated_at=excluded.updated_at
      WHERE sector_records.sector='clinic' AND sector_records.institution_id=excluded.institution_id`,
-  ).bind(id, "clinic", institutionId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp).run();
-  await env.DB.prepare(
-    "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
-  ).bind(makeId("audit"), institutionId, user.uid, "clinic.record.save", type, id, "{}", timestamp).run();
+    [id, "clinic", institutionId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp]);
+    await query(env,
+      "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+      [makeId("audit"), institutionId, user.uid, "clinic.record.save", type, id, "{}", timestamp]);
+  });
   return payload;
 }
 
@@ -78,14 +123,14 @@ async function ensureStored(
   if (!id) throw new Error("Clinic record ID is required");
   const timestamp = new Date().toISOString();
   const payload = { ...record, id, recordType: type, institutionId: user.institutionId, updatedAt: record.updatedAt || timestamp };
-  await env.DB.prepare(
-    `INSERT OR IGNORE INTO sector_records
+  await query(env,
+    `INSERT INTO sector_records
       (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
-     VALUES (?, 'clinic', ?, NULL, ?, ?, ?, ?, 0, ?, ?)`,
-  ).bind(
-    id, user.institutionId, ownerUid, type, JSON.stringify(payload), user.uid,
-    clean(record.createdAt, 32) || timestamp, timestamp,
-  ).run();
+     VALUES ($1, 'clinic', $2, NULL, $3, $4, $5, $6, 0, $7, $8)
+     ON CONFLICT (id) DO NOTHING`,
+    [id, user.institutionId, ownerUid, type, JSON.stringify(payload), user.uid,
+      clean(record.createdAt, 32) || timestamp, timestamp],
+  );
 }
 
 async function scopedPatient(env: AuthEnv, user: AuthUser, patientId: string): Promise<RecordData | null> {
@@ -130,39 +175,37 @@ async function workspace(env: AuthEnv, user: AuthUser, role: ClinicRole | "super
 }
 
 async function manualPayments(env: AuthEnv, user: AuthUser, ownOnly: boolean): Promise<RecordData[]> {
-  const query = ownOnly
-    ? "SELECT id,bill_record_id AS billId,patient_id AS patientId,amount,method,reference,created_at AS createdAt FROM clinic_manual_payments WHERE institution_id=? AND owner_uid=? ORDER BY created_at DESC LIMIT 500"
-    : "SELECT id,bill_record_id AS billId,patient_id AS patientId,amount,method,reference,created_at AS createdAt FROM clinic_manual_payments WHERE institution_id=? ORDER BY created_at DESC LIMIT 500";
-  const statement = env.DB.prepare(query);
-  const result = ownOnly
-    ? await statement.bind(user.institutionId, user.uid).all<RecordData>()
-    : await statement.bind(user.institutionId).all<RecordData>();
-  return result.results;
+  const sql = ownOnly
+    ? "SELECT id,bill_record_id AS \"billId\",patient_id AS \"patientId\",amount,method,reference,created_at AS \"createdAt\" FROM clinic_manual_payments WHERE institution_id=$1 AND owner_uid=$2 ORDER BY created_at DESC LIMIT 500"
+    : "SELECT id,bill_record_id AS \"billId\",patient_id AS \"patientId\",amount,method,reference,created_at AS \"createdAt\" FROM clinic_manual_payments WHERE institution_id=$1 ORDER BY created_at DESC LIMIT 500";
+  return ownOnly
+    ? query(env, sql, [user.institutionId, user.uid])
+    : query(env, sql, [user.institutionId]);
 }
 
 const pharmacySalesSql = `
   SELECT
     sale.id,
-    sale.bill_record_id AS billId,
-    sale.patient_id AS patientId,
-    sale.patient_name AS patientName,
-    sale.total_amount AS totalAmount,
-    sale.created_by AS createdBy,
-    sale.created_at AS createdAt,
-    json_extract(bill.record_json, '$.invoiceNumber') AS invoiceNumber,
-    coalesce(json_extract(bill.record_json, '$.status'), 'missing') AS billStatus,
+    sale.bill_record_id AS "billId",
+    sale.patient_id AS "patientId",
+    sale.patient_name AS "patientName",
+    sale.total_amount AS "totalAmount",
+    sale.created_by AS "createdBy",
+    sale.created_at AS "createdAt",
+    bill.record_json::jsonb->>'invoiceNumber' AS "invoiceNumber",
+    coalesce(bill.record_json::jsonb->>'status', 'missing') AS "billStatus",
     coalesce(
-      CAST(json_extract(bill.record_json, '$.balanceRemaining') AS INTEGER),
-      CAST(json_extract(bill.record_json, '$.totalAmount') AS INTEGER),
+      NULLIF(bill.record_json::jsonb->>'balanceRemaining', '')::numeric::integer,
+      NULLIF(bill.record_json::jsonb->>'totalAmount', '')::numeric::integer,
       sale.total_amount
-    ) AS balanceRemaining,
-    json_group_array(json_object(
+    ) AS "balanceRemaining",
+    json_agg(json_build_object(
       'inventoryId', line.inventory_record_id,
       'name', line.item_name,
       'quantity', line.quantity,
       'unitPrice', line.unit_price,
       'lineTotal', line.line_total
-    )) AS itemsJson
+    ) ORDER BY line.item_name) AS "items"
   FROM clinic_pharmacy_sales AS sale
   JOIN clinic_pharmacy_sale_items AS line
     ON line.sale_id = sale.id AND line.institution_id = sale.institution_id
@@ -175,23 +218,15 @@ const pharmacySalesSql = `
 `;
 
 async function pharmacySales(env: AuthEnv, institutionId: string, saleId?: string): Promise<RecordData[]> {
-  const filter = saleId ? " AND sale.id=?" : "";
-  const query = `${pharmacySalesSql}
-    WHERE sale.institution_id=?${filter}
+  const filter = saleId ? " AND sale.id=$2" : "";
+  const sql = `${pharmacySalesSql}
+    WHERE sale.institution_id=$1${filter}
     GROUP BY sale.id, bill.record_json
     ORDER BY sale.created_at DESC
     LIMIT ${saleId ? "1" : "100"}`;
-  const result = saleId
-    ? await env.DB.prepare(query).bind(institutionId, saleId).all<RecordData>()
-    : await env.DB.prepare(query).bind(institutionId).all<RecordData>();
-  return result.results.map((row) => {
-    let items: RecordData[] = [];
-    try {
-      const parsed: unknown = JSON.parse(String(row.itemsJson || "[]"));
-      if (Array.isArray(parsed)) items = parsed as RecordData[];
-    } catch {
-      items = [];
-    }
+  const result = await query<RecordData>(env, sql, saleId ? [institutionId, saleId] : [institutionId]);
+  return result.map((row) => {
+    const items = Array.isArray(row.items) ? row.items as RecordData[] : [];
     items.sort((a, b) => clean(a.name, 160).localeCompare(clean(b.name, 160)));
     return {
       id: row.id,
@@ -215,10 +250,10 @@ async function existingPharmacySale(
   institutionId: string,
   idempotencyKey: string,
 ): Promise<{ id: string; requestJson: string } | null> {
-  const result = await env.DB.prepare(
-    "SELECT id,request_json AS requestJson FROM clinic_pharmacy_sales WHERE institution_id=? AND idempotency_key=? LIMIT 1",
-  ).bind(institutionId, idempotencyKey).all<RecordData>();
-  const row = result.results[0];
+  const result = await query(env,
+    "SELECT id,request_json AS \"requestJson\" FROM clinic_pharmacy_sales WHERE institution_id=$1 AND idempotency_key=$2 LIMIT 1",
+    [institutionId, idempotencyKey]);
+  const row = result[0];
   return row ? { id: clean(row.id, 300), requestJson: String(row.requestJson || "") } : null;
 }
 
@@ -243,6 +278,7 @@ export async function handleClinicWorkflowRoute(
   if (!clinicRoles.has(role as ClinicRole) && role !== "superadmin") return json({ ok: false, error: "Clinic access required" }, 403);
   if (role !== "superadmin" && !user.institutionId) return json({ ok: false, error: "Clinic institution scope is required" }, 403);
   if (!user.institutionId) return json({ ok: false, error: "Select a clinic institution before continuing" }, 400);
+  if (!env.PG) return json({ ok: false, error: "Clinic workflows require the PostgreSQL database, which is unavailable" }, 503);
 
   if (url.pathname === "/api/clinic/workspace" && request.method === "GET") {
     return json(await workspace(env, user, role as ClinicRole | "superadmin"));
@@ -383,40 +419,38 @@ export async function handleClinicWorkflowRoute(
       createdAt: timestamp,
       createdBy: user.uid,
     };
-    const statements = [
-      env.DB.prepare(
+    try {
+      await inNeonTransaction(env.PG, async () => {
+      await query(env,
         `INSERT INTO clinic_pharmacy_sales
           (id,institution_id,bill_record_id,patient_id,patient_name,owner_uid,idempotency_key,request_json,total_amount,created_by,created_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      ).bind(
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [
         saleId, user.institutionId, billId, clean(patient.id, 300), patientName, ownerUid,
         idempotencyKey, requestJson, totalAmount, user.uid, timestamp,
-      ),
-      env.DB.prepare(
+      ]);
+      await query(env,
         `INSERT INTO sector_records
           (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
-         VALUES (?,'clinic',?,NULL,?,'billing',?,?,0,?,?)`,
-      ).bind(billId, user.institutionId, ownerUid, JSON.stringify(bill), user.uid, timestamp, timestamp),
-      ...lines.map((line) => env.DB.prepare(
+         VALUES ($1,'clinic',$2,NULL,$3,'billing',$4,$5,0,$6,$7)`,
+        [billId, user.institutionId, ownerUid, JSON.stringify(bill), user.uid, timestamp, timestamp]);
+      for (const line of lines) await query(env,
         `INSERT INTO clinic_pharmacy_sale_items
           (id,sale_id,institution_id,inventory_record_id,item_name,quantity,unit_price,line_total,created_at)
-         VALUES (?,?,?,?,?,?,?,?,?)`,
-      ).bind(
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [
         makeId("sale_item"), saleId, user.institutionId, line.inventoryId, line.name,
         line.quantity, line.unitPrice, line.lineTotal, timestamp,
-      )),
-      env.DB.prepare(
+      ]);
+      await query(env,
         `INSERT INTO audit
           (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at)
-         VALUES (?,?,?,?,?,?,?,?)`,
-      ).bind(
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [
         makeId("audit"), user.institutionId, user.uid, "clinic.pharmacy.checkout",
         "pharmacy_sale", saleId, JSON.stringify({ billId, totalAmount, lineCount: lines.length }), timestamp,
-      ),
-    ];
-
-    try {
-      await env.DB.batch(statements);
+      ]);
+      });
     } catch {
       const raced = await existingPharmacySale(env, user.institutionId, idempotencyKey);
       if (raced) {
@@ -457,10 +491,10 @@ export async function handleClinicWorkflowRoute(
     }
     const patientUid = clean(input.patientUid, 160);
     if (patientUid) {
-      const account = await env.DB.prepare(
-        "SELECT uid FROM users WHERE uid=? AND lower(role)='patient' AND institution_id=? AND active=1 AND disabled=0 LIMIT 1",
-      ).bind(patientUid, user.institutionId).all<RecordData>();
-      if (!account.results[0]) return json({ ok: false, error: "Linked patient account must already belong to this clinic" }, 400);
+      const account = await query(env,
+        "SELECT uid FROM users WHERE uid=$1 AND lower(role)='patient' AND institution_id=$2 AND active=TRUE AND disabled=FALSE LIMIT 1",
+        [patientUid, user.institutionId]);
+      if (!account[0]) return json({ ok: false, error: "Linked patient account must already belong to this clinic" }, 400);
     }
     const patient = await save(env, user, "patient", {
       fullName, name: fullName, phone, email: clean(input.email, 180).toLowerCase(),
@@ -493,10 +527,10 @@ export async function handleClinicWorkflowRoute(
     if (!doctorId || !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate) || !/^\d{2}:\d{2}$/.test(appointmentTime) || !reason) {
       return json({ ok: false, error: "Doctor, date, time, and appointment reason are required" }, 400);
     }
-    const doctor = await env.DB.prepare(
-      "SELECT uid FROM users WHERE uid=? AND lower(role)='doctor' AND institution_id=? AND active=1 AND disabled=0 LIMIT 1",
-    ).bind(doctorId, user.institutionId).all<RecordData>();
-    if (!doctor.results[0]) return json({ ok: false, error: "Select an active doctor from this clinic" }, 400);
+    const doctor = await query(env,
+      "SELECT uid FROM users WHERE uid=$1 AND lower(role)='doctor' AND institution_id=$2 AND active=TRUE AND disabled=FALSE LIMIT 1",
+      [doctorId, user.institutionId]);
+    if (!doctor[0]) return json({ ok: false, error: "Select an active doctor from this clinic" }, 400);
     const appointments = await list(env, user, "appointment");
     const conflict = appointments.some((row) =>
       clean(row.doctorId, 160) === doctorId &&
@@ -506,11 +540,19 @@ export async function handleClinicWorkflowRoute(
     );
     if (conflict) return json({ ok: false, error: "That doctor already has an appointment at this time." }, 409);
     const timestamp = new Date().toISOString();
-    const appointment = await save(env, user, "appointment", {
-      patientId: clean(patient.id, 300), patientName: clean(patient.fullName || patient.name, 160),
-      doctorId, appointmentDate, appointmentTime, reason, branchId: clean(input.branchId, 160),
-      status: "scheduled", createdAt: timestamp,
-    }, clean(patient.patientUid || patient.userUid || patient.uid, 160) || null);
+    let appointment: RecordData;
+    try {
+      appointment = await save(env, user, "appointment", {
+        patientId: clean(patient.id, 300), patientName: clean(patient.fullName || patient.name, 160),
+        doctorId, appointmentDate, appointmentTime, reason, branchId: clean(input.branchId, 160),
+        status: "scheduled", createdAt: timestamp,
+      }, clean(patient.patientUid || patient.userUid || patient.uid, 160) || null);
+    } catch (error) {
+      if ((error as { code?: string })?.code === "23505") {
+        return json({ ok: false, error: "That doctor already has an appointment at this time." }, 409);
+      }
+      throw error;
+    }
     return json({ ok: true, appointment }, 201);
   }
 
@@ -632,41 +674,43 @@ export async function handleClinicWorkflowRoute(
     if (!item) return json({ ok: false, error: "Inventory item not found" }, 404);
     if (clean(item.status, 40) === "discontinued") return json({ ok: false, error: "Discontinued inventory cannot be adjusted" }, 409);
     const recordId = clean(item.id, 300);
-    const prior = await env.DB.prepare(
-      "SELECT id,inventory_record_id,delta FROM clinic_stock_adjustments WHERE institution_id=? AND idempotency_key=? LIMIT 1",
-    ).bind(user.institutionId, idempotencyKey).all<RecordData>();
-    if (prior.results[0]) {
-      if (clean(prior.results[0].inventory_record_id, 300) !== recordId || Number(prior.results[0].delta) !== delta) {
+    const prior = await query(env,
+      "SELECT id,inventory_record_id,delta FROM clinic_stock_adjustments WHERE institution_id=$1 AND idempotency_key=$2 LIMIT 1",
+      [user.institutionId, idempotencyKey]);
+    if (prior[0]) {
+      if (clean(prior[0].inventory_record_id, 300) !== recordId || Number(prior[0].delta) !== delta) {
         return json({ ok: false, error: "This idempotency key was already used for a different adjustment" }, 409);
       }
-      return json({ ok: true, idempotent: true, adjustment: prior.results[0] });
+      return json({ ok: true, idempotent: true, adjustment: prior[0] });
     }
     const timestamp = new Date().toISOString();
-    await ensureStored(env, user, "pharmacy_inventory", item);
     try {
-      await env.DB.prepare(
+      await inNeonTransaction(env.PG, async () => {
+      await ensureStored(env, user, "pharmacy_inventory", item);
+      await query(env,
         `INSERT INTO clinic_stock_adjustments
           (id,institution_id,inventory_record_id,delta,idempotency_key,reason,created_by,created_at)
-         VALUES (?,?,?,?,?,?,?,?)`,
-      ).bind(makeId("stock_adjustment"), user.institutionId, recordId, delta, idempotencyKey, clean(input.reason, 240), user.uid, timestamp).run();
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [makeId("stock_adjustment"), user.institutionId, recordId, delta, idempotencyKey, clean(input.reason, 240), user.uid, timestamp]);
+      await query(env,
+        "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+        [makeId("audit"), user.institutionId, user.uid, "clinic.stock.adjust", "pharmacy_inventory", recordId, JSON.stringify({ delta }), timestamp]);
+      });
     } catch {
-      const raced = await env.DB.prepare(
-        "SELECT id,inventory_record_id,delta FROM clinic_stock_adjustments WHERE institution_id=? AND idempotency_key=? LIMIT 1",
-      ).bind(user.institutionId, idempotencyKey).all<RecordData>();
-      if (raced.results[0]) {
-        if (clean(raced.results[0].inventory_record_id, 300) !== recordId || Number(raced.results[0].delta) !== delta) {
+      const raced = await query(env,
+        "SELECT id,inventory_record_id,delta FROM clinic_stock_adjustments WHERE institution_id=$1 AND idempotency_key=$2 LIMIT 1",
+        [user.institutionId, idempotencyKey]);
+      if (raced[0]) {
+        if (clean(raced[0].inventory_record_id, 300) !== recordId || Number(raced[0].delta) !== delta) {
           return json({ ok: false, error: "This idempotency key was already used for a different adjustment" }, 409);
         }
-        return json({ ok: true, idempotent: true, adjustment: raced.results[0] });
+        return json({ ok: true, idempotent: true, adjustment: raced[0] });
       }
       return json({ ok: false, error: "Adjustment was rejected; verify available stock and try again" }, 409);
     }
-    const saved = await env.DB.prepare("SELECT record_json FROM sector_records WHERE id=? AND sector='clinic' AND institution_id=? LIMIT 1")
-      .bind(recordId, user.institutionId).all<RecordData>();
-    await env.DB.prepare(
-      "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
-    ).bind(makeId("audit"), user.institutionId, user.uid, "clinic.stock.adjust", "pharmacy_inventory", recordId, JSON.stringify({ delta }), timestamp).run();
-    return json({ ok: true, item: saved.results[0] ? JSON.parse(String(saved.results[0].record_json)) : null });
+    const saved = await query(env, "SELECT record_json FROM sector_records WHERE id=$1 AND sector='clinic' AND institution_id=$2 LIMIT 1",
+      [recordId, user.institutionId]);
+    return json({ ok: true, item: saved[0] ? decodeRecord(saved[0].record_json) : null });
   }
 
   const priceId = url.pathname.match(/^\/api\/clinic\/inventory\/([^/]+)\/price$/)?.[1];
@@ -688,24 +732,29 @@ export async function handleClinicWorkflowRoute(
       return json({ ok: false, error: "Discontinued inventory cannot be repriced" }, 409);
     }
     const recordId = clean(item.id, 300);
-    await ensureStored(env, user, "pharmacy_inventory", item);
     const timestamp = new Date().toISOString();
-    await env.DB.batch([
-      env.DB.prepare(
+    let changed = false;
+    await inNeonTransaction(env.PG, async () => {
+      await ensureStored(env, user, "pharmacy_inventory", item);
+      const updated = await query(env,
         `UPDATE sector_records
-         SET record_json=json_set(record_json, '$.unitPrice', ?, '$.updatedAt', ?), updated_at=?
-         WHERE id=? AND sector='clinic' AND institution_id=?
+         SET record_json=(record_json::jsonb || jsonb_build_object('unitPrice', $1, 'updatedAt', $2))::text,
+             updated_at=$2
+         WHERE id=$3 AND sector='clinic' AND institution_id=$4
            AND record_type IN ('pharmacy_inventory', 'clinic_pharmacy_inventory')
            AND is_deleted=0
-           AND coalesce(json_extract(record_json, '$.status'), 'active') <> 'discontinued'`,
-      ).bind(unitPrice, timestamp, timestamp, recordId, user.institutionId),
-      env.DB.prepare(
-        "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
-      ).bind(
+           AND coalesce(record_json::jsonb->>'status', 'active') <> 'discontinued'
+         RETURNING id`,
+        [unitPrice, timestamp, recordId, user.institutionId]);
+      changed = updated.length > 0;
+      if (changed) await query(env,
+        "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+      [
         makeId("audit"), user.institutionId, user.uid, "clinic.pharmacy.price.update",
         "pharmacy_inventory", recordId, JSON.stringify({ unitPrice }), timestamp,
-      ),
-    ]);
+      ]);
+    });
+    if (!changed) return json({ ok: false, error: "Inventory item could not be repriced" }, 409);
     const updated = (await list(env, user, "pharmacy_inventory")).find((row) => clean(row.id, 300) === recordId);
     return updated
       ? json({ ok: true, item: updated })
@@ -758,48 +807,50 @@ export async function handleClinicWorkflowRoute(
     const patientId = clean(bill.patientId, 300);
     const patient = await scopedPatient(env, user, patientId);
     if (!patient) return json({ ok: false, error: "Bill patient is not available in this clinic" }, 409);
-    const prior = await env.DB.prepare(
-      "SELECT id,bill_record_id AS billId,amount,method,created_at AS createdAt FROM clinic_manual_payments WHERE institution_id=? AND idempotency_key=? LIMIT 1",
-    ).bind(user.institutionId, idempotencyKey).all<RecordData>();
-    if (prior.results[0]) {
-      if (clean(prior.results[0].billId, 300) !== clean(bill.id, 300)
-        || Number(prior.results[0].amount) !== amount || clean(prior.results[0].method, 32) !== method) {
+    const prior = await query(env,
+      "SELECT id,bill_record_id AS \"billId\",amount,method,created_at AS \"createdAt\" FROM clinic_manual_payments WHERE institution_id=$1 AND idempotency_key=$2 LIMIT 1",
+      [user.institutionId, idempotencyKey]);
+    if (prior[0]) {
+      if (clean(prior[0].billId, 300) !== clean(bill.id, 300)
+        || Number(prior[0].amount) !== amount || clean(prior[0].method, 32) !== method) {
         return json({ ok: false, error: "This idempotency key was already used for a different payment" }, 409);
       }
-      return json({ ok: true, payment: prior.results[0], idempotent: true });
+      return json({ ok: true, payment: prior[0], idempotent: true });
     }
     const timestamp = new Date().toISOString();
     try {
-      const stored = await env.DB.prepare(
-        "SELECT id FROM sector_records WHERE id=? AND sector='clinic' AND institution_id=? AND record_type IN ('billing','clinic_billing') AND is_deleted=0 LIMIT 1",
-      ).bind(clean(bill.id, 300), user.institutionId).all<RecordData>();
-      if (!stored.results[0]) {
+      await inNeonTransaction(env.PG, async () => {
+      const stored = await query(env,
+        "SELECT id FROM sector_records WHERE id=$1 AND sector='clinic' AND institution_id=$2 AND record_type IN ('billing','clinic_billing') AND is_deleted=0 LIMIT 1",
+        [clean(bill.id, 300), user.institutionId]);
+      if (!stored[0]) {
         await ensureStored(env, user, "billing", bill, clean(patient.patientUid || patient.userUid || patient.uid, 160) || null);
       }
-      await env.DB.prepare(
+      await query(env,
         `INSERT INTO clinic_manual_payments
           (id,institution_id,bill_record_id,patient_id,owner_uid,amount,method,reference,idempotency_key,created_by,created_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      ).bind(makeId("clinic_payment"), user.institutionId, clean(bill.id, 300), patientId,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [makeId("clinic_payment"), user.institutionId, clean(bill.id, 300), patientId,
         clean(patient.patientUid || patient.userUid || patient.uid, 160) || null,
-        amount, method, clean(input.reference, 160), idempotencyKey, user.uid, timestamp).run();
+        amount, method, clean(input.reference, 160), idempotencyKey, user.uid, timestamp]);
+      await query(env,
+        "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
+      [makeId("audit"), user.institutionId, user.uid, "clinic.payment.record", "clinic_billing", clean(bill.id, 300), JSON.stringify({ amount, method }), timestamp]);
+      });
     } catch {
-      const raced = await env.DB.prepare(
-        "SELECT id,bill_record_id AS billId,amount,method,created_at AS createdAt FROM clinic_manual_payments WHERE institution_id=? AND idempotency_key=? LIMIT 1",
-      ).bind(user.institutionId, idempotencyKey).all<RecordData>();
-      if (raced.results[0]) {
-        if (clean(raced.results[0].billId, 300) !== clean(bill.id, 300)
-          || Number(raced.results[0].amount) !== amount || clean(raced.results[0].method, 32) !== method) {
+      const raced = await query(env,
+        "SELECT id,bill_record_id AS \"billId\",amount,method,created_at AS \"createdAt\" FROM clinic_manual_payments WHERE institution_id=$1 AND idempotency_key=$2 LIMIT 1",
+        [user.institutionId, idempotencyKey]);
+      if (raced[0]) {
+        if (clean(raced[0].billId, 300) !== clean(bill.id, 300)
+          || Number(raced[0].amount) !== amount || clean(raced[0].method, 32) !== method) {
           return json({ ok: false, error: "This idempotency key was already used for a different payment" }, 409);
         }
-        return json({ ok: true, payment: raced.results[0], idempotent: true });
+        return json({ ok: true, payment: raced[0], idempotent: true });
       }
       return json({ ok: false, error: "Payment was rejected; check the bill balance and try again" }, 409);
     }
     const updatedBill = (await list(env, user, "billing")).find((item) => clean(item.id, 300) === clean(bill.id, 300));
-    await env.DB.prepare(
-      "INSERT INTO audit (id,institution_id,actor_id,action,resource_type,resource_id,metadata_json,created_at) VALUES (?,?,?,?,?,?,?,?)",
-    ).bind(makeId("audit"), user.institutionId, user.uid, "clinic.payment.record", "clinic_billing", clean(bill.id, 300), JSON.stringify({ amount, method }), timestamp).run();
     return json({ ok: true, bill: updatedBill || null, amount, currency: "UGX", gateway: false }, 201);
   }
 
@@ -937,11 +988,11 @@ export async function handleClinicWorkflowRoute(
     if (!prescription) return json({ ok: false, error: "Prescription not found" }, 404);
     if (clean(prescription.status, 40) === "dispensed") return json({ ok: false, error: "Prescription has already been dispensed" }, 409);
     const patient = await scopedPatient(env, user, clean(prescription.patientId, 300));
-    const existing = await env.DB.prepare(
-      "SELECT id FROM sector_records WHERE id=? AND sector='clinic' AND institution_id=? AND record_type IN ('prescription','clinic_prescriptions') AND is_deleted=0 LIMIT 1",
-    ).bind(clean(prescription.id, 300), user.institutionId).all<RecordData>();
+    const existing = await query(env,
+      "SELECT id FROM sector_records WHERE id=$1 AND sector='clinic' AND institution_id=$2 AND record_type IN ('prescription','clinic_prescriptions') AND is_deleted=0 LIMIT 1",
+      [clean(prescription.id, 300), user.institutionId]);
     try {
-      if (!existing.results[0]) {
+      if (!existing[0]) {
         await save(env, user, "prescription", { ...prescription, status: "ready" }, clean(prescription.patientUid, 160) || null);
       }
       const updated = await save(env, user, "prescription", {

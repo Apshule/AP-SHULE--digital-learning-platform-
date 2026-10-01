@@ -26,6 +26,8 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "workbox-build": "^7.3.0",
     "wrangler": "^4.136.3"
   }
 }

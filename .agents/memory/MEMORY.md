@@ -29,4 +29,6 @@
 - [Firebase rules deployment boundary](firebase-rules-deployment-boundary.md) — GitHub pushes do not publish Firebase Storage Rules; verify the live bucket after rule changes.
 - [Cloudflare clean URL normalization](cloudflare-clean-urls.md) — The app domain redirects `.html` requests to extensionless paths, which still resolve to the staged HTML asset.
 - [Firestore mirror import format](firestore-mirror-import-format.md) — Decode Firestore typed-value wrappers before mapping mirror documents into operational D1 tables.
-- [Wrangler preview isolation](cloudflare-preview-isolation.md) — Keep app previews on local bindings; D1 migration prompts can block the managed port until run noninteractively.
+- [Wrangler preview isolation](cloudflare-preview-isolation.md) — Keep local bindings isolated; use a timestamped Node-generated Neon snapshot because workerd preview egress can fail.
+- [Wrangler D1 file output](wrangler-d1-file-output.md) — Verify file-based D1 writes with a separate SELECT; successful `--json` runs may still emit non-JSON stdout.
+- [Cross-engine migration validation](cross-engine-migration-validation.md) — Validate SQLite primary keys and PostgreSQL columns semantically, then compare canonical row checksums.

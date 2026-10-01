@@ -55,7 +55,36 @@ function educationEnv(db: DatabaseSync): AuthEnv {
       };
     },
   };
-  return { DB } as unknown as AuthEnv;
+  const PG = {
+    async query<T extends Record<string, unknown>>(sql: string, values: unknown[] = []) {
+      const normalizedSql = sql
+        .replace(/\bpublic\./g, "")
+        .replace(/\bIS NOT DISTINCT FROM\b/gi, "IS")
+        .replace(/::(?:jsonb|json|date|timestamp|timestamptz|integer|int|numeric|text)\b/gi, "")
+        .replace(/([A-Za-z_][A-Za-z0-9_.]*)\s*->>\s*'([^']+)'/g, (_match, column: string, key: string) =>
+          `json_extract(${column}, '$.${key}')`,
+        )
+        .replace(/\$(\d+)\b/g, "?$1")
+        .trim();
+      if (/^(BEGIN|COMMIT|ROLLBACK)\b/i.test(normalizedSql)) {
+        db.exec(normalizedSql);
+        return { rows: [] as T[], rowCount: 0 };
+      }
+      const statement = db.prepare(normalizedSql);
+      const params = values as (string | number | null)[];
+      if (/^(SELECT|WITH)\b/i.test(normalizedSql) || /\bRETURNING\b/i.test(normalizedSql)) {
+        const rows = (statement.all(...params) as T[]).map((row) => ({
+          ...row,
+          ...(typeof row.active === "number" ? { active: row.active !== 0 } : {}),
+          ...(typeof row.disabled === "number" ? { disabled: row.disabled !== 0 } : {}),
+        }));
+        return { rows, rowCount: rows.length };
+      }
+      const result = statement.run(...params);
+      return { rows: [] as T[], rowCount: Number(result.changes) };
+    },
+  };
+  return { DB, PG } as unknown as AuthEnv;
 }
 
 function user(uid: string, role: string, email: string): AuthUser {

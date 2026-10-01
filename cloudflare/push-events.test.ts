@@ -40,14 +40,40 @@ class FakeDatabase {
   queries: Array<{ sql: string; values: unknown[] }> = [];
   subscriptions: Record<string, unknown>[] = [];
 
+  async query<T = Record<string, unknown>>(sql: string, values: unknown[] = []): Promise<{ rows: T[] }> {
+    this.queries.push({ sql: sql.replaceAll("public.", ""), values });
+    if (sql.includes("SELECT id,type,message,created_at FROM public.push_events")) {
+      return {
+        rows: [{
+          id: 7,
+          type: "success",
+          message: "Push succeeded",
+          created_at: "2026-09-28T10:00:00.000Z",
+        } as unknown as T],
+      };
+    }
+    if (sql.includes("FROM public.push_subscriptions")) {
+      return { rows: this.subscriptions as T[] };
+    }
+    if (sql.startsWith("INSERT INTO public.push_events")) {
+      return { rows: [{ id: 12 } as unknown as T] };
+    }
+    if (sql.includes("SELECT id FROM public.push_events")) {
+      return { rows: [] };
+    }
+    return { rows: [] };
+  }
+
   prepare(sql: string): FakeStatement {
     return new FakeStatement(this, sql);
   }
 }
 
 function environment(pushSecret?: string): PushRouteEnv {
+  const database = new FakeDatabase();
   return {
-    DB: new FakeDatabase() as unknown as PushRouteEnv["DB"],
+    DB: database as unknown as PushRouteEnv["DB"],
+    PG: { query: database.query.bind(database) } as unknown as NonNullable<PushRouteEnv["PG"]>,
     PUBLIC_SITE_URL: "https://appshule.com",
     PUSH_SECRET: pushSecret,
     SESSIONS: { get: async () => null, put: async () => {}, delete: async () => {} },

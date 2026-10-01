@@ -24,7 +24,7 @@ function farmDatabase(includeFeedMigration = true) {
   return db;
 }
 
-function farmEnv(db: DatabaseSync): AuthEnv {
+function farmEnv(db: DatabaseSync, includeFeedMigration = true): AuthEnv {
   const DB = {
     prepare(sql: string) {
       return {
@@ -40,7 +40,38 @@ function farmEnv(db: DatabaseSync): AuthEnv {
       };
     },
   };
-  return { DB } as unknown as AuthEnv;
+  const PG = {
+    async query<T extends Record<string, unknown>>(sql: string, values: unknown[] = []) {
+      if (/^\s*(BEGIN|COMMIT|ROLLBACK)\s*$/i.test(sql)) {
+        db.exec(sql);
+        return { rows: [] as T[] };
+      }
+      if (sql.includes("FROM pg_catalog.pg_trigger")) {
+        return {
+          rows: (includeFeedMigration
+            ? [
+                { tgname: "farm_feed_consumption_validate" },
+                { tgname: "farm_feed_consumption_deduct_stock" },
+              ]
+            : []) as T[],
+        };
+      }
+      const sqliteSql = sql
+        .replaceAll("public.", "")
+        .replace(/record_json::jsonb\s*->>\s*'operationId'/g, "json_extract(record_json, '$.operationId')")
+        .replace(/\$\d+/g, "?");
+      const statement = db.prepare(sqliteSql);
+      const params = values as (string | number | null)[];
+      if (/^\s*SELECT\b/i.test(sqliteSql)) {
+        return { rows: statement.all(...params) as T[] };
+      }
+      statement.run(...params);
+      return { rows: [] as T[] };
+    },
+  };
+  // Adapt the Farm route's PostgreSQL contract to the SQLite fixture; this is
+  // a route test double, not coverage for PostgreSQL SQL syntax.
+  return { DB, PG } as unknown as AuthEnv;
 }
 
 function addInventory(db: DatabaseSync, id: string, institutionId: string, schoolId: string | null, record: Record<string, unknown>) {
@@ -65,14 +96,19 @@ describe("Farm workflow boundaries", () => {
     expect((await handleFarmWorkflowRoute(request("/api/farm/faceEmbedding"), env, user("farm_admin")))?.status).toBe(404);
   });
   it("prevents generic Farm writes from bypassing produce validation", async () => {
-    const response = await handleDomainRoute(
-      request("/api/farm/records?type=produce", "POST", {
-        type: "produce", name: "Milk", quantity: 1, unit: "litres", unitPrice: 2500,
-      }),
-      env,
-      user("farm_admin"),
-    );
-    expect(response?.status).toBe(405);
+    const db = farmDatabase();
+    try {
+      const response = await handleDomainRoute(
+        request("/api/farm/records?type=produce", "POST", {
+          type: "produce", name: "Milk", quantity: 1, unit: "litres", unitPrice: 2500,
+        }),
+        farmEnv(db),
+        user("farm_admin"),
+      );
+      expect(response?.status).toBe(405);
+    } finally {
+      db.close();
+    }
   });
   it("creates and lists tenant-scoped produce for Farm managers", async () => {
     const db = farmDatabase();
@@ -145,9 +181,15 @@ describe("Farm workflow boundaries", () => {
     }
   });
   it("validates registry, inventory, and idempotency inputs before writing", async () => {
-    expect((await handleFarmWorkflowRoute(request("/api/farm/animals", "POST", { name: "", animalType: "" }), env, user("farm_admin")))?.status).toBe(400);
-    expect((await handleFarmWorkflowRoute(request("/api/farm/inventory", "POST", { name: "feed", quantityInStock: -1 }), env, user("farm_admin")))?.status).toBe(400);
-    expect((await handleFarmWorkflowRoute(request("/api/farm/attendance", "POST", { status: "present" }), env, user("farm_worker")))?.status).toBe(400);
+    const db = farmDatabase();
+    try {
+      const d1 = farmEnv(db);
+      expect((await handleFarmWorkflowRoute(request("/api/farm/animals", "POST", { name: "", animalType: "" }), d1, user("farm_admin")))?.status).toBe(400);
+      expect((await handleFarmWorkflowRoute(request("/api/farm/inventory", "POST", { name: "feed", quantityInStock: -1 }), d1, user("farm_admin")))?.status).toBe(400);
+      expect((await handleFarmWorkflowRoute(request("/api/farm/attendance", "POST", { status: "present" }), d1, user("farm_worker")))?.status).toBe(400);
+    } finally {
+      db.close();
+    }
   });
 
   it("installs the inventory floor and operation uniqueness guards", () => {
@@ -253,11 +295,11 @@ describe("Farm workflow boundaries", () => {
     }
   });
 
-  it("fails closed and hides feed stock when the atomic D1 triggers are missing", async () => {
+  it("fails closed and hides feed stock when the atomic stock triggers are missing", async () => {
     const db = farmDatabase(false);
     try {
       addInventory(db, "stock-1", "farm-1", null, { name: "Layer mash", quantityInStock: 3, unit: "kg" });
-      const d1 = farmEnv(db);
+      const d1 = farmEnv(db, false);
       const unavailable = await handleFarmWorkflowRoute(
         request("/api/farm/feed", "POST", { itemId: "stock-1", quantity: 0.5, operationId: "feed-op-1" }),
         d1,
@@ -281,25 +323,31 @@ describe("Farm workflow boundaries", () => {
   });
 
   it("rejects malformed feed entries and generic feed writes", async () => {
-    const malformed = await handleFarmWorkflowRoute(
-      request("/api/farm/feed", "POST", { itemId: "stock-1", quantity: 0.0001, operationId: "bad-op" }),
-      env,
-      user("farm_admin"),
-    );
-    expect(malformed?.status).toBe(400);
+    const db = farmDatabase();
+    try {
+      const d1 = farmEnv(db);
+      const malformed = await handleFarmWorkflowRoute(
+        request("/api/farm/feed", "POST", { itemId: "stock-1", quantity: 0.0001, operationId: "bad-op" }),
+        d1,
+        user("farm_admin"),
+      );
+      expect(malformed?.status).toBe(400);
 
-    const missingKey = await handleFarmWorkflowRoute(
-      request("/api/farm/feed", "POST", { itemId: "stock-1", quantity: 1 }),
-      env,
-      user("farm_admin"),
-    );
-    expect(missingKey?.status).toBe(400);
+      const missingKey = await handleFarmWorkflowRoute(
+        request("/api/farm/feed", "POST", { itemId: "stock-1", quantity: 1 }),
+        d1,
+        user("farm_admin"),
+      );
+      expect(missingKey?.status).toBe(400);
 
-    const genericWrite = await handleDomainRoute(
-      request("/api/farm/records", "POST", { recordType: "feed_consumption" }),
-      env,
-      user("farm_admin"),
-    );
-    expect(genericWrite?.status).toBe(405);
+      const genericWrite = await handleDomainRoute(
+        request("/api/farm/records", "POST", { recordType: "feed_consumption" }),
+        d1,
+        user("farm_admin"),
+      );
+      expect(genericWrite?.status).toBe(405);
+    } finally {
+      db.close();
+    }
   });
 });

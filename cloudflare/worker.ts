@@ -6,24 +6,18 @@ import { handleDomainRoute } from "./domain-routes";
 import { handleProfileFileRoute } from "./profile-files";
 import { handlePushRoute } from "./push-events";
 import { handleTechContactRoute } from "./tech-contact";
+import { handleEducationFileRoute } from "./education-files";
+import { handleEducationPlatformRoute } from "./education-platform";
+import { handlePaymentMfiV10Route } from "./payment-mfi-v10";
+import { handleProjectsEarningsV10Route } from "./projects-earnings-v10";
+import { handleEducationExtendedV10Route } from "./education-extended-v10";
+import { handleMediaReferralV10Route } from "./media-referrals-v10";
+import { handleOfflineSettingsV10Route } from "./offline-settings-v10";
+import { handleTimetableV10Route } from "./timetable-v10";
+import { handleInstitutionsV10Route } from "./institutions-v10";
+import { handleAnalyticsV10Route } from "./analytics-v10";
+import { connectNeon, readNeonHealth } from "./neon-db";
 import type { AuthEnv, AuthUser } from "./backend-types";
-
-interface D1Statement {
-  bind(...values: unknown[]): D1Statement;
-  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
-  run(): Promise<unknown>;
-}
-
-interface D1BatchResult {
-  results?: Record<string, unknown>[];
-  success?: boolean;
-  meta?: { changes?: number };
-}
-
-interface D1Database {
-  prepare(query: string): D1Statement;
-  batch(statements: D1Statement[]): Promise<D1BatchResult[]>;
-}
 
 interface KVNamespace {
   get(key: string, type?: "text" | "json" | "arrayBuffer" | "stream"): Promise<unknown>;
@@ -40,6 +34,12 @@ interface R2Bucket {
   head(key: string): Promise<unknown>;
   put(key: string, value: ReadableStream | ArrayBuffer | string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
   get(key: string): Promise<R2Object | null>;
+  delete(key: string): Promise<unknown>;
+  list(options?: { prefix?: string; limit?: number; cursor?: string }): Promise<{
+    objects: Array<{ key: string; size: number; uploaded?: Date }>;
+    truncated: boolean;
+    cursor?: string;
+  }>;
 }
 
 interface Fetcher {
@@ -52,12 +52,14 @@ interface Env extends AuthEnv {
   FILES?: R2Bucket;
   STATIC?: Fetcher;
   ENVIRONMENT: string;
-  D1_DATABASE_NAME: string;
   APSHULE_API_WRITE_TOKEN?: string;
   PUSH_SECRET?: string;
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
+  NEON_HEALTH_SNAPSHOT_JSON?: string;
+  YO_API_PUBLIC_KEY?: string;
+  GEMINI_API_KEY?: string;
 }
 
 const STATIC_ROUTE_PREFIXES = [
@@ -66,6 +68,8 @@ const STATIC_ROUTE_PREFIXES = [
   "/education/",
   "/farm/",
   "/mfi/",
+  "/learn/",
+  "/my-account/",
   "/platform/",
   "/student/",
   "/teacher/",
@@ -133,7 +137,7 @@ function isExplicitStaticRoute(pathname: string): boolean {
 }
 
 function redirectDirectoryRoot(pathname: string, search: string): Response | null {
-  if (!["/admin", "/bursar", "/clinic", "/education", "/farm", "/mfi", "/parent", "/platform", "/secretary", "/skills", "/student", "/teacher", "/tech"].includes(pathname)) return null;
+  if (!["/admin", "/bursar", "/clinic", "/education", "/farm", "/learn", "/mfi", "/my-account", "/parent", "/platform", "/secretary", "/skills", "/student", "/teacher", "/tech"].includes(pathname)) return null;
   return new Response(null, {
     status: 308,
     headers: { location: `${pathname}/${search}` },
@@ -268,6 +272,7 @@ function publicProvider(row: ProviderRow, courses: Record<string, unknown>[]) {
 }
 
 async function providerRows(env: Env, providerId = ""): Promise<ProviderRow[]> {
+  if (!env.PG) throw new Error("Neon database is unavailable");
   const sql = `
     SELECT p.*, c.id AS course_id, c.title AS course_title,
       c.description AS course_description, c.duration AS course_duration,
@@ -275,12 +280,61 @@ async function providerRows(env: Env, providerId = ""): Promise<ProviderRow[]> {
       c.featured AS course_featured
     FROM skills_providers p
     LEFT JOIN vocational_courses c ON c.provider_id = p.id AND c.active = 1
-    ${providerId ? "WHERE p.id = ?" : ""}
+    ${providerId ? "WHERE p.id = $1" : ""}
     ORDER BY p.created_at DESC, c.title ASC
   `;
-  const statement = env.DB.prepare(sql);
-  const result = providerId ? await statement.bind(providerId).all<ProviderRow>() : await statement.all<ProviderRow>();
-  return result.results;
+  const result = await env.PG.query<ProviderRow>(sql, providerId ? [providerId] : []);
+  return result.rows;
+}
+
+async function healthResponse(env: Env): Promise<Response> {
+  try {
+    let counts: { users: number; tables: number };
+    let healthSnapshotAt: string | undefined;
+    if (env.ENVIRONMENT === "development" && env.NEON_HEALTH_SNAPSHOT_JSON) {
+      const snapshot = JSON.parse(env.NEON_HEALTH_SNAPSHOT_JSON) as {
+        users?: unknown;
+        tables?: unknown;
+        checkedAt?: unknown;
+      };
+      if (!Number.isSafeInteger(snapshot.users)
+        || !Number.isSafeInteger(snapshot.tables)
+        || typeof snapshot.checkedAt !== "string"
+        || !Number.isFinite(Date.parse(snapshot.checkedAt))) {
+        throw new Error("Local Neon health snapshot is invalid");
+      }
+      counts = { users: Number(snapshot.users), tables: Number(snapshot.tables) };
+      healthSnapshotAt = snapshot.checkedAt;
+    } else {
+      counts = await readNeonHealth(env);
+    }
+    const expectedUsers = 132;
+    return json({
+      ok: true,
+      environment: env.ENVIRONMENT,
+      db: "neon",
+      users: counts.users,
+      expectedUsers,
+      usersMatchExpected: counts.users === expectedUsers,
+      tables: counts.tables,
+      status: counts.users === expectedUsers ? "ok" : "degraded",
+      stack: "Cloudflare Worker + Neon PostgreSQL + R2 + GitHub Pages",
+      firebase: false,
+      authentication: "neon-postgresql-kv",
+      cloudflare: { kv: Boolean(env.CACHE || env.SESSIONS), r2: Boolean(env.FILES || env.VIDEOS) },
+      ...(healthSnapshotAt ? {
+        healthSource: "read-only-development-startup-snapshot",
+        healthCheckedAt: healthSnapshotAt,
+      } : {}),
+    });
+  } catch {
+    return json({
+      ok: false,
+      db: "neon",
+      status: "unavailable",
+      error: "Neon database health check failed",
+    }, 503);
+  }
 }
 
 function groupedProviders(rows: ProviderRow[]) {
@@ -315,14 +369,16 @@ async function api(request: Request, env: Env): Promise<Response> {
   const techContactResponse = await handleTechContactRoute(request, env);
   if (techContactResponse) return techContactResponse;
 
-  if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/api/healthz")) {
-    return json({
-      ok: true,
-      environment: env.ENVIRONMENT,
-      cloudflare: { d1: env.D1_DATABASE_NAME, kv: Boolean(env.CACHE || env.SESSIONS), r2: Boolean(env.FILES || env.VIDEOS) },
-      firebase: false,
-      authentication: "cloudflare-d1-kv",
-    });
+  if (request.method === "GET" &&
+      ["/health", "/api/health", "/api/healthz"].includes(url.pathname)) {
+    return healthResponse(env);
+  }
+
+  // Yo IPNs are authenticated by their signed raw payload, not a user session.
+  if (request.method === "POST" &&
+      ["/api/payments/ipn", "/api/webhooks/yo/ipn"].includes(url.pathname)) {
+    return await handlePaymentMfiV10Route(request, env, null)
+      ?? json({ ok: false, error: "Webhook route not found" }, 404);
   }
 
   if (url.pathname === "/api/profile/photo") {
@@ -331,42 +387,104 @@ async function api(request: Request, env: Env): Promise<Response> {
     return handleProfileFileRoute(request, env, authentication.user);
   }
 
+  const educationFilePath = /^\/api\/school\/lessons\/[^/]+\/files(?:\/[^/]+)?$/.test(url.pathname);
+  if (educationFilePath) {
+    const authentication = await authenticate(request, env);
+    if (!authentication.authenticated) {
+      return json({ ok: false, error: "Authentication is required" }, (authentication as { status: number }).status);
+    }
+    return handleEducationFileRoute(request, env, authentication.user, url.pathname);
+  }
+
+  const educationPlatformPath = url.pathname === "/api/admin/platform"
+    || url.pathname.startsWith("/api/admin/platform/")
+    || [
+      "/api/school/platform-content",
+      "/api/school/platform-feedback",
+      "/api/school/platform-logo",
+    ].includes(url.pathname)
+    || /^\/api\/school\/platform-views\/[^/]+$/.test(url.pathname);
+  if (educationPlatformPath) {
+    const authentication = await authenticate(request, env);
+    if (!authentication.authenticated) {
+      return json({ ok: false, error: "Authentication is required" }, (authentication as { status: number }).status);
+    }
+    return await handleEducationPlatformRoute(request, env, authentication.user, url.pathname)
+      ?? json({ ok: false, error: "not found" }, 404);
+  }
+
   const domainPath = url.pathname === "/api/pay"
     || url.pathname.startsWith("/api/payments")
     || url.pathname.startsWith("/api/school")
     || url.pathname.startsWith("/api/clinic")
     || url.pathname.startsWith("/api/farm")
     || url.pathname.startsWith("/api/mfi")
-    || url.pathname.startsWith("/api/admin");
+    || url.pathname.startsWith("/api/admin")
+    || [
+      "/api/earnings",
+      "/api/projects",
+      "/api/compliance",
+      "/api/ca_records",
+      "/api/curriculum",
+      "/api/gemini",
+      "/api/retooling",
+      "/api/uneb",
+      "/api/sample_videos",
+      "/api/cartoon_assets",
+      "/api/upload/r2",
+      "/api/referrals",
+      "/api/settings",
+      "/api/timetable",
+      "/api/institutions",
+      "/api/analytics",
+    ].some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`));
   if (domainPath) {
     const authentication = await authenticate(request, env);
+    const caller = authentication.authenticated ? authentication.user as AuthUser : null;
+    const settingsResponse = await handleOfflineSettingsV10Route(request, env, caller);
+    if (settingsResponse) return settingsResponse;
+    const timetableResponse = await handleTimetableV10Route(request, env, caller);
+    if (timetableResponse) return timetableResponse;
+    const institutionsResponse = await handleInstitutionsV10Route(request, env, caller);
+    if (institutionsResponse) return institutionsResponse;
+    const analyticsResponse = await handleAnalyticsV10Route(request, env, caller);
+    if (analyticsResponse) return analyticsResponse;
+    const paymentMfiV10Response = await handlePaymentMfiV10Route(request, env, caller);
+    if (paymentMfiV10Response) return paymentMfiV10Response;
+    const projectsEarningsResponse = await handleProjectsEarningsV10Route(request, env, caller);
+    if (projectsEarningsResponse) return projectsEarningsResponse;
+    const educationExtendedResponse = await handleEducationExtendedV10Route(request, env, caller);
+    if (educationExtendedResponse) return educationExtendedResponse;
+    const mediaReferralResponse = await handleMediaReferralV10Route(request, env, caller);
+    if (mediaReferralResponse) return mediaReferralResponse;
     const clinicResponse = await handleClinicWorkflowRoute(
       request,
       env,
-      authentication.authenticated ? authentication.user as AuthUser : null,
+      caller,
     );
     if (clinicResponse) return clinicResponse;
     const farmResponse = await handleFarmWorkflowRoute(
       request,
       env,
-      authentication.authenticated ? authentication.user as AuthUser : null,
+      caller,
     );
     if (farmResponse) return farmResponse;
     const mfiResponse = await handleMfiWorkflowRoute(
       request,
       env,
-      authentication.authenticated ? authentication.user as AuthUser : null,
+      caller,
     );
     if (mfiResponse) return mfiResponse;
     const response = await handleDomainRoute(
       request,
       env,
-      authentication.authenticated ? authentication.user as AuthUser : null,
+      caller,
     );
     if (response) return response;
   }
 
   if (request.method === "GET" && url.pathname === "/api/skills/providers") {
+    if (!env.PG) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const providers = groupedProviders((await providerRows(env)).filter((row) => row.status === "active"))
       .map(({ row, courses }) => publicProvider(row, courses));
     return json({ ok: true, providers });
@@ -374,6 +492,7 @@ async function api(request: Request, env: Env): Promise<Response> {
 
   const providerMatch = url.pathname.match(/^\/api\/skills\/providers\/([^/]+)$/);
   if (request.method === "GET" && providerMatch) {
+    if (!env.PG) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     let providerId = "";
     try {
       providerId = clean(decodeURIComponent(providerMatch[1]), 120);
@@ -386,6 +505,8 @@ async function api(request: Request, env: Env): Promise<Response> {
   }
 
   if (request.method === "GET" && url.pathname === "/api/skills/courses") {
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const category = clean(url.searchParams.get("category"), 80).toLowerCase();
     const referralCode = clean(url.searchParams.get("referralCode"), 120);
     const rows = groupedProviders((await providerRows(env)).filter((row) =>
@@ -396,10 +517,11 @@ async function api(request: Request, env: Env): Promise<Response> {
       for (const course of providerCourses) {
         const courseCategory = clean(course.category, 80).toLowerCase();
         if (category && category !== "vocational" && courseCategory !== category) continue;
-        const video = await env.DB.prepare(
-          "SELECT youtube_url, youtube_id, thumbnail_url FROM videos WHERE provider_id = ? AND course_id = ? ORDER BY created_at DESC LIMIT 1",
-        ).bind(row.id, course.id).all<{ youtube_url: string; youtube_id: string; thumbnail_url: string }>();
-        const linked = video.results[0];
+        const video = await pg.query<{ youtube_url: string; youtube_id: string; thumbnail_url: string }>(
+          "SELECT youtube_url, youtube_id, thumbnail_url FROM videos WHERE provider_id = $1 AND course_id = $2 ORDER BY created_at DESC LIMIT 1",
+          [row.id, course.id],
+        );
+        const linked = video.rows[0];
         const linkedId = youtubeId(linked?.youtube_url || linked?.youtube_id);
         courses.push({
           id: `${row.id}:${course.id}`,
@@ -431,6 +553,8 @@ async function api(request: Request, env: Env): Promise<Response> {
         error: status === 503 ? "Provider registration is temporarily unavailable" : "Sign in before submitting a provider profile",
       }, status);
     }
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const input = await body(request);
     const providerName = clean(input.name, 160);
     const description = clean(input.whatTheyTeach || input.description, 800);
@@ -453,10 +577,11 @@ async function api(request: Request, env: Env): Promise<Response> {
       contactEmail, contactPhone, `PROVIDER-${providerId.slice(-8).toUpperCase()}`,
       "pending", authentication?.authenticated === true ? authentication.user.uid : clean(input.ownerId, 160), timestamp, timestamp,
     ];
-    await env.DB.prepare(
+    await pg.query(
       `INSERT INTO skills_providers (id,name,description,logo_url,badge_url,physical_address,contact_email,contact_phone,referral_code,status,owner_id,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(...values).run();
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      values,
+    );
     return json({ ok: true, provider: { id: providerId, referralCode: values[8], status: "pending" } }, 201);
   }
 
@@ -469,6 +594,8 @@ async function api(request: Request, env: Env): Promise<Response> {
   }
 
   if (request.method === "POST" && ["/api/skills/enroll", "/api/skills/admission", "/api/skills/admissions"].includes(url.pathname)) {
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const input = await body(request);
     if (clean(input.website, 200)) return json({ ok: true }, 202);
     const providerId = clean(input.providerId, 120);
@@ -504,20 +631,23 @@ async function api(request: Request, env: Env): Promise<Response> {
       previousExperience: clean(input.previousExperience, 800),
       submittedAt: timestamp,
     };
-    await env.DB.prepare(
+    await pg.query(
       `INSERT INTO vocational_enrollments
         (id,provider_id,course_id,referral_code,student_id,full_name,phone,email,education_level,previous_experience,amount_ugx,payment_reference,payment_status,status,record_json,is_deleted,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+      [
       enrollmentId, providerId, courseId, referralCode, enrollment.studentId,
       fullName, phone, email, enrollment.educationLevel, enrollment.previousExperience,
       20000, "", "pending", "pending", JSON.stringify(enrollment), 0, timestamp, timestamp,
-    ).run();
+      ],
+    );
     return json({ ok: true, enrollment: { id: enrollmentId, status: "pending" } }, 201);
   }
 
   if (request.method === "POST" && url.pathname === "/api/skills/marks") {
     if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const input = await body(request);
     const theory = Number(input.theory);
     const practical = Number(input.practical);
@@ -534,33 +664,37 @@ async function api(request: Request, env: Env): Promise<Response> {
       courseId: clean(input.courseId, 120), courseTitle: clean(input.courseTitle, 160),
       theory, practical, total, grade, passed: grade !== "Fail", createdAt: timestamp, updatedAt: timestamp,
     };
-    await env.DB.prepare(
+    await pg.query(
       `INSERT INTO vocational_marks (id,admission_id,provider_id,student_id,course_id,course_title,theory,practical,total,grade,passed,entered_by,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(markId, mark.admissionId, mark.providerId, mark.studentId, mark.courseId, mark.courseTitle, theory, practical, total, grade, mark.passed ? 1 : 0, "cloudflare-authorized", timestamp, timestamp).run();
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+      [markId, mark.admissionId, mark.providerId, mark.studentId, mark.courseId, mark.courseTitle, theory, practical, total, grade, mark.passed ? 1 : 0, "cloudflare-authorized", timestamp, timestamp],
+    );
     return json({ ok: true, mark }, 201);
   }
 
   if (request.method === "POST" && url.pathname === "/api/skills/certificate") {
     if (!canWrite(request, env)) return json({ ok: false, error: "Cloudflare application write authorization is not configured" }, 503);
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
     const input = await body(request);
     const marksId = clean(input.marksId, 160);
-    const result = await env.DB.prepare("SELECT * FROM vocational_marks WHERE id = ? LIMIT 1").bind(marksId).all<Record<string, unknown>>();
-    const mark = result.results[0];
+    const result = await pg.query<Record<string, unknown>>("SELECT * FROM vocational_marks WHERE id = $1 LIMIT 1", [marksId]);
+    const mark = result.rows[0];
     if (!mark) return json({ ok: false, error: "Marks record not found" }, 404);
     if (Number(mark.passed) !== 1) return json({ ok: false, error: "A certificate can only be issued for a passing result" }, 409);
     const certificateId = id("certificate");
     const certificateNumber = `APSHULE-VOC-${new Date().getUTCFullYear()}-${certificateId.slice(-10).toUpperCase()}`;
     const issuedAt = now();
-    await env.DB.prepare(
+    await pg.query(
       `INSERT INTO certificates (id,certificate_number,marks_id,provider_id,student_id,student_name,course_id,course_title,theory,practical,total,grade,border_style,border_color,issued_by,issued_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+      [
       certificateId, certificateNumber, marksId, clean(mark.provider_id, 120), clean(mark.student_id, 160),
       clean(input.studentName, 160), clean(mark.course_id, 120), clean(mark.course_title, 160),
       Number(mark.theory), Number(mark.practical), Number(mark.total), clean(mark.grade, 30),
       "double", "#FF7A1A", "cloudflare-authorized", issuedAt,
-    ).run();
+      ],
+    );
     return json({ ok: true, certificate: { id: certificateId, certificateNumber, borderStyle: "double", borderColor: "#FF7A1A", issuedAt } }, 201);
   }
 
@@ -572,7 +706,24 @@ export default {
     try {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
-        return withCors(request, await api(request, env));
+        const databaseFreePath = ["/health", "/api/health", "/api/healthz"].includes(url.pathname)
+          || url.pathname === "/api/auth/logout"
+          || url.pathname === "/api/tech/contact";
+        if (request.method === "OPTIONS" || databaseFreePath || env.PG || !env.NEON_DATABASE_URL) {
+          return withCors(request, await api(request, env));
+        }
+
+        let client;
+        try {
+          client = await connectNeon(env);
+        } catch {
+          return withCors(request, json({ ok: false, error: "Neon database is unavailable" }, 503));
+        }
+        try {
+          return withCors(request, await api(request, { ...env, PG: client }));
+        } finally {
+          await client.end().catch(() => {});
+        }
       }
       const directoryRedirect = redirectDirectoryRoot(url.pathname, url.search);
       if (directoryRedirect) return directoryRedirect;

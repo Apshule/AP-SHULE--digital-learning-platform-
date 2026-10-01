@@ -1,5 +1,5 @@
 import type { AuthEnv, AuthUser } from "./backend-types";
-import { readRecords } from "./domain-routes";
+import { inNeonTransaction } from "./neon-db";
 
 type Row = Record<string, unknown>;
 type FarmRole = "farm_admin" | "farm_director" | "farm_manager" | "farm_worker" | "superadmin";
@@ -27,18 +27,77 @@ const roleOf = (user: AuthUser) => clean(user.role, 80).toLowerCase();
 const tenant = (user: AuthUser) => ({ institutionId: user.institutionId || null, schoolId: user.schoolId || null });
 const same = (a: unknown, b: string) => clean(a, 160) === b;
 
+function postgres(env: AuthEnv) {
+  if (!env.PG) throw new Error("Neon PostgreSQL is unavailable for Farm workflows");
+  return env.PG;
+}
+
+function recordData(value: unknown): Row {
+  let parsed: unknown;
+  try {
+    parsed = typeof value === "string" ? JSON.parse(value) : value;
+  } catch {
+    throw new Error("Farm record contains invalid JSON");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Farm record JSON must be an object");
+  }
+  return parsed as Row;
+}
+
+function postgresErrorCode(error: unknown): string {
+  return error && typeof error === "object" && "code" in error
+    ? String((error as { code?: unknown }).code ?? "")
+    : "";
+}
+
 function assigned(animal: Row, uid: string): boolean {
   if (same(animal.assignedWorkerUid, uid) || same(animal.workerUid, uid)) return true;
   return Array.isArray(animal.assignedWorkerUids) && animal.assignedWorkerUids.some((value) => same(value, uid));
 }
 
-async function records(env: AuthEnv, user: AuthUser, type: string) {
-  return readRecords(env, user, "farm", type);
+async function records(env: AuthEnv, user: AuthUser, type: string): Promise<Row[]> {
+  const db = postgres(env);
+  const role = roleOf(user);
+  const values: unknown[] = ["farm", type];
+  let scopeSql = "TRUE";
+  if (role !== "superadmin") {
+    if (user.schoolId) {
+      values.push(user.schoolId, user.institutionId || "");
+      scopeSql = "(school_id = $3 OR (school_id IS NULL AND institution_id = $4))";
+    } else {
+      values.push(user.institutionId || "");
+      scopeSql = "institution_id = $3";
+    }
+  }
+  if (role === "farm_worker") {
+    values.push(user.uid);
+    scopeSql += ` AND owner_uid = $${values.length}`;
+  }
+  const result = await db.query<Row>(
+    `SELECT id,record_json,record_type,created_at,updated_at,owner_uid,school_id,institution_id
+     FROM public.sector_records
+     WHERE sector=$1 AND record_type=$2 AND ${scopeSql} AND is_deleted=0
+     ORDER BY updated_at DESC LIMIT 500`,
+    values,
+  );
+  return result.rows.map((row) => {
+    const data = recordData(row.record_json);
+    return {
+      id: row.id,
+      ...data,
+      recordType: row.record_type,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      schoolId: row.school_id ?? data.schoolId ?? data.school_id ?? null,
+      institutionId: row.institution_id ?? data.institutionId ?? data.institution_id ?? null,
+    };
+  });
 }
 
 async function visibleRecords(env: AuthEnv, user: AuthUser, type: string) {
-  // readRecords applies worker owner_uid filtering. Animals are staff-owned registry
-  // rows, so query the already tenant-scoped D1 rows before assignment filtering.
+  // Farm records apply tenant and owner_uid scope in PostgreSQL. Animals are
+  // staff-owned registry rows, so apply worker assignment filtering afterwards.
   let result = type === "animal" && roleOf(user) === "farm_worker"
     ? await tenantAnimals(env, user)
     : await records(env, user, type);
@@ -50,48 +109,50 @@ async function visibleRecords(env: AuthEnv, user: AuthUser, type: string) {
 async function tenantAnimals(env: AuthEnv, user: AuthUser): Promise<Row[]> {
   const institution = user.institutionId || "";
   const school = user.schoolId || "";
-  const result = await env.DB.prepare(
-    `SELECT id,record_json,record_type,created_at,updated_at FROM sector_records
+  const result = await postgres(env).query<Row>(
+    `SELECT id,record_json,record_type,created_at,updated_at FROM public.sector_records
      WHERE sector='farm' AND record_type='animal' AND is_deleted=0
-       AND institution_id=? AND (school_id IS NULL OR school_id=?)
+       AND institution_id=$1 AND (school_id IS NULL OR school_id=$2)
      ORDER BY updated_at DESC LIMIT 500`,
-  ).bind(institution, school).all<Row>();
-  return result.results.map((row) => ({
-    id: row.id, ...JSON.parse(String(row.record_json || "{}")),
+    [institution, school],
+  );
+  return result.rows.map((row) => ({
+    id: row.id, ...recordData(row.record_json),
     recordType: row.record_type, createdAt: row.created_at, updatedAt: row.updated_at,
   }));
 }
 
 async function feedInventory(env: AuthEnv, user: AuthUser): Promise<Row[]> {
-  const result = await env.DB.prepare(
-    `SELECT id,record_json FROM sector_records
+  const result = await postgres(env).query<Row>(
+    `SELECT id,record_json FROM public.sector_records
      WHERE sector='farm' AND record_type='inventory' AND is_deleted=0
-       AND institution_id=? AND (school_id IS NULL OR school_id=?)
+       AND institution_id=$1 AND (school_id IS NULL OR school_id=$2)
      ORDER BY updated_at DESC LIMIT 500`,
-  ).bind(user.institutionId || "", user.schoolId || "").all<Row>();
-  return result.results.flatMap((row) => {
-    try {
-      const record = JSON.parse(String(row.record_json || "{}")) as Row;
-      const quantityInStock = Number(record.quantityInStock);
-      if (!Number.isFinite(quantityInStock) || quantityInStock < 0) return [];
-      return [{
-        id: row.id,
-        name: clean(record.name, 160),
-        quantityInStock,
-        unit: clean(record.unit, 40) || "unit",
-      }];
-    } catch {
-      return [];
-    }
+    [user.institutionId || "", user.schoolId || ""],
+  );
+  return result.rows.flatMap((row) => {
+    const record = recordData(row.record_json);
+    const quantityInStock = Number(record.quantityInStock);
+    if (!Number.isFinite(quantityInStock) || quantityInStock < 0) return [];
+    return [{
+      id: row.id,
+      name: clean(record.name, 160),
+      quantityInStock,
+      unit: clean(record.unit, 40) || "unit",
+    }];
   });
 }
 
 async function feedProtectionReady(env: AuthEnv): Promise<boolean> {
-  const result = await env.DB.prepare(
-    `SELECT name FROM sqlite_master
-     WHERE type='trigger' AND name IN ('farm_feed_consumption_validate', 'farm_feed_consumption_deduct_stock')`,
-  ).all<Row>();
-  return result.results.length === 2;
+  if (!env.PG) return false;
+  const result = await env.PG.query<Row>(
+    `SELECT tgname
+     FROM pg_catalog.pg_trigger
+     WHERE tgrelid=to_regclass('public.sector_records')
+       AND NOT tgisinternal
+       AND tgname IN ('farm_feed_consumption_validate', 'farm_feed_consumption_deduct_stock')`,
+  );
+  return result.rows.length === 2;
 }
 
 async function save(env: AuthEnv, user: AuthUser, type: string, fields: Row, ownerUid: string | null = null) {
@@ -100,11 +161,12 @@ async function save(env: AuthEnv, user: AuthUser, type: string, fields: Row, own
   const timestamp = new Date().toISOString();
   // Deliberately construct tenant fields here: browser-supplied tenant/owner IDs are ignored.
   const payload = { ...fields, id: recordId, recordType: type, institutionId: t.institutionId, schoolId: t.schoolId, updatedAt: timestamp };
-  await env.DB.prepare(
-    `INSERT INTO sector_records
+  await postgres(env).query(
+    `INSERT INTO public.sector_records
       (id,sector,institution_id,school_id,owner_uid,record_type,record_json,created_by,is_deleted,created_at,updated_at)
-     VALUES (?,?,?,?,?,?,?, ?,0,?,?)`,
-  ).bind(recordId, "farm", t.institutionId, t.schoolId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp).run();
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0,$9,$10)`,
+    [recordId, "farm", t.institutionId, t.schoolId, ownerUid, type, JSON.stringify(payload), user.uid, timestamp, timestamp],
+  );
   return payload;
 }
 
@@ -113,7 +175,7 @@ function allowedWrite(role: string, type: string): boolean {
 }
 
 function priorOperation(type: string, row: Row, input: Row): Response {
-  const record: Row = { id: row.id, ...JSON.parse(String(row.record_json || "{}")) as Row };
+  const record: Row = { id: row.id, ...recordData(row.record_json) };
   if (type === "feed_consumption" &&
       (clean(record.itemId, 300) !== clean(input.itemId, 300) || Number(record.quantity) !== Number(input.quantity))) {
     return json({ ok: false, error: "operationId is already associated with a different feed entry" }, 409);
@@ -122,15 +184,16 @@ function priorOperation(type: string, row: Row, input: Row): Response {
 }
 
 async function findOperation(env: AuthEnv, user: AuthUser, type: string, operationId: string) {
-  const schoolScope = type === "feed_consumption" ? " AND (school_id IS NULL OR school_id=?)" : "";
+  const schoolScope = type === "feed_consumption" ? " AND (school_id IS NULL OR school_id=$4)" : "";
   const values: unknown[] = [user.institutionId, type, operationId];
   if (type === "feed_consumption") values.push(user.schoolId || "");
-  return env.DB.prepare(
-    `SELECT id,record_json FROM sector_records
-     WHERE sector='farm' AND institution_id=? AND record_type=?
-       AND json_extract(record_json,'$.operationId')=? AND is_deleted=0${schoolScope}
+  return postgres(env).query<Row>(
+    `SELECT id,record_json FROM public.sector_records
+     WHERE sector='farm' AND institution_id=$1 AND record_type=$2
+       AND record_json::jsonb ->> 'operationId' = $3 AND is_deleted=0${schoolScope}
      LIMIT 1`,
-  ).bind(...values).all<Row>();
+    values,
+  );
 }
 
 export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, user: AuthUser | null | undefined): Promise<Response | null> {
@@ -142,7 +205,9 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   if (!user.institutionId) return json({ ok: false, error: "A selected Farm institution is required" }, 403);
   const path = url.pathname.slice("/api/farm/".length).split("/").filter(Boolean);
   const area = path[0] || "";
+  const type = types[area];
   if (area === "workspace" && request.method === "GET") {
+    if (!env.PG) return json({ ok: false, error: "Neon PostgreSQL is unavailable for Farm workflows" }, 503);
     const result: Row = { ok: true, role, institutionId: user.institutionId || null, schoolId: user.schoolId || null };
     result.animals = await visibleRecords(env, user, "animal");
     result.movements = role === "farm_worker" ? [] : await visibleRecords(env, user, "animal_movement");
@@ -157,6 +222,7 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   }
   if (area === "reports" && request.method === "GET") {
     if (role === "farm_worker") return json({ ok: false, error: "Farm reports are restricted to supervisors" }, 403);
+    if (!env.PG) return json({ ok: false, error: "Neon PostgreSQL is unavailable for Farm workflows" }, 503);
     const [animals, movements, attendance, eggs, produce, feed] = await Promise.all([
       records(env, user, "animal"), records(env, user, "animal_movement"),
       records(env, user, "attendance"), records(env, user, "egg_collection"), records(env, user, "produce"),
@@ -168,13 +234,13 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
       note: "Operational Farm report only; sales, expenses, cameras, and biometric data are not enabled in this slice.",
     });
   }
-  const type = types[area];
   if (!type || path.length > 2) return json({ ok: false, error: "Unknown Farm workflow route" }, 404);
   if (request.method === "GET") {
     if (role === "farm_worker" && !workerTypes.has(type)) {
       // Workers can see only animals assigned to them, and their own operational records.
       if (type !== "animal") return json({ ok: false, error: "Worker records are restricted to own operations" }, 403);
     }
+    if (!env.PG) return json({ ok: false, error: "Neon PostgreSQL is unavailable for Farm workflows" }, 503);
     const result = await visibleRecords(env, user, type);
     return json({ ok: true, records: result });
   }
@@ -183,6 +249,7 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   if (["animal", "inventory"].includes(type) && role !== "farm_admin" && role !== "superadmin") {
     return json({ ok: false, error: "Farm registry and inventory management is restricted to Farm Admin" }, 403);
   }
+  if (!env.PG) return json({ ok: false, error: "Neon PostgreSQL is unavailable for Farm workflows" }, 503);
   const input = await parse(request);
   if (!input) return json({ ok: false, error: "A JSON Farm record is required" }, 400);
   const operationId = clean(input.operationId || input.idempotencyKey, 180);
@@ -210,12 +277,14 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
   }
   if (operationId) {
     const prior = await findOperation(env, user, type, operationId);
-    if (prior.results[0]) return priorOperation(type, prior.results[0], input);
+    if (prior.rows[0]) return priorOperation(type, prior.rows[0], input);
   }
   if (input.id) {
-    const collision = await env.DB.prepare("SELECT id FROM sector_records WHERE id=? LIMIT 1")
-      .bind(clean(input.id, 300)).all<Row>();
-    if (collision.results[0]) return json({ ok: false, error: "Record ID already exists; append operations cannot overwrite records" }, 409);
+    const collision = await postgres(env).query<Row>(
+      "SELECT id FROM public.sector_records WHERE id=$1 LIMIT 1",
+      [clean(input.id, 300)],
+    );
+    if (collision.rows[0]) return json({ ok: false, error: "Record ID already exists; append operations cannot overwrite records" }, 409);
   }
   // Ownership is always derived from the authenticated principal; client owner IDs are never accepted.
   const owner = role === "farm_worker" ? user.uid : null;
@@ -228,10 +297,11 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     const assignedWorkerUid = clean(input.assignedWorkerUid, 160);
     if (!name || !animalType) return json({ ok: false, error: "Animal name and type are required" }, 400);
     if (assignedWorkerUid) {
-      const worker = await env.DB.prepare(
-        "SELECT uid FROM users WHERE uid=? AND lower(role)='farm_worker' AND institution_id=? AND active=1 AND disabled=0 LIMIT 1",
-      ).bind(assignedWorkerUid, user.institutionId).all<Row>();
-      if (!worker.results[0]) return json({ ok: false, error: "Assigned worker must be active in this farm tenant" }, 400);
+      const worker = await postgres(env).query<Row>(
+        "SELECT uid FROM public.users WHERE uid=$1 AND lower(role)='farm_worker' AND institution_id=$2 AND active=TRUE AND disabled=FALSE LIMIT 1",
+        [assignedWorkerUid, user.institutionId],
+      );
+      if (!worker.rows[0]) return json({ ok: false, error: "Assigned worker must be active in this farm tenant" }, 400);
     }
     input.name = name;
     input.animalType = animalType;
@@ -304,15 +374,16 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
     }
   }
   if (type === "feed_consumption") {
-    const inventory = await env.DB.prepare(
-      `SELECT id,record_json FROM sector_records
-       WHERE id=? AND sector='farm' AND record_type='inventory' AND is_deleted=0
-         AND institution_id=? AND (school_id IS NULL OR school_id=?)
+    const inventory = await postgres(env).query<Row>(
+      `SELECT id,record_json FROM public.sector_records
+       WHERE id=$1 AND sector='farm' AND record_type='inventory' AND is_deleted=0
+         AND institution_id=$2 AND (school_id IS NULL OR school_id=$3)
        LIMIT 1`,
-    ).bind(feedItemId, user.institutionId, user.schoolId || "").all<Row>();
-    if (!inventory.results[0]) return json({ ok: false, error: "Feed inventory item was not found in this Farm" }, 404);
+      [feedItemId, user.institutionId, user.schoolId || ""],
+    );
+    if (!inventory.rows[0]) return json({ ok: false, error: "Feed inventory item was not found in this Farm" }, 404);
     try {
-      feedItem = JSON.parse(String(inventory.results[0].record_json || "{}")) as Row;
+      feedItem = recordData(inventory.rows[0].record_json);
     } catch {
       return json({ ok: false, error: "Feed inventory item is invalid" }, 409);
     }
@@ -333,7 +404,10 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
           ...(role === "farm_worker" ? { workerUid: user.uid, ownerUid: user.uid } : {}),
         }
       : { ...input };
-    const saved = await save(env, user, type, { ...fields, operationId: operationId || undefined }, owner);
+    const saveRecord = () => save(env, user, type, { ...fields, operationId: operationId || undefined }, owner);
+    const saved = type === "feed_consumption"
+      ? await inNeonTransaction(postgres(env), saveRecord)
+      : await saveRecord();
     return json({ ok: true, record: saved }, 201);
   } catch (error) {
     const message = String(error);
@@ -341,10 +415,10 @@ export async function handleFarmWorkflowRoute(request: Request, env: AuthEnv, us
       return json({ ok: false, error: "Not enough stock is available for this feed entry" }, 409);
     }
     if (/FARM_FEED_INVALID/i.test(message)) return json({ ok: false, error: "Feed entry is invalid" }, 400);
-    if (!/UNIQUE constraint failed|PRIMARY KEY|Farm inventory cannot go below zero/i.test(message)) throw error;
+    if (postgresErrorCode(error) !== "23505" && !/Farm inventory cannot go below zero/i.test(message)) throw error;
     if (operationId) {
       const prior = await findOperation(env, user, type, operationId);
-      if (prior.results[0]) return priorOperation(type, prior.results[0], input);
+      if (prior.rows[0]) return priorOperation(type, prior.rows[0], input);
     }
     return json({ ok: false, error: "This record already exists or violates a Farm inventory guard" }, 409);
   }

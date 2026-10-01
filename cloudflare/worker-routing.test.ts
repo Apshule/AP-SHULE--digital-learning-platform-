@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
+import { readNeonHealth } from "./neon-db";
 import worker from "./worker";
+
+vi.mock("./neon-db", () => ({
+  readNeonHealth: vi.fn(),
+}));
 
 type WorkerEnv = Parameters<typeof worker.fetch>[1];
 
@@ -10,9 +15,7 @@ function previewEnv() {
   });
   const env = {
     ENVIRONMENT: "development",
-    D1_DATABASE_NAME: "apshule-preview-local",
     STATIC: { fetch: staticFetch },
-    DB: { prepare: vi.fn(() => { throw new Error("Unexpected D1 access in route test"); }) },
     CACHE: { get: vi.fn(async () => null), put: vi.fn(async () => {}), delete: vi.fn(async () => {}) },
     SESSIONS: { get: vi.fn(async () => null), put: vi.fn(async () => {}), delete: vi.fn(async () => {}) },
   } as unknown as WorkerEnv;
@@ -38,6 +41,8 @@ describe("APSHULE Worker routing", () => {
       "/parent/",
       "/skills/",
       "/tech/",
+      "/learn/",
+      "/my-account/",
       "/profile.html",
       "/reset-password.html",
       "/manifest.json",
@@ -96,6 +101,16 @@ describe("APSHULE Worker routing", () => {
     expect(staticFetch).not.toHaveBeenCalled();
   });
 
+  it("normalizes the learning and account alias roots", async () => {
+    const { env, staticFetch } = previewEnv();
+    for (const path of ["/learn", "/my-account"]) {
+      const response = await worker.fetch(new Request(`https://appshule.com${path}?from=home`), env);
+      expect(response.status, path).toBe(308);
+      expect(response.headers.get("location"), path).toBe(`${path}/?from=home`);
+    }
+    expect(staticFetch).not.toHaveBeenCalled();
+  });
+
   it("normalizes the restored role dashboard URLs", async () => {
     const { env, staticFetch } = previewEnv();
     for (const path of ["/student", "/teacher", "/secretary", "/bursar", "/parent"]) {
@@ -107,6 +122,7 @@ describe("APSHULE Worker routing", () => {
   });
 
   it("routes health and API requests ahead of static assets", async () => {
+    vi.mocked(readNeonHealth).mockResolvedValue({ users: 132, tables: 7 });
     const { env, staticFetch } = previewEnv();
     const health = await worker.fetch(new Request("https://appshule.com/health"), env);
     const apiHealth = await worker.fetch(new Request("https://appshule.com/api/healthz"), env);
@@ -114,7 +130,71 @@ describe("APSHULE Worker routing", () => {
     expect(health.status).toBe(200);
     expect((await health.json()).firebase).toBe(false);
     expect(apiHealth.status).toBe(200);
-    expect((await apiHealth.json()).authentication).toBe("cloudflare-d1-kv");
+    expect((await apiHealth.json()).authentication).toBe("neon-postgresql-kv");
+    expect(staticFetch).not.toHaveBeenCalled();
+  });
+
+  it("reports the Neon user count and checks for all 132 migrated users", async () => {
+    vi.mocked(readNeonHealth).mockResolvedValue({ users: 132, tables: 7 });
+    const { env, staticFetch } = previewEnv();
+    env.NEON_DATABASE_URL = "configured-for-test";
+
+    const response = await worker.fetch(new Request("https://appshule.com/api/health"), env);
+    const health = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(health).toMatchObject({
+      ok: true,
+      db: "neon",
+      users: 132,
+      expectedUsers: 132,
+      usersMatchExpected: true,
+      tables: 7,
+      status: "ok",
+    });
+    expect(readNeonHealth).toHaveBeenCalledWith(env);
+    expect(staticFetch).not.toHaveBeenCalled();
+  });
+
+  it("uses a read-only Neon snapshot for the isolated local Worker preview", async () => {
+    vi.mocked(readNeonHealth).mockClear();
+    const { env, staticFetch } = previewEnv();
+    env.NEON_HEALTH_SNAPSHOT_JSON = JSON.stringify({
+      users: 132,
+      tables: 69,
+      checkedAt: "2026-10-01T00:00:00.000Z",
+    });
+
+    const response = await worker.fetch(new Request("https://appshule.com/api/health"), env);
+    const health = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(health).toMatchObject({
+      ok: true,
+      db: "neon",
+      users: 132,
+      expectedUsers: 132,
+      usersMatchExpected: true,
+      tables: 69,
+      status: "ok",
+      healthSource: "read-only-development-startup-snapshot",
+      healthCheckedAt: "2026-10-01T00:00:00.000Z",
+    });
+    expect(readNeonHealth).not.toHaveBeenCalled();
+    expect(staticFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed local Neon health snapshots instead of masking them", async () => {
+    vi.mocked(readNeonHealth).mockClear();
+    const { env, staticFetch } = previewEnv();
+    env.NEON_HEALTH_SNAPSHOT_JSON = JSON.stringify({ users: "132", tables: 69 });
+
+    const response = await worker.fetch(new Request("https://appshule.com/api/health"), env);
+    const health = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(health).toMatchObject({ ok: false, status: "unavailable" });
+    expect(readNeonHealth).not.toHaveBeenCalled();
     expect(staticFetch).not.toHaveBeenCalled();
   });
 
@@ -130,7 +210,7 @@ describe("APSHULE Worker routing", () => {
     expect(staticFetch).not.toHaveBeenCalled();
   });
 
-  it("requires an authenticated D1 session before provider registration", async () => {
+  it("requires an authenticated session before provider registration", async () => {
     const { env } = previewEnv();
     const response = await worker.fetch(new Request("https://appshule.com/api/skills/providers/register", {
       method: "POST",
@@ -148,7 +228,7 @@ describe("APSHULE Worker routing", () => {
     expect(await response.json()).toMatchObject({ ok: false, error: "Sign in before submitting a provider profile" });
   });
 
-  it("binds provider registrations to the signed-in D1 account", async () => {
+  it("binds provider registrations to the signed-in Neon account", async () => {
     const token = "provider-registration-session";
     const sessionKey = `auth:session:v2:${createHash("sha256").update(token).digest("base64url")}`;
     const user = {
@@ -167,7 +247,6 @@ describe("APSHULE Worker routing", () => {
     const cacheValues = new Map<string, string>();
     const env = {
       ENVIRONMENT: "development",
-      D1_DATABASE_NAME: "apshule-preview-local",
       SESSIONS: {
         get: vi.fn(async (key: string) => key === sessionKey ? session : null),
         put: vi.fn(async () => {}),
@@ -178,22 +257,14 @@ describe("APSHULE Worker routing", () => {
         put: vi.fn(async (key: string, value: string) => { cacheValues.set(key, value); }),
         delete: vi.fn(async (key: string) => { cacheValues.delete(key); }),
       },
-      DB: {
-        prepare: (query: string) => {
-          let values: unknown[] = [];
-          return {
-            bind(...bound: unknown[]) {
-              values = bound;
-              return this;
-            },
-            async all<T>() {
-              return { results: query.includes("FROM users") ? [user as T] : [] };
-            },
-            async run() {
-              insertedValues.push(values);
-              return { success: true };
-            },
-          };
+      PG: {
+        query: async <T,>(query: string, values?: unknown[]) => {
+          if (query.includes("FROM users")) return { rows: [user as T], rowCount: 1 };
+          if (query.includes("INSERT INTO skills_providers")) {
+            insertedValues.push(values ?? []);
+            return { rows: [], rowCount: 1 };
+          }
+          return { rows: [], rowCount: 0 };
         },
       },
     } as unknown as WorkerEnv;

@@ -1,5 +1,6 @@
 import { authenticate } from "./auth";
 import type { AuthEnv, AuthUser } from "./backend-types";
+import { inNeonTransaction } from "./neon-db";
 import { sendWebPush, validateWebPushEndpoint, type WebPushSubscription } from "./web-push";
 
 export interface PushRouteEnv extends AuthEnv {
@@ -10,10 +11,10 @@ export interface PushRouteEnv extends AuthEnv {
 }
 
 interface PushEventRow {
-  id: number;
+  id: number | string;
   type: "success" | "error";
   message: string;
-  created_at: string;
+  created_at: string | Date;
 }
 
 interface PushSubscriptionRow {
@@ -89,7 +90,12 @@ async function readBody(request: Request): Promise<Record<string, unknown> | nul
 }
 
 function eventResponse(row: PushEventRow) {
-  return { id: Number(row.id), type: row.type, message: row.message, timestamp: row.created_at };
+  return {
+    id: Number(row.id),
+    type: row.type,
+    message: row.message,
+    timestamp: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+  };
 }
 
 function normalizedRole(role: string): string {
@@ -111,6 +117,7 @@ function vapidKeys(env: PushRouteEnv) {
 
 async function sendToSubscriptions(
   env: PushRouteEnv,
+  pg: NonNullable<PushRouteEnv["PG"]>,
   rows: PushSubscriptionRow[],
   payload: Record<string, unknown>,
 ): Promise<{ sent: number; failed: number }> {
@@ -137,32 +144,40 @@ async function sendToSubscriptions(
   }));
 
   await Promise.all(stale.map((endpoint) =>
-    env.DB.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").bind(endpoint).run(),
+    pg.query("DELETE FROM public.push_subscriptions WHERE endpoint = $1", [endpoint]),
   ));
   return { sent, failed };
 }
 
 async function handleEventRoute(request: Request, env: PushRouteEnv, path: string): Promise<Response> {
   if (request.method === "GET" && path === "/api/push-events/history") {
-    const result = await env.DB.prepare(
-      "SELECT id,type,message,created_at FROM push_events ORDER BY id DESC LIMIT ?",
-    ).bind(HISTORY_LIMIT).all<PushEventRow>();
-    return json(result.results.map(eventResponse));
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
+    const result = await pg.query<PushEventRow>(
+      "SELECT id,type,message,created_at FROM public.push_events ORDER BY id DESC LIMIT $1",
+      [HISTORY_LIMIT],
+    );
+    return json(result.rows.map(eventResponse));
   }
 
   if (request.method === "GET" && path === "/api/push-events") {
     const rawAfter = new URL(request.url).searchParams.get("afterId");
     if (rawAfter === null) {
-      const latest = await env.DB.prepare(
-        "SELECT id FROM push_events ORDER BY id DESC LIMIT 1",
-      ).all<{ id: number }>();
-      return json({ ok: true, events: [], latestId: Number(latest.results[0]?.id ?? 0) });
+      const pg = env.PG;
+      if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
+      const latest = await pg.query<{ id: number | string }>(
+        "SELECT id FROM public.push_events ORDER BY id DESC LIMIT 1",
+      );
+      return json({ ok: true, events: [], latestId: Number(latest.rows[0]?.id ?? 0) });
     }
     if (!/^\d+$/.test(rawAfter)) return json({ ok: false, error: "afterId must be a non-negative integer" }, 400);
-    const result = await env.DB.prepare(
-      "SELECT id,type,message,created_at FROM push_events WHERE id > ? ORDER BY id ASC LIMIT ?",
-    ).bind(Number(rawAfter), HISTORY_LIMIT).all<PushEventRow>();
-    const events = result.results.map(eventResponse);
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
+    const result = await pg.query<PushEventRow>(
+      "SELECT id,type,message,created_at FROM public.push_events WHERE id > $1 ORDER BY id ASC LIMIT $2",
+      [Number(rawAfter), HISTORY_LIMIT],
+    );
+    const events = result.rows.map(eventResponse);
     return json({ ok: true, events, latestId: events.length ? events[events.length - 1].id : Number(rawAfter) });
   }
 
@@ -174,7 +189,9 @@ async function handleEventRoute(request: Request, env: PushRouteEnv, path: strin
     if (!isSuperAdmin(authentication.user.role)) {
       return json({ ok: false, error: "Superadmin access required" }, 403);
     }
-    await env.DB.prepare("DELETE FROM push_events").run();
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
+    await pg.query("DELETE FROM public.push_events");
     return json({ ok: true });
   }
 
@@ -191,29 +208,37 @@ async function handleEventRoute(request: Request, env: PushRouteEnv, path: strin
       return json({ ok: false, error: "type must be 'success' or 'error'" }, 400);
     }
     if (!message) return json({ ok: false, error: "type and message are required" }, 400);
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
 
     const timestamp = new Date().toISOString();
-    const inserted = await env.DB.prepare(
-      "INSERT INTO push_events (type,message,created_at) VALUES (?,?,?)",
-    ).bind(type, message, timestamp).run() as { meta?: { last_row_id?: number } };
-    await env.DB.prepare(
-      "DELETE FROM push_events WHERE id NOT IN (SELECT id FROM push_events ORDER BY id DESC LIMIT ?)",
-    ).bind(MAX_EVENTS_KEPT).run();
+    const inserted = await pg.query<{ id: number | string }>(
+      "INSERT INTO public.push_events (type,message,created_at) VALUES ($1,$2,$3) RETURNING id",
+      [type, message, timestamp],
+    );
+    const eventId = inserted.rows[0] ? Number(inserted.rows[0].id) : null;
+    if (eventId === null || !Number.isSafeInteger(eventId)) {
+      return json({ ok: false, error: "The push event could not be stored" }, 503);
+    }
+    await pg.query(
+      "DELETE FROM public.push_events WHERE id NOT IN (SELECT id FROM public.push_events ORDER BY id DESC LIMIT $1)",
+      [MAX_EVENTS_KEPT],
+    );
 
-    const subscriptions = await env.DB.prepare(
-      "SELECT endpoint,user_id,p256dh,auth,created_at,updated_at FROM push_subscriptions",
-    ).all<PushSubscriptionRow>();
+    const subscriptions = await pg.query<PushSubscriptionRow>(
+      "SELECT endpoint,user_id,p256dh,auth,created_at,updated_at FROM public.push_subscriptions",
+    );
     const title = type === "success" ? "APSHULE Push" : "APSHULE Push Failed";
     const body = `${type === "success" ? "✅ " : "❌ "}${message}`;
-    const delivery = await sendToSubscriptions(env, subscriptions.results, {
-      title, body, tag: "apshule-push-event", data: { url: "/", eventId: inserted.meta?.last_row_id ?? null },
+    const delivery = await sendToSubscriptions(env, pg, subscriptions.rows, {
+      title, body, tag: "apshule-push-event", data: { url: "/", eventId },
     });
     return json({
       ok: true,
-      eventId: inserted.meta?.last_row_id ?? null,
+      eventId,
       notified: delivery.sent,
       webPush: delivery,
-      ...(subscriptions.results.length > 0 && !vapidKeys(env)
+      ...(subscriptions.rows.length > 0 && !vapidKeys(env)
         ? { warning: "Web Push is not configured; the event was stored without device delivery." }
         : {}),
     });
@@ -254,25 +279,46 @@ async function handleSubscriptionRoute(request: Request, env: PushRouteEnv, path
       return json({ ok: false, error: "Unsupported Web Push endpoint" }, 400);
     }
 
-    const existing = await env.DB.prepare(
-      "SELECT endpoint FROM push_subscriptions WHERE endpoint = ? AND user_id = ? LIMIT 1",
-    ).bind(input.endpoint, authentication.user.uid).all<{ endpoint: string }>();
-    if (existing.results.length === 0) {
-      const count = await env.DB.prepare(
-        "SELECT COUNT(*) AS total FROM push_subscriptions WHERE user_id = ?",
-      ).bind(authentication.user.uid).all<{ total: number }>();
-      if (Number(count.results[0]?.total ?? 0) >= MAX_SUBSCRIPTIONS_PER_USER) {
-        return json({ ok: false, error: "This account has reached the device alert limit" }, 429);
-      }
-    }
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
 
     const timestamp = new Date().toISOString();
-    await env.DB.prepare(
-      `INSERT INTO push_subscriptions (endpoint,user_id,p256dh,auth,created_at,updated_at)
-       VALUES (?,?,?,?,?,?)
-       ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,p256dh=excluded.p256dh,
-         auth=excluded.auth,updated_at=excluded.updated_at`,
-    ).bind(input.endpoint, authentication.user.uid, keys.p256dh, keys.auth, timestamp, timestamp).run();
+    const writeResult = await inNeonTransaction(pg, async () => {
+      const owner = await pg.query<{ uid: string }>(
+        "SELECT uid FROM public.users WHERE uid = $1 FOR UPDATE",
+        [authentication.user.uid],
+      );
+      if (owner.rows.length === 0) return "user-unavailable" as const;
+
+      const existing = await pg.query<{ endpoint: string }>(
+        "SELECT endpoint FROM public.push_subscriptions WHERE endpoint = $1 AND user_id = $2 LIMIT 1",
+        [input.endpoint, authentication.user.uid],
+      );
+      if (existing.rows.length === 0) {
+        const count = await pg.query<{ total: number | string }>(
+          "SELECT COUNT(*)::integer AS total FROM public.push_subscriptions WHERE user_id = $1",
+          [authentication.user.uid],
+        );
+        if (Number(count.rows[0]?.total ?? 0) >= MAX_SUBSCRIPTIONS_PER_USER) {
+          return "limit-reached" as const;
+        }
+      }
+
+      await pg.query(
+        `INSERT INTO public.push_subscriptions (endpoint,user_id,p256dh,auth,created_at,updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT(endpoint) DO UPDATE SET user_id=EXCLUDED.user_id,p256dh=EXCLUDED.p256dh,
+           auth=EXCLUDED.auth,updated_at=EXCLUDED.updated_at`,
+        [input.endpoint, authentication.user.uid, keys.p256dh, keys.auth, timestamp, timestamp],
+      );
+      return "stored" as const;
+    });
+    if (writeResult === "user-unavailable") {
+      return json({ ok: false, error: "PostgreSQL account record is unavailable" }, 503);
+    }
+    if (writeResult === "limit-reached") {
+      return json({ ok: false, error: "This account has reached the device alert limit" }, 429);
+    }
     return json({ ok: true }, 201);
   }
 
@@ -281,9 +327,12 @@ async function handleSubscriptionRoute(request: Request, env: PushRouteEnv, path
     if (!input || typeof input.endpoint !== "string" || input.endpoint.length > 2048) {
       return json({ ok: false, error: "endpoint is required" }, 400);
     }
-    await env.DB.prepare(
-      "DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?",
-    ).bind(input.endpoint, authentication.user.uid).run();
+    const pg = env.PG;
+    if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
+    await pg.query(
+      "DELETE FROM public.push_subscriptions WHERE endpoint = $1 AND user_id = $2",
+      [input.endpoint, authentication.user.uid],
+    );
     return json({ ok: true });
   }
 
@@ -307,26 +356,30 @@ async function handleTargetedNotification(request: Request, env: PushRouteEnv): 
   const title = sanitizeText(input.title, 120);
   const body = sanitizeText(input.body, 1000);
   if (!targetUserId || !title) return json({ ok: false, error: "targetUserId and title are required" }, 400);
+  const pg = env.PG;
+  if (!pg) return json({ ok: false, error: "PostgreSQL is unavailable" }, 503);
 
-  const targetResult = await env.DB.prepare(
-    "SELECT uid,school_id FROM users WHERE uid = ? LIMIT 1",
-  ).bind(targetUserId).all<{ uid: string; school_id: string | null }>();
-  const target = targetResult.results[0];
+  const targetResult = await pg.query<{ uid: string; school_id: string | null }>(
+    "SELECT uid,school_id FROM public.users WHERE uid = $1 LIMIT 1",
+    [targetUserId],
+  );
+  const target = targetResult.rows[0];
   if (!target) return json({ ok: false, error: "Target user not found" }, 404);
   if (!superAdmin && (!user.schoolId || target.school_id !== user.schoolId)) {
     return json({ ok: false, error: "Target user is outside your school" }, 403);
   }
 
-  const subscriptions = await env.DB.prepare(
-    "SELECT endpoint,user_id,p256dh,auth,created_at,updated_at FROM push_subscriptions WHERE user_id = ?",
-  ).bind(targetUserId).all<PushSubscriptionRow>();
-  if (subscriptions.results.length && !vapidKeys(env)) {
+  const subscriptions = await pg.query<PushSubscriptionRow>(
+    "SELECT endpoint,user_id,p256dh,auth,created_at,updated_at FROM public.push_subscriptions WHERE user_id = $1",
+    [targetUserId],
+  );
+  if (subscriptions.rows.length && !vapidKeys(env)) {
     return json({ ok: false, error: "Web Push is not configured" }, 503);
   }
-  const delivery = await sendToSubscriptions(env, subscriptions.results, {
+  const delivery = await sendToSubscriptions(env, pg, subscriptions.rows, {
     title, body, tag: `apshule-user-${targetUserId}`, data: { url: "/" },
   });
-  return json({ ok: true, ...delivery, subscriptions: subscriptions.results.length });
+  return json({ ok: true, ...delivery, subscriptions: subscriptions.rows.length });
 }
 
 export async function handlePushRoute(request: Request, env: PushRouteEnv): Promise<Response | null> {

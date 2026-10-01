@@ -36,6 +36,17 @@ async function digest(bytes: ArrayBuffer): Promise<string> {
   const hash = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(hash)].map((value) => value.toString(16).padStart(2, "0")).join("");
 }
+async function digestText(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  return digest(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
+}
+function allowedContentType(type: string): boolean {
+  return type === "image/jpeg" || type === "image/png" || type === "image/webp";
+}
+function validProfileObjectKey(key: string, uidHash: string, type: string): boolean {
+  const match = key.match(/^profile\/([a-f0-9]{64})\/([a-f0-9]{64})\.(jpg|png|webp)$/);
+  return Boolean(match && match[1] === uidHash && match[3] === extension(type));
+}
 async function boundedBody(request: Request): Promise<ArrayBuffer | null> {
   const reader = request.body?.getReader();
   if (!reader) return new ArrayBuffer(0);
@@ -59,11 +70,21 @@ async function boundedBody(request: Request): Promise<ArrayBuffer | null> {
   }
   return output.buffer;
 }
-async function placeholder(env: ProfileEnv): Promise<Response> {
-  const result = await env.DB.prepare(
-    "SELECT object_key,content_type FROM storage_migration_manifest WHERE is_placeholder=1 AND content_type='image/jpeg' ORDER BY object_key LIMIT 1",
-  ).all<{ object_key: string; content_type: string }>();
-  const key = result.results[0]?.object_key;
+async function placeholder(env: ProfileEnv, pg: NonNullable<ProfileEnv["PG"]>): Promise<Response> {
+  let rows: { object_key: string; content_type: string }[];
+  try {
+    const result = await pg.query<{ object_key: string; content_type: string }>(
+      `SELECT object_key,COALESCE(placeholder_content_type,content_type) AS content_type
+       FROM public.storage_migration_manifest
+       WHERE is_placeholder=1
+         AND COALESCE(placeholder_content_type,content_type)='image/jpeg'
+       ORDER BY object_key LIMIT 1`,
+    );
+    rows = result.rows;
+  } catch {
+    return json({ ok: false, error: "Profile photo placeholder metadata is unavailable" }, 503);
+  }
+  const key = rows[0]?.object_key;
   if (key && env.FILES) {
     const object = await env.FILES.get(key);
     if (object?.body) return new Response(object.body, { headers: { "content-type": "image/jpeg", "cache-control": "no-store" } });
@@ -72,14 +93,25 @@ async function placeholder(env: ProfileEnv): Promise<Response> {
 }
 
 export async function handleProfileFileRoute(request: Request, env: ProfileEnv, user: AuthUser): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
+  const pg = env.PG;
+  if (!pg) return json({ ok: false, error: "Neon database is unavailable" }, 503);
+
   if (request.method === "GET") {
-    const row = (await env.DB.prepare("SELECT active_key,content_type FROM profile_photos WHERE uid=? LIMIT 1").bind(user.uid).all<{ active_key: string; content_type: string }>()).results[0];
-    if (!row || !env.FILES) return placeholder(env);
+    const result = await pg.query<{ active_key: string; content_type: string }>(
+      "SELECT active_key,content_type FROM profile_photos WHERE uid=$1 LIMIT 1",
+      [user.uid],
+    );
+    const row = result.rows[0];
+    if (!row || !env.FILES) return placeholder(env, pg);
+    const uidHash = await digestText(user.uid);
+    if (!allowedContentType(row.content_type) || !validProfileObjectKey(row.active_key, uidHash, row.content_type)) {
+      return json({ ok: false, error: "Profile photo metadata is invalid" }, 500);
+    }
     const object = await env.FILES.get(row.active_key);
-    if (!object?.body) return placeholder(env);
+    if (!object?.body) return placeholder(env, pg);
     return new Response(object.body, { headers: { "content-type": row.content_type, "cache-control": "no-store" } });
   }
-  if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
   if (!env.FILES) return json({ ok: false, error: "Profile photo storage is unavailable" }, 503);
   const origin = request.headers.get("origin");
   if (!origin || origin !== new URL(request.url).origin) {
@@ -96,15 +128,17 @@ export async function handleProfileFileRoute(request: Request, env: ProfileEnv, 
   if (!bytes.byteLength) return json({ ok: false, error: "Choose a photo before uploading" }, 400);
   if (!signature(new Uint8Array(bytes), type)) return json({ ok: false, error: "The file content does not match its image type" }, 415);
   const sha256 = await digest(bytes);
-  const uidHash = await digest(new TextEncoder().encode(user.uid).slice().buffer as ArrayBuffer);
+  const uidHash = await digestText(user.uid);
   const key = `profile/${uidHash}/${sha256}.${extension(type)}`;
+  if (!validProfileObjectKey(key, uidHash, type)) return json({ ok: false, error: "Profile photo object key is invalid" }, 500);
   await env.FILES.put(key, bytes, { httpMetadata: { contentType: type } });
   const timestamp = new Date().toISOString();
-  await env.DB.prepare(
+  await pg.query(
     `INSERT INTO profile_photos (uid,active_key,content_type,size_bytes,sha256,created_at,updated_at)
-     VALUES (?,?,?,?,?,?,?)
-     ON CONFLICT(uid) DO UPDATE SET active_key=excluded.active_key,content_type=excluded.content_type,
-       size_bytes=excluded.size_bytes,sha256=excluded.sha256,updated_at=excluded.updated_at`,
-  ).bind(user.uid, key, type, bytes.byteLength, sha256, timestamp, timestamp).run();
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (uid) DO UPDATE SET active_key=EXCLUDED.active_key,content_type=EXCLUDED.content_type,
+       size_bytes=EXCLUDED.size_bytes,sha256=EXCLUDED.sha256,updated_at=EXCLUDED.updated_at`,
+    [user.uid, key, type, bytes.byteLength, sha256, timestamp, timestamp],
+  );
   return json({ ok: true, contentType: type, sizeBytes: bytes.byteLength, updatedAt: timestamp });
 }
