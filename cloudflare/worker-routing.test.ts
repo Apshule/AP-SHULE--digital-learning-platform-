@@ -137,6 +137,7 @@ describe("APSHULE Worker routing", () => {
   it("reports the Neon user count and checks for all 132 migrated users", async () => {
     vi.mocked(readNeonHealth).mockResolvedValue({ users: 132, tables: 7 });
     const { env, staticFetch } = previewEnv();
+    env.ENVIRONMENT = "production";
     env.NEON_DATABASE_URL = "configured-for-test";
 
     const response = await worker.fetch(new Request("https://appshule.com/api/health"), env);
@@ -145,6 +146,7 @@ describe("APSHULE Worker routing", () => {
     expect(response.status).toBe(200);
     expect(health).toMatchObject({
       ok: true,
+      env: "production",
       db: "neon",
       users: 132,
       expectedUsers: 132,
@@ -171,6 +173,7 @@ describe("APSHULE Worker routing", () => {
     expect(response.status).toBe(200);
     expect(health).toMatchObject({
       ok: true,
+      env: "development",
       db: "neon",
       users: 132,
       expectedUsers: 132,

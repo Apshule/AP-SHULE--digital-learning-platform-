@@ -312,6 +312,7 @@ async function healthResponse(env: Env): Promise<Response> {
     return json({
       ok: true,
       environment: env.ENVIRONMENT,
+      env: env.ENVIRONMENT,
       db: "neon",
       users: counts.users,
       expectedUsers,
